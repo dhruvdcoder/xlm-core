@@ -1,0 +1,15 @@
+# @package _global_
+
+datamodule:
+  _target_: xlm.datamodule.TextDataModule
+  manual_cache_dir: ${oc.env:DATA_DIR, data}
+  tokenizer: ${global_components:tokenizer}
+  dataset_managers: ???
+  noise_schedule: ${global_components:noise_schedule}
+  rewrite_manual_cache: false
+  block_size: ${block_size}
+  global_batch_size: ${global_batch_size}
+  num_dataset_workers: ${num_dataset_workers}
+
+tags:
+  dataset: ???

@@ -1,0 +1,5 @@
+[darglint]
+strictness = long
+docstring_style=google
+ignore_regex=^test_(.*)
+message_template=In {path}:{line} in {obj} :: {msg_id}: {msg}

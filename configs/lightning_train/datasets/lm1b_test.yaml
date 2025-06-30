@@ -1,0 +1,13 @@
+defaults:
+  - lm1b_train
+  - _self_
+
+full_name: billion-word-benchmark/lm1b/test
+full_name_debug: billion-word-benchmark/lm1b/train
+stages:
+  - fit
+  - validate
+
+iterable_dataset_shards: 16
+shuffle_buffer_size: null # no shuffling
+split_by_node: true

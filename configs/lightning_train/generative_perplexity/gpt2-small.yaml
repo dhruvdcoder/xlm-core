@@ -1,0 +1,4 @@
+gpt2:
+  _target_: xlm.diffusion.generative_perplexity.AutoModelForCausalLMGenerativePerplexityEvaluator
+  name: gpt2
+  batch_size: 8

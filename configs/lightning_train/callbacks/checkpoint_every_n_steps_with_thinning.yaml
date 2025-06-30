@@ -1,0 +1,9 @@
+checkpoint_every_n_steps:
+  _target_: xlm.utils.checkpoint_with_thinning.ThinningCheckpoint
+  save_top_k: -1 # Do not save any "best" models; this callback is being used to save every n train steps
+  save_last: True # save model as ${checkpointing_dir}/checkpoints/last.ckpt
+  dirpath: ${checkpointing_dir}
+  verbose: True
+  auto_insert_metric_name: False
+  every_n_train_steps: 500
+  keep_multiple: 100 # Keep every (keep_multiple * every_n_train_steps) permanently

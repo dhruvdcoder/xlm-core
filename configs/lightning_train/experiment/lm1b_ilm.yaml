@@ -1,0 +1,25 @@
+# @package _global_
+defaults:
+  - override /datamodule: lm1b_ilm
+  - override /noise_schedule: dummy # default
+  - override /model_type: ilm_stopping # discrete_time_absorbing
+  - override /model: rotary_transformer_small_ilm_stopping
+  
+
+per_device_batch_size: 64
+global_batch_size: 512
+block_size: 128
+
+datamodule:
+  print_batch_fn: xlm.lm.ilm.datamodule_ilm.print_batch_ilm
+  dataset_managers:
+    val:
+      unconditional_prediction:
+        dataset_constructor_str: xlm.lm.ilm.datamodule_ilm.ILMEmptyDataset
+
+
+
+trainer:
+  max_steps: 1000_000 # 1M
+  val_check_interval: 50000
+  num_sanity_val_steps: 3

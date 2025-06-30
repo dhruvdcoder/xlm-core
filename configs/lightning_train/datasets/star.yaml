@@ -1,0 +1,28 @@
+defaults:
+  - default_text
+
+_target_: xlm.datamodule.DatasetManager
+collator: ??? # model specific collator
+full_name: ??? # dhruveshpatel/star-small/train # <repo>/<ds_name>/<split_to_download> . 
+preprocess_function: xlm.tasks.star.preprocess_fn
+on_the_fly_processor: xlm.datamodule.token_ids_to_input_ids_and_prompt_ids
+on_the_fly_group_processor: null
+columns_to_remove: 
+    - edge_list
+    - source
+    - goal
+    - path
+stages: ??? # like ["fit"]
+iterable_dataset_shards: null
+shuffle_buffer_size: null
+shuffle_seed: 42
+split_by_node: true
+dataloader_kwargs:
+    batch_size: ${per_device_batch_size} # per device, depends on the device type
+    num_workers: ${num_dataloader_workers} 
+    shuffle: null # can't specify shuffle for IterableDataset
+    pin_memory: True
+    persistent_workers: False # INFO: see: https://github.com/huggingface/datasets/issues/7447
+    prefetch_factor: ${dataloader_prefetch_factor}
+    drop_last: True
+model_name: null

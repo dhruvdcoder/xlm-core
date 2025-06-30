@@ -1,0 +1,12 @@
+# @package _global_
+defaults:
+  - default
+  - /collator@datamodule.dataset_managers.train.lm.collator: seq2seq_ilm
+  - /collator@datamodule.dataset_managers.val.lm.collator: seq2seq_ilm
+  - /collator@datamodule.dataset_managers.test.lm.collator: seq2seq_ilm
+  - /collator@datamodule.dataset_managers.val.prediction.collator: seq2seq_pred_ilm
+  - /collator@datamodule.dataset_managers.test.prediction.collator: seq2seq_pred_ilm
+
+
+tags:
+  dataset: star_easy

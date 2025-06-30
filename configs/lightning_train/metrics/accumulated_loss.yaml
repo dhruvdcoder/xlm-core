@@ -1,0 +1,6 @@
+_target_: xlm.metrics.MetricWrapper
+name: accumulated_loss
+metric: 
+  _target_: torchmetrics.MeanMetric
+prefix: ??? # eg: train/lm/, val/lm/, test/lm/, etc.
+update_fn: ??? # eg: xlm.lm.ilm.metrics_ilm.mean_metric_update_fn

@@ -1,0 +1,12 @@
+# @package _global_
+
+noise_schedule:
+  _target_: xlm.diffusion.absorbing.ContinuousTimeLogLinearSchedule
+  sigma_min: 0 # mdlm and sedd
+  sigma_max: 10.0 # mdlm, eps of 4.5e-5
+  antithetic_sampling: false
+
+tags:
+  noise_schedule: loglinear
+  correlated_t: ${noise_schedule.antithetic_sampling}
+  T: 1

@@ -1,0 +1,13 @@
+defaults:
+  - owt_train
+
+collator: ??? # model specific collator
+full_name: dhruveshpatel/owt-gpt2-1024-split/validation # <repo>/<ds_name>/<split_to_download> . 
+full_name_debug: dhruveshpatel/owt-gpt2-1024-split/train
+stages:
+    - fit
+    - validate
+iterable_dataset_shards: 32
+shuffle_buffer_size: null # no shuffling for validation
+shuffle_seed: 42
+split_by_node: true

@@ -1,0 +1,26 @@
+# @package _global_
+
+defaults:
+  - override /hydra/launcher: submitit_slurm
+  - _self_
+
+
+hydra:
+  launcher:
+    timeout_min: 20160 # 14 days in minutes
+    partition: gpu-long
+    #constraint: vram11,sm_75 # vram=11GB, compute 7.5 and above (need > sm_70 for torch compile)
+    nodes: 1
+    gpus_per_node: 1
+    cpus_per_task: 8
+    mem_gb: 30
+    setup:
+      - "export MKL_NUM_THREADS=1" # limit threads for low-level libraries that numpy uses to avoid deadlocks
+      - "export OPENBLAS_NUM_THREADS=1"
+      - "export OMP_NUM_THREADS=1" 
+  job:
+    env_set:
+      MKL_NUM_THREADS: "1" # limit threads for low-level libraries that numpy uses to avoid deadlocks
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1" 
+      HYDRA_FULL_ERROR: "1"

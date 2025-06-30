@@ -1,0 +1,65 @@
+defaults:
+  - _self_
+  - paths: default
+  - hardware: null
+
+# Keep common utils
+hydra:
+  job:
+    env_set:
+      PROJECT_ROOT: "."
+      OMP_NUM_THREADS: "1"
+  searchpath:
+    - file://${oc.env:PROJECT_ROOT,.}/configs/common
+  # output directory for the sbatch generation script submit_train.py etc.
+  run:
+    dir: ${paths.output_dir}/sbatch/${now:%Y-%m-%d}_${now:%H-%M-%S}
+  sweep:
+    dir: ${paths.output_dir}/sbatch/${now:%Y-%m-%d}_${now:%H-%M-%S}
+    subdir: ${oc.select:hydra.job.num,0}
+
+
+# SLURM settings
+slurm:
+  # output file is set by the script typically to paths.logs_dir/%x.out
+  job_name: ${job_name}
+  nodes: 1
+  mem: 20GB
+  time: "20:00:00"
+  partition: gpu
+  constraint: vram40,bf16
+  ntasks_per_node: 1 
+  cpus_per_task: 5
+  gres: gpu:1 
+  open_mode: append
+  requeue: true
+  mail_type: 
+    - BEGIN
+    - END
+    - FAIL
+    - REQUEUE
+    - TIME_LIMIT_80
+  mail_user: dhruveshpate@umass.edu
+
+# Environment variables
+env:
+  HYDRA_FULL_ERROR: 1
+  NCCL_NSOCKS_PERTHREAD: 4
+  NCCL_SOCKET_NTHREADS: 2
+  TORCH_LOGS: recompiles
+  TQDM_MINITERS: 1000
+
+# Training configuration
+train:
+  experiment: ???
+  debug: null
+  batch_size: 64 # per device batch size, global is set by the main config
+  compile: false
+  precision: bf16-mixed
+  job_type: train
+  num_nodes: ${slurm.nodes}
+  devices: ${parse_gpu_count:${slurm.gres}}
+  trainer_strategy: ${determine_trainer_strategy:${slurm.ntasks_per_node},${slurm.nodes}}
+
+do: print # submit
+job_name: ???

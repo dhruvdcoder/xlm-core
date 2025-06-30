@@ -1,0 +1,9 @@
+# @package _global_
+defaults:
+  - star_medium
+  - /datasets@datamodule.dataset_managers.train.lm: star_medium_train
+  - /datasets@datamodule.dataset_managers.val.lm: star_medium_val
+  - /datasets@datamodule.dataset_managers.val.prediction: star_medium_val_pred
+  - /datasets@datamodule.dataset_managers.test.lm: star_medium_test
+  - /datasets@datamodule.dataset_managers.test.prediction: star_medium_test_pred
+

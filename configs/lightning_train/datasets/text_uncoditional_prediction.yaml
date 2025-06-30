@@ -1,0 +1,11 @@
+_target_: xlm.datamodule.UnconditionalGenerationDatasetManager 
+collator: ??? # like xlm.lm.ilm.datamodule_ilm.DefaultILMCollator
+dataloader_kwargs:
+    batch_size: ${per_device_batch_size} # per device, depends on the device type
+    num_workers: 0 
+    shuffle: null # can't specify shuffle for IterableDataset
+    pin_memory: False
+    persistent_workers: False # INFO: see: https://github.com/huggingface/datasets/issues/7447
+    prefetch_factor: null
+    drop_last: True
+num_examples: ${per_device_batch_size}

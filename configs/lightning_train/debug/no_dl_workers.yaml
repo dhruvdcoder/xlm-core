@@ -1,0 +1,6 @@
+# @package _global_
+
+num_dataloader_workers: 0
+dataloader_prefetch_factor: null
+dataloader_persistent_workers: null
+dataloader_pin_memory: true

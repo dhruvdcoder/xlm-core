@@ -1,0 +1,7 @@
+defaults:
+  - star_hard_train
+
+collator: ??? # model specific collator
+full_name: dhruveshpatel/star-hard/test # dhruveshpatel/star-small/train # <repo>/<ds_name>/<split_to_download> . 
+full_name_debug: dhruveshpatel/star-hard/train
+stages: ["test"] 

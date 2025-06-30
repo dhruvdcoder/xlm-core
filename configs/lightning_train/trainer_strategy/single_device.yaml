@@ -1,0 +1,3 @@
+# @package trainer.strategy
+_target_: lightning.pytorch.strategies.SingleDeviceStrategy
+device: "cuda:0"

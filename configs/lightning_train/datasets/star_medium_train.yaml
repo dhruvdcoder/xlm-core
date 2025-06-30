@@ -1,0 +1,16 @@
+defaults:
+  - star
+
+collator: ??? # model specific collator
+full_name: dhruveshpatel/star-medium/train # dhruveshpatel/star-small/train # <repo>/<ds_name>/<split_to_download> . 
+full_name_debug: dhruveshpatel/star-medium/train
+stages: ["fit"]
+dataloader_kwargs:
+    batch_size: ${per_device_batch_size} # per device, depends on the device type
+    num_workers: ${num_dataloader_workers} 
+    shuffle: null # we don't specify shuffle and let the code determine the right sampler.
+    pin_memory: ${dataloader_pin_memory}
+    persistent_workers: ${dataloader_persistent_workers} # INFO: see: https://github.com/huggingface/datasets/issues/7447
+    prefetch_factor: ${dataloader_prefetch_factor}
+    drop_last: True
+model_name: null

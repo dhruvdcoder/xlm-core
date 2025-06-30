@@ -1,0 +1,70 @@
+defaults:
+  - paths: default
+  - hardware: null
+
+paths:
+  output_dir: ${ckpt_path_to_output_dir:${generate.ckpt_path}}
+
+# Keep common utils
+hydra:
+  job:
+    env_set:
+      PROJECT_ROOT: "."
+      OMP_NUM_THREADS: "1"
+  searchpath:
+    - file://${oc.env:PROJECT_ROOT,.}/configs/common
+  # output directory, generated dynamically on each run
+  run:
+    dir: ${paths.output_dir}/sbatch/${now:%Y-%m-%d}_${now:%H-%M-%S}
+  sweep:
+    dir: ${paths.output_dir}/sbatch/${now:%Y-%m-%d}_${now:%H-%M-%S}
+    subdir: ${oc.select:hydra.job.num,0}
+
+
+# SLURM settings
+slurm:
+  # output file is set by the script typically to paths.logs_dir/%x.out
+  job_name: ${job_name}
+  nodes: 1
+  mem: 20GB
+  time: "20:00:00"
+  partition: gpu,superpod-a100
+  constraint: vram40,bf16
+  ntasks_per_node: 1 # TODO change default
+  cpus_per_task: 5
+  gres: gpu:1 # TODO change default
+  open_mode: append
+  requeue: false # unlikely that we will support resuming for generate jobs
+  mail_type: 
+    - BEGIN
+    - END
+    - FAIL
+    - REQUEUE
+    - TIME_LIMIT_80
+  mail_user: dhruveshpate@umass.edu
+
+# Environment variables
+env:
+  HYDRA_FULL_ERROR: 1
+  NCCL_NSOCKS_PERTHREAD: 4
+  NCCL_SOCKET_NTHREADS: 2
+  TORCH_LOGS: recompiles
+  TQDM_MINITERS: 1000
+
+# Training/Eval/Generate configuration
+generate:
+  output_dir: null
+  ckpt_path: ???
+  output_file_name: null
+  experiment: ???
+  debug: null
+  batch_size: 64
+  compile: false
+  precision: bf16-mixed
+  job_type: generate
+  num_nodes: ${slurm.nodes}
+  devices: ${parse_gpu_count:${slurm.gres}}
+  trainer_strategy: ${determine_trainer_strategy:${slurm.ntasks_per_node},${slurm.nodes}}
+
+do: print # submit
+job_name: ???

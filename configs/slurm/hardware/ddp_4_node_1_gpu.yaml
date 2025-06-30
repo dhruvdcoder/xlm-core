@@ -1,0 +1,11 @@
+# @package _global_
+# four nodes, one gpu per node
+
+slurm:
+  nodes: 4
+  gres: gpu:1
+  ntasks_per_node: 1
+  constrain: "vram80,bf16,ib"  # ib for infiniband
+  partition: gpu,gpu-preempt,superpod-a100
+  time: 4-00:00:00
+  qos: long

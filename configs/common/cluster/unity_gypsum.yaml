@@ -1,0 +1,10 @@
+# @package _global_
+
+defaults:
+  - unity_default
+  - _self_
+
+hydra:
+  launcher:
+    timeout_min: 10080 # 7 days in minutes
+    partition: gypsum-2080ti

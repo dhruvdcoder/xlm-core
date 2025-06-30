@@ -1,0 +1,46 @@
+# @package _global_
+
+defaults:
+  - /metrics@reported_metrics.train.lm.accumulated_loss: accumulated_loss
+  - /metrics@reported_metrics.val.lm.accumulated_loss: accumulated_loss
+  - /metrics@reported_metrics.test.lm.accumulated_loss: accumulated_loss
+
+lightning_module:
+  _target_: xlm.harness.Harness
+
+loss:
+  _target_: xlm.lm.ilm.loss_ilm.ILMLossWithMaskedCE
+  length_loss: binary_ce
+
+predictor:
+  _target_: xlm.lm.ilm.predictor_ilm.ILMPredictorWithStoppingClassification
+  tokenizer: ${lightning_module:tokenizer}
+  noise_schedule: ${lightning_module:noise_schedule}
+  max_steps: ${block_size} # depends on the dataset, set in
+  max_length: ${eval:${block_size}+${oc.select:input_block_size,0}} # depends on the dataset
+  sampling_method: sample_top_p
+  p: 0.5
+  second_sampling_method: sample_top_k
+  second_top: 1
+
+diagnostic_metrics: null
+reported_metrics:
+  train:
+    lm:
+      accumulated_loss:
+        prefix: train/lm
+        update_fn: xlm.lm.ilm.metrics_ilm.mean_metric_update_fn
+  val:
+    lm:
+      accumulated_loss:
+        prefix: val/lm
+        update_fn: xlm.lm.ilm.metrics_ilm.mean_metric_update_fn
+  test:
+    lm:
+      accumulated_loss:
+        prefix: test/lm
+        update_fn: xlm.lm.ilm.metrics_ilm.mean_metric_update_fn
+
+
+tags:
+  model_type: ilm_stopping

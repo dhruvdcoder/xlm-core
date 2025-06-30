@@ -1,0 +1,6 @@
+_target_: xlm.metrics.MetricWrapper
+name: token_accuracy
+metric: 
+  _target_: xlm.metrics.TokenAccuracy
+prefix: ??? # eg: train/lm/, val/lm/, test/lm/, etc.
+update_fn: xlm.metrics.seq2seq_token_accuracy_update_fn

@@ -1,0 +1,55 @@
+# @package _global_
+defaults:
+  - override /datamodule: star_easy_ilm
+  - override /noise_schedule: dummy # default
+  - override /model_type: ilm_stopping_seq2seq # discrete_time_absorbing
+  - override /model: rotary_transformer_small_ilm_stopping
+  
+
+per_device_batch_size: 64
+global_batch_size: 64
+input_block_size: 28
+block_size: 14
+
+datamodule:
+  print_batch_fn: xlm.lm.ilm.datamodule_ilm.print_batch_ilm
+
+global_components:
+  tokenizer:
+    _target_: xlm.datamodule.SimpleSpaceTokenizer.for_numbers
+    vocab_size: 20 # 20 (easy,medium), 56 (hard)
+
+trainer:
+  max_steps: 80000 
+  val_check_interval: null
+  num_sanity_val_steps: 3
+  check_val_every_n_epoch: 2
+
+log_predictions:
+  _target_: xlm.harness.LogPredictions
+  fields_to_keep_in_output:
+    - text
+    - truth
+  inject_target: target_ids
+
+callbacks:
+  checkpoint_monitor:
+    monitor: val/lm/accumulated_loss
+
+
+optimizer:
+  lr: 0.0001
+
+lr_scheduler:
+  name: "constant" # https://github.com/huggingface/transformers/blob/main/src/transformers/trainer_utils.py#L435
+  #fraction_warmup_steps: 0.002 # 2000 for 1M steps
+  num_warmup_steps: 500
+  num_training_steps: ${trainer.max_steps}
+  monitor: "train/loss"
+
+
+predictor:
+  sampling_method: sample_top_k
+  top: 1
+  second_sampling_method: sample_top_k
+  second_top: 2

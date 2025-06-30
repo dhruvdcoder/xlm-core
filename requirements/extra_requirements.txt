@@ -1,0 +1,4 @@
+matplotlib
+seaborn
+networkx
+wandb

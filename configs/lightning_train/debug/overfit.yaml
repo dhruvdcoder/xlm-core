@@ -1,0 +1,38 @@
+# @package _global_
+defaults:
+  - small_data
+global_flags:
+  DEBUG_OVERFIT: true
+
+paths:
+  log_dir: ${paths.root_dir}/debug_logs/
+
+global_batch_size: 1
+per_device_batch_size: 1
+num_dataloader_workers: 0
+dataloader_prefetch_factor: null
+dataloader_persistent_workers: False
+
+
+trainer:
+  max_epochs: null
+  max_steps: 30000 #1000_000
+  overfit_batches: 1 #500 # 500
+  val_check_interval: 100 #null # 5000
+  check_val_every_n_epoch: null #1
+  log_every_n_steps: 1
+  gradient_clip_val: 1.0
+  num_sanity_val_steps: 0
+  enable_checkpointing: null
+
+optimizer:
+  lr: 0.0005
+
+lr_scheduler:
+  num_warmup_steps: 100
+  num_training_steps: ${trainer.max_steps}
+  fraction_warmup_steps: null 
+
+generative_perplexity:
+  evaluators: null
+  num_samples: 1

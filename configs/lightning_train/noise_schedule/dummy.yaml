@@ -1,0 +1,10 @@
+# @package _global_
+
+global_components:
+  noise_schedule:
+    _target_: xlm.noise.DummyNoiseSchedule
+
+tags:
+  noise_schedule: dummy
+  correlated_t: false
+  T: 0

@@ -1,0 +1,15 @@
+# @package _global_
+defaults:
+  - rotary_transformer
+
+
+model:
+  num_layers: 4
+  nhead: 6
+  d_model: 384 
+  dim_feedforward: ${eval:${.d_model}*6}
+
+
+
+tags:
+  model: rotary_transformer_xtiny2

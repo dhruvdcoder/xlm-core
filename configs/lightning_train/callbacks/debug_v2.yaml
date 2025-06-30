@@ -1,0 +1,4 @@
+defaults:
+  - file_friendly_progress_bar
+  - learning_rate_monitor
+  - ema

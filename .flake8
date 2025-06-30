@@ -1,0 +1,11 @@
+[flake8]
+select = B,B9,C,D,DAR,E,F,N,RST,S,W
+ignore = E203,E501,RST201,RST203,RST301,W503,D100,DAR401,DAR401,D102,D105,D103,D205,D415,D212,F722,E266,E402
+max-complexity = 10
+docstring-convention = google
+per-file-ignores =
+    tests/*:S101
+    **/__init__.py:F401,D415,D100,D103,D104
+    **/__main__.py:F401,D415,D100,D103,D104
+rst-roles = class,const,func,meth,mod,ref
+rst-directives = deprecated

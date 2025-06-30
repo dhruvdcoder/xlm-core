@@ -1,0 +1,3 @@
+log_gradients_to_tensorboard:
+  _target_: xlm.diffusion.var_len.LogGradientsToTensorBoard
+  log_every_n_steps: 50

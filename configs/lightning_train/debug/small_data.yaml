@@ -1,0 +1,52 @@
+# @package _global_
+defaults:
+  #- /callbacks/unconditional_samples #CLEANUP: Don't need this for prediction in v2
+  - override /callbacks: debug_v2
+  - override /loggers: debug
+
+paths:
+  log_dir: ${paths.root_dir}/debug_logs/
+
+global_flags:
+  DEBUG: true
+
+num_dataset_workers: 1 # does not accept 0
+global_batch_size: 10
+num_dataloader_workers: 0
+per_device_batch_size: 10
+dataloader_prefetch_factor: null
+dataloader_persistent_workers: False
+
+optimizer:
+  lr: 0.0001
+
+lr_scheduler:
+  num_training_steps: 500
+
+trainer:
+  max_epochs: 3
+  log_every_n_steps: 1
+  limit_train_batches: 100
+  limit_val_batches: 100
+  limit_test_batches: 100
+  enable_checkpointing: false
+  val_check_interval: 50
+  num_sanity_val_steps: 2
+
+checkpointing_dir: ${paths.output_dir}/checkpoints
+
+tags:
+  debug: true
+
+hydra:
+  job:
+    env_set:
+      TQDM_MINITERS: 1 # Print every step while debugging
+  job_logging:
+    loggers:
+      __main__:
+        level: DEBUG
+      datasets:
+        level: DEBUG
+      datasets.arrow_dataset:
+        level: DEBUG

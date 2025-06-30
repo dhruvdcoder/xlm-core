@@ -1,0 +1,22 @@
+_target_: xlm.datamodule.DatasetManager
+collator: ???
+full_name: ??? # like billion-word-benchmark/lm1b/train # <repo>/<ds_name>/<split_to_download> . 
+full_name_debug: ??? # like billion-word-benchmark/lm1b/train
+preprocess_function: ??? # likexlm.tasks.lm1b.preprocess_fn
+on_the_fly_processor: ??? # like xlm.datamodule.ids_to_example_fn or null
+on_the_fly_group_processor: ??? # like null 
+columns_to_remove: ??? # like null or [text], has to be a list
+stages: ??? # like ["fit"]
+iterable_dataset_shards: ??? # 256 or null for using non-iterable dataset
+shuffle_buffer_size: ??? # like 10000 or null for no-shuffling
+shuffle_seed: 42
+split_by_node: true
+dataloader_kwargs:
+    batch_size: ${per_device_batch_size} # per device, depends on the device type
+    num_workers: ${num_dataloader_workers} 
+    shuffle: null # can't specify shuffle for IterableDataset, specify if non-iterable
+    pin_memory: True
+    persistent_workers: False # INFO: see: https://github.com/huggingface/datasets/issues/7447
+    prefetch_factor: ${dataloader_prefetch_factor}
+    drop_last: True
+model_name: null

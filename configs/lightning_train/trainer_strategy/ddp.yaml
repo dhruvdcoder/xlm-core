@@ -1,0 +1,3 @@
+# @package trainer.strategy
+# see: https://lightning.ai/docs/pytorch/stable/advanced/ddp_optimizations.html#ddp-static-graph
+_target_: lightning.pytorch.strategies.DDPStrategy

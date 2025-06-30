@@ -1,0 +1,20 @@
+defaults:
+  - ema
+  - checkpoint_every_n_steps_with_thinning
+  - checkpoint_monitor
+  - on_exception_checkpoint
+  - learning_rate_monitor
+  - file_friendly_progress_bar
+  - print_batch
+  - unconditional_samples
+
+# MAYBE: Add params_log callback 
+# https://github.com/Dao-AILab/flash-attention/blob/main/training/src/callbacks/params_log.py (use class attributes instead of AttributeDict)
+
+# MAYBE: Add speed_monitor callback
+# https://github.com/Dao-AILab/flash-attention/blob/main/training/src/callbacks/speed_monitor.py
+
+# MAYBE: loss_scale_monitor for bf16
+# https://github.com/Dao-AILab/flash-attention/blob/main/training/src/callbacks/loss_scale_monitor.py
+
+# TODO (extra extra): Add flop_count

@@ -1,0 +1,5 @@
+on_exception_checkpoint:
+  #_target_: lightning.pytorch.callbacks.OnExceptionCheckpoint
+  _target_: xlm.utils.on_exception_checkpoint.OnExceptionCheckpoint
+  dirpath: ${checkpointing_dir}
+  filename: on_exception

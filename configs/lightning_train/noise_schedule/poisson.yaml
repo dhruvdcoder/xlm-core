@@ -1,0 +1,11 @@
+# @package _global_
+
+noise_schedule:
+  _target_: xlm.datamodule.var_len.PoissonNoiseSchedule
+  sigma: 10 # mdlm and sedd
+  antithetic_sampling: false
+
+tags:
+  noise_schedule: poisson
+  correlated_t: ${noise_schedule.antithetic_sampling}
+  T: 1

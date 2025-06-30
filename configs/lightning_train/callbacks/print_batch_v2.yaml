@@ -1,0 +1,2 @@
+print_batch_v2:
+  _target_: xlm.datamodule.datamodule.PrintBatchCallback

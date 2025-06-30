@@ -1,0 +1,3 @@
+speed_monitor:
+  _target_: xlm.utils.speed_monitor_callback.SpeedMonitorCallback
+  window: ${trainer.log_every_n_steps}

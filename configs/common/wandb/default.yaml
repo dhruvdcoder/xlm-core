@@ -1,0 +1,2 @@
+dir: "${paths.output_dir}"
+entity: iesl-dhruvesh # set to name of your wandb team

@@ -1,0 +1,4 @@
+llama3_3B:
+  _target_: xlm.diffusion.generative_perplexity.AutoModelForCausalLMGenerativePerplexityEvaluator
+  name: "/datasets/ai/llama3/hub/models--meta-llama--Llama-3.2-3B/snapshots/13afe5124825b4f3751f836b40dafda64c1ed062"
+  batch_size: 2
