@@ -4,7 +4,10 @@
 #lightning==2.5.1.post0 
 # was using lightning=2.3.1 # check https://github.com/Lightning-AI/pytorch-lightning/issues/20280 before updating. 
 # Update: It seems like the fix is on the way but not in the latest stable release. https://github.com/Lightning-AI/pytorch-lightning/pull/20780. So I will use the nightly for now.
-https://github.com/Lightning-AI/lightning/archive/refs/heads/master.zip
+#https://github.com/Lightning-AI/lightning/archive/refs/heads/master.zip
+# Update: The new release is here.
+lightning==2.5.2
+fsspec>=2050.5.0 # https://github.com/Lightning-AI/pytorch-lightning/pull/20780
 torch>=2.7.0,<2.8.0
 # --index-url https://download.pytorch.org/whl/cu124 ; torch==2.5.1+cu124
 # you can change the cuda version but make sure to use torch 2.5.1
