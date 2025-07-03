@@ -311,3 +311,5 @@ configs_old/train/debug/no_serialization.yaml
 configs_old/train/debug/overfit.yaml
 configs_old/train/debug/profile.yaml
 configs_old/train/experiment/train_babylm_tokenizer.yaml
+tests/**/*.txt
+tests/**/*.out

@@ -410,6 +410,7 @@ class DatasetManager:
         shuffle_seed: Optional[int] = 42,  # e.g. 42
         split_by_node: bool = True,  # e.g. True
         dataset: Optional[datasets.Dataset] = None,  # only set later
+        rewrite_manual_cache: bool = False,
     ):
         self.collator = collator
         self._full_name = full_name
@@ -436,6 +437,7 @@ class DatasetManager:
         self.dataset = dataset
         self.dataset = None
         self.is_iterable_dataset = iterable_dataset_shards is not None
+        self.rewrite_manual_cache = rewrite_manual_cache
 
     def __repr__(self) -> str:
         return f"DatasetManager(full_name={self.full_name})"
@@ -495,6 +497,16 @@ class DatasetManager:
 
     def _get_cache_dir(self, manual_cache_dir: str) -> Path:
         return Path(manual_cache_dir) / self.full_name
+
+    def _clean_manual_cache(self, manual_cache_dir: str) -> None:
+        cache_dir = self._get_cache_dir(manual_cache_dir)
+        logger.info(
+            f"Cleaning manual cache for {self.full_name} at {cache_dir}"
+        )
+        # remove all files in the cache dir
+        for file in cache_dir.iterdir():
+            file.unlink()
+        cache_dir.rmdir()
 
     def _manually_cache(
         self, ds: datasets.Dataset, manual_cache_dir: str
@@ -565,6 +577,17 @@ class DatasetManager:
             ds = self._download(num_proc=num_proc)
             ds = self._preprocess(ds, tokenizer, num_proc=num_proc)
             self._manually_cache(ds, manual_cache_dir)
+        elif self.rewrite_manual_cache:
+            logger.info(
+                f"Rewriting manual cache for {self.full_name} at {manual_cache_dir}"
+            )
+            ds = self._download(num_proc=num_proc)
+            logger.info(
+                f"Cleaned {ds.cleanup_cache_files()} automatic cached files"
+            )
+            self._clean_manual_cache(manual_cache_dir)
+            ds = self._preprocess(ds, tokenizer, num_proc=num_proc)
+            self._manually_cache(ds, manual_cache_dir)
         else:
             logger.info(
                 f"Found manual cache for {self.full_name} at {self._get_cache_dir(manual_cache_dir)}"
@@ -612,7 +635,7 @@ class DatasetManager:
                 and self.is_iterable_dataset
             ):
                 logger.info(
-                    f"Splitting dataset {self.full_name} by node for {world_size}"
+                    f"Splitting dataset {self.full_name} by node for {world_size=}"
                 )
                 self.dataset = split_dataset_by_node(
                     self.dataset, rank=rank, world_size=world_size
@@ -636,7 +659,24 @@ class DatasetManager:
             and self.is_iterable_dataset
         ):  # case 1
             DL = StatefulDataLoader
+            logger.info(
+                f"Using StatefulDataLoader for {type} of {self.full_name} dataloader"
+            )
             sampler = None
+            # Checks:
+            num_workers = self.dataloader_kwargs.get("num_workers", 1)
+            assert (
+                self.iterable_dataset_shards is not None
+            ), "iterable_dataset_shards must be set"
+            num_shards_per_worker = self.iterable_dataset_shards / (
+                world_size * num_workers
+            )
+            per_worker_batch_size = self.dataloader_kwargs.get("batch_size", 1)
+            if num_shards_per_worker > per_worker_batch_size:
+                raise ValueError(
+                    f"{num_shards_per_worker=} > {per_worker_batch_size=}. This may cause the training to hang even with drop_last=True. "
+                    "Either increase the num_workers or world_size to bring down the num_shards_per_worker or reduce the num_shards or increase the batch_size."
+                )
         elif (
             type == "train"
             and is_ddp
@@ -649,6 +689,9 @@ class DatasetManager:
             # while issue 1440 was resolved for RandomSampler, I believe it still exists for StatefulDistributedSampler.
             # Therefore, we continue to send our own seed.
             DL = StatefulDataLoader
+            logger.info(
+                f"Using StatefulDataLoader for {type} of {self.full_name} dataloader"
+            )
             seed = int(torch.empty((), dtype=torch.int64).random_().item())
             sampler = StatefulDistributedSampler(
                 self.dataset,

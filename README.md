@@ -84,9 +84,14 @@ python scripts/submit_train.py "do=submit" "job_name=owt_ilm" "train.experiment=
 ```
 
 TODO: 
-1. Test star graphs.
-  - The type_ids are not correct for traning batches (fixed)
-2. Start OWT run with truncated owt dataset.
+0. On exception checkpointing is not working. See line 1452 in `logs/owt_ilm/sbatch/2025-06-30_22-15-58/owt_ilm.out`.
+  * possible solutions update fsspec to 2025.5.0. I've updated the environment but the run is already on its way. Will wait for the next run.
+1. Implement MLM, MDLM with all the necessary predictors (get help)
+  *  Test them on star graphs
+2. Implement ARLM (get help)
+  * test on star graphs
+3. Implement InDIGO (difficult)
+4. Implement Slidinging Insertion (difficult)
 
 
 

@@ -47,5 +47,5 @@ predictor:
 
 callbacks:
   checkpoint_every_n_steps:
-    every_n_train_steps: 5000
-    keep_multiple: 20 # Keep every (keep_multiple * every_n_train_steps) permanently
+    every_n_train_steps: 2500
+    keep_multiple: 40 # Keep every (keep_multiple * every_n_train_steps) permanently = 2500 * 40 = 100_000

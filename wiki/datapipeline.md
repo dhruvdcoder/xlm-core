@@ -59,9 +59,76 @@ Ex for case 2:
 
 
 
-
-
-
-
 Handling packed sequences:
 1. (Option 1) 
+
+
+# General Flow
+
+Generally, for each stage, train, val, test, predict, we can have multiple datasets. Therefore, we create a dataset level abstraction called `DatasetManager` that performs the following:
+
+1. Prepare
+ - prepare data on rank 0 only
+ - things like download and tokenize.
+
+2. Setup
+ - Performed on all ranks.
+ - loads the data
+ - If using an iterable dataset, it tells the dataset about the rank and world size. For example, for huggingface iterable dataset, we will need to call `.split_dataset_by_node()` to split the dataset across nodes.
+
+
+3. Create dataloaders
+  - We create one dataloader per dataset.
+  - Depending on the case: DDP/non-DDP | map-style/iterable-style | setup the right dataloader and sampler.
+
+
+## Case 1: DDP | Iterable Dataset
+
+1. Prepare
+  - prepare data on rank 0 and save it to the disk using `.save_to_disk(num_shards)`
+
+2. Setup
+  - `load_from_disk()` followed by `.to_iterable_dataset(num_shards)`
+  - `.shuffle(buffer_size)`
+  - `.split_dataset_by_node()`
+
+3. Create dataloaders
+  - Use `StatefulDataloader` without a sampler.
+
+### What happens internally?
+
+- `.to_iterable_dataset(num_shards)` splits the dataset into `num_shards`. It does not write to disk. Simply creates logical shards which is useful for splitting the dataset across nodes as well as for shuffling. For example, if we have 1000 examples and 64 shards, then 64\*15 = 960, therefore each shard will have at least 15 examples. The first 40 shards will have 16 examples and the last 24 shards will have 15 examples. Now let's say we perform DDP training with 4 GPUs and 4 dataloader workers per GPU, first the dataset shards will be assigned to the GPUs:
+ - GPU 0: shards 1-16 : 16\*16          = 256 examples
+ - GPU 1: shards 17-32 : 16\*16         = 256 examples
+ - GPU 2: shards 33-48 : 8\*16 + 8\*15  = 248 examples (8 shards with 16 examples and 8 shards with 15 examples)
+ - GPU 3: shards 49-64 : 16\*15         = 240 examples (16 shards with 15 examples)
+                                          ------------
+                                          Total: 1000 examples
+
+- Once the shards are assigned to the nodes/GPUs, then the examples will be assigned to the dataloader workers. For iterable datasets, pytorch let's the dataset decide how to slice the examples. According to [pytorch docs](https://docs.pytorch.org/docs/stable/data.html#torch.utils.data.IterableDataset), the iterable dataset is responsible for slicing the dataset by checking the `torch.utils.data.get_worker_info().num_workers` and `torch.utils.data.get_worker_info().id`. HF dataset assigns entire shards to each worker. This is for efficiency reasons. Now each worker can read chunks of contiguous examples from the shard. But when unevenly sized shards exist, each worker can produce partial batch at the end of the epoch. So there can be upto num_workers partial batches on each node. In the worst case, all the workers on one node produce partial batches on one node and no partial batches on the other node. Making the difference in the number of batches seen per node `num_workers`. Even if the num of batches seen per node is different  by 1, the training hangs. Setting `drop_last=True` will also not help here. Following are some minor points regarding how the shards are assigned to the workers:
+  - The shards are assigned to workers in round robin fashion.
+  - If num_shards is not divisible by num_workers, due to the round robin assignment, the initial workers will get more shards than the later workers. 
+
+
+### Best practices
+- Reduce the number of uneven shards. The goal is to make sure that no worker can produce a full micro batch using the extra single examples of the shards assigned to it. So choose the num_shards such that the remainder (N % num_shards) < shards_per_worker < micro_batch_size. The second condition ensures that no worker can produce a full micro batch using the extra examples of the shards assigned to it. The first condition ensures that the workers belonging to one node cannot gang up to produce too many partial batches.
+If we set `drop_last=True` all the partial batches from all the workers will be dropped. So in this case, only the second condition is important. This condition was violated when I used `num_shards=1024` `num_nodes=4` `num_workers=5` `micro_batch_size=32` because each worker got 51.2 shards.
+
+ - shards_per_worker = num_shards / (num_nodes * num_workers). So it is best to reduce the number of shards to a reasonable value.
+
+
+### Rough math
+
+- Let N be the dataset size.
+- Then (num_shards - (N % num_shards)) shards will have 1 less example and (N % num_shards) shards will have 1 more example.
+- Let n_gpus be the number of GPUs. Then each one will be assigned shards_per_gpu = (num_shards / n_gpus) shards. The num_shards has to be divisible by n_gpus.
+- Assume that shards are sorted by the number of examples in them. So all the shards with on less example go on the right. Then the first GPU will get the most examples and the last one will get the least. NOTE: This assumption is the worst case scenario. Usually the shards will be shuffled and therefore, each GPU can get uneven sized shards.
+- The GPU with most examples will have shards_per_gpu * (N // num_shards) + (N % num_shards)//n_gpus examples.
+- The GPU with the least examples will have shards_per_gpu * (N // num_shards) + (N % num_shards) % (n_gpus - 1) examples.
+- Therefore the worst case difference in the number of examples per GPU is (N % num_shards)//n_gpus and if this is larger than the per_device_batch_size, then one GPU will might end up having one less batch. 
+
+The bottom line is that if the shards are of uneven size, which then leads to each GPU getting uneven total number of examples, then setting or not setting the drop_last flag may not prevent the sporadic one-batch less on a GPU situation. The best thing to do is to remove the extra samples such that all the shards are of equal size or select the num_shards such that (num_shards - N % num_shards) < per_device_batch_size.
+
+
+
+

@@ -467,7 +467,7 @@ class Harness(L.LightningModule):
                     "trace.graph_diagram": False,
                     "trace.enabled": False,
                 },
-                dynamic=True,
+                # dynamic=True,
             )  # type: ignore
 
     @staticmethod
