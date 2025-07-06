@@ -8,6 +8,7 @@ per_device_batch_size: 32
 global_batch_size: 512
 input_block_size: null
 block_size: 1024
+num_dataloader_workers: 5
 
 datamodule:
   print_batch_fn: xlm.lm.ilm.datamodule_ilm.print_batch_ilm
@@ -16,6 +17,10 @@ datamodule:
       unconditional_prediction:
         dataset_constructor_str: xlm.lm.ilm.datamodule_ilm.ILMEmptyDataset
 
+
+loss:
+  length_loss_weight: 0.00001
+  stopping_class_weight: 0.9
 
 
 trainer:

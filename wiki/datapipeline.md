@@ -116,18 +116,9 @@ If we set `drop_last=True` all the partial batches from all the workers will be 
 
  - shards_per_worker = num_shards / (num_nodes * num_workers). So it is best to reduce the number of shards to a reasonable value.
 
+Even the above did not work. But the following super conservative condition worked:
+ - Make sure that no node (not workers) can accumulate more than 1 micro batch worth of extra examples.
 
-### Rough math
-
-- Let N be the dataset size.
-- Then (num_shards - (N % num_shards)) shards will have 1 less example and (N % num_shards) shards will have 1 more example.
-- Let n_gpus be the number of GPUs. Then each one will be assigned shards_per_gpu = (num_shards / n_gpus) shards. The num_shards has to be divisible by n_gpus.
-- Assume that shards are sorted by the number of examples in them. So all the shards with on less example go on the right. Then the first GPU will get the most examples and the last one will get the least. NOTE: This assumption is the worst case scenario. Usually the shards will be shuffled and therefore, each GPU can get uneven sized shards.
-- The GPU with most examples will have shards_per_gpu * (N // num_shards) + (N % num_shards)//n_gpus examples.
-- The GPU with the least examples will have shards_per_gpu * (N // num_shards) + (N % num_shards) % (n_gpus - 1) examples.
-- Therefore the worst case difference in the number of examples per GPU is (N % num_shards)//n_gpus and if this is larger than the per_device_batch_size, then one GPU will might end up having one less batch. 
-
-The bottom line is that if the shards are of uneven size, which then leads to each GPU getting uneven total number of examples, then setting or not setting the drop_last flag may not prevent the sporadic one-batch less on a GPU situation. The best thing to do is to remove the extra samples such that all the shards are of equal size or select the num_shards such that (num_shards - N % num_shards) < per_device_batch_size.
 
 
 

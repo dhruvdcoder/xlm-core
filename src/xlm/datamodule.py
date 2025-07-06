@@ -15,6 +15,7 @@ from typing import (
     Optional,
     cast,
 )
+import shutil
 from torchdata.stateful_dataloader import StatefulDataLoader
 from torchdata.stateful_dataloader.sampler import (
     RandomSampler,
@@ -503,10 +504,8 @@ class DatasetManager:
         logger.info(
             f"Cleaning manual cache for {self.full_name} at {cache_dir}"
         )
-        # remove all files in the cache dir
-        for file in cache_dir.iterdir():
-            file.unlink()
-        cache_dir.rmdir()
+        # Fallback to pathlib if fsspec fails
+        shutil.rmtree(cache_dir, ignore_errors=True)
 
     def _manually_cache(
         self, ds: datasets.Dataset, manual_cache_dir: str
