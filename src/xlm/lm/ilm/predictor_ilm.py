@@ -9,7 +9,7 @@ from torch import Tensor as TT
 from .types_ilm import ILMBatch, ILMPredictionDict, ILMModel
 from xlm.harness import Predictor
 from xlm.noise import NoiseSchedule
-from ..nn import (
+from .nn import (
     _remove_tokens,
     remove_tokens,
     general_sample_over_last_two_dims,

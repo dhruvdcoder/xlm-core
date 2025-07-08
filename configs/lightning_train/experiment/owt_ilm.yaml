@@ -19,7 +19,7 @@ datamodule:
 
 
 loss:
-  length_loss_weight: 0.00001
+  length_loss_weight: 0.001
   stopping_class_weight: 0.9
 
 

@@ -8,7 +8,7 @@ import torch
 from jaxtyping import Bool, Float
 from torch import Tensor as TT
 
-from ..nn import (
+from .nn import (
     masked_ce_last_two_dims,
 )
 

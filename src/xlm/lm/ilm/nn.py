@@ -1,4 +1,3 @@
-# v2
 from typing import Callable, Optional, Tuple, Union
 
 import torch
