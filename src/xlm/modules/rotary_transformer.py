@@ -308,6 +308,7 @@ class RotaryTransformerFinalLayer(nn.Module):
         out_dims: int,
         layer_norm_eps: float = 1e-5,
         use_final_layer_norm: bool = True,
+        zero_init: bool = False,
     ):
         super().__init__()
         self.norm_final = (
@@ -316,6 +317,9 @@ class RotaryTransformerFinalLayer(nn.Module):
             else None
         )
         self.linear = nn.Linear(d_model, out_dims, bias=False)
+        if zero_init:
+            with torch.no_grad():
+                self.linear.weight.zero_()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
