@@ -810,6 +810,7 @@ class BaseDataModule(L.LightningDataModule):
     Base class for all datamodules.
     """
 
+    no_trainer_mode: bool = False
     dataloader_names: Dict[
         Literal["train", "val", "test", "predict"], Dict[int, str]
     ]
@@ -824,6 +825,7 @@ class BaseDataModule(L.LightningDataModule):
     def __init__(self, *args, **kwargs):  # type: ignore
         super().__init__()  # LightningDataModule.__init__() does not take any arguments
         self.prepare_data_per_node = False
+        self.no_trainer_mode = False
 
     def print_batch(
         self,
@@ -883,6 +885,11 @@ class BaseDataModule(L.LightningDataModule):
     def rank(self) -> int:
         if self.trainer is not None:
             return self.trainer.global_rank
+        elif self.no_trainer_mode:
+            logger.warning(
+                "No trainer mode. Returning rank 0. If using multiple GPUs, this will result in incorrect results."
+            )
+            return 0
         else:
             raise ValueError("Trainer is not set")
 
@@ -890,6 +897,11 @@ class BaseDataModule(L.LightningDataModule):
     def world_size(self) -> int:
         if self.trainer is not None:
             return self.trainer.world_size
+        elif self.no_trainer_mode:
+            logger.warning(
+                "No trainer mode. Returning world size 1. If using multiple GPUs, this will result in incorrect results."
+            )
+            return 1
         else:
             raise ValueError("Trainer is not set")
 

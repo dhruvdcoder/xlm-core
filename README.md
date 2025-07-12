@@ -81,17 +81,12 @@ python scripts/submit_train.py "do=submit" "job_name=owt_ilm_debug_multinode_com
 # final run
 NUM_NODES=4 # or 8
 python scripts/submit_train.py "do=submit" "job_name=owt_ilm" "train.experiment=owt_ilm" "train.batch_size=32" "hardware=ddp_${NUM_NODES}_node_1_gpu" "slurm.constraint=\"vram80,bf16,ib\"" --- "compile=true" "trainer.precision=bf16-mixed" "trainer.num_nodes=$NUM_NODES" "trainer.devices=1" "trainer_strategy=ddp_multinode"
+
+# generate from a checkpoint
+python src/xlm/commands/lightning_main.py "job_type=generate" "job_name=owt_ilm" "experiment=owt_ilm" "debug=[overfit,print_predictions]" "+generation.ckpt_path=logs/owt_ilm5/checkpoints/19-200000.ckpt" datamodule.dataset_managers.predict.unconditional_prediction.num_examples=2
 ```
 
-TODO: 
-0. On exception checkpointing is not working. See line 1452 in `logs/owt_ilm/sbatch/2025-06-30_22-15-58/owt_ilm.out`.
-  * possible solutions update fsspec to 2025.5.0. I've updated the environment but the run is already on its way. Will wait for the next run.
-1. Implement MLM, MDLM with all the necessary predictors (get help)
-  *  Test them on star graphs
-2. Implement ARLM (get help)
-  * test on star graphs
-3. Implement InDIGO (difficult)
-4. Implement Slidinging Insertion (difficult)
+
 
 
 
@@ -223,3 +218,29 @@ python scripts/submit_generate.py "do=submit" "job_name=idlm_lm1b_generate" "gen
 
 python scripts/submit_generate.py "do=submit" "job_name=idlm_lm1b_generate" "generate.experiment=idlm_lm1b_generate" "generate.ckpt_path=/scratch3/workspace/dhruveshpate_umass_edu-text_diffusion/xlm/logs/idlm_lm1b_v4/checkpoints/16-1000000.ckpt" --- "predictor.sampling_method=sample_top_p" "predictor.p=0.2" "predictor.second_sampling_method=sample_top_k" "predictor.second_top=1" "predictor.length_temperature=1.0" "predictor.use_first_step_factor=true"
 ```
+
+
+# Log
+
+TODO: 
+0. On exception checkpointing is not working. See line 1452 in `logs/owt_ilm/sbatch/2025-06-30_22-15-58/owt_ilm.out`.
+  * (Done) possible solutions update fsspec to 2025.5.0. I've updated the environment but the run is already on its way. Will wait for the next run.
+
+- owt training still fails towards the end of an epoch.
+  - (fixed) reduced the number of shards per node to less than the batch size. Waiting to see if it works.
+
+- Faulty nodes. Some runs are 3x slower for no apparent reason. 
+  - In all these runs there is on faulty GPU with lower utilization (92%) compared to the rest (99%).
+  - 07/04: node016 is currently faulty.
+  - I need to use custom [WandbLogger](https://github.com/Lightning-AI/pytorch-lightning/issues/20774) to log system metrics from all ranks.
+
+- ILM OWT training fails after 60k steps due to NaN loss probably due to stopping loss. 
+
+
+1. Implement MLM, MDLM with all the necessary predictors (get help)
+  * (WIP) Implementing predictor for MLM.
+  *  Test them on star graphs
+2. Implement ARLM (get help)
+  * test on star graphs
+3. Implement InDIGO (difficult)
+4. Implement Slidinging Insertion (difficult)

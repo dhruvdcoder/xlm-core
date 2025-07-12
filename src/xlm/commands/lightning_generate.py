@@ -4,7 +4,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, Generator, cast
+from typing import Any, Dict, Generator, Optional, cast
 
 import torch
 
@@ -18,7 +18,7 @@ os.environ["HYDRA_FULL_ERROR"] = "1"
 
 # region: Import necessary modules
 import hydra
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from lightning import seed_everything
 from xlm.utils.rank_zero import RankedLogger
 
@@ -27,21 +27,18 @@ logger = RankedLogger(__name__, rank_zero_only=True)
 # endregion
 
 
-def generate(cfg: DictConfig):
-    print_config_tree(cfg, resolve=True, save_to_file=False)
-    if cfg.get("seed"):
-        logger.info(f"Seed everything with seed {cfg.seed}")
-        seed_everything(cfg.seed)
-
-    # checkpoint pickup
-    generation_ckpt_path = cfg.generation.ckpt_path
-    generation_output_dir = cfg.generation.get("output_dir", None)
+def get_generation_output_file_path(cfg: DictConfig) -> Optional[Path]:
+    generation_output_dir: Optional[Path] = cfg.generation.get(
+        "output_dir", None
+    )
     generation_output_dir = (
         Path(generation_output_dir)
         if generation_output_dir is not None
         else None
     )
-    generation_output_file_name = cfg.generation.get("output_file_name", None)
+    generation_output_file_name: Optional[str] = cfg.generation.get(
+        "output_file_name", None
+    )
     if (
         generation_output_file_name is None
         and generation_output_dir is not None
@@ -49,29 +46,32 @@ def generate(cfg: DictConfig):
         raise ValueError(
             "output_file_name is required when output_dir is provided"
         )
-    generation_output_file_path = None
+    generation_output_file_path: Optional[Path] = None
     if generation_output_file_name is not None:
+        assert generation_output_dir is not None
         generation_output_file_path = (
             generation_output_dir / generation_output_file_name
         )
+    return generation_output_file_path
 
-    if generation_output_file_path is not None:
-        logger.info(
-            f"Writing generation output to {generation_output_file_path}"
-        )
 
-    # prepare generation dataloader
-    if cfg.generation.get("datamodule", None) is not None:
-        datamodule = hydra.utils.instantiate(cfg.generation.datamodule)
-        tokenizer = datamodule.tokenizer
-    else:
-        datamodule = hydra.utils.instantiate(cfg.datamodule)
-        tokenizer = datamodule.tokenizer
-    datamodule.prepare_data()
-    datamodule.setup("predict")
-    dataloader = datamodule.predict_dataloader()
+def instantiate_model(
+    cfg: DictConfig,
+    datamodule: Any,
+    tokenizer: Any,
+) -> Harness:
+    """
 
-    # instantiate the model
+    Supports two modes:
+        1. Load a model from full training checkpoint using `lightning_module.load_from_checkpoint(cfg.generation.ckpt_path)`
+        2. Load a model from model only checkpoint using `lightning_module.model.load_state_dict(torch.load(cfg.generation.model_only_checkpoint_path))`
+
+    Args:
+        cfg: Hydra config
+        generation_ckpt_path: Path to the generation checkpoint
+        datamodule: Datamodule
+    """
+    generation_ckpt_path = cfg.generation.ckpt_path
     torch.set_float32_matmul_precision("medium")
     if generation_ckpt_path is not None:
         module_cls = hydra.utils.get_class(cfg.lightning_module._target_)
@@ -116,148 +116,71 @@ def generate(cfg: DictConfig):
             f"Loading weights for `model` from a pretrained model at {model_only_ckpt_path} before generation"
         )
         logger.warning(message)
+    return lightning_module
 
-    # function to convert preds to serializable dict depending on the task.
-    input_field_to_display = cfg.generation.get(
-        "input_field_to_display", "input_ids"
+
+def generate(cfg: DictConfig):
+    print_config_tree(cfg, resolve=True, save_to_file=False)
+    if cfg.get("seed"):
+        logger.info(f"Seed everything with seed {cfg.seed}")
+        seed_everything(cfg.seed)
+
+    # Always create the global components first.
+    global_components: Dict[str, Any] = hydra.utils.instantiate(
+        cfg.global_components
     )
-
-    def to_dict(preds, batch, batch_idx, dataloader_idx, dataloader_name):
-        # we will implement a version for unconditional generation here.
-        input_seqs = lightning_module.tokenizer.batch_decode(
-            batch[input_field_to_display]
-        )
-        out_dicts = lightning_module.predictor.to_dict(
-            batch,
-            preds,
-            batch_idx,
-            dataloader_idx,
-            dataloader_name,
-        )
-        assert len(out_dicts) == len(input_seqs)
-        for i in range(len(out_dicts)):
-            out_dicts[i]["input_text"] = input_seqs[i]
-        return out_dicts
-
-    prepare_input_batch_for_prediction = cfg.generation.get(
-        "prepare_input_batch_for_prediction", False
+    OmegaConf.clear_resolver("global_components")
+    OmegaConf.register_new_resolver(
+        "global_components", lambda x: global_components[x]
     )
-    if prepare_input_batch_for_prediction:
-        # check if the model has a _prepare_input_batch_for_prediction method
-        if not hasattr(lightning_module, "_prepare_input_batch_for_predict"):
-            raise ValueError(
-                "Model does not have a _prepare_input_batch_for_prediction method"
-            )
+    # instantiate the datamodule
+    datamodule = hydra.utils.instantiate(cfg.datamodule)
+    tokenizer = datamodule.tokenizer
 
-    def sample_generator() -> Generator[Dict[str, Any], None, None]:
-        # generates batches of predictions form the model
-        for i, batch in enumerate(dataloader):
+    # update the omegaconf resolvers
+    OmegaConf.clear_resolver("tokenizer")
+    OmegaConf.register_new_resolver(
+        "tokenizer", lambda x: getattr(tokenizer, x)
+    )
+    OmegaConf.clear_resolver("datamodule")
+    OmegaConf.register_new_resolver(
+        "datamodule", lambda x: getattr(datamodule, x)
+    )
+    datamodule.no_trainer_mode = True
+    datamodule.prepare_data()
+    datamodule.setup("predict")
+
+    # instantiate the model
+    lightning_module = instantiate_model(cfg, datamodule, tokenizer)
+
+    # output file path
+    generation_output_file_path = get_generation_output_file_path(cfg)
+
+    if generation_output_file_path is not None:
+        logger.info(
+            f"Writing generation output to {generation_output_file_path}"
+        )
+    predict_dataloaders = datamodule.predict_dataloader()
+    dataloader_names = []
+    if isinstance(predict_dataloaders, list):
+        for i, dl in enumerate(predict_dataloaders):
+            dataloader_names.append(datamodule.dataloader_names["predict"][i])
+    else:
+        dataloader_names.append(datamodule.dataloader_names["predict"][0])
+        predict_dataloaders = [predict_dataloaders]
+
+    for dataloader_idx, (dataloader_name, dl) in enumerate(
+        zip(dataloader_names, predict_dataloaders)
+    ):
+        for batch_idx, batch in enumerate(dl):
+            # hardcode the move to cuda for now
             batch = {
                 k: (v.to("cuda") if isinstance(v, torch.Tensor) else v)
                 for k, v in batch.items()
             }
-            if i == 0:
-                if hasattr(datamodule, "print_batch"):
-                    datamodule.print_batch(batch, "predict", 0)
-            with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-                if prepare_input_batch_for_prediction:
-                    _batch = lightning_module._prepare_input_batch_for_predict(
-                        batch
-                    )
-                else:
-                    _batch = batch
-                predicted_dict = lightning_module.predictor.predict(
-                    _batch,
-                    i,
-                    dataloader_idx=None,
-                    dataloader_name=(
-                        dataloader.name
-                        if hasattr(dataloader, "name")
-                        else None
-                    ),
-                )
-            yield from to_dict(
-                predicted_dict,
-                batch,
-                i,
-                dataloader_idx=None,
-                dataloader_name=(
-                    dataloader.name if hasattr(dataloader, "name") else None
-                ),
+            preds = lightning_module.predict_step(
+                batch, batch_idx, dataloader_idx
             )
-
-    fields_to_keep_in_output = cfg.generation.get(
-        "fields_to_keep_in_output", ["input_text", "text"]
-    )
-    checked_fields = False
-
-    def output_filter(out_dict: Dict[str, Any]) -> Dict[str, Any]:
-        nonlocal checked_fields
-        if not checked_fields:
-            for field in fields_to_keep_in_output:
-                if field not in out_dict:
-                    raise ValueError(f"Field {field} not found in output")
-            checked_fields = True
-        return {
-            k: v for k, v in out_dict.items() if k in fields_to_keep_in_output
-        }
-
-    # Do some evaluation here
-
-    # pprint_template = """
-    # --------------------------------
-    # input_text: {input_text}\n
-    # output_text: {text}\n
-    # output_text_with_spl_tokens: {text_with_spl_tokens}\n
-    # --------------------------------
-    # """
-    pprint_template = """
-    --------------------------------
-    input_text: {input_text}\n
-    output_text: {text}\n
-    --------------------------------
-    """
-
-    f = None
-    max_examples = cfg.generation.get("max_examples", None)
-    try:
-        if generation_output_file_path is not None:
-            generation_output_file_path.parent.mkdir(
-                parents=True, exist_ok=True
+            lightning_module._call_log_predictions(
+                batch, preds, "predict", dataloader_name, no_trainer_mode=True
             )
-            f = open(
-                generation_output_file_path,
-                "w",
-            )
-
-        with torch.no_grad():
-            for i, out_dict in enumerate(sample_generator()):
-                if max_examples is not None and i > max_examples:
-                    logger.info(f"Generated {i} predictions")
-                    logger.info(
-                        f"Stopping generation at {max_examples} examples"
-                    )
-                    break
-
-                if i % 100 == 0:
-                    logger.info(f"Generated {i} predictions")
-
-                if f is not None:
-                    f.write(
-                        json.dumps(
-                            output_filter(out_dict),
-                        )
-                        + "\n"
-                    )
-                    f.flush()
-                else:
-                    print(
-                        pprint_template.format(
-                            **out_dict,
-                        )
-                    )
-    finally:
-        if f is not None:
-            f.flush()
-            f.close()
-        logger.info("Generation complete")

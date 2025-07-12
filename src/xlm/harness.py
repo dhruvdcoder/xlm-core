@@ -1,6 +1,5 @@
 from collections.abc import Generator
 from itertools import chain
-import json
 from pathlib import Path
 from typing import (
     Any,
@@ -28,10 +27,15 @@ from omegaconf import DictConfig, OmegaConf
 from torch.optim.lr_scheduler import LRScheduler
 from torch.optim.optimizer import Optimizer
 from transformers import get_scheduler
-from xlm.datamodule import BaseBatch, BaseDataModule, Tokenizer
+from xlm.datamodule import BaseDataModule, Tokenizer
 from xlm.noise import NoiseSchedule
-from xlm.utils.rank_zero import RankedLogger, rank_zero_only
+from xlm.utils.rank_zero import RankedLogger
 import lightning as L
+
+# Import LogPredictions classes from the new module
+from xlm.log_predictions import (
+    LogPredictions,
+)
 
 logger = RankedLogger(__name__, rank_zero_only=True)
 ranked_logger = RankedLogger(__name__, rank_zero_only=False)
@@ -61,7 +65,7 @@ class LRSchedulerWithConfig(TypedDict):
 
     scheduler: LRScheduler
     interval: str  # = "step"
-    frequency: int  #   = 1
+    frequency: int  # = 1
     monitor: Optional[str]  # = None
     strict: bool  # = True
 
@@ -76,7 +80,7 @@ class LossFunction(Generic[T_in, T_out], Protocol):
     model: Any
     tokenizer: Tokenizer
 
-    def configure(self, pl_module: "BaseLightningModule"): ...
+    def configure(self, pl_module: "Harness"): ...
 
     """Called from the device context."""
 
@@ -159,96 +163,6 @@ def to_nested_module_dict(
     )
 
 
-class _LogPredictions(Protocol):
-    def __call__(
-        self,
-        pl_module: L.LightningModule,
-        trainer: L.Trainer,
-        batch: Dict[str, Any],
-        preds: Dict[str, Any],
-        split: Literal["train", "val", "test"],
-        dataloader_name: str,
-    ): ...
-
-
-class LogPredictions:
-    def __init__(
-        self,
-        fields_to_keep_in_output: Optional[List[str]] = None,
-        inject_target: Optional[str] = None,
-    ) -> None:
-        self.fields_to_keep_in_output = fields_to_keep_in_output
-        self.last_global_step_logged_at_which_logged_predictions: int = -1
-        self.inject_target = inject_target
-
-    def filter_fields(self, out_dict: Dict[str, Any]) -> Dict[str, Any]:
-        if self.fields_to_keep_in_output is None:
-            return out_dict
-        return {
-            k: v
-            for k, v in out_dict.items()
-            if k in self.fields_to_keep_in_output
-        }
-
-    @rank_zero_only
-    def __call__(
-        self,
-        pl_module: "Harness",
-        trainer: L.Trainer,
-        batch: Dict[str, Any],
-        preds: Dict[str, Any],
-        split: Literal["train", "val", "test"],
-        dataloader_name: str,
-    ):
-        step = pl_module.trainer.global_step or 0
-        epoch = pl_module.trainer.current_epoch or 0
-        file_path = (
-            pl_module.predictions_dir
-            / f"{split}/{dataloader_name}/{epoch=}_{step=}.jsonl"
-        )
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        logger_ = [
-            l_ for l_ in pl_module.trainer.loggers if hasattr(l_, "log_text")
-        ]
-        text = []  # list of rows
-        if self.inject_target is not None:
-            ground_truth_text = pl_module.tokenizer.batch_decode(
-                batch[self.inject_target], skip_special_tokens=True
-            )
-        else:
-            bs = batch["input_ids"].shape[0]
-            ground_truth_text = [""] * bs
-
-        with open(file_path, "a") as f:
-            for dict_, gt in zip(
-                pl_module.predictor.to_dict(batch, preds), ground_truth_text
-            ):
-                text.append(dict_["text"])
-                dict_["truth"] = gt
-                f.write(json.dumps(self.filter_fields(dict_)) + "\n")
-        # only log one set of predictions per eval run.
-        if (
-            pl_module.trainer.global_step
-            > pl_module.last_global_step_logged_at_which_logged_predictions
-        ):
-            n_rows = 10
-            for logger_ in logger_:
-                logger_.log_text(
-                    f"{split}/{dataloader_name}",
-                    ["generated", "truth"],  # column names
-                    [
-                        [_text, _gt]
-                        for _text, _gt in zip(
-                            text[:n_rows], ground_truth_text[:n_rows]
-                        )
-                    ],  # rows
-                    step=pl_module.trainer.global_step,
-                )
-            pl_module.last_global_step_logged_at_which_logged_predictions = (
-                pl_module.trainer.global_step
-            )
-
-
 class Harness(L.LightningModule):
     """Main module that provides the scaffolding for the codebase."""
 
@@ -282,16 +196,25 @@ class Harness(L.LightningModule):
     #    torch.nn.ModuleDict[str, torch.nn.ModuleList[MetricWrapper]],
     # ]
     key_to_remove_after_logging: List[str]
+    log_predictions: Optional[LogPredictions]
 
     def __init__(
         self,
         cfg: DictConfig,
         tokenizer: Optional[Tokenizer] = None,
         datamodule: Optional[BaseDataModule] = None,
-        fields_to_keep_in_output: Optional[List[str]] = None,
         write_per_sample_metrics: bool = False,
         **kwargs: Any,
     ):
+        """Initialize the Harness module.
+
+        Args:
+            cfg: Configuration dictionary.
+            tokenizer: Optional tokenizer instance.
+            datamodule: Optional datamodule instance.
+            write_per_sample_metrics: Whether to write per-sample metrics.
+            **kwargs: Additional keyword arguments.
+        """
         # Ensure config is a DictConfig. When loading from checkpoint, we get a dict instance.
         if not isinstance(cfg, DictConfig):
             cfg = OmegaConf.create(cfg)
@@ -315,14 +238,6 @@ class Harness(L.LightningModule):
         self.setup_dataloader_names()
         self.setup_metrics(cfg)
         self.predictions_dir = Path(cfg.paths.run_dir) / "predictions"
-        if (
-            cfg.lightning_module.get("fields_to_keep_in_output", None)
-            is not None
-        ):
-            fields_to_keep_in_output = (
-                cfg.lightning_module.fields_to_keep_in_output
-            )
-        self.fields_to_keep_in_output = fields_to_keep_in_output
         # validate and save config at the end
         self.validate_config(self.config)
         # Save hyperparameters as a plain dict.
@@ -423,11 +338,9 @@ class Harness(L.LightningModule):
         self.diagnostic_metrics = to_nested_module_dict(diagnostic_metrics)
         self.reported_metrics = to_nested_module_dict(reported_metrics)
         if "log_predictions" in cfg:
-            self.log_predictions: _LogPredictions = hydra.utils.instantiate(
-                cfg.log_predictions
-            )
+            self.log_predictions = hydra.utils.instantiate(cfg.log_predictions)
         else:
-            self.log_predictions = LogPredictions()
+            self.log_predictions = None
 
     def validate_config(self, cfg: DictConfig):
         return
@@ -496,6 +409,9 @@ class Harness(L.LightningModule):
             monitor: The metric to monitor for the learning rate noise_schedule.
             strict: Whether to strictly follow the learning rate schedule.
             **kwargs: Additional keyword arguments to pass to the learning rate noise_schedule.
+
+        Returns:
+            LRSchedulerWithConfig: The configured learning rate scheduler.
         """
         if num_warmup_steps is None:
             if fraction_warmup_steps is None:
@@ -604,7 +520,7 @@ class Harness(L.LightningModule):
         loss_dict = self.compute_loss(
             batch, batch_idx, dataloader_idx, dataloader_name
         )
-        if loss := loss_dict.get("loss", False):
+        if loss_dict.get("loss", False):
             if bool(loss_dict["loss"].isnan()):
                 global_step = self.trainer.global_step
                 raise RuntimeError(
@@ -666,7 +582,7 @@ class Harness(L.LightningModule):
         self,
         batch: Dict[str, Any],
         batch_idx: int,
-        dataloader_idx: Optional[int] = 0,
+        dataloader_idx: int = 0,
     ) -> Dict[str, Any]:
         return self._step(batch, batch_idx, dataloader_idx, "test")
 
@@ -702,6 +618,25 @@ class Harness(L.LightningModule):
         self.trainer.datamodule.print_batch(batch, "val", dataloader_idx)
         self.printed_batches.add(f"val/{dataloader_idx}")
 
+    def _call_log_predictions(
+        self,
+        batch: Dict[str, Any],
+        outputs: Dict[str, Any],
+        split: Literal["train", "val", "test", "predict"],
+        dataloader_name: str,
+        no_trainer_mode: bool = False,
+    ) -> None:
+        """Helper method to call log_predictions, supporting both single loggers and lists of loggers."""
+        if self.log_predictions is not None:
+            self.log_predictions(
+                self,
+                self.trainer if not no_trainer_mode else None,
+                batch,
+                outputs,
+                split,
+                dataloader_name,
+            )
+
     def on_validation_batch_end(
         self,
         outputs: Dict[str, Any],
@@ -711,9 +646,7 @@ class Harness(L.LightningModule):
     ) -> None:
         dataloader_name = self.dataloader_names["val"][dataloader_idx]
         if "prediction" in dataloader_name:
-            self.log_predictions(
-                self, self.trainer, batch, outputs, "val", dataloader_name
-            )
+            self._call_log_predictions(batch, outputs, "val", dataloader_name)
 
     def on_test_batch_end(
         self,
@@ -724,9 +657,7 @@ class Harness(L.LightningModule):
     ) -> None:
         dataloader_name = self.dataloader_names["test"][dataloader_idx]
         if "prediction" in dataloader_name:
-            self.log_predictions(
-                self, self.trainer, batch, outputs, "test", dataloader_name
-            )
+            self._call_log_predictions(batch, outputs, "test", dataloader_name)
 
     def on_predict_batch_end(
         self,
@@ -737,8 +668,8 @@ class Harness(L.LightningModule):
     ) -> None:
         dataloader_name = self.dataloader_names["predict"][dataloader_idx]
         if "prediction" in dataloader_name:
-            self.log_predictions(
-                self, self.trainer, batch, outputs, "predict", dataloader_name
+            self._call_log_predictions(
+                batch, outputs, "predict", dataloader_name
             )
 
     def on_test_batch_start(
