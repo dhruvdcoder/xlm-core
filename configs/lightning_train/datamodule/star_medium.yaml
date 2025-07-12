@@ -1,7 +1,0 @@
-# @package _global_
-defaults:
-  - star
-
-
-tags:
-  dataset: star_medium

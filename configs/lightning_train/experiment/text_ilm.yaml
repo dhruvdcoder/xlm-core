@@ -11,10 +11,12 @@ block_size: 128
 
 
 log_predictions:
-  _target_: xlm.harness.LogPredictions
+  _target_: xlm.log_predictions.LogPredictions
   fields_to_keep_in_output:
     - text
-  inject_target: null
+  writers:
+    - file
+    - logger
 
 callbacks:
   checkpoint_monitor:
