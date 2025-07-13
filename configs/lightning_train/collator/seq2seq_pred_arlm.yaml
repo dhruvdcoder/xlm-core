@@ -1,0 +1,7 @@
+_target_: xlm.lm.arlm.datamodule_arlm.ARLMSeq2SeqPredCollator
+input_block_size: ${oc.select:input_block_size,null}
+block_size: ${block_size}
+tokenizer: ${global_components:tokenizer}
+noise_schedule: ${global_components:noise_schedule} 
+add_bos: output
+add_eos: true

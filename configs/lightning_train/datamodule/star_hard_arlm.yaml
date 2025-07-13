@@ -1,0 +1,12 @@
+# @package _global_
+defaults:
+  - star_arlm
+  - /datasets@datamodule.dataset_managers.train.lm: star_hard_train
+  - /datasets@datamodule.dataset_managers.val.lm: star_hard_val
+  - /datasets@datamodule.dataset_managers.val.prediction: star_hard_val_pred
+  - /datasets@datamodule.dataset_managers.test.lm: star_hard_test
+  - /datasets@datamodule.dataset_managers.test.prediction: star_hard_test_pred
+  - /datasets@datamodule.dataset_managers.predict.prediction: star_hard_test_pred
+
+tags:
+  dataset: star_hard 

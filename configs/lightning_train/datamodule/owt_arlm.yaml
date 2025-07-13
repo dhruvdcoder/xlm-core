@@ -1,0 +1,11 @@
+# @package _global_
+defaults:
+  - owt
+  - /collator@datamodule.dataset_managers.train.lm.collator: default_arlm
+  - /collator@datamodule.dataset_managers.val.lm.collator: default_arlm
+
+datamodule:
+  print_batch_fn: xlm.lm.arlm.datamodule_arlm.print_batch_arlm
+
+tags:
+  dataset: owt 
