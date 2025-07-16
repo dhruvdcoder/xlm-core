@@ -87,26 +87,10 @@ def train(cfg: DictConfig):
                     loggers.append(hydra.utils.instantiate(lg_conf))
 
     # Resume from checkpoint and automatic checkpoint pickup
-    DONT_ALLOW = False
-    # TODO: remove this
-    # region: Temporary patch
-    import os
-
-    JOB_ID = os.environ.get("SLURM_JOB_ID", None)
-    if (
-        JOB_ID == "29755333"
-        and cfg.get("resume_checkpoint_path", None)
-        == "/scratch3/workspace/dhruveshpate_umass_edu-text_diffusion/xlm/logs/ilm_owt_v11/back_checkpoints/11-170000.ckpt"
-    ):
-        DONT_ALLOW = True
-
-    # endregion
     ckpt_path = None
     if cfg.resume_from_checkpoint:
         # determine the checkpoint path
-        if (
-            cfg.resume_checkpoint_path is not None and not DONT_ALLOW
-        ):  # TODO: remove DONT_ALLOW flag
+        if cfg.resume_checkpoint_path is not None:
             if os.path.isfile(cfg.resume_checkpoint_path):
                 ckpt_path = cfg.resume_checkpoint_path
             else:

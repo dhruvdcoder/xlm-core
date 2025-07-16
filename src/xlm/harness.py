@@ -135,6 +135,8 @@ class Predictor(Generic[T_in, T_out_pred], Protocol):
         """Create json lines from the predictions batch."""
         ...
 
+    def generate(self, prompts: List[str]) -> List[str]: ...
+
 
 class CustomModuleDict(torch.nn.ModuleDict):
     def get(self, key: str, default: Any = None) -> Any:

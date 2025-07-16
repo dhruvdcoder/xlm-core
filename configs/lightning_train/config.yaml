@@ -9,6 +9,7 @@ defaults:
   - callbacks: default_v2
   - loggers: default
   - trainer_strategy: single_device
+  - hub: null
   - experiment: null # inject arbitrary overrides
   - debug: null
 

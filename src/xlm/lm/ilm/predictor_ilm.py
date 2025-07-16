@@ -6,9 +6,15 @@ from jaxtyping import Bool, Integer
 from xlm import flags
 from xlm.datamodule import Tokenizer
 from torch import Tensor as TT
-from .types_ilm import ILMBatch, ILMPredictionDict, ILMModel
+from .types_ilm import (
+    ILMBatch,
+    ILMPredictionDict,
+    ILMModel,
+    ILMSeq2SeqPredictionBatch,
+)
 from xlm.harness import Predictor
 from xlm.noise import NoiseSchedule
+from .datamodule_ilm import prepare_prefix_ids
 from .nn import (
     _remove_tokens,
     remove_tokens,
@@ -415,6 +421,9 @@ class ILMPredictor(
                 step_results,
             )
             history = self._update_history(history, step_results, current_step)
+            if flags.DEBUG_PRINT_PREDS:
+                print("--" * 10 + f"STEP {current_step}" + "--" * 10)
+                print(self.decode(step_results)[0])
             current_step += 1
         # final step (nothing special)
         step_results = self._predict_single_step(
@@ -443,6 +452,36 @@ class ILMPredictor(
                 [_time_taken] * len(out)
             ),  # cannot separate time for each sample
         }
+
+    @torch.inference_mode()
+    def generate(self, prompts: List[str]) -> List[str]:
+        # Convert prompts to input batch
+        token_ids = self.tokenizer(prompts, add_special_tokens=False)[
+            "input_ids"
+        ]
+
+        batch = cast(
+            ILMSeq2SeqPredictionBatch,
+            prepare_prefix_ids(
+                token_ids,
+                self.tokenizer.pad_token_id,
+                self.tokenizer.cls_token_id,
+                self.tokenizer.bos_token_id,
+                bos_side="left",
+            ),
+        )
+        batch["target_ids"] = None
+        constraint = torch.ones_like(batch["attention_mask"], dtype=torch.bool)
+        constraint[:, -1] = False
+        batch["constraint"] = constraint
+        # move to device
+        batch = {
+            k: v.to("cuda")
+            for k, v in batch.items()
+            if isinstance(v, torch.Tensor)
+        }
+        preds = self.predict(batch)
+        return preds["text"]
 
 
 class ILMPredictorWithLengthClassification(
@@ -639,6 +678,8 @@ class ILMPredictorWithLengthClassification(
         else:
             # if predict was false, it should still be false
             predict = predict.logical_and(step_results["predict"])
+        if flags.DEBUG_PRINT_PREDS and current_step < 10:
+            predict[:] = 1
         if not predict.any().item():
             return {
                 "x": x_t,
@@ -760,6 +801,7 @@ class ILMPredictorWithLengthClassification(
                 dtype=torch.bool,
                 device=batch["input_ids"].device,
             ),
+            "current_step": 1,
         }
         current_step = 1
         history: List[List[Tuple[str, float, int]]] = [
@@ -772,7 +814,11 @@ class ILMPredictorWithLengthClassification(
                 current_step,
             )
             history = self._update_history(history, step_results, current_step)
+            if flags.DEBUG_PRINT_PREDS:
+                print("--" * 10 + f"STEP {current_step}" + "--" * 10)
+                print(self.decode(step_results)[0])
             current_step += 1
+            step_results["current_step"] = current_step
         # final step (nothing special)
         step_results = self._predict_single_step(
             step_results,
@@ -799,6 +845,36 @@ class ILMPredictorWithLengthClassification(
             "loss": None,
             "time_taken": [_time_taken] * len(out),
         }
+
+    @torch.inference_mode()
+    def generate(self, prompts: List[str]) -> List[str]:
+        # Convert prompts to input batch
+        token_ids = self.tokenizer(prompts, add_special_tokens=False)[
+            "input_ids"
+        ]
+
+        batch = cast(
+            ILMSeq2SeqPredictionBatch,
+            prepare_prefix_ids(
+                token_ids,
+                self.tokenizer.pad_token_id,
+                self.tokenizer.cls_token_id,
+                self.tokenizer.bos_token_id,
+                bos_side="left",
+            ),
+        )
+        batch["target_ids"] = None
+        constraint = torch.ones_like(batch["attention_mask"], dtype=torch.bool)
+        constraint[:, -1] = False
+        batch["constraint"] = constraint
+        # move to device
+        batch = {
+            k: v.to("cuda")
+            for k, v in batch.items()
+            if isinstance(v, torch.Tensor)
+        }
+        preds = self.predict(batch)
+        return preds["text"]
 
 
 class ILMPredictorWithStoppingClassification(

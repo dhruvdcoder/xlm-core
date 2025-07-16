@@ -82,8 +82,16 @@ python scripts/submit_train.py "do=submit" "job_name=owt_ilm_debug_multinode_com
 NUM_NODES=4 # or 8
 python scripts/submit_train.py "do=submit" "job_name=owt_ilm" "train.experiment=owt_ilm" "train.batch_size=32" "hardware=ddp_${NUM_NODES}_node_1_gpu" "slurm.constraint=\"vram80,bf16,ib\"" --- "compile=true" "trainer.precision=bf16-mixed" "trainer.num_nodes=$NUM_NODES" "trainer.devices=1" "trainer_strategy=ddp_multinode"
 
+python scripts/submit_train.py "do=submit" "job_name=owt_ilm5" "train.experiment=owt_ilm" "train.batch_size=32" "hardware=ddp_4_node_1_gpu" "slurm.constraint=\"vram80,bf16,ib\""  "++slurm.exclude=gpu016" --- "compile=true" "trainer.precision=bf16-mixed" "trainer.num_nodes=4" "trainer.devices=1" "trainer_strategy=ddp_multinode" "optimizer.lr=0.0001"
+
 # generate from a checkpoint
 python src/xlm/commands/lightning_main.py "job_type=generate" "job_name=owt_ilm" "experiment=owt_ilm" "debug=[overfit,print_predictions]" "+generation.ckpt_path=logs/owt_ilm5/checkpoints/19-200000.ckpt" datamodule.dataset_managers.predict.unconditional_prediction.num_examples=2
+
+# push to hub
+python src/xlm/commands/push_to_hub.py "job_type=push_to_hub" "job_name=owt_ilm_hub" "experiment=owt_ilm" "+hub_checkpoint_path=logs/owt_ilm5/checkpoints/40-422500.ckpt" +hub.repo_id="dhruveshpatel/ilm-owt"
+
+# run the demo
+python src/xlm/commands/cli_demo.py "job_type=demo" "job_name=owt_ilm_demo" "experiment=owt_ilm" predictor.stopping_threshold=0.9 +global_flags.DEBUG_PRINT_PREDS=true +hub/checkpoint=ilm_owt
 ```
 
 

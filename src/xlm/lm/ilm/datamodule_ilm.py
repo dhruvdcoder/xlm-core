@@ -144,6 +144,7 @@ def prepare_prefix_ids(
     max_seq_len: Optional[int] = None,
     cls_token_id: Optional[int] = None,
     bos_token_id: Optional[int] = None,
+    bos_side: Literal["left", "right"] = "right",
 ) -> Dict[str, TT]:
     add_cls = 1 if cls_token_id is not None else 0
     add_bos = 1 if bos_token_id is not None else 0
@@ -157,11 +158,18 @@ def prepare_prefix_ids(
     else:
         max_len = max_seq_len
     for _prefix_ids in prefix_ids:
-        temp = (
-            ([cls_token_id] if add_cls else [])
-            + _prefix_ids
-            + ([bos_token_id] if add_bos else [])
-        )
+        if bos_side == "right":
+            temp = (
+                ([cls_token_id] if add_cls else [])
+                + _prefix_ids
+                + ([bos_token_id] if add_bos else [])
+            )
+        else:
+            temp = (
+                ([cls_token_id] if add_cls else [])
+                + ([bos_token_id] if add_bos else [])
+                + _prefix_ids
+            )
         input_ids.append(
             pad_truncate_list(
                 temp,
@@ -630,4 +638,12 @@ def print_batch_ilm(
 
 
 # endregion: Utilities
+################################################################################
+
+
+################################################################################
+# region: Prediction utils
+
+
+# endregion: Prediction utils
 ################################################################################

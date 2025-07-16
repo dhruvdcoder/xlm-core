@@ -45,7 +45,7 @@ class ILMBatch(BaseBatch):
     constraint: Optional[Bool[TT, " batch post_seq_len"]]
 
 
-class ILMSeq2SeqPredictionBatch:
+class ILMSeq2SeqPredictionBatch(TypedDict):
     """Input to the ILM for predicting suffix given the prefix.
     Note that the target_ids are different from the ILMBatch
 
@@ -59,10 +59,11 @@ class ILMSeq2SeqPredictionBatch:
     input_ids: Integer[TT, " batch prefix_seq_len"]
     attention_mask: Integer[TT, " batch prefix_seq_len"]
     token_type_ids: Integer[TT, " batch prefix_seq_len"]
-    target_ids: Integer[TT, " batch suffix_seq_len"]
+    target_ids: Optional[Integer[TT, " batch suffix_seq_len"]]
+    constraint: Optional[Bool[TT, " batch prefix_seq_len"]]
 
 
-class ILMUncondtionalPredictionBatch:
+class ILMUncondtionalPredictionBatch(TypedDict):
     """Input to the ILM for unconditional generation.
 
     Attributes:
