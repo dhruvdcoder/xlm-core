@@ -19,7 +19,13 @@ ranked_logger = RankedLogger(__name__, rank_zero_only=False)
 
 
 class MetricWrapper(torch.nn.Module):
-    """Sends the raw `batch` and `loss_dict` output to the `update_fn` which transforms it into a dict of kwargs for the `metric`. The `update_fn` can contain task specific and model specific logic."""
+    """Unified metric wrapper that works with both Lightning trainer and Fabric.
+
+    Sends the raw `batch` and `loss_dict` output to the `update_fn` which transforms it into a dict of kwargs for the `metric`. The `update_fn` can contain task specific and model specific logic.
+
+    For Lightning: Use the `log` method to log metrics via LightningModule.
+    For Fabric: Use `compute` and `get_log_dict` methods for manual logging.
+    """
 
     def __init__(
         self,
@@ -52,9 +58,15 @@ class MetricWrapper(torch.nn.Module):
     def update(
         self, batch: Dict[str, Any], loss_dict: Dict[str, Any]
     ) -> Dict[str, Any]:
+        """Update the metric with the current batch and loss_dict."""
         kwargs = self.update_fn(batch, loss_dict)
         self.metric.update(**kwargs)
         return loss_dict
+
+    @property
+    def full_name(self) -> str:
+        """Get the full metric name with prefix."""
+        return f"{self.prefix}/{self.name}"
 
     def log(
         self,
@@ -62,6 +74,7 @@ class MetricWrapper(torch.nn.Module):
         batch: Dict[str, Any],
         metrics: Dict[str, Any],
     ):
+        """Log the metric using Lightning's logging mechanism."""
         pl_module.log(
             f"{self.prefix}/{self.name}",
             self.metric,
@@ -72,7 +85,19 @@ class MetricWrapper(torch.nn.Module):
         )
         return metrics
 
+    def compute(self) -> torch.Tensor:
+        """Compute the current metric value. Useful for Fabric-based training."""
+        return self.metric.compute()
+
+    def get_log_dict(self) -> Dict[str, Any]:
+        """Get a dictionary with the metric name and computed value for logging. Useful for Fabric-based training."""
+        computed_value = self.compute()
+        return {
+            self.full_name: computed_value,
+        }
+
     def reset(self) -> None:
+        """Reset the metric state."""
         self.metric.reset()
 
 

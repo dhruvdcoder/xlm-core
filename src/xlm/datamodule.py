@@ -23,7 +23,7 @@ from torchdata.stateful_dataloader.sampler import (
 )
 from jaxtyping import Integer
 from torch import Tensor as TT
-from torch.utils.data import DataLoader, IterableDataset
+from torch.utils.data import DataLoader, IterableDataset, SequentialSampler
 from datasets.distributed import split_dataset_by_node
 import torch
 from transformers import (
@@ -35,7 +35,14 @@ from transformers import (
     GPT2TokenizerFast as _GPT2TokenizerFast,
     PreTrainedTokenizerBase,
 )
-from lightning.pytorch.strategies import DDPStrategy, SingleDeviceStrategy
+from lightning.pytorch.strategies import DDPStrategy as LDDPStrategy
+from lightning.pytorch.strategies import (
+    SingleDeviceStrategy as LSingleDeviceStrategy,
+)
+from lightning.fabric.strategies import DDPStrategy as FDDPStrategy
+from lightning.fabric.strategies import (
+    SingleDeviceStrategy as FSingleDeviceStrategy,
+)
 import lightning as L
 from xlm import flags
 from xlm.utils.imports import get_function
@@ -54,6 +61,9 @@ ranked_logger = RankedLogger(__name__, rank_zero_only=False)
 
 ################################################################################
 # region: Types
+
+SingleDeviceStrategy = (LSingleDeviceStrategy, FSingleDeviceStrategy)
+DDPStrategy = (LDDPStrategy, FDDPStrategy)
 
 
 class Tokenizer(Protocol):
@@ -460,8 +470,10 @@ class DatasetManager:
         return "/".join(self.full_name.split("/")[:2])
 
     def set_epoch(self, epoch: int) -> None:
-        # only datasets.IterableDataset has set_epoch to shuffle the buffer.
-        if hasattr(self.dataset, "set_epoch"):
+        # only datasets.IterableDataset has set_epoch to shuffle the buffer
+        # TODO (fabric): For map-style datasets that use DistributedSampler, one needs to
+        # call set_epoch on the DistributedSampler of the dataloader.
+        if hasattr(self.dataset, "set_epoch") and not flags.DEBUG_OVERFIT:
             self.dataset.set_epoch(epoch)  # type: ignore
 
     def _download(self, num_proc: Optional[int] = None) -> datasets.Dataset:
@@ -662,6 +674,12 @@ class DatasetManager:
                 f"Using StatefulDataLoader for {type} of {self.full_name} dataloader"
             )
             sampler = None
+            # remove shuffle from dataloader kwargs if provided
+            if "shuffle" in self.dataloader_kwargs:
+                logger.warning(
+                    f"Shuffle is set to True for {self.full_name} {type} dataloader for DDP with IterableDataset. This will be ignored as shuffling is handled by the dataset in this case."
+                )
+                self.dataloader_kwargs.pop("shuffle")
             # Checks:
             num_workers = self.dataloader_kwargs.get("num_workers", 1)
             assert (
@@ -695,7 +713,7 @@ class DatasetManager:
             sampler = StatefulDistributedSampler(
                 self.dataset,
                 seed=seed,
-                shuffle=True,
+                shuffle=True if not flags.DEBUG_OVERFIT else False,
                 # num_replicas=world_size, # Let it retrieve these values from the distributed context
                 # rank=rank,
             )
@@ -703,7 +721,11 @@ class DatasetManager:
             type == "train" and not is_ddp and not self.is_iterable_dataset
         ):  # case 3
             DL = StatefulDataLoader
-            sampler = RandomSampler(self.dataset)
+            sampler = (
+                RandomSampler(self.dataset)
+                if not flags.DEBUG_OVERFIT
+                else SequentialSampler(self.dataset)
+            )
         elif (
             type == "train" and not is_ddp and self.is_iterable_dataset
         ):  # case 4
@@ -904,10 +926,6 @@ class BaseDataModule(L.LightningDataModule):
             return 1
         else:
             raise ValueError("Trainer is not set")
-
-    def set_epoch(self, epoch: int) -> None:
-        if self.train_dataset_lm is not None:
-            self.train_dataset_lm.set_epoch(epoch)
 
 
 class TextDataModule(BaseDataModule):
@@ -1484,38 +1502,6 @@ def print_batch_base(
     print(batch["attention_mask"][0])
     print("token_type_ids:")
     print(batch["token_type_ids"][0])
-
-
-class PrintBatchCallback(L.Callback):
-
-    @rank_zero_only
-    def on_fit_start(
-        self, trainer: L.Trainer, pl_module: L.LightningModule
-    ) -> None:
-        # obtain a fresh dl just for printing
-        datamodule = cast(BaseDataModule, trainer.datamodule)  # type: ignore[attr-defined]
-        train_dl = datamodule.train_dataloader()
-        if not hasattr(datamodule, "print_batch"):
-            return
-        logger.info(f"Printing batch for train dataloader")
-        batch = next(iter(train_dl))
-        datamodule.print_batch(batch, "train", 0)
-
-    def on_sanity_check_start(
-        self, trainer: L.Trainer, pl_module: L.LightningModule
-    ) -> None:
-        # obtain a fresh dl just for printing
-        datamodule = cast(BaseDataModule, trainer.datamodule)  # type: ignore[attr-defined]
-        val_dl = datamodule.val_dataloader()
-        if val_dl is None:
-            return
-        val_dls = val_dl if isinstance(val_dl, list) else [val_dl]
-        if not hasattr(datamodule, "print_batch"):
-            return
-        logger.info("Printing batch for val dataloaders")
-        for i, val_dl in enumerate(val_dls):
-            batch = next(iter(val_dl))
-            datamodule.print_batch(batch, "val", i)
 
 
 # endregion: Utilities

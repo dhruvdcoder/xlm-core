@@ -18,6 +18,7 @@ class RankedLogger(logging.LoggerAdapter):
         name: str = __name__,
         rank_zero_only: bool = False,
         extra: Optional[Mapping[str, object]] = None,
+        stacklevel: int = 2,
     ) -> None:
         """Initializes a multi-GPU-friendly python command line logger that logs on all processes
         with their rank prefixed in the log message.
@@ -25,10 +26,12 @@ class RankedLogger(logging.LoggerAdapter):
         :param name: The name of the logger. Default is ``__name__``.
         :param rank_zero_only: Whether to force all logs to only occur on the rank zero process. Default is `False`.
         :param extra: (Optional) A dict-like object which provides contextual information. See `logging.LoggerAdapter`.
+        :param stacklevel: The stack level to use for finding the caller. Default is 2.
         """
         logger = logging.getLogger(name)
         super().__init__(logger=logger, extra=extra)
         self.rank_zero_only = rank_zero_only
+        self.stacklevel = stacklevel
 
     def log(
         self, level: int, msg: str, *args, rank: Optional[int] = None, **kwargs
@@ -51,14 +54,21 @@ class RankedLogger(logging.LoggerAdapter):
                     "The `rank_zero_only.rank` needs to be set before use"
                 )
             msg = rank_prefixed_message(msg, current_rank)
+
             if self.rank_zero_only:
                 if current_rank == 0:
-                    self.logger.log(level, msg, *args, **kwargs)
+                    self.logger.log(
+                        level, msg, *args, stacklevel=self.stacklevel, **kwargs
+                    )
             else:
                 if rank is None:
-                    self.logger.log(level, msg, *args, **kwargs)
+                    self.logger.log(
+                        level, msg, *args, stacklevel=self.stacklevel, **kwargs
+                    )
                 elif current_rank == rank:
-                    self.logger.log(level, msg, *args, **kwargs)
+                    self.logger.log(
+                        level, msg, *args, stacklevel=self.stacklevel, **kwargs
+                    )
 
 
 def get_rank_zero_logger(
