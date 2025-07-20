@@ -36,6 +36,7 @@ compile: false
 per_device_batch_size: 64
 global_batch_size: 512
 block_size: 128
+#input_block_size: null # only needed for seq2seq and is set in experiment config should not be set here
 num_dataloader_workers: ${oc.decode:${oc.env:SLURM_CPUS_PER_TASK,4}}
 num_dataset_workers: ${oc.decode:${oc.env:SLURM_CPUS_PER_TASK,4}}
 dataloader_prefetch_factor: 5

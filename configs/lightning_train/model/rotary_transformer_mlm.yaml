@@ -1,0 +1,21 @@
+# @package _global_
+
+model:
+  _target_: xlm.lm.mlm.model_mlm.RotaryTransformerMLMModel
+  num_embeddings: ${tokenizer:full_vocab_size}
+  d_model: 768
+  num_layers: 12
+  nhead: 12
+  padding_idx: ${tokenizer:pad_token_id}
+  mask_idx: ${tokenizer:mask_token_id}
+  dim_feedforward: ${eval:${.d_model}*4}
+  dropout: 0.1
+  activation: "relu"
+  layer_norm_eps: 1e-5
+  rotary_emb_dim: 64
+  max_length: ${eval:${block_size}+${oc.select:input_block_size,0}+4} #${predictor.max_length}
+  force_flash_attn: false
+  final_layer_without_normalization: false
+
+tags:
+  model: rotary_transformer_mlm 

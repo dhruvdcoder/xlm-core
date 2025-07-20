@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Any, List
+from typing import Any, List, Literal, Optional
 import torch
 
 
@@ -337,3 +337,121 @@ def pad_truncate_list(
         return [pad_token] * (max_len - len(ids)) + ids[
             -max_len:
         ]  # when padding left, truncate left side
+
+
+def add_gumbel_noise(
+    logits: torch.Tensor, temperature: float = 1.0, noise_scale: float = 1.0
+) -> torch.Tensor:
+    """
+    Add gumbel noise to logits which will result in samples from the distribtution if argmaxed.
+    Args:
+        logits: (*batch, seq_len, vocab_size) can have any number of leading dimensions. Assumed to be log of exponentiated scores.
+            That is, we assume logits are $l_i$ in $p_i = exp(l_i) / \sum_i \exp(l_i)$.
+    Returns:
+        (*batch, seq_len)
+    """
+    gumbel_noise = -torch.log(
+        -torch.log(torch.rand_like(logits) + 1e-10) + 1e-10
+    )
+    perturbed_logits = (logits / temperature) + gumbel_noise * noise_scale
+    return perturbed_logits
+
+
+def add_exp_1_noise(
+    probs: torch.Tensor, temperature: float = 1.0
+) -> torch.Tensor:
+    """
+    Sample from unnormalized probability using the exponential race method.
+    Similar to using gumbel noise, trick but we require the probs to be positive (can be unnormalized).
+    You can generate samples without repeatations from the output by taking argmax or topk, etc.
+    Args:
+        probs: (*batch, seq_len, vocab_size) can have any number of leading dimensions.
+    Returns:
+        (*batch, seq_len)
+    """
+    exp_1_samples = 1e-10 - (torch.rand_like(probs) + 1e-10).log()
+    if temperature != 1.0:
+        probs = probs ** (1.0 / temperature)
+    perturbed = probs / exp_1_samples
+    return perturbed
+
+
+def select_random_indices(
+    inp_shape: torch.Size,
+    num_unmask: torch.Tensor,
+    select_from_mask: Optional[torch.Tensor] = None,
+    selection_score: Optional[torch.Tensor] = None,
+    temperature: float = 1.0,
+    selection_mode: Literal["greedy", "sample"] = "greedy",
+    score_mode: Literal["logits", "uprobs"] = "logits",
+) -> torch.Tensor:
+    """
+    Select random indices from the last dimension using the selection_score.
+    1. If selection score is None then it is assumed to be uniform.
+    2. If score_mode = logits and selection_mode=sample, then temperature can be used to control the temperature of the distribution.
+    3. If select_from_mask is provided, indices only from these positions are sampled.
+    Args:
+        inp_shape: torch.Size, typeically (batch, d)
+        num_unmask: (batch,) int tensor
+        select_from_mask: (batch, d) tensor, if provided, we only sample from the selected
+        selection_score: logit-like score for selection (can be negative). Should match inp_shape, so typically (batch, d)
+        score_mode:
+            "logits" => p_i = \exp(s_i)/\sum_j \exp(s_j)
+            "uprobs" => p_i = s_i / \sum_j s_j
+    """
+    if select_from_mask is not None:
+        mask = select_from_mask
+    else:
+        # mask = torch.ones_like(inp, dtype=torch.bool)
+        mask = torch.ones(
+            *inp_shape, dtype=torch.bool, device=num_unmask.device
+        )
+    # create a tensor of shape (bs, seq) with
+    # first num_unmask[i] elements of row i are 1 rest are 0
+    # print(f"\nnum_unmask={num_unmask}")
+    # temp = torch.nn.functional.one_hot(num_unmask, num_classes=inp.shape[-1])
+    temp = torch.nn.functional.one_hot(num_unmask, num_classes=inp_shape[-1])
+    # print(f"\ntemp=\n{temp}")
+    temp2 = (1 - temp.cumsum(dim=-1)).to(dtype=torch.bool)
+    # print(f"\ntemp2=\n{temp2.int()}")
+
+    # now we shuffle all indices but pinning the indices for non-mask to the right end
+    # rand = torch.rand(bs, seq)
+    # rand = torch.rand_like(inp, dtype=torch.float32)
+    if selection_score is None:  # uniform
+        rand = torch.rand(
+            *inp_shape, dtype=torch.float32, device=num_unmask.device
+        )
+    else:
+        if selection_mode == "greedy":
+            rand = selection_score.clone()
+        elif selection_mode == "sample":
+            if score_mode == "logits":
+                rand = add_gumbel_noise(
+                    selection_score, temperature=temperature
+                )
+            elif score_mode == "uprobs":
+                rand = add_exp_1_noise(selection_score)
+            else:
+                raise ValueError(f"score_mode={score_mode} not supported")
+
+        else:
+            raise ValueError(f"selection_mode={selection_mode} not supported")
+    rand[~mask] = float(
+        "-inf"
+    )  # to keep non-masked positions always on the right
+    rand_perm = torch.argsort(rand, dim=-1, descending=True)
+    # print(f"\nrand_perm=\n{rand_perm}")
+    # rand_perm and temp2 have the information to index into a
+    # unmask_out = torch.zeros_like(inp, dtype=torch.bool).scatter_(
+    #    -1, rand_perm, temp2
+    # )
+    unmask_out = torch.zeros(
+        *inp_shape, dtype=torch.bool, device=num_unmask.device
+    ).scatter_(-1, rand_perm, temp2)
+    # print(f"unmask=\n{unmask_out.int()}")
+    # check if all unmask_out are mask
+    assert mask[unmask_out].all()
+    # check that the number of unmask matches the target
+    assert (unmask_out.sum(-1) == num_unmask).all()
+    return unmask_out

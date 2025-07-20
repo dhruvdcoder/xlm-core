@@ -44,6 +44,10 @@ def register_resolvers():
     omegaconf.OmegaConf.register_new_resolver(
         "find_grad_accum", determine_accumulate_grad_batches
     )
+    omegaconf.OmegaConf.register_new_resolver(
+        "if_else",
+        lambda cond, true_val, false_val: true_val if cond else false_val,
+    )
 
 
 def dictconfig_filter_key(

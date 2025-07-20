@@ -1,5 +1,5 @@
 # v2
-from typing import Optional, Tuple
+from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -70,7 +70,7 @@ class RotaryTransformerMLMModel(torch.nn.Module):
             num_embeddings,
             layer_norm_eps,
             use_final_layer_norm=not final_layer_without_normalization,
-            zero_init=True,  # zero init important for mdlm, mlm?
+            zero_init=False,  # zero init important for mdlm, mlm?
         )
 
     def forward(
@@ -79,14 +79,10 @@ class RotaryTransformerMLMModel(torch.nn.Module):
         attention_mask: Optional[Bool[TT, " *batch seq_len"]] = None,
         positions: Optional[Integer[TT, " *batch seq_len"]] = None,
         token_type_ids: Optional[Integer[TT, " *batch seq_len"]] = None,
-    ) -> Tuple[
-        Float[TT, " *batch seq_len vocab_size"],
-        Float[TT, " *batch max_length"],
-    ]:
+    ) -> Float[TT, " *batch seq_len vocab_size"]:
         """
         Args:
             x_t: The input tokens of shape (*batch, seq_len)
-            t: The timesteps of shape (*batch)
             attention_mask: The attention mask of shape (*batch, seq_len), which is True for non-padding tokens.
             positions: The positions of the tokens of shape (*batch, seq_len)
         """
@@ -101,7 +97,7 @@ class RotaryTransformerMLMModel(torch.nn.Module):
         vocab_logits = self.output_layer(
             x,
         )  # shape (batch_size, seq_len, vocab_size)
-        return x, vocab_logits
+        return vocab_logits
 
     def get_named_params_for_weight_decay(self):
         # all parameters except biases and layer-norm parameters
