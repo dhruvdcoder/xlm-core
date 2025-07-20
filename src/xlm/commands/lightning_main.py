@@ -15,15 +15,19 @@ from pathlib import Path
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from xlm.utils import omegaconf_resolvers
+from xlm.external_models import setup_external_models
 import dotenv
 
 # endregion
 
 
 # Hydra configuration parameters
+# Use absolute path to configs directory within the package
 _HYDRA_PARAMS = {
     "version_base": "1.3",
-    "config_path": str(Path("../../../configs") / "lightning_train"),
+    "config_path": str(
+        Path(__file__).parent.parent / "configs" / "lightning_train"
+    ),
     "config_name": "config.yaml",
 }
 
@@ -49,6 +53,28 @@ OmegaConf.register_new_resolver(
     "global_components", lambda attr: "${global_components:" + str(attr) + "}"
 )
 # endregion
+
+# Setup external models before Hydra initialization
+# This adds external model directories to sys.path for imports
+external_model_dirs = setup_external_models()
+
+# Register our SearchPathPlugin manually with Hydra
+if external_model_dirs:
+    from hydra.core.plugins import Plugins
+    from hydra.plugins.search_path_plugin import SearchPathPlugin
+    from hydra.core.config_search_path import ConfigSearchPath
+
+    class ExternalModelsSearchPathPlugin(SearchPathPlugin):
+        def manipulate_search_path(
+            self, search_path: ConfigSearchPath
+        ) -> None:
+            for model_dir in external_model_dirs:
+                config_dir = model_dir / "configs"
+                if config_dir.exists():
+                    search_path.append("file", str(config_dir))
+
+    # Register the plugin
+    Plugins.instance().register(ExternalModelsSearchPathPlugin)
 
 
 @hydra.main(**_HYDRA_PARAMS)

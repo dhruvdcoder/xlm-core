@@ -1,0 +1,61 @@
+# @package _global_
+
+defaults:
+  - /metrics@reported_metrics.train.lm.accumulated_loss: accumulated_loss
+  - /metrics@reported_metrics.val.lm.accumulated_loss: accumulated_loss
+  - /metrics@reported_metrics.test.lm.accumulated_loss: accumulated_loss
+  - /metrics@reported_metrics.val.prediction.exact_match: seq2seq_exact_match
+  - /metrics@reported_metrics.test.prediction.exact_match: seq2seq_exact_match
+  - /metrics@reported_metrics.val.prediction.token_accuracy: seq2seq_token_accuracy
+  - /metrics@reported_metrics.test.prediction.token_accuracy: seq2seq_token_accuracy
+
+lightning_module:
+  _target_: xlm.harness.Harness
+
+loss:
+  _target_: zlm.loss.ZLMLoss
+
+predictor:
+  _target_: zlm.predictor.ZLMPredictor
+  tokenizer: ${lightning_module:tokenizer}
+  noise_schedule: ${lightning_module:noise_schedule}
+  max_steps: ${block_size} # depends on the dataset, set in
+  max_length: ${eval:${block_size}+${oc.select:input_block_size,0}} # depends on the dataset
+  sampling_method: sample_top_p
+  p: 0.5
+
+diagnostic_metrics: null
+
+reported_metrics:
+  train:
+    lm:
+      accumulated_loss:
+        prefix: train/lm
+        update_fn: zlm.metrics.mean_metric_update_fn
+  val:
+    lm:
+      accumulated_loss:
+        prefix: val/lm
+        update_fn: zlm.metrics.mean_metric_update_fn
+    prediction:
+      exact_match:
+        prefix: val/prediction
+        update_fn: zlm.metrics.seq2seq_exact_match_update_fn
+      token_accuracy:
+        prefix: val/prediction
+        update_fn: zlm.metrics.seq2seq_token_accuracy_update_fn
+  test:
+    lm:
+      accumulated_loss:
+        prefix: test/lm
+        update_fn: zlm.metrics.mean_metric_update_fn
+    prediction:
+      exact_match:
+        prefix: test/prediction
+        update_fn: zlm.metrics.seq2seq_exact_match_update_fn
+      token_accuracy:
+        prefix: test/prediction
+        update_fn: zlm.metrics.seq2seq_token_accuracy_update_fn
+
+tags:
+  model_type: zlm 
