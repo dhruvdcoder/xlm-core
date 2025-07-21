@@ -27,7 +27,7 @@ hydra:
 # region: main global config that controls the components
 seed: 1
 job_type: train
-job_name: job_type=${job_type}__model_type=${tags.model_type}__model=${tags.model}__scheduler=${tags.noise_schedule}__dataset=${tags.dataset}__tokenizer=${tags.tokenizer}__collation=${tags.collation_strategy}__debug=${tags.debug}
+job_name: job_type=${job_type}__model_type=${tags.model_type}__model=${tags.model}__scheduler=${tags.noise_schedule}__dataset=${tags.dataset}__debug=${tags.debug}
 global_flags: null
 checkpointing_dir: ${paths.output_dir}/checkpoints
 resume_from_checkpoint: true

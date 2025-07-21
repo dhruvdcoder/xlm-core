@@ -308,7 +308,6 @@ class IdlmPredictor(
             t if self.send_t_to_model else total_noise,
             attention_mask,
             positions=positions,
-            token_type_ids=None,  # Simplified - don't use token type ids
         )
 
         # Suppress specified tokens

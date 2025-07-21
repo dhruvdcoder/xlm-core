@@ -561,7 +561,7 @@ class DDITIDLMModel(torch.nn.Module, Model):
         num_special_tokens: int = 2,
         max_length: int = 1024,
         force_flash_attn: bool = False,
-        period_for_time_embedding: int = 10000,
+        period_for_time_embedding: int = 0.5,  # t input in [0,1] for noise input use 10000
         use_bias_in_length_output_layer: bool = False,
     ):
         super().__init__()

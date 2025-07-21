@@ -3,6 +3,7 @@ defaults:
   - override /datamodule: star_easy_idlm
   - override /model_type: idlm
   - override /model: idlm
+  - override /noise_schedule: idlm_loglinear
 
 per_device_batch_size: 64
 global_batch_size: 64

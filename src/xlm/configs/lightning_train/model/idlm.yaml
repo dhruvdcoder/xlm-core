@@ -18,7 +18,7 @@ model:
   num_special_tokens: 2
   max_length: ${predictor.max_length}
   force_flash_attn: false
-  period_for_time_embedding: 10000
+  period_for_time_embedding: 0.5
   use_bias_in_length_output_layer: false
 
 tags:

@@ -217,7 +217,6 @@ class IdlmLoss(LossFunction[IdlmBatch, IdlmLossDict]):
             t if self.send_t_to_model else total_noise,
             non_pad,  # Use non_pad since no dropped tokens in the new approach
             positions=positions,
-            token_type_ids=batch.get("token_type_ids"),
         )
 
         # Get number of drops from the batch (more efficient than computing from target_ids)
