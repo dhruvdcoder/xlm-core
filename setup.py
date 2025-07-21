@@ -1,4 +1,3 @@
-from typing import List
 from setuptools import setup, find_packages
 import os
 
@@ -28,10 +27,15 @@ setup(
         ],
     ),
     package_dir={"": "src"},
+    package_data={
+        "xlm": ["configs/**/*.yaml", "configs/**/*.yml"],
+    },
+    include_package_data=True,
     entry_points={
         "console_scripts": [
             "xlm=xlm.__main__:main",
-        ]
+            "xlm-scaffold=xlm.commands.scaffold_model:main",
+        ],
     },
     python_requires=">=3.11",
 )
