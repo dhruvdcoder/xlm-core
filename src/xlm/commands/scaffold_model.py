@@ -1730,6 +1730,67 @@ def main():
             print(f"Temporary directory: {temp_model_dir}")
             if args.dry_run:
                 print("DRY RUN - no files will be created")
+                print("\n📁 Files that would be created:")
+
+                # Python files in src/xlm/lm/
+                core_model_dir = Path("src/xlm/lm") / model_name
+                print(f"\n📂 Python files in {core_model_dir}:")
+                python_files = [
+                    "__init__.py",
+                    "types.py",
+                    "model.py",
+                    "loss.py",
+                    "predictor.py",
+                    "collators.py",
+                    "metrics.py",
+                ]
+                for py_file in python_files:
+                    print(f"  📄 {core_model_dir / py_file}")
+
+                # Config files in src/xlm/configs/lightning_train/
+                config_base = Path("src/xlm/configs/lightning_train")
+                print(f"\n📂 Config files in {config_base}:")
+
+                # Model configs
+                print(f"  📂 {config_base / 'model'}:")
+                print(f"    📄 {config_base / 'model' / f'{model_name}.yaml'}")
+
+                # Model type configs
+                print(f"  📂 {config_base / 'model_type'}:")
+                print(
+                    f"    📄 {config_base / 'model_type' / f'{model_name}.yaml'}"
+                )
+
+                # Collator configs
+                print(f"  📂 {config_base / 'collator'}:")
+                print(
+                    f"    📄 {config_base / 'collator' / f'default_{model_name}.yaml'}"
+                )
+                print(
+                    f"    📄 {config_base / 'collator' / f'seq2seq_{model_name}.yaml'}"
+                )
+                print(
+                    f"    📄 {config_base / 'collator' / f'seq2seq_pred_{model_name}.yaml'}"
+                )
+
+                # Datamodule configs
+                print(f"  📂 {config_base / 'datamodule'}:")
+                print(
+                    f"    📄 {config_base / 'datamodule' / f'star_{model_name}.yaml'}"
+                )
+                print(
+                    f"    📄 {config_base / 'datamodule' / f'star_easy_{model_name}.yaml'}"
+                )
+
+                # Experiment configs
+                print(f"  📂 {config_base / 'experiment'}:")
+                print(
+                    f"    📄 {config_base / 'experiment' / f'star_easy_{model_name}.yaml'}"
+                )
+
+                print(
+                    f"\n📝 Total: {len(python_files) + 7} files would be created"
+                )
                 return
 
             # Generate Python files
@@ -1810,6 +1871,73 @@ def main():
         print(f"Output directory: {model_dir}")
         if args.dry_run:
             print("DRY RUN - no files will be created")
+            print("\n📁 Files that would be created:")
+
+            # Python files in model_dir/model_name/
+            python_dir = model_dir / model_name
+            print(f"\n📂 Python files in {python_dir}:")
+            python_files = [
+                "__init__.py",
+                "types.py",
+                "model.py",
+                "loss.py",
+                "predictor.py",
+                "collators.py",
+                "metrics.py",
+            ]
+            for py_file in python_files:
+                print(f"  📄 {python_dir / py_file}")
+
+            # Config files in model_dir/configs/
+            config_base = model_dir / "configs"
+            print(f"\n📂 Config files in {config_base}:")
+
+            # Model configs
+            print(f"  📂 {config_base / 'model'}:")
+            print(f"    📄 {config_base / 'model' / f'{model_name}.yaml'}")
+
+            # Model type configs
+            print(f"  📂 {config_base / 'model_type'}:")
+            print(
+                f"    📄 {config_base / 'model_type' / f'{model_name}.yaml'}"
+            )
+
+            # Collator configs
+            print(f"  📂 {config_base / 'collator'}:")
+            print(
+                f"    📄 {config_base / 'collator' / f'default_{model_name}.yaml'}"
+            )
+            print(
+                f"    📄 {config_base / 'collator' / f'seq2seq_{model_name}.yaml'}"
+            )
+            print(
+                f"    📄 {config_base / 'collator' / f'seq2seq_pred_{model_name}.yaml'}"
+            )
+
+            # Datamodule configs
+            print(f"  📂 {config_base / 'datamodule'}:")
+            print(
+                f"    📄 {config_base / 'datamodule' / f'star_{model_name}.yaml'}"
+            )
+            print(
+                f"    📄 {config_base / 'datamodule' / f'star_easy_{model_name}.yaml'}"
+            )
+
+            # Experiment configs
+            print(f"  📂 {config_base / 'experiment'}:")
+            print(
+                f"    📄 {config_base / 'experiment' / f'star_easy_{model_name}.yaml'}"
+            )
+
+            # Package files
+            print(f"\n📂 Package files in {model_dir}:")
+            package_files = ["setup.py", "README.md"]
+            for pkg_file in package_files:
+                print(f"  📄 {model_dir / pkg_file}")
+
+            print(
+                f"\n📝 Total: {len(python_files) + 7 + len(package_files)} files would be created"
+            )
             return
 
         # Create directory structure
