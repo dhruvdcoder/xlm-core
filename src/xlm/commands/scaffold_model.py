@@ -43,7 +43,7 @@ def generate_types_file(model_dir: Path, context: Dict[str, Any]) -> None:
     content = f'''"""Type definitions for {context['model_class_name']} model.
 
 This file defines the data structures used throughout the {context['model_class_name']} implementation.
-Follow the existing patterns and add any additional fields your model requires.
+Based on ARLM types - modify as needed for your specific model.
 """
 
 from typing import Optional, Protocol, List, TypedDict
@@ -52,71 +52,86 @@ from torch import Tensor as TT
 
 
 class {context['model_class_name']}Batch(TypedDict):
-    """Input batch for the {context['model_class_name']} model.
-    
-    This defines the structure of data passed to your model during training/inference.
-    Modify the fields below to match your model's input requirements.
+    """Input to the {context['model_class_name']} model.
+
+    Attributes:
+        input_ids (Integer[TT, " batch seq_len"]): The input ids to the model.
+        attention_mask (Integer[TT, " batch seq_len"]): 1 for tokens that are not padding.
+        target_ids (Integer[TT, " batch seq_len"]): The target ids for language modeling (shifted by 1).
+            Positions with -100 are ignored during loss computation (prompt tokens or padding).
     """
-    input_ids: Integer[TT, " batch seq_len"]
-    attention_mask: Integer[TT, " batch seq_len"]
-    # TODO: Add any additional input fields your model needs
-    # For example:
-    # position_ids: Integer[TT, " batch seq_len"]
-    # token_type_ids: Integer[TT, " batch seq_len"]
-
-
-class {context['model_class_name']}Seq2SeqBatch(TypedDict):
-    """Input batch for seq2seq tasks with the {context['model_class_name']} model."""
     input_ids: Integer[TT, " batch seq_len"]
     attention_mask: Integer[TT, " batch seq_len"]
     target_ids: Integer[TT, " batch seq_len"]
-    prompt_ids: List[List[int]]
+
+
+class {context['model_class_name']}Seq2SeqBatch(TypedDict):
+    """Input to the {context['model_class_name']} for sequence-to-sequence training.
+
+    Attributes:
+        input_ids (Integer[TT, " batch seq_len"]): The input ids to the model (prompt + target).
+        attention_mask (Integer[TT, " batch seq_len"]): 1 for tokens that are not padding.
+        token_type_ids (Integer[TT, " batch seq_len"]): Token type ids (not used but kept for interface consistency).
+        target_ids (Integer[TT, " batch seq_len"]): The target ids for language modeling (shifted by 1).
+            Positions with -100 are ignored during loss computation (prompt tokens or padding).
+    """
+    input_ids: Integer[TT, " batch seq_len"]
+    attention_mask: Integer[TT, " batch seq_len"]
+    token_type_ids: Integer[TT, " batch seq_len"]
+    target_ids: Integer[TT, " batch seq_len"]
 
 
 class {context['model_class_name']}LossDict(TypedDict):
-    """Output of the loss function.
-    
-    Must contain at least a 'loss' key. Add any additional metrics you want to track.
+    """Output of the LossFunction Callable.
+
+    Attributes:
+        loss (Float[TT, ""]): The total loss value.
     """
     loss: Float[TT, ""]
-    batch_loss: Float[TT, " batch"]
-    # TODO: Add any additional metrics your model computes
-    # For example:
-    # accuracy: Float[TT, ""]
-    # perplexity: Float[TT, ""]
 
 
 class {context['model_class_name']}PredictionDict(TypedDict):
-    """Output of the predictor.
-    
-    This defines what your model returns during inference/generation.
+    """Output of the Predictor for {context['model_class_name']}.
+
+    Attributes:
+        text (List[str]): The batch of generated text without special tokens.
+        text_with_spl_tokens (List[str]): The batch of generated text with special tokens.
+        ids (Integer[TT, " batch seq_len"]): The batch of generated token_ids.
+        attention_mask (Bool[TT, " batch seq_len"]): Attention mask accompanying the generated ids.
+        positions (Integer[TT, " batch seq_len"]): The batch of positions of the generated tokens accompanying the ids.
+        time_taken (List[float]): Time taken for each prediction.
+        output_start_idx (int): The index of the first output token.
     """
     text: List[str]
+    text_with_spl_tokens: List[str]
     ids: Integer[TT, " batch seq_len"]
-    # TODO: Add any additional prediction outputs
-    # For example:
-    # scores: Float[TT, " batch seq_len vocab_size"]
-    # attention_weights: Float[TT, " batch num_heads seq_len seq_len"]
+    attention_mask: Bool[TT, " batch seq_len"]
+    positions: Integer[TT, " batch seq_len"]
+    time_taken: List[float]
+    output_start_idx: int
 
 
 class {context['model_class_name']}Model(Protocol):
     """Protocol defining the interface for {context['model_class_name']} models."""
     
-    def forward(
+    def __call__(
         self,
-        input_ids: Integer[TT, " batch seq_len"],
-        attention_mask: Optional[Integer[TT, " batch seq_len"]] = None,
+        x_t: Integer[TT, " batch seq_len"],
+        attention_mask: Optional[Bool[TT, " batch seq_len seq_len"]] = None,
+        positions: Optional[Integer[TT, " batch seq_len"]] = None,
         **kwargs
-    ) -> TT:
+    ) -> Float[TT, " batch seq_len vocab_size"]:
         """Forward pass of the model.
         
         Args:
-            input_ids: Input token IDs
-            attention_mask: Attention mask (1 for real tokens, 0 for padding)
+            x_t: The input tokens of shape (batch, seq_len)
+            attention_mask: The attention mask of shape (batch, seq_len, seq_len) for full attention matrix,
+                          or (batch, seq_len) for simple mask. True for non-padding tokens.
+            positions: The positions of the tokens of shape (batch, seq_len)
             **kwargs: Additional model-specific arguments
             
         Returns:
-            Model output (typically logits)
+            vocab_logits: The vocabulary logits of shape (batch, seq_len, vocab_size)
         """
         ...
 '''
@@ -128,108 +143,138 @@ def generate_model_file(model_dir: Path, context: Dict[str, Any]) -> None:
     """Generate the model.py file with the neural network implementation."""
     content = f'''"""Neural network implementation for {context['model_class_name']} model.
 
-This file contains the main model architecture. Implement your model following
-the interface defined in types.py.
+This file contains the main model architecture. Based on ARLM implementation -
+modify as needed for your specific model.
 """
 
+from typing import Optional
 import torch
 import torch.nn as nn
-from typing import Optional
-from jaxtyping import Integer
+from jaxtyping import Bool, Float, Integer
 from torch import Tensor as TT
+from xlm.modules.rotary_transformer import (
+    RotaryTransformerFinalLayer,
+    RotaryTransformerLayer,
+    RotaryTransformerLayerList,
+    RotaryEmbedding,
+)
 
 
-class {context['model_class_name']}Model(nn.Module):
-    """Main neural network architecture for {context['model_class_name']}.
+class RotaryTransformer{context['model_class_name']}Model(torch.nn.Module):
+    """Rotary embedding based transformer decoder for auto-regressive language modeling.
     
-    TODO: Implement your model architecture here. This should include:
-    - Input embeddings
-    - Core architecture (transformer, CNN, RNN, etc.)
-    - Output layers
-    - Any custom components your model needs
+    This is a working implementation based on ARLM. Modify as needed for your model.
     """
 
     def __init__(
         self,
-        num_embeddings: int,
-        d_model: int = 768,
-        num_layers: int = 12,
-        nhead: int = 12,
+        num_embeddings: int,  # vocab plus padding and other special tokens
+        d_model: int,
+        num_layers: int,
+        nhead: int,
         padding_idx: int = 0,
         dim_feedforward: Optional[int] = None,
         dropout: float = 0.1,
+        activation: str = "relu",
+        layer_norm_eps: float = 1e-5,
+        rotary_emb_dim: int = 64,
         max_length: int = 1024,
-        **kwargs
+        force_flash_attn: bool = False,
+        final_layer_without_normalization: bool = False,
     ):
-        """Initialize the {context['model_class_name']} model.
+        """Initialize the {context['model_class_name']} transformer model.
 
         Args:
-            num_embeddings: Size of the vocabulary
-            d_model: Dimension of the model
-            num_layers: Number of layers in your architecture
-            nhead: Number of attention heads (if using transformer)
-            padding_idx: Index of the padding token
-            dim_feedforward: Dimension of feedforward network
-            dropout: Dropout rate
-            max_length: Maximum sequence length
-            **kwargs: Additional model-specific parameters
+            num_embeddings: Size of the vocabulary.
+            d_model: Dimension of the model.
+            num_layers: Number of transformer layers.
+            nhead: Number of attention heads.
+            padding_idx: Index of the padding token.
+            dim_feedforward: Dimension of the feedforward network.
+            dropout: Dropout rate.
+            activation: Activation function.
+            layer_norm_eps: Epsilon for layer normalization.
+            rotary_emb_dim: Dimension of rotary embeddings.
+            max_length: Maximum sequence length.
+            force_flash_attn: Whether to force flash attention.
+            final_layer_without_normalization: Whether to use final layer without normalization.
         """
         super().__init__()
-        
-        # TODO: Initialize your model components here
-        # Example components (replace with your architecture):
-        
-        # Input embeddings
-        self.embedding = nn.Embedding(num_embeddings, d_model, padding_idx=padding_idx)
-        
-        # Core architecture - replace with your model
-        # self.transformer = nn.TransformerEncoder(...)
-        # self.cnn = nn.Conv1d(...)
-        # self.rnn = nn.LSTM(...)
-        
-        # Output layer
-        self.output_projection = nn.Linear(d_model, num_embeddings)
-        
-        # Store config
-        self.d_model = d_model
+        self.padding_idx = padding_idx
+        self.embed_tokens = nn.Embedding(
+            num_embeddings, d_model, padding_idx=padding_idx
+        )
+        self.dim_feedforward = dim_feedforward or 4 * d_model
+        encoder_layer = RotaryTransformerLayer(
+            d_model,
+            nhead,
+            self.dim_feedforward,
+            dropout,
+            activation,
+            layer_norm_eps,
+            force_flash_attn=force_flash_attn,
+        )
         self.max_length = max_length
-        
-        # TODO: Initialize any other components your model needs
+        self.encoder = RotaryTransformerLayerList.from_layer(
+            encoder_layer,
+            num_layers,
+            RotaryEmbedding(
+                rotary_emb_dim, head_first=True, cache_size=max_length
+            ),
+        )
+        self.output_layer = RotaryTransformerFinalLayer(
+            d_model,
+            num_embeddings,
+            layer_norm_eps,
+            use_final_layer_norm=not final_layer_without_normalization,
+            zero_init=False,
+        )
 
     def forward(
         self,
-        input_ids: Integer[TT, " batch seq_len"],
-        attention_mask: Optional[Integer[TT, " batch seq_len"]] = None,
-        **kwargs
-    ) -> TT:
-        """Forward pass of the model.
+        x_t: Integer[TT, " *batch seq_len"],
+        attention_mask: Optional[Bool[TT, " *batch seq_len seq_len"]] = None,
+        positions: Optional[Integer[TT, " *batch seq_len"]] = None,
+        token_type_ids: Optional[Integer[TT, " *batch seq_len"]] = None,
+    ) -> Float[TT, " *batch seq_len vocab_size"]:
+        """
+        Forward pass of the {context['model_class_name']} model.
 
         Args:
-            input_ids: Input token IDs [batch, seq_len]
-            attention_mask: Attention mask [batch, seq_len]
-            **kwargs: Additional arguments
+            x_t: The input tokens of shape (*batch, seq_len)
+            attention_mask: The attention mask of shape (*batch, seq_len, seq_len) for full attention matrix,
+                          or (*batch, seq_len) for simple mask. True for non-padding tokens.
+            positions: The positions of the tokens of shape (*batch, seq_len)
+            token_type_ids: The token type ids of shape (*batch, seq_len)
 
         Returns:
-            Model outputs, typically logits [batch, seq_len, vocab_size]
+            vocab_logits: The vocabulary logits of shape (*batch, seq_len, vocab_size)
         """
-        # TODO: Implement your forward pass here
-        
-        # Example implementation (replace with your logic):
-        # 1. Embed input tokens
-        embeddings = self.embedding(input_ids)  # [batch, seq_len, d_model]
-        
-        # 2. Apply your core architecture
-        # hidden_states = self.transformer(embeddings, attention_mask=attention_mask)
-        # hidden_states = self.cnn(embeddings.transpose(1, 2)).transpose(1, 2)
-        # hidden_states, _ = self.rnn(embeddings)
-        
-        # For now, just use embeddings as placeholder
-        hidden_states = embeddings
-        
-        # 3. Project to vocabulary
-        logits = self.output_projection(hidden_states)  # [batch, seq_len, vocab_size]
-        
-        return logits
+        if attention_mask is not None:
+            attention_mask = attention_mask.to(torch.bool)
+
+        x = self.embed_tokens(x_t)  # shape (batch_size, seq_len, d_model)
+
+        for block in self.encoder:
+            x = block(x, attention_mask, positions=positions)
+
+        vocab_logits = self.output_layer(
+            x,
+        )  # shape (batch_size, seq_len, vocab_size)
+        return vocab_logits
+
+    def get_named_params_for_weight_decay(self):
+        """Get parameters for weight decay (all parameters except biases and layer-norm parameters)."""
+        for name, param in self.named_parameters():
+            if "bias" in name or "norm" in name:
+                continue
+            yield (name, param)
+
+    def get_named_params_for_no_weight_decay(self):
+        """Get parameters for no weight decay (biases and layer-norm parameters)."""
+        for name, param in self.named_parameters():
+            if "bias" in name or "norm" in name:
+                yield (name, param)
 '''
 
     (model_dir / "model.py").write_text(content)
@@ -274,57 +319,70 @@ class {context['model_class_name']}Loss(LossFunction[{context['model_class_name'
         self.model = model
         self.tokenizer = tokenizer
 
-    def loss_fn(self, batch: {context['model_class_name']}Batch, **kwargs) -> {context['model_class_name']}LossDict:
-        """Compute the training loss.
+    def loss_fn(
+        self,
+        batch: {context['model_class_name']}Batch,
+        batch_idx: Optional[int] = None,
+        dataloader_idx: Optional[int] = None,
+        dataloader_name: Optional[str] = None,
+    ) -> {context['model_class_name']}LossDict:
+        """Compute the causal language modeling loss.
 
         Args:
-            batch: Input batch containing input_ids, attention_mask, etc.
-            **kwargs: Additional arguments
+            batch: The input batch.
+            batch_idx: The batch index.
+            dataloader_idx: The dataloader index.
+            dataloader_name: The dataloader name.
 
         Returns:
-            Dictionary containing loss and any additional metrics
+            Dictionary containing the loss.
         """
-        # TODO: Implement your loss computation here
-        
-        # Example implementation for language modeling (replace with your logic):
-        
-        # 1. Forward pass through the model
-        logits = self.model(
-            input_ids=batch["input_ids"],
-            attention_mask=batch["attention_mask"]
-        )  # [batch, seq_len, vocab_size]
-        
-        # 2. Prepare targets (for language modeling, typically shifted input_ids)
-        # You might need to modify this based on your task
-        targets = batch["input_ids"][:, 1:].contiguous()  # Shift right for next token prediction
-        logits = logits[:, :-1].contiguous()  # Align with targets
-        
-        # 3. Compute loss
-        loss = F.cross_entropy(
-            logits.view(-1, logits.size(-1)),  # [batch*seq_len, vocab_size]
-            targets.view(-1),  # [batch*seq_len]
-            ignore_index=self.tokenizer.pad_token_id,  # Ignore padding tokens
-            reduction='mean'
+        input_ids = batch["input_ids"]
+        attention_mask = batch["attention_mask"]
+        target_ids = batch["target_ids"]
+
+        assert self.model is not None
+
+        # Create position IDs considering padding on both ends
+        # attention_mask has 1 for real tokens, 0 for padding
+        positions = attention_mask.cumsum(dim=1) - 1
+        positions *= attention_mask  # Zero out positions for padding tokens on the right
+
+        # Create causal attention mask with padding consideration
+        _, seq_len = attention_mask.shape
+        causal_mask = torch.tril(
+            torch.ones(
+                seq_len,
+                seq_len,
+                dtype=torch.bool,
+                device=attention_mask.device,
+            )
         )
-        
-        # 4. Compute per-sample losses (optional)
-        with torch.no_grad():
-            batch_loss = F.cross_entropy(
-                logits.view(-1, logits.size(-1)),
-                targets.view(-1),
-                ignore_index=self.tokenizer.pad_token_id,
-                reduction='none'
-            ).view(logits.size(0), -1).mean(dim=1)  # [batch]
-        
-        # TODO: Add any additional metrics you want to track
-        # For example:
-        # accuracy = compute_accuracy(logits, targets)
-        # perplexity = torch.exp(loss)
-        
+
+        # Expand attention_mask to (batch, seq_len, seq_len) and combine with causal mask
+        expanded_attention_mask = attention_mask.unsqueeze(
+            1
+        )  # (batch, 1, seq_len)
+        causal_attention_mask = (
+            expanded_attention_mask & causal_mask
+        )  # (batch, seq_len, seq_len)
+
+        # Get logits from the model
+        logits = self.model(input_ids, causal_attention_mask, positions)
+
+        # For causal LM, we predict the next token
+        # Since target_ids are already shifted we don't need to shift again
+
+        # Transpose logits for cross_entropy (expects [N, C, ...] format)
+        logits_T = logits.transpose(1, 2)
+
+        # Compute cross-entropy loss (ignores -100 positions)
+        ce_loss = torch.nn.functional.cross_entropy(
+            logits_T, target_ids, reduction="mean", ignore_index=-100
+        )
+
         return {{
-            "loss": loss,
-            "batch_loss": batch_loss,
-            # TODO: Add your additional metrics here
+            "loss": ce_loss,
         }}
 
     def configure(self, pl_module: Harness) -> None:
@@ -351,12 +409,14 @@ def generate_predictor_file(model_dir: Path, context: Dict[str, Any]) -> None:
     """Generate the predictor.py file with inference logic."""
     content = f'''"""Predictor implementation for {context['model_class_name']} model.
 
-This file implements the inference/generation logic. Modify the predict method
-to implement your specific generation strategy.
+This file implements the inference/generation logic.
+Based on ARLM implementation - modify as needed.
 """
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Literal, Tuple
 import torch
+from jaxtyping import Integer, Bool
+from torch import Tensor as TT
 from xlm.harness import Predictor
 from xlm.datamodule import Tokenizer
 from xlm.noise import NoiseSchedule
@@ -409,72 +469,113 @@ class {context['model_class_name']}Predictor(Predictor[{context['model_class_nam
         self.top_k = top_k
         self.temperature = temperature
 
-    def predict(self, batch: {context['model_class_name']}Batch, **kwargs) -> {context['model_class_name']}PredictionDict:
+    @torch._dynamo.disable()
+    def predict(
+        self,
+        batch: Dict[str, Any],  # type: ignore
+        batch_idx: Optional[int] = None,
+        dataloader_idx: Optional[int] = None,
+        dataloader_name: Optional[str] = None,
+        max_len: int = 0,
+    ) -> {context['model_class_name']}PredictionDict:
         """Generate predictions from the model.
 
         Args:
             batch: Input batch
-            **kwargs: Additional generation arguments
+            batch_idx: Batch index
+            dataloader_idx: Dataloader index  
+            dataloader_name: Dataloader name
+            max_len: Maximum length override
 
         Returns:
             Dictionary containing generated text and token IDs
         """
-        # TODO: Implement your generation logic here
+        # Record start time
+        import time
+        start_time = time.time()
         
-        # Example implementation for autoregressive generation (replace with your logic):
-        
+        # Get batch information
         batch_size = batch["input_ids"].size(0)
+        input_length = batch["input_ids"].size(1)
         device = batch["input_ids"].device
         
-        # 1. Initialize generation
-        generated_ids = batch["input_ids"].clone()  # Start with input
+        # Determine generation length
+        generation_steps = max_len if max_len > 0 else self.max_steps
+        max_total_length = min(input_length + generation_steps, self.max_length)
         
-        # 2. Generate tokens step by step
-        for step in range(self.max_steps):
-            # Check if we've reached max length
-            if generated_ids.size(1) >= self.max_length:
+        # Initialize generation state
+        current_ids = batch["input_ids"].clone()
+        current_attention_mask = batch["attention_mask"].clone()
+        
+        # Track positions
+        positions = current_attention_mask.cumsum(dim=1) - 1
+        positions *= current_attention_mask
+        
+        # Generate tokens autoregressively
+        for step in range(generation_steps):
+            if current_ids.size(1) >= max_total_length:
                 break
+                
+            # Create causal attention mask
+            seq_len = current_ids.size(1)
+            causal_mask = torch.tril(
+                torch.ones(seq_len, seq_len, dtype=torch.bool, device=device)
+            )
+            expanded_attention_mask = current_attention_mask.unsqueeze(1)
+            causal_attention_mask = expanded_attention_mask & causal_mask
             
             # Forward pass
             with torch.no_grad():
-                logits = self.model(
-                    input_ids=generated_ids,
-                    attention_mask=torch.ones_like(generated_ids)
-                )  # [batch, seq_len, vocab_size]
+                logits = self.model(current_ids, causal_attention_mask, positions)
+                
+            # Get next token logits  
+            next_token_logits = logits[:, -1, :]
             
-            # Get next token logits
-            next_token_logits = logits[:, -1, :] / self.temperature  # [batch, vocab_size]
-            
-            # Sample next token
-            if self.sampling_method == "greedy":
+            # Sample next tokens
+            if self.sampling_method == "sample_top_k":
+                next_token_ids = self._sample_top_k(next_token_logits)
+            elif self.sampling_method == "sample_top_p": 
+                next_token_ids = self._sample_top_p(next_token_logits)
+            else:  # Default to greedy
                 next_token_ids = torch.argmax(next_token_logits, dim=-1, keepdim=True)
-            elif self.sampling_method == "sample_top_k":
-                next_token_ids = self._sample_top_k(next_token_logits, self.top_k)
-            elif self.sampling_method == "sample_top_p":
-                next_token_ids = self._sample_top_p(next_token_logits, self.p)
-            else:
-                # Default to multinomial sampling
-                probs = torch.softmax(next_token_logits, dim=-1)
-                next_token_ids = torch.multinomial(probs, num_samples=1)
             
-            # Append to generated sequence
-            generated_ids = torch.cat([generated_ids, next_token_ids], dim=1)
+            # Append new tokens
+            current_ids = torch.cat([current_ids, next_token_ids], dim=1)
             
-            # TODO: Add stopping criteria (e.g., EOS token detection)
-            # if all sequences have generated EOS:
-            #     break
-        
-        # 3. Decode to text
+            # Update attention mask
+            new_attention = torch.ones(
+                batch_size, 1, dtype=current_attention_mask.dtype, device=device
+            )
+            current_attention_mask = torch.cat([current_attention_mask, new_attention], dim=1)
+            
+            # Update positions
+            new_positions = positions.max(dim=1, keepdim=True)[0] + 1
+            positions = torch.cat([positions, new_positions], dim=1)
+            
+            # TODO: Add stopping criteria (EOS detection)
+            
+        # Decode to text
         generated_text = []
+        generated_text_with_spl = []
         for i in range(batch_size):
-            tokens = generated_ids[i].tolist()
+            tokens = current_ids[i].tolist()
             text = self.tokenizer.decode(tokens, skip_special_tokens=True)
+            text_with_spl = self.tokenizer.decode(tokens, skip_special_tokens=False)
             generated_text.append(text)
+            generated_text_with_spl.append(text_with_spl)
+        
+        # Record end time
+        end_time = time.time()
+        time_taken = [end_time - start_time] * batch_size
         
         return {{
             "text": generated_text,
-            "ids": generated_ids,
-            # TODO: Add any additional prediction outputs
+            "text_with_spl_tokens": generated_text_with_spl,
+            "ids": current_ids,
+            "attention_mask": current_attention_mask,
+            "positions": positions,
+            "time_taken": time_taken,
+            "output_start_idx": input_length,
         }}
 
     def _sample_top_k(self, logits: torch.Tensor, k: int) -> torch.Tensor:
@@ -524,214 +625,375 @@ def generate_collators_file(model_dir: Path, context: Dict[str, Any]) -> None:
     """Generate the collators.py file with data processing logic."""
     content = f'''"""Data collation logic for {context['model_class_name']} model.
 
-This file implements the data preprocessing and batching logic. Implement
-the collators for different training/inference scenarios.
+This file implements the data preprocessing and batching logic.
+Based on ARLM implementation - modify as needed.
 """
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Literal
 import torch
-from xlm.datamodule import Collator, Tokenizer
+from xlm.datamodule import Collator, Tokenizer, Seq2SeqCollatorInput
 from xlm.noise import NoiseSchedule
+from xlm.utils.nn import pad_truncate_list
 from .types import {context['model_class_name']}Batch, {context['model_class_name']}Seq2SeqBatch
 
 
 class Default{context['model_class_name']}Collator(Collator):
     """Default collator for {context['model_class_name']} model.
     
-    Used for standard language modeling tasks.
-    TODO: Implement your data preprocessing logic.
+    Used for pre-training. Based on ARLM implementation.
     """
 
     def __init__(
         self,
         tokenizer: Tokenizer,
-        noise_schedule: NoiseSchedule,
         block_size: int,
-        **kwargs
-    ):
-        """Initialize the collator.
-
-        Args:
-            tokenizer: Tokenizer for text processing
-            noise_schedule: Noise schedule (if applicable)
-            block_size: Maximum sequence length
-            **kwargs: Additional collator parameters
-        """
-        self.tokenizer = tokenizer
-        self.noise_schedule = noise_schedule
-        self.block_size = block_size
-
-    def __call__(self, examples: List[Dict[str, Any]]) -> {context['model_class_name']}Batch:
-        """Collate a batch of examples.
-
-        Args:
-            examples: List of examples from the dataset
-
-        Returns:
-            Batched and processed data
-        """
-        # TODO: Implement your collation logic here
-        
-        # Example implementation (replace with your logic):
-        
-        # 1. Extract input_ids from examples
-        input_ids_list = [example["input_ids"] for example in examples]
-        
-        # 2. Pad sequences to the same length
-        max_length = min(max(len(ids) for ids in input_ids_list), self.block_size)
-        
-        batch_input_ids = []
-        batch_attention_mask = []
-        
-        for input_ids in input_ids_list:
-            # Truncate if too long
-            if len(input_ids) > max_length:
-                input_ids = input_ids[:max_length]
-            
-            # Pad if too short
-            padding_length = max_length - len(input_ids)
-            padded_ids = input_ids + [self.tokenizer.pad_token_id] * padding_length
-            attention_mask = [1] * len(input_ids) + [0] * padding_length
-            
-            batch_input_ids.append(padded_ids)
-            batch_attention_mask.append(attention_mask)
-        
-        # 3. Convert to tensors
-        batch = {{
-            "input_ids": torch.tensor(batch_input_ids, dtype=torch.long),
-            "attention_mask": torch.tensor(batch_attention_mask, dtype=torch.long),
-            # TODO: Add any additional fields your model needs
-        }}
-        
-        return batch
-
-
-class {context['model_class_name']}Seq2SeqCollator(Collator):
-    """Seq2seq collator for {context['model_class_name']} model.
-    
-    Used for sequence-to-sequence tasks with separate input and target sequences.
-    TODO: Implement your seq2seq preprocessing logic.
-    """
-
-    def __init__(
-        self,
-        tokenizer: Tokenizer,
         noise_schedule: NoiseSchedule,
-        input_block_size: int,
-        block_size: int,
-        add_bos: str = "output",
-        add_eos: bool = True,
-        **kwargs
+        truncate: Literal["max", "block", None] = "block",
+        add_eos: bool = False,
     ):
-        """Initialize the seq2seq collator.
+        """Initialize the {context['model_class_name']} collator.
 
         Args:
-            tokenizer: Tokenizer for text processing
-            noise_schedule: Noise schedule (if applicable)
-            input_block_size: Maximum input sequence length
-            block_size: Maximum output sequence length
-            add_bos: Where to add BOS token ("input", "output", or "both")
-            add_eos: Whether to add EOS token to output
-            **kwargs: Additional parameters
+            tokenizer: The tokenizer to use.
+            block_size: Maximum sequence length.
+            noise_schedule: Noise schedule (not used but kept for interface consistency).
+            truncate: Truncation strategy.
+            add_eos: Whether to add EOS token at the end of the sequence.
         """
-        self.tokenizer = tokenizer
-        self.noise_schedule = noise_schedule
-        self.input_block_size = input_block_size
         self.block_size = block_size
-        self.add_bos = add_bos
+        self.noise_schedule = noise_schedule
+        self.tokenizer = tokenizer
+        self._vocab_size = len(self.tokenizer)
+        self.truncate = truncate
         self.add_eos = add_eos
 
-    def __call__(self, examples: List[Dict[str, Any]]) -> {context['model_class_name']}Seq2SeqBatch:
-        """Collate a batch of seq2seq examples.
+    @property
+    def vocab_size(self) -> int:
+        if self._vocab_size is None:
+            if self.tokenizer is None:
+                raise RuntimeError("Tokenizer not set")
+            self._vocab_size = len(self.tokenizer)
+        return self._vocab_size
+
+    def get_max_len(self, batch: List[Dict[str, Any]]) -> int:
+        return self.block_size
+
+    def __call__(
+        self,
+        examples: List[Dict[str, Any]],
+    ) -> {context['model_class_name']}Batch:
+        """Collate examples into a batch for {context['model_class_name']} training.
 
         Args:
-            examples: List of examples with 'prompt_ids' and 'input_ids'
+            examples: List of examples with input_ids.
 
         Returns:
-            Batched seq2seq data
+            {context['model_class_name']}Batch with input_ids, attention_mask, and target_ids.
         """
-        # TODO: Implement your seq2seq collation logic here
-        
-        # Example implementation (replace with your logic):
-        
-        # 1. Process inputs and targets
-        batch_input_ids = []
-        batch_attention_mask = []
-        batch_target_ids = []
-        
+        input_ids: List[List[int]] = []
+        attention_mask: List[List[int]] = []
+        target_ids: List[List[int]] = []
+
+        # Extract input_ids from examples
+        seq_lens = [len(e["input_ids"]) for e in examples]
+
+        # Determine max length based on truncation strategy
+        # Account for BOS and EOS tokens that will be added
+        tokens_to_add = 1  # BOS token
+        if self.add_eos:
+            tokens_to_add += 1  # EOS token
+
+        if self.truncate == "max":
+            max_len = min(max(seq_lens) + tokens_to_add, self.block_size)
+        elif self.truncate == "block":
+            max_len = self.block_size
+        elif self.truncate is None:
+            max_len = max(seq_lens) + tokens_to_add
+        else:
+            raise ValueError(f"Invalid truncate value: {{self.truncate}}")
+
         for example in examples:
-            prompt_ids = example["prompt_ids"]
-            target_ids = example["input_ids"]
-            
-            # TODO: Add BOS/EOS tokens as configured
-            # TODO: Truncate/pad sequences appropriately
-            # TODO: Combine prompt and target for input_ids
-            # TODO: Create appropriate target_ids for loss computation
-            
-            # Placeholder implementation
-            combined_ids = prompt_ids + target_ids
-            if len(combined_ids) > self.input_block_size + self.block_size:
-                combined_ids = combined_ids[:self.input_block_size + self.block_size]
-            
-            attention_mask = [1] * len(combined_ids)
-            targets = combined_ids.copy()  # Simplified - you'll want to mask prompt tokens
-            
-            batch_input_ids.append(combined_ids)
-            batch_attention_mask.append(attention_mask)
-            batch_target_ids.append(targets)
-        
-        # 2. Pad all sequences to same length
-        max_length = max(len(ids) for ids in batch_input_ids)
-        
-        for i in range(len(batch_input_ids)):
-            padding_length = max_length - len(batch_input_ids[i])
-            batch_input_ids[i].extend([self.tokenizer.pad_token_id] * padding_length)
-            batch_attention_mask[i].extend([0] * padding_length)
-            batch_target_ids[i].extend([-100] * padding_length)  # -100 is ignored in loss
-        
+            # Get the input sequence
+            seq = example["input_ids"]
+
+            # Truncate if necessary (account for BOS and EOS tokens)
+            if len(seq) > max_len - tokens_to_add:
+                seq = seq[: max_len - tokens_to_add]
+
+            # Add BOS token at the beginning
+            seq_with_bos = [self.tokenizer.bos_token_id] + seq
+
+            # Add EOS token at the end if requested
+            if self.add_eos:
+                seq_with_bos = seq_with_bos + [self.tokenizer.eos_token_id]
+
+            # Pad to max_len
+            padded_seq = pad_truncate_list(
+                seq_with_bos,
+                max_len,
+                self.tokenizer.pad_token_id,
+                pad_left=False,
+            )
+            input_ids.append(padded_seq)
+
+            # Create attention mask (1 for real tokens including BOS/EOS, 0 for padding)
+            mask = [1] * len(seq_with_bos) + [0] * (
+                max_len - len(seq_with_bos)
+            )
+            attention_mask.append(mask)
+
+            # Create target_ids (shifted by 1 for next token prediction)
+            # For {context['model_class_name']}, target_ids are the same as input_ids but shifted left by 1
+            # Use -100 for padding positions to ignore them during loss computation
+            target_seq = seq_with_bos[1:] + [-100]  # Shift left by 1
+            # Set padding positions to -100
+            for j in range(len(target_seq)):
+                if (
+                    j < len(mask) - 1 and mask[j + 1] == 0
+                ):  # Check if next position is padding
+                    target_seq[j] = -100
+
+            target_ids.append(target_seq)
+
         return {{
-            "input_ids": torch.tensor(batch_input_ids, dtype=torch.long),
-            "attention_mask": torch.tensor(batch_attention_mask, dtype=torch.long),
-            "target_ids": torch.tensor(batch_target_ids, dtype=torch.long),
-            "prompt_ids": [example["prompt_ids"] for example in examples],
+            "input_ids": torch.tensor(input_ids, dtype=torch.long),
+            "attention_mask": torch.tensor(attention_mask, dtype=torch.bool),
+            "target_ids": torch.tensor(target_ids, dtype=torch.long),
         }}
+
+
+# Import necessary ARLM components
+from xlm.lm.arlm.datamodule_arlm import (
+    prepare_prefix_ids_arlm,
+    prepare_suffix_ids_arlm,
+)
+
+
+class {context['model_class_name']}Seq2SeqCollator:
+    """Seq2seq collator for {context['model_class_name']} model.
+    
+    Based on ARLM implementation - modify as needed.
+    """
+
+    def __init__(
+        self,
+        tokenizer: Tokenizer,
+        noise_schedule: NoiseSchedule,
+        block_size: Optional[int] = None,
+        input_block_size: Optional[int] = None,
+        add_bos: Optional[str] = None,
+        add_eos: bool = False,
+        truncate: Literal["max", "block", None] = "block",
+    ):
+        """Initialize the {context['model_class_name']} sequence-to-sequence collator.
+
+        Args:
+            tokenizer: The tokenizer to use.
+            noise_schedule: Noise schedule (not used but kept for interface consistency).
+            block_size: Maximum sequence length for the target.
+            input_block_size: Maximum sequence length for the input.
+            add_bos: Where to add BOS token ("input" for prefix, "output" for after prefix, None for no BOS).
+            add_eos: Whether to add EOS token at the end of the suffix.
+            truncate: Truncation strategy.
+        """
+        self.tokenizer = tokenizer
+        self.block_size = block_size
+        self.noise_schedule = noise_schedule
+        self.input_block_size = input_block_size
+        self.add_bos = add_bos
+        self.add_eos = add_eos
+        self.truncate = truncate
+        self._vocab_size = (
+            len(self.tokenizer) if self.tokenizer is not None else None
+        )
+
+    @property
+    def vocab_size(self) -> int:
+        if self._vocab_size is None:
+            if self.tokenizer is None:
+                raise RuntimeError("Tokenizer not set")
+            self._vocab_size = len(self.tokenizer)
+        return self._vocab_size
+
+    def __call__(
+        self,
+        examples: List[Seq2SeqCollatorInput],
+    ) -> {context['model_class_name']}Seq2SeqBatch:
+        """Collate examples into a batch for {context['model_class_name']} sequence-to-sequence training.
+
+        Args:
+            examples: List of examples with prompt_ids and input_ids.
+
+        Returns:
+            {context['model_class_name']}Seq2SeqBatch with input_ids, attention_mask, target_ids.
+        """
+        # Prepare prefix (prompt)
+        prefix = prepare_prefix_ids_arlm(
+            [e["prompt_ids"] for e in examples],
+            self.tokenizer.pad_token_id,
+            bos_token_id=self.tokenizer.bos_token_id,
+            eos_token_id=self.tokenizer.eos_token_id,
+            max_seq_len=self.input_block_size,
+            truncate=self.truncate,
+            add_bos=self.add_bos,
+            add_eos=False,  # No EOS in prefix for seq2seq
+        )
+
+        # Prepare suffix (target)
+        suffix = prepare_suffix_ids_arlm(
+            [e["input_ids"] for e in examples],
+            self.tokenizer.pad_token_id,
+            bos_token_id=self.tokenizer.bos_token_id,
+            eos_token_id=self.tokenizer.eos_token_id,
+            max_seq_len=self.block_size,
+            truncate=self.truncate,
+            add_bos=None,  # BOS through prefix
+            add_eos=self.add_eos,
+        )
+
+        # Concatenate prefix and suffix as lists
+        input_ids = [
+            p + s for p, s in zip(prefix["input_ids"], suffix["input_ids"])
+        ]
+        attention_mask = [
+            p + s
+            for p, s in zip(prefix["attention_mask"], suffix["attention_mask"])
+        ]
+
+        # Create target_ids (shifted by 1 for next token prediction)
+        target_ids = []
+        for i, (input_seq, mask) in enumerate(zip(input_ids, attention_mask)):
+            target_seq = input_seq[1:] + [-100]  # Shift left by 1
+            # Set padding positions to -100
+            for j in range(len(target_seq)):
+                if (
+                    j < len(mask) - 1 and mask[j + 1] == 0
+                ):  # Check if next position is padding
+                    target_seq[j] = -100
+            target_ids.append(target_seq)
+
+        return {{
+            "input_ids": torch.tensor(input_ids, dtype=torch.long),
+            "attention_mask": torch.tensor(attention_mask, dtype=torch.bool),
+            "token_type_ids": torch.zeros(
+                len(input_ids),
+                max(len(seq) for seq in input_ids),
+                dtype=torch.long,
+            ),
+            "target_ids": torch.tensor(target_ids, dtype=torch.long),
+        }}
+
+
+class {context['model_class_name']}Seq2SeqPredCollator({context['model_class_name']}Seq2SeqCollator):
+    """Drops all the suffix/target tokens and sends them in the target_ids of shape (batch_size, target_seq_len)"""
+
+    def __call__(
+        self,
+        examples: List[Seq2SeqCollatorInput],
+    ) -> {context['model_class_name']}Seq2SeqBatch:
+        """Collate examples into a batch for {context['model_class_name']} sequence-to-sequence prediction.
+
+        Args:
+            examples: List of examples with prompt_ids and input_ids.
+
+        Returns:
+            {context['model_class_name']}Seq2SeqBatch with input_ids, attention_mask, target_ids.
+        """
+        # For prediction, we only need the prefix (prompt) and the target_ids
+        # Prepare prefix (prompt)
+        prefix = prepare_prefix_ids_arlm(
+            [e["prompt_ids"] for e in examples],
+            self.tokenizer.pad_token_id,
+            bos_token_id=self.tokenizer.bos_token_id,
+            eos_token_id=self.tokenizer.eos_token_id,
+            max_seq_len=self.input_block_size,
+            truncate=self.truncate,
+            add_bos=self.add_bos,
+            add_eos=False,  # No EOS in prefix for seq2seq
+        )
+
+        # Prepare target_ids (the full suffix sequence)
+        target_ids = prepare_suffix_ids_arlm(
+            [e["input_ids"] for e in examples],
+            self.tokenizer.pad_token_id,
+            bos_token_id=self.tokenizer.bos_token_id,
+            eos_token_id=self.tokenizer.eos_token_id,
+            max_seq_len=self.block_size,
+            truncate=self.truncate,
+            add_bos=None,
+            add_eos=self.add_eos,
+        )
+
+        # For prediction, input_ids is just the prefix
+        input_ids = prefix["input_ids"]
+        attention_mask = prefix["attention_mask"]
+
+        # target_ids is the full suffix sequence (not shifted)
+        target_ids = target_ids[
+            "target_ids"
+        ]  # Use unshifted target_ids for prediction
+
+        # Convert to tensors
+        return {{
+            "input_ids": torch.tensor(input_ids, dtype=torch.long),
+            "attention_mask": torch.tensor(attention_mask, dtype=torch.bool),
+            "token_type_ids": torch.zeros(
+                len(input_ids),
+                max(len(seq) for seq in input_ids),
+                dtype=torch.long,
+            ),
+            "target_ids": torch.tensor(target_ids, dtype=torch.long),
+        }}
+
+
+# endregion: Collators
+################################################################################
+
+
+################################################################################
+# region: Utilities
+
+
+def _replace_100_with_pad(ids: torch.Tensor, tokenizer: Tokenizer):
+    _ids = ids.clone()
+    _ids[_ids == -100] = tokenizer.pad_token_id
+    return _ids
 
 
 def print_batch_{context['model_name']}(
-    batch: Dict[str, Any], 
-    split: str, 
-    tokenizer: Tokenizer, 
-    num_examples: int = 2
-) -> None:
-    """Print examples from a batch for debugging.
+    batch: Dict[str, Any],
+    split: Literal["train", "val", "test", "predict"],
+    tokenizer: Tokenizer,
+    dataloader_name: str = "",
+):
+    """Print batch information for debugging {context['model_class_name']} batches.
 
     Args:
-        batch: Batch to print
-        split: Dataset split name
-        tokenizer: Tokenizer for decoding
-        num_examples: Number of examples to print
+        batch: The batch to print.
+        split: The split name.
+        tokenizer: The tokenizer to decode tokens.
+        dataloader_name: Name of the dataloader.
     """
-    print(f"\\n=== {{context['model_class_name']}} Batch ({{split}}) ===")
-    
-    # TODO: Customize this based on your batch structure
-    
-    for i in range(min(num_examples, batch["input_ids"].size(0))):
-        print(f"\\nExample {{i}}:")
-        
-        # Print input
-        input_ids = batch["input_ids"][i]
-        input_text = tokenizer.decode(input_ids, skip_special_tokens=True)
-        print(f"  Input: {{input_text}}")
-        
-        # Print target if available
-        if "target_ids" in batch:
-            target_ids = batch["target_ids"][i]
-            target_ids_filtered = target_ids[target_ids != -100]  # Remove ignored tokens
-            target_text = tokenizer.decode(target_ids_filtered, skip_special_tokens=True)
-            print(f"  Target: {{target_text}}")
-        
-        # Print shapes
-        print(f"  Shapes - input_ids: {{input_ids.shape}}, attention_mask: {{batch['attention_mask'][i].shape}}")
+    print(
+        f"Printing first entries of the tensors in batch for {{split}}/{{dataloader_name}}..."
+    )
+    print("input tokens:")
+    # replace -100 with <pad>
+    _input_ids = _replace_100_with_pad(batch["input_ids"][0], tokenizer)
+    print(tokenizer.decode(_input_ids))
+    print("input_ids:")
+    print(batch["input_ids"][0])
+    print("attention_mask (int):")
+    print(batch["attention_mask"][0].int())
+    print("target_ids:")
+    print(batch["target_ids"][0])
+    print("target tokens:")
+    _target_ids = _replace_100_with_pad(batch["target_ids"][0], tokenizer)
+    print(tokenizer.decode(_target_ids))
+
+
+# endregion: Utilities
+################################################################################
 '''
 
     (model_dir / "collators.py").write_text(content)
@@ -742,128 +1004,203 @@ def generate_metrics_file(model_dir: Path, context: Dict[str, Any]) -> None:
     content = f'''"""Metrics computation for {context['model_class_name']} model.
 
 This file implements metric update functions used by the training framework.
-Add any custom metrics your model needs to track.
+Based on ARLM metrics - modify as needed for your model.
 """
 
 from typing import Any, Dict
 import torch
 
 
-def mean_metric_update_fn(
-    metric,
-    loss_dict: Dict[str, Any],
-    batch: Dict[str, Any],
-    predictions: Dict[str, Any] = None,
-    **kwargs
-) -> None:
-    """Update function for mean-based metrics (e.g., loss, accuracy).
-
-    Args:
-        metric: The metric object to update
-        loss_dict: Dictionary containing loss and other values
-        batch: Input batch
-        predictions: Model predictions (optional)
-        **kwargs: Additional arguments
-    """
-    # TODO: Customize this based on what you want to track
-    
-    # Standard loss tracking
-    if "loss" in loss_dict:
-        metric.update(loss_dict["loss"])
-    
-    # TODO: Add any additional metric updates
-    # For example:
-    # if "accuracy" in loss_dict:
-    #     metric.update(loss_dict["accuracy"])
-
-
 def seq2seq_exact_match_update_fn(
-    metric,
-    loss_dict: Dict[str, Any],
-    batch: Dict[str, Any],
-    predictions: Dict[str, Any] = None,
-    **kwargs
-) -> None:
-    """Update function for sequence-to-sequence exact match metric.
-
-    Args:
-        metric: The metric object to update
-        loss_dict: Dictionary containing loss and other values
-        batch: Input batch
-        predictions: Model predictions
-        **kwargs: Additional arguments
+    batch: Dict[str, Any], loss_dict: Dict[str, Any]
+) -> Dict[str, Any]:
     """
-    if predictions is None:
-        return
-    
-    # TODO: Implement exact match computation for your task
-    
-    # Example implementation (replace with your logic):
-    if "text" in predictions and "target_ids" in batch:
-        predicted_texts = predictions["text"]
-        
-        # Get target texts (you'll need to implement this based on your batch structure)
-        # target_texts = decode_targets(batch["target_ids"], tokenizer)
-        
-        # Compute exact matches
-        # matches = [pred.strip() == target.strip() for pred, target in zip(predicted_texts, target_texts)]
-        # metric.update(torch.tensor(matches))
-        
-        # Placeholder - implement based on your needs
-        pass
+    Args:
+        batch: Dict[str, Any]. Should contain the following keys:
+            - "target_ids": Integer[TT, " *batch target_seq_len"]
+            - "input_ids": Integer[TT, " *batch input_seq_len"]
+        loss_dict: Dict[str, Any]. Should contain the following keys:
+            - "ids": Integer[TT, " *batch input_seq_len+target_seq_len"]
+    Note: We rely on having same number right pads in target and pred, which may not be true for {context['model_class_name']}.
+    """
+    output_start_idx = loss_dict["output_start_idx"]
+    pred = loss_dict["ids"][:, output_start_idx:]
+    return {{
+        "pred": pred,
+        "target": batch["target_ids"],
+        "pred_length": None,
+        "target_length": None,
+    }}
 
 
 def seq2seq_token_accuracy_update_fn(
-    metric,
-    loss_dict: Dict[str, Any],
-    batch: Dict[str, Any],
-    predictions: Dict[str, Any] = None,
-    **kwargs
-) -> None:
-    """Update function for sequence-to-sequence token-level accuracy.
+    batch: Dict[str, Any], loss_dict: Dict[str, Any]
+) -> Dict[str, Any]:
+    """
+    Args:
+        batch: Dict[str, Any]. Should contain the following keys:
+            - "target_ids": Integer[TT, " *batch target_seq_len"]
+            - "input_ids": Integer[TT, " *batch input_seq_len"]
+        loss_dict: Dict[str, Any]. Should contain the following keys:
+            - "ids": Integer[TT, " *batch input_seq_len+target_seq_len"]
+    """
+    output_start_idx = loss_dict["output_start_idx"]
+    pred = loss_dict["ids"][:, output_start_idx:]
+    target = batch["target_ids"]
+    pred_mask = torch.ones_like(pred, dtype=torch.bool)
+    return {{
+        "pred": pred,
+        "target": target,
+        "pred_mask": pred_mask,
+    }}
+
+
+def mean_metric_update_fn(
+    batch: Dict[str, Any], loss_dict: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Update function for mean loss metric.
 
     Args:
-        metric: The metric object to update
-        loss_dict: Dictionary containing loss and other values
-        batch: Input batch
-        predictions: Model predictions
-        **kwargs: Additional arguments
+        batch: Input batch.
+        loss_dict: Loss dictionary containing loss.
+
+    Returns:
+        Dictionary with mean loss value.
     """
-    if predictions is None:
-        return
-    
-    # TODO: Implement token-level accuracy computation
-    
-    # Example implementation (replace with your logic):
-    if "ids" in predictions and "target_ids" in batch:
-        predicted_ids = predictions["ids"]
-        target_ids = batch["target_ids"]
-        
-        # Mask out ignored tokens (-100)
-        valid_mask = target_ids != -100
-        
-        if valid_mask.any():
-            # Compute token-level accuracy
-            matches = (predicted_ids == target_ids) & valid_mask
-            accuracy = matches.float().sum() / valid_mask.float().sum()
-            metric.update(accuracy)
+    return {{
+        "value": loss_dict["loss"],
+    }}
 
 
-# TODO: Add any additional custom metrics your model needs
-# For example:
-# def perplexity_update_fn(metric, loss_dict, batch, predictions=None, **kwargs):
-#     """Update function for perplexity metric."""
-#     if "loss" in loss_dict:
-#         perplexity = torch.exp(loss_dict["loss"])
-#         metric.update(perplexity)
+def perplexity_metric_update_fn(
+    batch: Dict[str, Any], loss_dict: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Update function for perplexity metric.
+
+    Args:
+        batch: Input batch.
+        loss_dict: Loss dictionary containing nlls.
+
+    Returns:
+        Dictionary with perplexity value.
+    """
+    # Perplexity is exp(mean(nlls))
+    nlls = loss_dict["nlls"]
+    perplexity = torch.exp(nlls.mean())
+    return {{
+        "value": perplexity,
+    }}
+
+
+def token_nll_metric_update_fn(
+    batch: Dict[str, Any], loss_dict: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Update function for token-level negative log likelihood metric.
+
+    Args:
+        batch: Input batch.
+        loss_dict: Loss dictionary containing nlls.
+
+    Returns:
+        Dictionary with token-level NLL values.
+    """
+    return {{
+        "value": loss_dict["nlls"],
+    }}
+
+
+def sequence_length_metric_update_fn(
+    batch: Dict[str, Any], loss_dict: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Update function for sequence length metric.
+
+    Args:
+        batch: Input batch.
+        loss_dict: Loss dictionary.
+
+    Returns:
+        Dictionary with sequence length values.
+    """
+    # Calculate sequence lengths based on attention mask
+    attention_mask = batch["attention_mask"]
+    seq_lengths = attention_mask.sum(dim=1).float()
+    return {{
+        "value": seq_lengths,
+    }}
+
+
+def valid_tokens_metric_update_fn(
+    batch: Dict[str, Any], loss_dict: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Update function for valid tokens count metric.
+
+    Args:
+        batch: Input batch.
+        loss_dict: Loss dictionary.
+
+    Returns:
+        Dictionary with valid tokens count.
+    """
+    # Count tokens that are not padding (valid tokens)
+    attention_mask = batch["attention_mask"]
+    target_ids = batch["target_ids"]
+
+    # Valid tokens are those that are not padding and not -100 (ignored tokens)
+    valid_tokens = attention_mask & (target_ids != -100)
+    valid_token_counts = valid_tokens.sum(dim=1).float()
+
+    return {{
+        "value": valid_token_counts,
+    }}
 '''
 
     (model_dir / "metrics.py").write_text(content)
 
 
-def generate_init_file(model_dir: Path, context: Dict[str, Any]) -> None:
+def generate_init_file(
+    model_dir: Path, context: Dict[str, Any], is_core: bool = False
+) -> None:
     """Generate the __init__.py file."""
-    content = f'''"""
+    if is_core:
+        content = f'''"""
+{context['model_class_name']} - Core Language Model for XLM Framework
+
+This module implements the {context['model_class_name']} model with all necessary components:
+- Model architecture (model.py)
+- Loss function (loss.py) 
+- Predictor for inference (predictor.py)
+- Data collators (collators.py)
+- Metrics computation (metrics.py)
+- Type definitions (types.py)
+
+This is a core model that is part of the XLM library.
+"""
+
+from .model import {context['model_class_name']}Model
+from .loss import {context['model_class_name']}Loss
+from .predictor import {context['model_class_name']}Predictor
+from .collators import Default{context['model_class_name']}Collator, {context['model_class_name']}Seq2SeqCollator
+from .types import (
+    {context['model_class_name']}Batch,
+    {context['model_class_name']}Seq2SeqBatch, 
+    {context['model_class_name']}LossDict,
+    {context['model_class_name']}PredictionDict,
+)
+
+__all__ = [
+    "{context['model_class_name']}Model",
+    "{context['model_class_name']}Loss", 
+    "{context['model_class_name']}Predictor",
+    "Default{context['model_class_name']}Collator",
+    "{context['model_class_name']}Seq2SeqCollator",
+    "{context['model_class_name']}Batch",
+    "{context['model_class_name']}Seq2SeqBatch",
+    "{context['model_class_name']}LossDict",
+    "{context['model_class_name']}PredictionDict",
+]
+'''
+    else:
+        content = f'''"""
 {context['model_class_name']} - External Language Model for XLM Framework
 
 This package implements the {context['model_class_name']} model with all necessary components:
@@ -906,14 +1243,36 @@ __all__ = [
     (model_dir / "__init__.py").write_text(content)
 
 
-def generate_config_files(config_dir: Path, context: Dict[str, Any]) -> None:
+def generate_config_files(
+    config_dir: Path, context: Dict[str, Any], is_core: bool = False
+) -> None:
     """Generate all configuration files."""
-
     # Model config
+    if is_core:
+        model_target = f"xlm.lm.{context['model_name']}.model.RotaryTransformer{context['model_class_name']}Model"
+        loss_target = f"xlm.lm.{context['model_name']}.loss.{context['model_class_name']}Loss"
+        predictor_target = f"xlm.lm.{context['model_name']}.predictor.{context['model_class_name']}Predictor"
+        collator_target = f"xlm.lm.{context['model_name']}.collators.Default{context['model_class_name']}Collator"
+        seq2seq_collator_target = f"xlm.lm.{context['model_name']}.collators.{context['model_class_name']}Seq2SeqCollator"
+        seq2seq_pred_collator_target = f"xlm.lm.{context['model_name']}.collators.{context['model_class_name']}Seq2SeqPredCollator"
+        print_batch_fn = f"xlm.lm.{context['model_name']}.collators.print_batch_{context['model_name']}"
+        metrics_prefix = f"xlm.lm.{context['model_name']}.metrics"
+    else:
+        model_target = f"{context['model_name']}.model.RotaryTransformer{context['model_class_name']}Model"
+        loss_target = (
+            f"{context['model_name']}.loss.{context['model_class_name']}Loss"
+        )
+        predictor_target = f"{context['model_name']}.predictor.{context['model_class_name']}Predictor"
+        collator_target = f"{context['model_name']}.collators.Default{context['model_class_name']}Collator"
+        seq2seq_collator_target = f"{context['model_name']}.collators.{context['model_class_name']}Seq2SeqCollator"
+        seq2seq_pred_collator_target = f"{context['model_name']}.collators.{context['model_class_name']}Seq2SeqPredCollator"
+        print_batch_fn = f"{context['model_name']}.collators.print_batch_{context['model_name']}"
+        metrics_prefix = f"{context['model_name']}.metrics"
+
     model_config = f"""# @package _global_
 
 model:
-  _target_: {context['model_name']}.model.{context['model_class_name']}Model
+  _target_: {model_target}
   num_embeddings: ${{tokenizer:full_vocab_size}}
   d_model: 768
   num_layers: 12
@@ -921,8 +1280,12 @@ model:
   padding_idx: ${{tokenizer:pad_token_id}}
   dim_feedforward: ${{eval:${{.d_model}}*4}}
   dropout: 0.1
+  activation: relu
+  layer_norm_eps: 1e-5
+  rotary_emb_dim: 64
   max_length: ${{predictor.max_length}}
-  # TODO: Add any additional model parameters
+  force_flash_attn: false
+  final_layer_without_normalization: false
 
 tags:
   model: {context['model_name']}
@@ -947,17 +1310,16 @@ lightning_module:
   _target_: xlm.harness.Harness
 
 loss:
-  _target_: {context['model_name']}.loss.{context['model_class_name']}Loss
+  _target_: {loss_target}
 
 predictor:
-  _target_: {context['model_name']}.predictor.{context['model_class_name']}Predictor
+  _target_: {predictor_target}
   tokenizer: ${{lightning_module:tokenizer}}
   noise_schedule: ${{lightning_module:noise_schedule}}
   max_steps: ${{block_size}}
   max_length: ${{eval:${{block_size}}+${{oc.select:input_block_size,0}}}}
   sampling_method: sample_top_p
-  p: 0.9
-  # TODO: Add any additional predictor parameters
+  p: 0.5
 
 diagnostic_metrics: null
 
@@ -966,31 +1328,31 @@ reported_metrics:
     lm:
       accumulated_loss:
         prefix: train/lm
-        update_fn: {context['model_name']}.metrics.mean_metric_update_fn
+        update_fn: {metrics_prefix}.mean_metric_update_fn
   val:
     lm:
       accumulated_loss:
         prefix: val/lm
-        update_fn: {context['model_name']}.metrics.mean_metric_update_fn
+        update_fn: {metrics_prefix}.mean_metric_update_fn
     prediction:
       exact_match:
         prefix: val/prediction
-        update_fn: {context['model_name']}.metrics.seq2seq_exact_match_update_fn
+        update_fn: {metrics_prefix}.seq2seq_exact_match_update_fn
       token_accuracy:
         prefix: val/prediction
-        update_fn: {context['model_name']}.metrics.seq2seq_token_accuracy_update_fn
+        update_fn: {metrics_prefix}.seq2seq_token_accuracy_update_fn
   test:
     lm:
       accumulated_loss:
         prefix: test/lm
-        update_fn: {context['model_name']}.metrics.mean_metric_update_fn
+        update_fn: {metrics_prefix}.mean_metric_update_fn
     prediction:
       exact_match:
         prefix: test/prediction
-        update_fn: {context['model_name']}.metrics.seq2seq_exact_match_update_fn
+        update_fn: {metrics_prefix}.seq2seq_exact_match_update_fn
       token_accuracy:
         prefix: test/prediction
-        update_fn: {context['model_name']}.metrics.seq2seq_token_accuracy_update_fn
+        update_fn: {metrics_prefix}.seq2seq_token_accuracy_update_fn
 
 tags:
   model_type: {context['model_name']}
@@ -1000,7 +1362,7 @@ tags:
     )
 
     # Collator configs
-    default_collator_config = f"""_target_: {context['model_name']}.collators.Default{context['model_class_name']}Collator
+    default_collator_config = f"""_target_: {collator_target}
 block_size: ${{block_size}}
 tokenizer: ${{global_components:tokenizer}}
 noise_schedule: ${{global_components:noise_schedule}}
@@ -1009,7 +1371,7 @@ noise_schedule: ${{global_components:noise_schedule}}
         config_dir / "collator" / f"default_{context['model_name']}.yaml"
     ).write_text(default_collator_config)
 
-    seq2seq_collator_config = f"""_target_: {context['model_name']}.collators.{context['model_class_name']}Seq2SeqCollator
+    seq2seq_collator_config = f"""_target_: {seq2seq_collator_target}
 input_block_size: ${{oc.select:input_block_size,null}}
 block_size: ${{block_size}}
 tokenizer: ${{global_components:tokenizer}}
@@ -1021,40 +1383,117 @@ add_eos: true
         config_dir / "collator" / f"seq2seq_{context['model_name']}.yaml"
     ).write_text(seq2seq_collator_config)
 
-    # Experiment config
+    # Datamodule configs
+    (config_dir / "datamodule").mkdir(exist_ok=True)
+
+    # Base star datamodule config
+    star_datamodule_config = f"""# @package _global_
+defaults:
+  - default
+  - /collator@datamodule.dataset_managers.train.lm.collator: seq2seq_{context['model_name']}
+  - /collator@datamodule.dataset_managers.val.lm.collator: seq2seq_{context['model_name']}
+  - /collator@datamodule.dataset_managers.test.lm.collator: seq2seq_{context['model_name']}
+  - /collator@datamodule.dataset_managers.val.prediction.collator: seq2seq_pred_{context['model_name']}
+  - /collator@datamodule.dataset_managers.test.prediction.collator: seq2seq_pred_{context['model_name']}
+  - /collator@datamodule.dataset_managers.predict.prediction.collator: seq2seq_pred_{context['model_name']}
+
+datamodule:
+  print_batch_fn: {print_batch_fn}
+
+tags:
+  dataset: ???
+"""
+    (
+        config_dir / "datamodule" / f"star_{context['model_name']}.yaml"
+    ).write_text(star_datamodule_config)
+
+    # Star easy datamodule config
+    star_easy_datamodule_config = f"""# @package _global_
+defaults:
+  - star_{context['model_name']}
+  - /datasets@datamodule.dataset_managers.train.lm: star_easy_train
+  - /datasets@datamodule.dataset_managers.val.lm: star_easy_val
+  - /datasets@datamodule.dataset_managers.val.prediction: star_easy_val_pred
+  - /datasets@datamodule.dataset_managers.test.lm: star_easy_test
+  - /datasets@datamodule.dataset_managers.test.prediction: star_easy_test_pred
+  - /datasets@datamodule.dataset_managers.predict.prediction: star_easy_test_pred
+
+tags:
+  dataset: star_easy
+"""
+    (
+        config_dir / "datamodule" / f"star_easy_{context['model_name']}.yaml"
+    ).write_text(star_easy_datamodule_config)
+
+    # Seq2seq pred collator config
+    seq2seq_pred_collator_config = f"""_target_: {seq2seq_pred_collator_target}
+input_block_size: ${{oc.select:input_block_size,null}}
+block_size: ${{block_size}}
+tokenizer: ${{global_components:tokenizer}}
+noise_schedule: ${{global_components:noise_schedule}}
+add_bos: output
+add_eos: true
+"""
+    (
+        config_dir / "collator" / f"seq2seq_pred_{context['model_name']}.yaml"
+    ).write_text(seq2seq_pred_collator_config)
+
+    # Experiment config - using star_easy pattern
     experiment_config = f"""# @package _global_
 defaults:
-  - override /noise_schedule: dummy
+  - override /datamodule: star_easy_{context['model_name']}
+  - override /noise_schedule: dummy # default
   - override /model_type: {context['model_name']}
   - override /model: {context['model_name']}
 
-# TODO: Configure your experiment parameters
-per_device_batch_size: 32
-global_batch_size: 256
-block_size: 512
+per_device_batch_size: 64
+global_batch_size: 64
+input_block_size: 28
+block_size: 14
+
+datamodule:
+  print_batch_fn: {print_batch_fn}
+
+global_components:
+  tokenizer:
+    _target_: xlm.datamodule.SimpleSpaceTokenizer.for_numbers
+    vocab_size: 20 # 20 (easy,medium), 56 (hard)
 
 trainer:
-  max_steps: 10000
-  val_check_interval: 1000
-  num_sanity_val_steps: 2
+  max_steps: 80000 
+  val_check_interval: null
+  num_sanity_val_steps: 3
+  check_val_every_n_epoch: 2
+
+log_predictions:
+  _target_: xlm.log_predictions.LogPredictions
+  fields_to_keep_in_output:
+    - text
+    - truth
+  inject_target: target_ids
+  writers:
+    - file
+    - logger
+
+callbacks:
+  checkpoint_monitor:
+    monitor: val/lm/accumulated_loss
 
 optimizer:
   lr: 0.0001
 
 lr_scheduler:
-  name: "constant_with_warmup"
+  name: "constant" # https://github.com/huggingface/transformers/blob/main/src/transformers/trainer_utils.py#L435
   num_warmup_steps: 500
   num_training_steps: ${{trainer.max_steps}}
+  monitor: "train/loss"
 
 predictor:
-  sampling_method: sample_top_p
-  p: 0.9
-
-# TODO: Add datamodule configuration or create separate datamodule configs
-# datamodule: ...
+  sampling_method: sample_top_k
+  top: 1
 """
     (
-        config_dir / "experiment" / f"{context['model_name']}_debug.yaml"
+        config_dir / "experiment" / f"star_easy_{context['model_name']}.yaml"
     ).write_text(experiment_config)
 
 
@@ -1233,10 +1672,15 @@ def update_xlm_models_file(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Scaffold a new external language model"
+        description="Scaffold a new language model (external or core)"
     )
     parser.add_argument(
         "model_name", help="Name of the new model (e.g., 'my_transformer')"
+    )
+    parser.add_argument(
+        "--core",
+        action="store_true",
+        help="Generate a core model that gets added to the XLM library (default: external model)",
     )
     parser.add_argument(
         "--dry-run",
@@ -1247,12 +1691,12 @@ def main():
         "--output-dir",
         type=Path,
         default=Path("."),
-        help="Directory to create the model in",
+        help="Directory to create the model in (for external models only)",
     )
     parser.add_argument(
         "--no-xlm-models",
         action="store_true",
-        help="Don't update .xlm_models file",
+        help="Don't update .xlm_models file (for external models only)",
     )
 
     args = parser.parse_args()
@@ -1263,56 +1707,152 @@ def main():
         print(f"Error: {e}")
         sys.exit(1)
 
-    model_dir = args.output_dir / model_name
     context = create_template_context(model_name)
 
-    print(f"Scaffolding model: {model_name}")
-    print(f"Output directory: {model_dir}")
-    if args.dry_run:
-        print("DRY RUN - no files will be created")
-        return
+    if args.core:
+        # Generate core model in temp directory first
+        import tempfile
+        import shutil
 
-    # Create directory structure
-    model_dir.mkdir(exist_ok=True)
-    (model_dir / model_name).mkdir(exist_ok=True)
-    (model_dir / "configs" / "model").mkdir(parents=True, exist_ok=True)
-    (model_dir / "configs" / "model_type").mkdir(exist_ok=True)
-    (model_dir / "configs" / "collator").mkdir(exist_ok=True)
-    (model_dir / "configs" / "experiment").mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_model_dir = Path(temp_dir) / model_name
+            temp_model_dir.mkdir(exist_ok=True)
+            (temp_model_dir / model_name).mkdir(exist_ok=True)
+            (temp_model_dir / "configs" / "model").mkdir(
+                parents=True, exist_ok=True
+            )
+            (temp_model_dir / "configs" / "model_type").mkdir(exist_ok=True)
+            (temp_model_dir / "configs" / "collator").mkdir(exist_ok=True)
+            (temp_model_dir / "configs" / "experiment").mkdir(exist_ok=True)
+            (temp_model_dir / "configs" / "datamodule").mkdir(exist_ok=True)
 
-    # Generate Python files
-    print("Generating Python package...")
-    generate_init_file(model_dir / model_name, context)
-    generate_types_file(model_dir / model_name, context)
-    generate_model_file(model_dir / model_name, context)
-    generate_loss_file(model_dir / model_name, context)
-    generate_predictor_file(model_dir / model_name, context)
-    generate_collators_file(model_dir / model_name, context)
-    generate_metrics_file(model_dir / model_name, context)
+            print(f"Scaffolding core model: {model_name}")
+            print(f"Temporary directory: {temp_model_dir}")
+            if args.dry_run:
+                print("DRY RUN - no files will be created")
+                return
 
-    # Generate config files
-    print("Generating configuration files...")
-    generate_config_files(model_dir / "configs", context)
+            # Generate Python files
+            print("Generating Python package...")
+            generate_init_file(
+                temp_model_dir / model_name, context, is_core=True
+            )
+            generate_types_file(temp_model_dir / model_name, context)
+            generate_model_file(temp_model_dir / model_name, context)
+            generate_loss_file(temp_model_dir / model_name, context)
+            generate_predictor_file(temp_model_dir / model_name, context)
+            generate_collators_file(temp_model_dir / model_name, context)
+            generate_metrics_file(temp_model_dir / model_name, context)
 
-    # Generate package files
-    print("Generating package files...")
-    generate_setup_file(model_dir, context)
-    generate_documentation(model_dir, context)
+            # Generate config files
+            print("Generating configuration files...")
+            generate_config_files(
+                temp_model_dir / "configs", context, is_core=True
+            )
 
-    # Update .xlm_models file
-    if not args.no_xlm_models:
-        update_xlm_models_file(model_name)
+            if not args.dry_run:
+                # Move Python files to src/xlm/lm/
+                core_model_dir = Path("src/xlm/lm") / model_name
+                core_model_dir.mkdir(exist_ok=True)
 
-    print(f"\\n✅ Model '{model_name}' scaffolded successfully!")
-    print(f"\\n📁 Created files in: {model_dir}")
-    print(f"\\n📝 Next steps:")
-    print(f"1. cd {model_dir}")
-    print(f"2. Read README.md for implementation guidance")
-    print(f"3. Implement the model architecture in {model_name}/model.py")
-    print(f"4. Implement the loss function in {model_name}/loss.py")
-    print(
-        f"5. Test with: xlm job_type=train experiment={model_name}_debug debug=overfit"
-    )
+                print(f"Moving Python files to {core_model_dir}...")
+                for py_file in (temp_model_dir / model_name).glob("*.py"):
+                    shutil.copy2(py_file, core_model_dir / py_file.name)
+
+                # Move config files to src/xlm/configs/
+                print("Moving config files to src/xlm/configs/...")
+                for config_type in [
+                    "model",
+                    "model_type",
+                    "collator",
+                    "datamodule",
+                ]:
+                    config_src_dir = temp_model_dir / "configs" / config_type
+                    config_dst_dir = (
+                        Path("src/xlm/configs/lightning_train") / config_type
+                    )
+                    config_dst_dir.mkdir(exist_ok=True)
+
+                    for config_file in config_src_dir.glob("*.yaml"):
+                        shutil.copy2(
+                            config_file, config_dst_dir / config_file.name
+                        )
+
+                # Move experiment configs
+                exp_src_dir = temp_model_dir / "configs" / "experiment"
+                exp_dst_dir = Path(
+                    "src/xlm/configs/lightning_train/experiment"
+                )
+                exp_dst_dir.mkdir(exist_ok=True)
+
+                for exp_file in exp_src_dir.glob("*.yaml"):
+                    shutil.copy2(exp_file, exp_dst_dir / exp_file.name)
+
+        print(f"✅ Core model '{model_name}' scaffolded successfully!")
+        print(f"📁 Python files created in: src/xlm/lm/{model_name}/")
+        print("📁 Config files created in: src/xlm/configs/lightning_train/")
+        print("📝 Next steps:")
+        print(
+            f"1. Review and implement the model architecture in src/xlm/lm/{model_name}/model.py"
+        )
+        print(
+            f"2. Review and implement the loss function in src/xlm/lm/{model_name}/loss.py"
+        )
+        print(
+            f"3. Test with: xlm job_type=train experiment=star_easy_{model_name} debug=overfit"
+        )
+
+    else:
+        # Generate external model
+        model_dir = args.output_dir / model_name
+
+        print(f"Scaffolding external model: {model_name}")
+        print(f"Output directory: {model_dir}")
+        if args.dry_run:
+            print("DRY RUN - no files will be created")
+            return
+
+        # Create directory structure
+        model_dir.mkdir(exist_ok=True)
+        (model_dir / model_name).mkdir(exist_ok=True)
+        (model_dir / "configs" / "model").mkdir(parents=True, exist_ok=True)
+        (model_dir / "configs" / "model_type").mkdir(exist_ok=True)
+        (model_dir / "configs" / "collator").mkdir(exist_ok=True)
+        (model_dir / "configs" / "experiment").mkdir(exist_ok=True)
+
+        # Generate Python files
+        print("Generating Python package...")
+        generate_init_file(model_dir / model_name, context)
+        generate_types_file(model_dir / model_name, context)
+        generate_model_file(model_dir / model_name, context)
+        generate_loss_file(model_dir / model_name, context)
+        generate_predictor_file(model_dir / model_name, context)
+        generate_collators_file(model_dir / model_name, context)
+        generate_metrics_file(model_dir / model_name, context)
+
+        # Generate config files
+        print("Generating configuration files...")
+        generate_config_files(model_dir / "configs", context)
+
+        # Generate package files
+        print("Generating package files...")
+        generate_setup_file(model_dir, context)
+        generate_documentation(model_dir, context)
+
+        # Update .xlm_models file
+        if not args.no_xlm_models:
+            update_xlm_models_file(model_name)
+
+        print(f"✅ External model '{model_name}' scaffolded successfully!")
+        print(f"📁 Created files in: {model_dir}")
+        print("📝 Next steps:")
+        print(f"1. cd {model_dir}")
+        print("2. Read README.md for implementation guidance")
+        print(f"3. Implement the model architecture in {model_name}/model.py")
+        print(f"4. Implement the loss function in {model_name}/loss.py")
+        print(
+            f"5. Test with: xlm job_type=train experiment=star_easy_{model_name} debug=overfit"
+        )
 
 
 if __name__ == "__main__":
