@@ -1,6 +1,12 @@
 # %%
 # change dir to the root of the project
 # create the notebook inside the commands directory
+# import debugpy
+#
+# debugpy.listen(("localhost", 6767))
+# print("Waiting for debugger attach...")
+# debugpy.wait_for_client()
+
 import os
 import json
 
@@ -26,7 +32,9 @@ import dotenv
 _HYDRA_PARAMS = {
     "version_base": "1.3",
     "config_path": str(
-        Path(__file__).parent.parent / "configs" / "lightning_train"
+        (
+            Path(__file__).parent.parent / "configs" / "lightning_train"
+        ).resolve()
     ),
     "config_name": "config.yaml",
 }
