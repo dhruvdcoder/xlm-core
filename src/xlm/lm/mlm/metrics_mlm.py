@@ -3,7 +3,7 @@ import torch
 
 
 def seq2seq_exact_match_update_fn(
-    batch: Dict[str, Any], loss_dict: Dict[str, Any]
+    batch: Dict[str, Any], loss_dict: Dict[str, Any], tokenizer: Any = None
 ) -> Dict[str, Any]:
     """
     Args:
@@ -27,7 +27,7 @@ def seq2seq_exact_match_update_fn(
 
 
 def seq2seq_token_accuracy_update_fn(
-    batch: Dict[str, Any], loss_dict: Dict[str, Any]
+    batch: Dict[str, Any], loss_dict: Dict[str, Any], tokenizer: Any = None
 ) -> Dict[str, Any]:
     """
     Args:
@@ -50,7 +50,7 @@ def seq2seq_token_accuracy_update_fn(
 
 
 def mean_metric_update_fn(
-    batch: Dict[str, Any], loss_dict: Dict[str, Any]
+    batch: Dict[str, Any], loss_dict: Dict[str, Any], tokenizer: Any = None
 ) -> Dict[str, Any]:
     """Update function for mean loss metric.
 
