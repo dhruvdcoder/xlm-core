@@ -570,6 +570,7 @@ class DDITIDLMModel(torch.nn.Module, Model):
         )
         self.padding_idx = padding_idx
         self.mask_idx = mask_idx
+        self.d_model = d_model
         self.embed_tokens = nn.Embedding(
             num_embeddings, d_model, padding_idx=padding_idx
         )
@@ -622,6 +623,7 @@ class DDITIDLMModel(torch.nn.Module, Model):
         attention_mask: Optional[Bool[TT, " *batch seq_len"]] = None,
         positions: Optional[Integer[TT, " *batch seq_len"]] = None,
         token_type_ids: Optional[Integer[TT, " *batch seq_len"]] = None,
+        cls_position: Optional[Integer[TT, " *batch"]] = None,
     ) -> Tuple[
         Float[TT, " *batch seq_len vocab_size"],
         Float[TT, " *batch max_length"],
@@ -651,10 +653,18 @@ class DDITIDLMModel(torch.nn.Module, Model):
             x, c
         )  # shape (batch_size, seq_len, vocab_size)
         # set the logits for the time/cls token to -inf
-        # vocab_logits[:, 0, :] = -torch.inf # not needed. They will be indexed out anyway
-        # first token is the time/cls token
+        if cls_position is not None:
+            length_reps = x.gather(
+                1,
+                cls_position.unsqueeze(-1)
+                .unsqueeze(-1)
+                .expand(-1, -1, self.d_model),
+            )  # shape (batch, 1, d_model)
+        else:
+            length_reps = x[:, :1, :]
+
         length_logits = self.length_output_layer(
-            x[:, :1, :], c  # need to have (batch, 1, d_model)
+            length_reps, c  # need to have (batch, 1, d_model)
         ).squeeze(
             1
         )  # shape (batch_size, max_length)
@@ -714,6 +724,9 @@ class DDITIDLMModelFinalLength(DDITIDLMModel):
             attention_mask: The attention mask of shape (*batch, seq_len), which is True for non-padding tokens.
             positions: The positions of the tokens of shape (*batch, seq_len)
         """
+        raise NotImplementedError(
+            "first fix the cls_position like the other model above"
+        )
         if token_type_ids is not None:
             raise NotImplementedError(
                 "Token type ids are not implemented for IDLM"

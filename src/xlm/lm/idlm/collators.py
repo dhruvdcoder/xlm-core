@@ -101,6 +101,7 @@ def prepare_prefix_ids_idlm(
     input_ids: List[List[int]] = []
     attention_mask: List[List[int]] = []
     token_type_ids: List[List[int]] = []
+    cls_positions: List[int] = []
 
     if max_seq_len is None:
         max_len = max(
@@ -123,14 +124,16 @@ def prepare_prefix_ids_idlm(
                 + _prefix_ids
             )
 
-        input_ids.append(
-            pad_truncate_list(
-                temp,
-                max_len,
-                pad_token_id,
-                pad_left=True,
-            )
+        padded, num_padded = pad_truncate_list(
+            temp,
+            max_len,
+            pad_token_id,
+            pad_left=True,
+            return_num_padded=True,
         )
+        cls_positions.append(num_padded)
+        input_ids.append(padded)
+
         attention_mask.append(
             pad_truncate_list([1] * len(temp), max_len, 0, pad_left=True)
         )
@@ -144,11 +147,11 @@ def prepare_prefix_ids_idlm(
                 pad_left=True,
             )
         )
-
     return {
         "input_ids": torch.tensor(input_ids, dtype=torch.long),
         "attention_mask": torch.tensor(attention_mask, dtype=torch.bool),
         "token_type_ids": torch.tensor(token_type_ids, dtype=torch.long),
+        "cls_position": torch.tensor(cls_positions, dtype=torch.long),
     }
 
 
@@ -342,6 +345,7 @@ def idlm_single_segment_collate_target_fn(
         "noise_rate": torch.tensor(noise_rates, dtype=torch.float),
         "total_noise": torch.tensor(total_noises, dtype=torch.float),
         "constraint": None,
+        "cls_position": torch.zeros(len(input_ids), dtype=torch.long),
     }
 
 
@@ -398,7 +402,7 @@ class DefaultIdlmCollator(Collator):
         Returns:
             IdlmBatch with diffusion-specific fields.
         """
-        return idlm_single_segment_collate_target_fn(
+        batch = idlm_single_segment_collate_target_fn(
             [e["input_ids"] for e in examples],
             self.tokenizer.pad_token_id,
             self.tokenizer.bos_token_id,
@@ -413,6 +417,13 @@ class DefaultIdlmCollator(Collator):
             return_dense_target=self.return_dense_target,
             drop_indices_fn=_drop_uniformly,
         )
+        cls_position = torch.zeros(
+            batch["input_ids"].shape[0], dtype=torch.long
+        )
+        return {
+            **batch,
+            "cls_position": cls_position,
+        }
 
 
 class IdlmSeq2SeqCollator:
@@ -516,6 +527,7 @@ class IdlmSeq2SeqCollator:
             "noise_rate": suffix["noise_rate"],
             "total_noise": suffix["total_noise"],
             "constraint": None,
+            "cls_position": prefix["cls_position"],
         }
 
 
@@ -564,11 +576,9 @@ class IdlmSeq2SeqPredCollator(IdlmSeq2SeqCollator):
             )
             target_ids.append(padded_target)
 
-        # Create dummy diffusion parameters for prediction
-        batch_size = len(examples)
-        dummy_t = torch.zeros(batch_size)
-        dummy_noise_rate = torch.zeros(batch_size)
-        dummy_total_noise = torch.zeros(batch_size)
+        batch_size = prefix["input_ids"].shape[0]
+        constraint = torch.ones_like(prefix["input_ids"], dtype=torch.bool)
+        constraint[:, -1] = 0
 
         return {
             "input_ids": prefix["input_ids"],
@@ -576,10 +586,11 @@ class IdlmSeq2SeqPredCollator(IdlmSeq2SeqCollator):
             "token_type_ids": prefix["token_type_ids"],
             "target_ids": torch.tensor(target_ids, dtype=torch.long),
             "n_drops": None,
-            "t": dummy_t,
-            "noise_rate": dummy_noise_rate,
-            "total_noise": dummy_total_noise,
-            "constraint": None,
+            "t": torch.ones(batch_size),
+            "noise_rate": None,
+            "total_noise": None,
+            "constraint": constraint,
+            "cls_position": prefix["cls_position"],
         }
 
 
@@ -611,10 +622,12 @@ def print_batch_idlm(
     print(batch["token_type_ids"][0])
     print("t:")
     print(batch["t"][0])
-    print("noise_rate:")
-    print(batch["noise_rate"][0])
-    print("total_noise:")
-    print(batch["total_noise"][0])
+    if batch["noise_rate"] is not None:
+        print("noise_rate:")
+        print(batch["noise_rate"][0])
+    if batch["total_noise"] is not None:
+        print("total_noise:")
+        print(batch["total_noise"][0])
     if batch.get("n_drops", None) is not None:
         print("n_drops:")
         print(batch["n_drops"][0])

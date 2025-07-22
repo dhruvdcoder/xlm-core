@@ -196,6 +196,7 @@ class IdlmLoss(LossFunction[IdlmBatch, IdlmLossDict]):
         total_noise = batch["total_noise"]  # shape (batch,)
         t = batch["t"]  # shape (batch,)
         constraint = batch["constraint"]  # shape (batch, seq_len) or None
+        cls_position = batch["cls_position"]  # shape (batch,)
 
         assert self.model is not None
 
@@ -217,6 +218,7 @@ class IdlmLoss(LossFunction[IdlmBatch, IdlmLossDict]):
             t if self.send_t_to_model else total_noise,
             non_pad,  # Use non_pad since no dropped tokens in the new approach
             positions=positions,
+            cls_position=cls_position,
         )
 
         # Get number of drops from the batch (more efficient than computing from target_ids)

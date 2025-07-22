@@ -20,15 +20,15 @@ loss:
   _target_: xlm.lm.idlm.loss.IdlmLoss
   loss_on_padding: false
   use_constraint: false
-  use_diffusion_weight_for_ce: false
-  use_diffusion_weight_for_length_loss: false
+  use_diffusion_weight_for_ce: true
+  use_diffusion_weight_for_length_loss: true
   use_n_drops_for_ce: false
-  length_loss: cross_entropy
+  length_loss: diffusion
   ce_weight: 1.0
   length_loss_weight: 1.0
   max_diffusion_weight: 100.0
   use_incomplete_gamma_factor: false
-  send_t_to_model: false
+  send_t_to_model: true
 
 predictor:
   _target_: xlm.lm.idlm.predictor.IdlmPredictor
@@ -77,10 +77,10 @@ reported_metrics:
     prediction:
       exact_match:
         prefix: val/prediction
-        update_fn: xlm.metrics.seq2seq_exact_match_update_fn
+        update_fn: xlm.lm.idlm.metrics.seq2seq_exact_match_update_fn
       token_accuracy:
         prefix: val/prediction
-        update_fn: xlm.metrics.seq2seq_token_accuracy_update_fn
+        update_fn: xlm.lm.idlm.metrics.seq2seq_token_accuracy_update_fn
   test:
     lm:
       accumulated_loss:
@@ -89,10 +89,10 @@ reported_metrics:
     prediction:
       exact_match:
         prefix: test/prediction
-        update_fn: xlm.metrics.seq2seq_exact_match_update_fn
+        update_fn: xlm.lm.idlm.metrics.seq2seq_exact_match_update_fn
       token_accuracy:
         prefix: test/prediction
-        update_fn: xlm.metrics.seq2seq_token_accuracy_update_fn
+        update_fn: xlm.lm.idlm.metrics.seq2seq_token_accuracy_update_fn
 
 tags:
   model_type: idlm

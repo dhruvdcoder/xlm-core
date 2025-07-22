@@ -1,9 +1,11 @@
 from typing import Any, Dict
 import torch
+from jaxtyping import Integer
+from torch import Tensor as TT
 
 
 def mean_metric_update_fn(
-    batch: Dict[str, Any], loss_dict: Dict[str, Any]
+    batch: Dict[str, Any], loss_dict: Dict[str, Any], tokenizer: Any = None
 ) -> Dict[str, Any]:
     """Update function for mean loss metric."""
     return {
@@ -12,7 +14,7 @@ def mean_metric_update_fn(
 
 
 def length_loss_metric_update_fn(
-    batch: Dict[str, Any], loss_dict: Dict[str, Any]
+    batch: Dict[str, Any], loss_dict: Dict[str, Any], tokenizer: Any = None
 ) -> Dict[str, Any]:
     """Update function for length loss metric."""
     return {
@@ -21,7 +23,7 @@ def length_loss_metric_update_fn(
 
 
 def token_ce_metric_update_fn(
-    batch: Dict[str, Any], loss_dict: Dict[str, Any]
+    batch: Dict[str, Any], loss_dict: Dict[str, Any], tokenizer: Any = None
 ) -> Dict[str, Any]:
     """Update function for token cross-entropy metric."""
     return {
@@ -29,54 +31,93 @@ def token_ce_metric_update_fn(
     }
 
 
+def _extend(
+    a: Integer[TT, " *batch seq_len"],
+    b: Integer[TT, " *batch seq_len"],
+    pad_token_id: int,
+) -> Integer[TT, " *batch max_seq_len"]:
+    """Extend the length of a to the length of b."""
+    max_seq_len = max(a.shape[-1], b.shape[-1])
+    a = torch.cat(
+        [
+            a,
+            torch.full(
+                (a.shape[0], max_seq_len - a.shape[1]),
+                pad_token_id,
+                dtype=a.dtype,
+                device=a.device,
+            ),
+        ],
+        dim=-1,
+    )
+    b = torch.cat(
+        [
+            b,
+            torch.full(
+                (b.shape[0], max_seq_len - b.shape[1]),
+                pad_token_id,
+                dtype=b.dtype,
+                device=b.device,
+            ),
+        ],
+        dim=-1,
+    )
+    return a, b
+
+
 def seq2seq_exact_match_update_fn(
-    batch: Dict[str, Any], loss_dict: Dict[str, Any]
+    batch: Dict[str, Any], loss_dict: Dict[str, Any], tokenizer: Any = None
 ) -> Dict[str, Any]:
-    """Update function for sequence-to-sequence exact match metric."""
-    # This would be called during prediction, so loss_dict is actually the prediction dict
+    """Update function for sequence-to-sequence exact match metric.
+    Args:
+        batch: Dict[str, Any]. Should contain the following keys:
+            - "target_ids": Integer[TT, " *batch target_seq_len"]
+            - "input_ids": Integer[TT, " *batch input_seq_len"]
+        loss_dict: Dict[str, Any]. Should contain the following keys:
+            - "ids": Integer[TT, " *batch input_seq_len+target_seq_len"]
+    Note: We rely on having same number right pads in target and pred, which may not be true for ARLM.
+    """
     preds = loss_dict  # prediction dict
-    target_ids = batch.get("target_ids", None)
+    target_ids = batch["target_ids"]
+    input_end_idx = batch["input_ids"].shape[-1]
+    pred_ids = preds["ids"][:, input_end_idx:]
+    # extend the length to the longer of the two
+    pred_ids, target_ids = _extend(
+        pred_ids, target_ids, tokenizer.pad_token_id
+    )
+    assert pred_ids.shape == target_ids.shape
 
-    if target_ids is None or preds.get("ids", None) is None:
-        return {"value": 0.0}
-
-    # Simple exact match computation
-    pred_ids = preds["ids"]
-    if pred_ids.shape != target_ids.shape:
-        return {"value": 0.0}
-
-    exact_matches = (pred_ids == target_ids).all(dim=-1).float()
     return {
-        "value": exact_matches,
+        "pred": pred_ids,
+        "target": target_ids,
+        "pred_length": None,
+        "target_length": None,
     }
 
 
 def seq2seq_token_accuracy_update_fn(
-    batch: Dict[str, Any], loss_dict: Dict[str, Any]
+    batch: Dict[str, Any], loss_dict: Dict[str, Any], tokenizer: Any = None
 ) -> Dict[str, Any]:
-    """Update function for sequence-to-sequence token accuracy metric."""
-    # This would be called during prediction, so loss_dict is actually the prediction dict
+    """
+    Args:
+        batch: Dict[str, Any]. Should contain the following keys:
+            - "target_ids": Integer[TT, " *batch target_seq_len"]
+            - "input_ids": Integer[TT, " *batch input_seq_len"]
+        loss_dict: Dict[str, Any]. Should contain the following keys:
+            - "ids": Integer[TT, " *batch input_seq_len+target_seq_len"]
+    """
     preds = loss_dict  # prediction dict
-    target_ids = batch.get("target_ids", None)
+    target_ids = batch["target_ids"]
 
-    if target_ids is None or preds.get("ids", None) is None:
-        return {"value": 0.0}
+    input_end_idx = batch["input_ids"].shape[-1]
+    pred_ids = preds["ids"][:, input_end_idx:]
+    pred_ids, target_ids = _extend(
+        pred_ids, target_ids, tokenizer.pad_token_id
+    )
+    assert pred_ids.shape == target_ids.shape
 
-    # Token-level accuracy computation
-    pred_ids = preds["ids"]
-
-    # Create mask for valid positions (non-padding)
-    attention_mask = preds.get("attention_mask", None)
-    if attention_mask is not None:
-        valid_mask = attention_mask.bool()
-    else:
-        valid_mask = torch.ones_like(pred_ids, dtype=torch.bool)
-
-    # Compute token accuracy
-    correct_tokens = ((pred_ids == target_ids) & valid_mask).sum()
-    total_tokens = valid_mask.sum()
-
-    accuracy = correct_tokens.float() / (total_tokens.float() + 1e-8)
     return {
-        "value": accuracy,
+        "pred": pred_ids,
+        "target": target_ids,
+        "pred_mask": None,
     }

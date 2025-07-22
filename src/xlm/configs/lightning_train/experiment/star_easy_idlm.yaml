@@ -19,8 +19,8 @@ global_components:
     vocab_size: 20 # 20 (easy,medium), 56 (hard)
   noise_schedule:
     _target_: xlm.lm.idlm.noise_schedule.LogLinearNoiseSchedule
-    sigma_max: 50  # specific for star hard
-    sigma_min: 5   #  specific for star hard
+    sigma_max: 30  # specific for star hard
+    sigma_min: 3   #  specific for star hard
     eps: 1e-3
 
 trainer:

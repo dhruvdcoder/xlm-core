@@ -29,6 +29,7 @@ class IdlmBatch(TypedDict):
     attention_mask: Integer[TT, " batch seq_len"]
     token_type_ids: Integer[TT, " batch seq_len"]
     target_ids: Optional[Integer[TT, " batch seq_len vocab_size"]]
+    cls_position: Optional[Integer[TT, " batch"]]
     n_drops: Optional[Integer[TT, " batch seq_len"]]
     t: Float[TT, " batch"]
     noise_rate: Float[TT, " batch"]
@@ -112,6 +113,7 @@ class IdlmModel(Protocol):
         non_drop_non_pad: Integer[TT, " batch seq_len"],
         positions: Integer[TT, " batch seq_len"],
         token_type_ids: Optional[Integer[TT, " batch seq_len"]] = None,
+        cls_position: Optional[Integer[TT, " batch"]] = None,
     ) -> Tuple[TokenLogitsType, LengthLogitsType]:
         """Forward pass of the model.
 

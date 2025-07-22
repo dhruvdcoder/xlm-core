@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Any, List, Literal, Optional
+from typing import Any, List, Literal, Optional, Tuple, Union, overload
 import torch
 
 
@@ -284,18 +284,45 @@ def sample_from_top_p(p: float, logits: torch.Tensor) -> torch.Tensor:
     return sampled_indices  # (*batch, seq_len)
 
 
+# overload for tensor for typing
+@overload
 def pad_truncate_list(
     ids: List[Any],
     max_len: int,
     pad_token: Any,
     pad_left: bool = False,
-) -> List[Any]:
+    return_num_padded: bool = False,
+) -> List[Any]: ...
+
+
+@overload
+def pad_truncate_list(
+    ids: List[Any],
+    max_len: int,
+    pad_token: Any,
+    pad_left: bool = False,
+    return_num_padded: bool = True,
+) -> Tuple[List[Any], int]: ...
+
+
+def pad_truncate_list(
+    ids: List[Any],
+    max_len: int,
+    pad_token: Any,
+    pad_left: bool = False,
+    return_num_padded: bool = False,
+) -> Union[List[Any], Tuple[List[Any], int]]:
+    num_padded = max_len - len(ids)
     if not pad_left:
-        return ids[:max_len] + [pad_token] * (max_len - len(ids))
+        padded = ids[:max_len] + [pad_token] * num_padded
     else:
-        return [pad_token] * (max_len - len(ids)) + ids[
+        padded = [pad_token] * num_padded + ids[
             -max_len:
         ]  # when padding left, truncate left side
+    if return_num_padded:
+        return padded, num_padded
+    else:
+        return padded
 
 
 def add_gumbel_noise(

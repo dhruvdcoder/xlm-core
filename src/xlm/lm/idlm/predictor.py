@@ -19,7 +19,7 @@ from .types import (
     IdlmModel,
 )
 from xlm.lm.ilm.nn import (
-    remove_tokens,
+    _remove_tokens,
     general_sample_over_last_two_dims,
 )
 from .collators import prepare_prefix_ids_idlm
@@ -45,7 +45,9 @@ class IdlmPredictorUtilitiesMixin:
     return_history: bool
 
     def clean_up_pred_ids(
-        self, pred_ids: Integer[TT, " *batch seq_len"]
+        self,
+        pred_ids: Integer[TT, " *batch seq_len"],
+        hold_mask: Optional[Bool[TT, " *batch seq_len"]] = None,
     ) -> Integer[TT, " *batch seq_len"]:
         """Remove mask tokens inserted due to batched prediction."""
         pad_token_id = self.tokenizer.pad_token_id
@@ -53,7 +55,13 @@ class IdlmPredictorUtilitiesMixin:
         remove = torch.tensor(
             [mask_token_id, pad_token_id], device=pred_ids.device
         )
-        clean_pred_ids = remove_tokens(pred_ids, remove, pad_token_id)
+        non_mask = torch.isin(
+            pred_ids, remove, invert=True
+        )  # shape: (batch, seq_len)
+        if hold_mask is not None:
+            non_mask = torch.logical_or(non_mask, hold_mask)
+        clean_pred_ids = _remove_tokens(pred_ids, non_mask, pad_token_id)
+        # clean_pred_ids = remove_tokens(pred_ids, remove, pad_token_id)
         return clean_pred_ids
 
     def decode(self, results: Dict) -> Tuple[
@@ -63,29 +71,31 @@ class IdlmPredictorUtilitiesMixin:
         Integer[TT, " batch seq_len"],
         Integer[TT, " batch seq_len"],
     ]:
-        """Decode results into text and tensors."""
         x: Integer[TT, " batch seq_len"] = results["x"]
         positions: Integer[TT, " batch seq_len"] = results["positions"]
         attention_mask: Bool[TT, " batch seq_len"] = results["attention_mask"]
-
-        # All tensors are out of order. Sort them based on positions.
+        # all tensors are out of order. Sort them based on positions.
         final_positions, sorted_positions_indices = torch.sort(
             positions, dim=-1
         )
         final_x: Integer[TT, " batch seq_len"] = torch.gather(
             x, dim=-1, index=sorted_positions_indices
         )
+        prefix_mask = torch.gather(
+            (results["token_type_ids"] <= 1),
+            dim=-1,
+            index=sorted_positions_indices,
+        )
+        final_x = self.clean_up_pred_ids(final_x, prefix_mask)
         final_attention_mask: Bool[TT, " batch seq_len"] = torch.gather(
             attention_mask, dim=-1, index=sorted_positions_indices
         )
-
         out_with_spl_tokens: List[str] = self.tokenizer.batch_decode(
             final_x, skip_special_tokens=False
         )
         out: List[str] = self.tokenizer.batch_decode(
             final_x, skip_special_tokens=True
         )
-
         return (
             out,
             out_with_spl_tokens,
@@ -293,12 +303,13 @@ class IdlmPredictor(
         token_type_ids: Integer[TT, " batch seq_len"] = step_results[
             "token_type_ids"
         ]
+        cls_position: Integer[TT, " batch"] = step_results["cls_position"]
 
         # Update time step
         delta_t = self.dt
         s = t - delta_t
 
-        # Get noise parameters if noise schedule is available
+        # Get noise parameters
         assert self.noise_schedule is not None
         noise_rate, total_noise = self.noise_schedule(t)
 
@@ -308,6 +319,7 @@ class IdlmPredictor(
             t if self.send_t_to_model else total_noise,
             attention_mask,
             positions=positions,
+            cls_position=cls_position,
         )
 
         # Suppress specified tokens
@@ -342,15 +354,15 @@ class IdlmPredictor(
             )
             p = p / f
 
-        # Decide which sequences to predict for
+        # sample whether to predict or not
         predict = torch.rand_like(p) < p
         predict = torch.logical_and(
             predict, attention_mask.sum(-1) < self.max_length
         )
 
-        step_results["first_step_done"] = (
-            step_results["first_step_done"] | predict
-        )
+        step_results["first_step_done"] = step_results[
+            "first_step_done"
+        ].logical_or(predict)
 
         # If no predictions, just update time
         if not predict.any().item():
@@ -367,33 +379,37 @@ class IdlmPredictor(
                 "oracle_length": step_results.get("oracle_length", None),
                 "predict": predict,
                 "first_step_done": step_results["first_step_done"],
+                "cls_position": cls_position,
             }
 
         # Sample position and token
         pred_seq_index, pred_vocab_index = general_sample_over_last_two_dims(
             logits, self.sampling_function, self.second_sampling_function
-        )
+        )  # shape (batch,), (batch,)
 
+        # Note: pred_seq_index is not the real index in the token sequence because logits and x_t are kept out of order.
         # Get real position for insertion
         pred_real_index = positions.gather(
             dim=-1, index=pred_seq_index.unsqueeze(-1)
         ).squeeze(-1)
 
-        # Insert tokens only where predict is True
+        # Insert tokens only where predict is True else place a pad which we will remove later
         inserted_tokens = torch.where(
             predict,
             pred_vocab_index,
-            self.tokenizer.mask_token_id,
+            self.tokenizer.mask_token_id,  # can't insert pads because we may have left-padding, need a different token
         )
 
         # Concatenate new tokens
         x_s = torch.cat([x_t, inserted_tokens.unsqueeze(-1)], dim=-1)
 
+        # update attention mask, positions, constraint, token_type_ids, etc.
+        # attention mask
         pred_attention_mask = torch.cat(
             [attention_mask, predict.unsqueeze(-1)], dim=-1
         )
 
-        # Update positions
+        # position: increment by 1 positions that are greater than the inserted position
         pos_greater_than_inserted_position = (
             positions > pred_real_index.unsqueeze(-1)
         )
@@ -449,6 +465,7 @@ class IdlmPredictor(
             "oracle_length": step_results.get("oracle_length", None),
             "predict": predict,
             "first_step_done": step_results["first_step_done"],
+            "cls_position": cls_position,
         }
 
     def _stop(
@@ -515,6 +532,7 @@ class IdlmPredictor(
             "oracle_length": batch.get("oracle_length", None),
             "predict": torch.ones_like(t_, dtype=torch.bool),
             "first_step_done": torch.zeros_like(t_, dtype=torch.bool),
+            "cls_position": batch["cls_position"],
         }
 
         current_step = 1
