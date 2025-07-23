@@ -8,5 +8,5 @@ noise_schedule:
 
 tags:
   noise_schedule: loglinear
-  correlated_t: ${noise_schedule.antithetic_sampling}
+  correlated_t: ${global_components.noise_schedule.antithetic_sampling}
   T: 1

@@ -8,7 +8,6 @@ model:
   nhead: 12
   padding_idx: ${tokenizer:pad_token_id}
   mask_idx: ${tokenizer:mask_token_id}
-  num_classes: ${predictor.max_length}
   dim_feedforward: ${eval:${.d_model}*4}
   dropout: 0.1
   activation: relu

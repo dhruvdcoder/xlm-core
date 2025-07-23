@@ -511,7 +511,7 @@ class IdlmPredictor(
             t_ = t.float()
 
         attention_mask = batch["attention_mask"].to(dtype=torch.bool)
-        positions = attention_mask.cumsum(dim=-1) - 1
+        positions = (attention_mask.cumsum(dim=-1) - 1).clamp(min=0).long()
 
         if batch["constraint"] is not None:
             constraint = batch["constraint"]

@@ -114,10 +114,12 @@ def seq2seq_token_accuracy_update_fn(
     pred_ids, target_ids = _extend(
         pred_ids, target_ids, tokenizer.pad_token_id
     )
+    pred_mask = torch.ones_like(pred_ids, dtype=torch.bool)
+    pred_mask[:, :input_end_idx] = False
     assert pred_ids.shape == target_ids.shape
 
     return {
         "pred": pred_ids,
         "target": target_ids,
-        "pred_mask": None,
+        "pred_mask": pred_mask,
     }
