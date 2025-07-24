@@ -8,7 +8,6 @@ defaults:
 
 per_device_batch_size: 32
 global_batch_size: 512
-input_block_size: null
 block_size: 1024
 
 global_components:
@@ -16,6 +15,15 @@ global_components:
     _target_: xlm.datamodule.GPT2TokenizerFast.from_pretrained
     pretrained_model_name_or_path: gpt2
 
+datamodule:
+  print_batch_fn: ???
+  dataset_managers:
+    val:
+      unconditional_prediction:
+        dataset_constructor_str: ???
+    predict:
+      unconditional_prediction:
+        dataset_constructor_str: ???
 
 tags:
   dataset: owt

@@ -8,10 +8,35 @@ from typing import List, Dict, Any, Optional, Literal, Callable
 import numpy as np
 import torch
 from torch import Tensor as TT
+from torch.utils.data import IterableDataset
 from xlm.datamodule import Collator, Tokenizer, Seq2SeqCollatorInput
 from xlm.noise import NoiseSchedule
 from xlm.utils.nn import pad_truncate_list
 from .types import IdlmBatch
+
+
+class IdlmEmptyDataset(IterableDataset):
+    def __init__(
+        self,
+        tokenizer: Tokenizer,
+        num_examples: int,
+    ):
+        """
+        Args:
+            tokenizer_kwargs: Keyword arguments for the tokenizer.
+
+            empty_text: For MLM, you will want to set the `empty_text` to a sequence of all mask tokens.
+        """
+        self.tokenizer = tokenizer
+        self.num_examples = num_examples
+
+    def __iter__(self):
+        for _ in range(self.num_examples):
+            ex = self.tokenizer(
+                "",
+                add_special_tokens=False,
+            )
+            yield ex
 
 
 def _drop_uniformly(seq_len: int, n_drops: int) -> List[int]:

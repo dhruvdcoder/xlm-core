@@ -1,7 +1,7 @@
 # @package _global_
 defaults:
   - override /datamodule: star_hard_idlm
-  - override /model_type: idlm
+  - override /model_type: idlm_seq2seq
   - override /model: idlm
   - override /noise_schedule: idlm_loglinear
 

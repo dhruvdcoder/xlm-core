@@ -4,18 +4,15 @@ defaults:
   - /metrics@reported_metrics.train.lm.accumulated_loss: accumulated_loss
   - /metrics@reported_metrics.val.lm.accumulated_loss: accumulated_loss
   - /metrics@reported_metrics.test.lm.accumulated_loss: accumulated_loss
+  - /metrics@reported_metrics.val.prediction.exact_match: seq2seq_exact_match
+  - /metrics@reported_metrics.test.prediction.exact_match: seq2seq_exact_match
+  - /metrics@reported_metrics.val.prediction.token_accuracy: seq2seq_token_accuracy
+  - /metrics@reported_metrics.test.prediction.token_accuracy: seq2seq_token_accuracy
   - /metrics@diagnostic_metrics.train.lm.length_loss: seq2seq_length_loss
   - /metrics@diagnostic_metrics.val.lm.length_loss: seq2seq_length_loss
   - /metrics@diagnostic_metrics.train.lm.token_ce: seq2seq_token_ce
   - /metrics@diagnostic_metrics.val.lm.token_ce: seq2seq_token_ce
 
-global_components:
-  noise_schedule:
-    _target_: xlm.lm.idlm.noise_schedule.LogLinearNoiseSchedule
-    sigma_max: ???  # specific for dataset
-    sigma_min: ???   
-    eps: 1e-3
-  
 lightning_module:
   _target_: xlm.harness.Harness
 
@@ -35,8 +32,8 @@ loss:
 
 predictor:
   _target_: xlm.lm.idlm.predictor.IdlmPredictor
-  tokenizer: ${global_components:tokenizer}
-  noise_schedule: ${global_components:noise_schedule}
+  tokenizer: ${lightning_module:tokenizer}
+  noise_schedule: ${lightning_module:noise_schedule}
   max_steps: ${block_size}
   max_length: ${eval:${block_size}+${oc.select:input_block_size,0}}
   sampling_method: sample_top_p
@@ -77,13 +74,25 @@ reported_metrics:
       accumulated_loss:
         prefix: val/lm
         update_fn: xlm.lm.idlm.metrics.mean_metric_update_fn
-
+    prediction:
+      exact_match:
+        prefix: val/prediction
+        update_fn: xlm.lm.idlm.metrics.seq2seq_exact_match_update_fn
+      token_accuracy:
+        prefix: val/prediction
+        update_fn: xlm.lm.idlm.metrics.seq2seq_token_accuracy_update_fn
   test:
     lm:
       accumulated_loss:
         prefix: test/lm
         update_fn: xlm.lm.idlm.metrics.mean_metric_update_fn
-
+    prediction:
+      exact_match:
+        prefix: test/prediction
+        update_fn: xlm.lm.idlm.metrics.seq2seq_exact_match_update_fn
+      token_accuracy:
+        prefix: test/prediction
+        update_fn: xlm.lm.idlm.metrics.seq2seq_token_accuracy_update_fn
 
 tags:
   model_type: idlm

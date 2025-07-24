@@ -246,9 +246,67 @@ If your model requires custom metrics, or custom update functions for existing m
 
 ### Step 8: Register Components in Configuration
 
-Based on the actual config structure, you need to create several configuration files:
+The necessary **logical** components for a typical new model can be described using the following tree. Through configs we built this logical three bottom up--meaning the higher nodes have a chance to override the config values set by the lower nodes.
+```
+experiment
+├── data
+│   └── datamodule
+│       └── collators
+└── model components
+    ├── neural network
+    ├── loss
+    └── predictor
+```
+Unfortunately, the actual config files don't correspond exactly to the logical tree described above, but they will come pretty close.
+
+First start with the data section.
+
+#### Collator Configurations
+
+A model can have different collators for three different batch formation tasks:
+
+1. **Base (uncoditional) Training**: The dataset sends raw lists of tokenized ids as examples. Each example is a single tokenized sentence. In this collator, this sequence is converted to a batch for the model for training. For example, for MLM, this would mean adding some masks, creating target ids and padding.
+2. **Seq2Seq Training**: The dataset sends two lists of tokenized ids per example--one for prompt/prefix and one for target/suffix. Typically, this collator will concat the prefix and suffix put any necessary special tokens in between, etc.
+
+3. **Seq2Seq Prediction**: The collator either single list of tokenized ids per example corresponding to the prompt (true prediction scenario), or two lists of tokenized ids per example corresponding to the prompt and target (prediction eval scenario). So how is this different from the seq2seq training collator? Typically, this collator does not put the prefix and suffix together, instead it will only send out the prefix as "input_ids", the suffix, if present (prediction eval scenario) is kept separate as "target_ids", to be used by the corresponding metric.
+
+
+
+
+Create `configs/lightning_train/collator/default_my_lm.yaml`:
+
+```yaml
+_target_: xlm.lm.my_lm.datamodule_my_lm.DefaultMyLMCollator
+block_size: ${block_size}
+tokenizer: ${global_components:tokenizer}
+noise_schedule: ${global_components:noise_schedule}
+```
+
+We will now use the collators in the datamodule config.
+
+#### Datamodule Configuration
+We need `<dataset>_<model_type>.yaml` for each dataset.
+Create `configs/lightning_train/datamodule/<dataset>_my_lm.yaml` where you will combine all the collators and other components for your model type for a specific dataset.
+
+```yaml
+# @package _global_
+defaults:
+  - default
+  - /collator@datamodule.dataset_managers.train.lm.collator: default_my_lm
+  - /collator@datamodule.dataset_managers.val.lm.collator: default_my_lm
+
+datamodule:
+  print_batch_fn: xlm.lm.my_lm.datamodule_my_lm.print_batch_my_lm
+
+tags:
+  dataset: my_lm
+```
+
 
 #### Model Configuration
+Responsibilities:
+  1. Define default parameters for the model (neural network architecture only)
+
 Create `configs/lightning_train/model/my_lm.yaml`:
 
 ```yaml
@@ -273,6 +331,13 @@ tags:
 ```
 
 #### Model Type Configuration
+
+Responsibilities:
+  1. Set-up the reported and diagnostic metrics, which will be present in all tasks/datasets, for the model type. Leave task/dataset specific metrics for the final experiment config.
+  2. Provide loss function defaults.
+  3. Provide predictor defaults.
+  4. (Advanced) If you have you own harness, you can also set it up here under `lightning_module` section.
+
 Create `configs/lightning_train/model_type/my_lm.yaml`:
 
 ```yaml
@@ -317,33 +382,6 @@ reported_metrics:
 
 tags:
   model_type: my_lm
-```
-
-#### Collator Configuration
-Create `configs/lightning_train/collator/default_my_lm.yaml`:
-
-```yaml
-_target_: xlm.lm.my_lm.datamodule_my_lm.DefaultMyLMCollator
-block_size: ${block_size}
-tokenizer: ${global_components:tokenizer}
-noise_schedule: ${global_components:noise_schedule}
-```
-
-#### Datamodule Configuration
-Create `configs/lightning_train/datamodule/dataset_my_lm.yaml` where you will combine all the collators and other components for your model type for a specific dataset.
-
-```yaml
-# @package _global_
-defaults:
-  - default
-  - /collator@datamodule.dataset_managers.train.lm.collator: default_my_lm
-  - /collator@datamodule.dataset_managers.val.lm.collator: default_my_lm
-
-datamodule:
-  print_batch_fn: xlm.lm.my_lm.datamodule_my_lm.print_batch_my_lm
-
-tags:
-  dataset: my_lm
 ```
 
 #### Experiment Configuration
@@ -391,6 +429,221 @@ python src/xlm/commands/lightning_main.py "job_type=train" "job_name=my_lm_debug
 # Debug with small data
 python src/xlm/commands/lightning_main.py "job_type=train" "job_name=my_lm_debug" "experiment=my_lm" "debug=small_data"
 ```
+
+## Design
+
+### Why is there so much nesting in the datamodule config?
+
+The main component of the datamodule are the `dataset_managers`. Each `dataset_manager` will generate its own `dataloader` with its own `collator` and processing functions. This design choice is the crux of the whole codebase. This allows the following:
+
+1. Chain arbirary number of "eval" tasks/datasets to be run during validation or testing (validation and testing can even have different eval tasks!)
+2. Inject new eval tasks post-training.
+
+TODO: We don't need stages to be present inside each dataset manager. We can rely on the outer keys to determine the stages.
+
+```yaml
+datamodule:
+  _target_: xlm.datamodule.TextDataModule
+  ...
+  dataset_managers:
+    train:
+      lm:
+        _target_: xlm.datamodule.DatasetManager
+        collator:
+          _target_: xlm.lm.ilm.datamodule_ilm.ILMSeq2SeqCollator
+          ...
+        full_name: dhruveshpatel/star-hard/train
+        preprocess_function: xlm.tasks.star.preprocess_fn
+        on_the_fly_processor: xlm.datamodule.token_ids_to_input_ids_and_prompt_ids
+        on_the_fly_group_processor: null
+        stages:
+        - fit
+        dataloader_kwargs:
+          batch_size: 64
+          ...
+    val:
+      lm:
+        _target_: xlm.datamodule.DatasetManager
+        collator:
+          _target_: xlm.lm.ilm.datamodule_ilm.ILMSeq2SeqCollator
+          ...
+        full_name: dhruveshpatel/star-hard/validation
+        preprocess_function: xlm.tasks.star.preprocess_fn
+        on_the_fly_processor: xlm.datamodule.token_ids_to_input_ids_and_prompt_ids
+        on_the_fly_group_processor: null
+        stages:
+        - fit
+        - validate
+        ...
+        dataloader_kwargs:
+          ...
+      prediction:
+        collator:
+          _target_: xlm.lm.ilm.datamodule_ilm.ILMSeq2SeqPredCollator
+          input_block_size: 116
+          block_size: 28
+          tokenizer: ${global_components:tokenizer}
+          noise_schedule: ${global_components:noise_schedule}
+        _target_: xlm.datamodule.DatasetManager
+        full_name: dhruveshpatel/star-hard/validation
+        full_name_debug: dhruveshpatel/star-hard/train
+        preprocess_function: xlm.tasks.star.preprocess_fn
+        on_the_fly_processor: xlm.datamodule.token_ids_to_input_ids_and_prompt_ids
+        on_the_fly_group_processor: null
+        columns_to_remove:
+        - edge_list
+        - source
+        - goal
+        - path
+        stages:
+        - fit
+        - validate
+        iterable_dataset_shards: null
+        shuffle_buffer_size: null
+        shuffle_seed: 42
+        split_by_node: true
+        dataloader_kwargs:
+          batch_size: 64
+          num_workers: 5
+          shuffle: null
+          pin_memory: true
+          persistent_workers: false
+          prefetch_factor: 5
+          drop_last: true
+        model_name: null
+    test:
+      lm:
+        collator:
+          _target_: xlm.lm.ilm.datamodule_ilm.ILMSeq2SeqCollator
+          input_block_size: 116
+          block_size: 28
+          tokenizer: ${global_components:tokenizer}
+          noise_schedule: ${global_components:noise_schedule}
+        _target_: xlm.datamodule.DatasetManager
+        full_name: dhruveshpatel/star-hard/test
+        full_name_debug: dhruveshpatel/star-hard/train
+        preprocess_function: xlm.tasks.star.preprocess_fn
+        on_the_fly_processor: xlm.datamodule.token_ids_to_input_ids_and_prompt_ids
+        on_the_fly_group_processor: null
+        columns_to_remove:
+        - edge_list
+        - source
+        - goal
+        - path
+        stages:
+        - test
+        iterable_dataset_shards: null
+        shuffle_buffer_size: null
+        shuffle_seed: 42
+        split_by_node: true
+        dataloader_kwargs:
+          batch_size: 64
+          num_workers: 5
+          shuffle: null
+          pin_memory: true
+          persistent_workers: false
+          prefetch_factor: 5
+          drop_last: true
+        model_name: null
+      prediction:
+        collator:
+          _target_: xlm.lm.ilm.datamodule_ilm.ILMSeq2SeqPredCollator
+          input_block_size: 116
+          block_size: 28
+          tokenizer: ${global_components:tokenizer}
+          noise_schedule: ${global_components:noise_schedule}
+        _target_: xlm.datamodule.DatasetManager
+        full_name: dhruveshpatel/star-hard/test
+        full_name_debug: dhruveshpatel/star-hard/train
+        preprocess_function: xlm.tasks.star.preprocess_fn
+        on_the_fly_processor: xlm.datamodule.token_ids_to_input_ids_and_prompt_ids
+        on_the_fly_group_processor: null
+        columns_to_remove:
+        - edge_list
+        - source
+        - goal
+        - path
+        stages:
+        - test
+        iterable_dataset_shards: null
+        shuffle_buffer_size: null
+        shuffle_seed: 42
+        split_by_node: true
+        dataloader_kwargs:
+          batch_size: 64
+          num_workers: 5
+          shuffle: null
+          pin_memory: true
+          persistent_workers: false
+          prefetch_factor: 5
+          drop_last: true
+        model_name: null
+  noise_schedule: ${global_components:noise_schedule}
+  rewrite_manual_cache: false
+  block_size: 28
+  global_batch_size: 64
+  num_dataset_workers: 5
+  print_batch_fn: xlm.lm.ilm.datamodule_ilm.print_batch_ilm
+reported_metrics:
+  train:
+    lm:
+      accumulated_loss:
+        _target_: xlm.metrics.MetricWrapper
+        name: accumulated_loss
+        metric:
+          _target_: torchmetrics.MeanMetric
+        prefix: train/lm
+        update_fn: xlm.lm.ilm.metrics_ilm.mean_metric_update_fn
+  val:
+    lm:
+      accumulated_loss:
+        _target_: xlm.metrics.MetricWrapper
+        name: accumulated_loss
+        metric:
+          _target_: torchmetrics.MeanMetric
+        prefix: val/lm
+        update_fn: xlm.lm.ilm.metrics_ilm.mean_metric_update_fn
+    prediction:
+      exact_match:
+        _target_: xlm.metrics.MetricWrapper
+        name: exact_match
+        metric:
+          _target_: xlm.metrics.ExactMatch
+        prefix: val/prediction
+        update_fn: xlm.metrics.seq2seq_exact_match_update_fn
+      token_accuracy:
+        _target_: xlm.metrics.MetricWrapper
+        name: token_accuracy
+        metric:
+          _target_: xlm.metrics.TokenAccuracy
+        prefix: val/prediction
+        update_fn: xlm.metrics.seq2seq_token_accuracy_update_fn
+  test:
+    lm:
+      accumulated_loss:
+        _target_: xlm.metrics.MetricWrapper
+        name: accumulated_loss
+        metric:
+          _target_: torchmetrics.MeanMetric
+        prefix: test/lm
+        update_fn: xlm.lm.ilm.metrics_ilm.mean_metric_update_fn
+    prediction:
+      exact_match:
+        _target_: xlm.metrics.MetricWrapper
+        name: exact_match
+        metric:
+          _target_: xlm.metrics.ExactMatch
+        prefix: test/prediction
+        update_fn: xlm.metrics.seq2seq_exact_match_update_fn
+      token_accuracy:
+        _target_: xlm.metrics.MetricWrapper
+        name: token_accuracy
+        metric:
+          _target_: xlm.metrics.TokenAccuracy
+        prefix: test/prediction
+        update_fn: xlm.metrics.seq2seq_token_accuracy_update_fn
+```
+
 
 ## Best Practices
 
@@ -444,6 +697,10 @@ The ARLM (Auto-Regressive Language Model) implementation serves as a good exampl
   - `configs/lightning_train/datamodule/star_easy_arlm.yaml`
   - `configs/lightning_train/experiment/star_easy_arlm.yaml`
 
+## FAQs
+
+## How do I train an existing model architecture on a new dataset?
+TODO
 
 ## Troubleshooting
 
