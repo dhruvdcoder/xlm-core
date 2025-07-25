@@ -652,7 +652,6 @@ class DDITIDLMModel(torch.nn.Module, Model):
         vocab_logits = self.output_layer(
             x, c
         )  # shape (batch_size, seq_len, vocab_size)
-        # set the logits for the time/cls token to -inf
         if cls_position is not None:
             length_reps = x.gather(
                 1,

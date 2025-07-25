@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 import torch
 from jaxtyping import Integer
 from torch import Tensor as TT
@@ -35,8 +35,11 @@ def _extend(
     a: Integer[TT, " *batch seq_len"],
     b: Integer[TT, " *batch seq_len"],
     pad_token_id: int,
-) -> Integer[TT, " *batch max_seq_len"]:
+) -> Tuple[
+    Integer[TT, " *batch max_seq_len"], Integer[TT, " *batch max_seq_len"], int
+]:
     """Extend the length of a to the length of b."""
+    longer = 0 if a.shape[-1] >= b.shape[-1] else 1
     max_seq_len = max(a.shape[-1], b.shape[-1])
     a = torch.cat(
         [
@@ -62,7 +65,7 @@ def _extend(
         ],
         dim=-1,
     )
-    return a, b
+    return a, b, longer
 
 
 def seq2seq_exact_match_update_fn(
@@ -111,11 +114,15 @@ def seq2seq_token_accuracy_update_fn(
 
     input_end_idx = batch["input_ids"].shape[-1]
     pred_ids = preds["ids"][:, input_end_idx:]
-    pred_ids, target_ids = _extend(
+    pred_ids, target_ids, longer = _extend(
         pred_ids, target_ids, tokenizer.pad_token_id
     )
-    pred_mask = torch.ones_like(pred_ids, dtype=torch.bool)
-    pred_mask[:, :input_end_idx] = False
+    # pred_mask = torch.ones_like(pred_ids, dtype=torch.bool)
+    # pred_mask[:, :input_end_idx] = False
+    pred_mask = (pred_ids != tokenizer.pad_token_id).logical_or(
+        target_ids != tokenizer.pad_token_id
+    )
+
     assert pred_ids.shape == target_ids.shape
 
     return {

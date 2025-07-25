@@ -637,6 +637,7 @@ class ILMPredictorWithLengthClassification(
         attention_mask: Bool[TT, " *batch seq_len"] = step_results["attention_mask"]
         constraint: Bool[TT, " *batch seq_len"] = step_results["constraint"]
         token_type_ids: Integer[TT, " *batch seq_len"] = step_results["token_type_ids"]
+        cls_position: Integer[TT, " *batch"] = step_results["cls_position"]
         # fmt: on
         model = cast(ILMModel, self.model)
         logits, length_logits = model(
@@ -644,6 +645,7 @@ class ILMPredictorWithLengthClassification(
             attention_mask,
             positions=positions,
             token_type_ids=constraint if self.input_constraint else None,
+            cls_position=cls_position,
         )
 
         # suppress some specified (mostly special) tokens
@@ -690,6 +692,7 @@ class ILMPredictorWithLengthClassification(
                 "constraint": step_results["constraint"],
                 "oracle_length": step_results.get("oracle_length", None),
                 "predict": predict,
+                "cls_position": cls_position,
             }
         pred_seq_index, pred_vocab_index = general_sample_over_last_two_dims(
             logits, self.sampling_function, self.second_sampling_function
@@ -759,6 +762,7 @@ class ILMPredictorWithLengthClassification(
             "constraint": constraint,
             "oracle_length": step_results.get("oracle_length", None),
             "predict": predict,
+            "cls_position": cls_position,
         }
         return step_result
 
@@ -782,11 +786,9 @@ class ILMPredictorWithLengthClassification(
         _start_time = time.time()
         attention_mask = batch["attention_mask"].to(dtype=torch.bool)
         positions = (attention_mask.cumsum(dim=-1) - 1).clamp(min=0)
-        if batch["constraint"] is not None:
-            constraint = batch["constraint"]
-        else:
-            # CLS=0, BOS+REST>=1, prefix=1, non_prefix=2
-            constraint = batch["token_type_ids"] <= 1
+        constraint = batch.get("constraint")  # expect it to be present
+        if constraint is None:
+            constraint = batch["token_type_ids"] <= 0
 
         step_results = {
             "x": batch["input_ids"],
@@ -802,6 +804,7 @@ class ILMPredictorWithLengthClassification(
                 device=batch["input_ids"].device,
             ),
             "current_step": 1,
+            "cls_position": batch["cls_position"],
         }
         current_step = 1
         history: List[List[Tuple[str, float, int]]] = [
@@ -867,6 +870,16 @@ class ILMPredictorWithLengthClassification(
         constraint = torch.ones_like(batch["attention_mask"], dtype=torch.bool)
         constraint[:, -1] = False
         batch["constraint"] = constraint
+        cls_position = batch.get(
+            "cls_position",
+            torch.zeros(
+                batch["input_ids"].shape[0],
+                dtype=torch.long,
+                device=batch["input_ids"].device,
+            ),
+        )
+        constraint = constraint.scatter(-1, cls_position.unsqueeze(-1), 1)
+        batch["cls_position"] = cls_position
         # move to device
         batch = {
             k: v.to("cuda")

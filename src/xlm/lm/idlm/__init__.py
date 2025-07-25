@@ -20,13 +20,13 @@ from .collators import (
     DefaultIdlmCollator,
     IdlmSeq2SeqCollator,
     IdlmSeq2SeqPredCollator,
-    print_batch_idlm,
 )
 from .noise_schedule import (
     PoissonNoiseSchedule,
     LogLinearNoiseSchedule,
     GeometricNoiseSchedule,
 )
+from .datamodule import print_batch_idlm
 from .nn import incomplete_gamma_factor_using_series
 from .types import (
     IdlmBatch,

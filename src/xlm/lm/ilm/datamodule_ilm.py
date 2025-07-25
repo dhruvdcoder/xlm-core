@@ -151,6 +151,7 @@ def prepare_prefix_ids(
     input_ids: List[List[int]] = []
     attention_mask: List[List[int]] = []
     token_type_ids: List[List[int]] = []
+    cls_positions: List[int] = []
     if max_seq_len is None:
         max_len = max(
             len(_prefix_ids) + add_cls + add_bos for _prefix_ids in prefix_ids
@@ -170,14 +171,15 @@ def prepare_prefix_ids(
                 + ([bos_token_id] if add_bos else [])
                 + _prefix_ids
             )
-        input_ids.append(
-            pad_truncate_list(
-                temp,
-                max_len,
-                pad_token_id,
-                pad_left=True,
-            )
+        _padded, num_padded = pad_truncate_list(
+            temp,
+            max_len,
+            pad_token_id,
+            pad_left=True,
+            return_num_padded=True,
         )
+        input_ids.append(_padded)
+        cls_positions.append(num_padded)
         attention_mask.append(
             pad_truncate_list([1] * len(temp), max_len, 0, pad_left=True)
         )
@@ -195,6 +197,7 @@ def prepare_prefix_ids(
         "input_ids": torch.tensor(input_ids, dtype=torch.long),
         "attention_mask": torch.tensor(attention_mask, dtype=torch.bool),
         "token_type_ids": torch.tensor(token_type_ids, dtype=torch.long),
+        "cls_positions": torch.tensor(cls_positions, dtype=torch.long),
     }
 
 
@@ -309,29 +312,32 @@ def ilm_single_segment_collate_target_fn(
                 pad_left,
             )
         )
-        # type_ids: 0 for CLS, 1 for prefix (fixed), 2 for non-prefix (not fixed) tokens
+        # type_ids: 0 for CLS, 1 for prefix (fixed), 2 for non-prefix (not fixed) tokens including BOS
+        # we don't have prefix in this function
         token_type_ids.append(
             pad_truncate_list(
                 (
-                    [0, 1]
+                    [0, 2]
                     + [type_extension_id]
                     * (
-                        len(
-                            single_seq_drop_result[
-                                "segment_input_ids_with_drops"
-                            ]
+                        (
+                            len(
+                                single_seq_drop_result[
+                                    "segment_input_ids_with_drops"
+                                ]
+                            )
+                            - 2
                         )
-                        - 2
-                    )
-                    if cls_token_id is not None
-                    else [type_extension_id]
-                    * (
-                        len(
-                            single_seq_drop_result[
-                                "segment_input_ids_with_drops"
-                            ]
+                        if cls_token_id is not None
+                        else [type_extension_id]
+                        * (
+                            len(
+                                single_seq_drop_result[
+                                    "segment_input_ids_with_drops"
+                                ]
+                            )
+                            - 1
                         )
-                        - 1
                     )
                 ),
                 max_len,
@@ -466,7 +472,7 @@ class DefaultILMCollator(Collator):
         self,
         examples: List[BaseCollatorInput],
     ) -> ILMBatch:
-        return ilm_single_segment_collate_target_fn(
+        batch = ilm_single_segment_collate_target_fn(
             [e["input_ids"] for e in examples],  # type: ignore
             self.tokenizer.pad_token_id,
             self.tokenizer.bos_token_id,
@@ -482,6 +488,10 @@ class DefaultILMCollator(Collator):
             sample_n_drops_fn=self.__class__.sample_n_drops_fn,
             drop_indices_fn=self.__class__.drop_indices_fn,
         )
+        batch["cls_position"] = torch.zeros(
+            batch["input_ids"].shape[0], dtype=torch.long
+        )
+        return batch
 
 
 class ILMSeq2SeqCollator:
@@ -556,7 +566,7 @@ class ILMSeq2SeqCollator:
             "target_ids": suffix["target_ids"],
             "n_drops": suffix["n_drops"],
             "constraint": None,
-            "cls_position": None,
+            "cls_position": prefix["cls_positions"],
             "target_attention_mask": None,
         }
 
@@ -591,7 +601,7 @@ class ILMSeq2SeqPredCollator(ILMSeq2SeqCollator):
             "target_attention_mask": target_ids["attention_mask"],
             "n_drops": None,
             "constraint": None,
-            "cls_position": None,
+            "cls_position": prefix["cls_positions"],
         }
 
 
@@ -635,6 +645,10 @@ def print_batch_ilm(
     )
     print("constraint:")
     print(batch["constraint"][0] if batch["constraint"] is not None else None)
+    print("cls_position:")
+    print(
+        batch["cls_position"][0] if batch["cls_position"] is not None else None
+    )
 
 
 # endregion: Utilities

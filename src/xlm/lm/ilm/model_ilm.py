@@ -51,6 +51,7 @@ class BaseRotaryTransformerILMModel(torch.nn.Module, Model):
             num_embeddings, d_model, padding_idx=padding_idx
         )
         self.dim_feedforward = dim_feedforward or 4 * d_model
+        self.d_model = d_model
         encoder_layer = RotaryTransformerLayer(
             d_model,
             nhead,
@@ -82,6 +83,7 @@ class BaseRotaryTransformerILMModel(torch.nn.Module, Model):
         attention_mask: Optional[Bool[TT, " *batch seq_len"]] = None,
         positions: Optional[Integer[TT, " *batch seq_len"]] = None,
         token_type_ids: Optional[Integer[TT, " *batch seq_len"]] = None,
+        cls_position: Optional[Integer[TT, " *batch"]] = None,
     ) -> Tuple[
         Float[TT, " *batch seq_len vocab_size"],
         Float[TT, " *batch max_length"],
@@ -127,12 +129,14 @@ class RotaryTransformerITModel(BaseRotaryTransformerILMModel):
         attention_mask: Optional[Bool[TT, " *batch seq_len"]] = None,
         positions: Optional[Integer[TT, " *batch seq_len"]] = None,
         token_type_ids: Optional[Integer[TT, " *batch seq_len"]] = None,
+        cls_position: Optional[Integer[TT, " *batch"]] = None,
     ) -> Float[TT, " *batch seq_len vocab_size"]:
         x, vocab_logits = super().forward(
             x_t,
             attention_mask=attention_mask,
             positions=positions,
             token_type_ids=token_type_ids,
+            cls_position=cls_position,
         )
         return vocab_logits
 
@@ -144,12 +148,14 @@ class RotaryTransformerILMModel(BaseRotaryTransformerILMModel):
         attention_mask: Optional[Bool[TT, " *batch seq_len"]] = None,
         positions: Optional[Integer[TT, " *batch seq_len"]] = None,
         token_type_ids: Optional[Integer[TT, " *batch seq_len"]] = None,
+        cls_position: Optional[Integer[TT, " *batch"]] = None,
     ) -> Tuple[Float[TT, " *batch seq_len vocab_size"], None]:
         x, vocab_logits = super().forward(
             x_t,
             attention_mask=attention_mask,
             positions=positions,
             token_type_ids=token_type_ids,
+            cls_position=cls_position,
         )
         return vocab_logits, None
 
@@ -210,6 +216,7 @@ class RotaryTransformerILMModelWithClassification(
         attention_mask: Optional[Bool[TT, " *batch seq_len"]] = None,
         positions: Optional[Integer[TT, " *batch seq_len"]] = None,
         token_type_ids: Optional[Integer[TT, " *batch seq_len"]] = None,
+        cls_position: Optional[Integer[TT, " *batch"]] = None,
     ) -> Tuple[
         Float[TT, " *batch seq_len vocab_size"],
         Float[TT, " *batch max_length"],
@@ -225,9 +232,22 @@ class RotaryTransformerILMModelWithClassification(
             x_t,
             attention_mask,
             positions,
-            token_type_ids,
+            token_type_ids=token_type_ids,
+            cls_position=cls_position,
         )  # shape (batch_size, seq_len, d_model), (batch_size, seq_len, vocab_size)
-        length_logits = self.length_output_layer(x[:, :1, :]).squeeze(
+        if cls_position is not None:
+            length_reps = x.gather(
+                1,
+                cls_position.unsqueeze(-1)
+                .unsqueeze(-1)
+                .expand(-1, -1, self.d_model),
+            )  # shape (batch, 1, d_model)
+        else:
+            length_reps = x[:, :1, :]
+
+        length_logits = self.length_output_layer(
+            length_reps,  # need to have (batch, 1, d_model)
+        ).squeeze(
             1
         )  # shape (batch_size, max_length)
         return vocab_logits, length_logits

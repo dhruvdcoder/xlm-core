@@ -78,3 +78,7 @@ def print_batch_idlm(
         print(batch["target_ids"][0, :, :5])
     print("constraint:")
     print(batch["constraint"][0] if batch["constraint"] is not None else None)
+    print("cls_position:")
+    print(
+        batch["cls_position"][0] if batch["cls_position"] is not None else None
+    )

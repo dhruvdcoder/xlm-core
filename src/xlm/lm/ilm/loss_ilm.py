@@ -5,7 +5,7 @@ from typing import (
 )
 
 import torch
-from jaxtyping import Bool, Float
+from jaxtyping import Bool, Float, Integer
 from torch import Tensor as TT
 
 from .nn import (
@@ -111,14 +111,23 @@ class ILMLossWithMaskedCE(LossFunction[ILMBatch, ILMLossDict]):
     def create_mask(
         self,
         non_drop_non_pad: Bool[TT, " batch seq_len"],
+        cls_position: Optional[Integer[TT, " batch"]],
         constraint: Optional[Bool[TT, " batch seq_len"]],
     ) -> Bool[TT, " batch seq_len"]:
+        if cls_position is not None:
+            # mask out the cls position
+            _constraint = non_drop_non_pad.scatter(
+                -1, cls_position.unsqueeze(-1), 0
+            ).logical_not()
+        else:
+            _constraint = non_drop_non_pad.logical_not_()
+            _constraint[:, 0] = 1
+
         if constraint is None or not self.use_constraint:
-            return (non_drop_non_pad.logical_not_()[:, 1:]).unsqueeze(-1)
+            return _constraint.unsqueeze(-1)
+
         elif self.use_constraint and constraint is not None:
-            return (
-                non_drop_non_pad.logical_not_().logical_or_(constraint)[:, 1:]
-            ).unsqueeze(-1)
+            return _constraint.logical_or_(constraint).unsqueeze(-1)
         else:
             raise ValueError("Invalid constraint")
 
@@ -150,12 +159,8 @@ class ILMLossWithMaskedCE(LossFunction[ILMBatch, ILMLossDict]):
             batch["attention_mask"],  # shape (batch, post_seq_len)
             batch["target_ids"],  # shape (batch, post_seq_len, vocab_size)
             batch["n_drops"],  # shape (batch, post_seq_len)
-            batch["cls_position"],  # shape (batch, post_seq_len)
+            batch["cls_position"],  # shape (batch,)
         )
-        if cls_position is not None:
-            raise NotImplementedError(
-                "arbitrary cls position is not supported yet"
-            )
         # TODO (efficiency): This might be redundant if the data pipeline is aware of loss_on_padding flag.
         positions = (torch.cumsum(attention_mask, dim=-1) - 1).clamp(
             min=0
@@ -165,15 +170,19 @@ class ILMLossWithMaskedCE(LossFunction[ILMBatch, ILMLossDict]):
             x,
             attention_mask,
             positions=positions,
+            cls_position=cls_position,
         )
         total_n_drops = n_drops.sum(dim=-1)
         p_target = target_ids / (total_n_drops[:, None, None] + 1e-9)
+        loss_mask = self.create_mask(
+            attention_mask, cls_position, None
+        )  # shape (batch, seq_len, vocab_size)
         ce = masked_ce_last_two_dims(
-            logits[:, 1:, :],
-            p_target[:, 1:, :],
-            ~attention_mask[:, 1:, None],
+            logits,
+            p_target,
+            loss_mask,
             min_value=self.min_value(logits),
-            inplace=True,
+            inplace=False,
         )  # shape (batch,)
         example_loss = ce
         loss = example_loss.mean()

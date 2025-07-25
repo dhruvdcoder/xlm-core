@@ -19,6 +19,8 @@ global_components:
 
 loss:
   length_loss_weight: 0.001
+  ce_weight: 0.001
+
 
 
 trainer:
@@ -28,7 +30,7 @@ trainer:
 
 
 optimizer:
-  lr: 0.00005
+  lr: 0.0001
 
 lr_scheduler:
   name: "constant_with_warmup" # https://github.com/huggingface/transformers/blob/main/src/transformers/trainer_utils.py#L435

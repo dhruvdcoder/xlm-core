@@ -11,7 +11,7 @@ input_block_size: 28
 block_size: 14
 
 datamodule:
-  print_batch_fn: xlm.lm.idlm.collators.print_batch_idlm
+  print_batch_fn: xlm.lm.idlm.datamodule.print_batch_idlm
 
 global_components:
   tokenizer:

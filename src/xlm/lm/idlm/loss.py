@@ -11,6 +11,8 @@ from xlm.datamodule import Tokenizer
 from xlm.lm.ilm.nn import masked_ce_last_two_dims
 from .nn import incomplete_gamma_factor_using_series
 from .types import IdlmBatch, IdlmLossDict, IdlmModel
+from jaxtyping import Bool
+from torch import Tensor as TT
 
 
 class IdlmLoss(LossFunction[IdlmBatch, IdlmLossDict]):
@@ -130,16 +132,25 @@ class IdlmLoss(LossFunction[IdlmBatch, IdlmLossDict]):
 
     def create_mask(
         self,
-        non_pad: torch.Tensor,
+        non_pad: Bool[TT, " *batch seq_len"],
+        cls_position: Optional[Bool[TT, " *batch"]],
         constraint: Optional[torch.Tensor],
     ) -> torch.Tensor:
         """Create mask for loss computation."""
+        if cls_position is not None:
+            # mask out the cls position
+            _constraint = non_pad.scatter(
+                -1, cls_position.unsqueeze(-1), 0
+            ).logical_not()
+        else:
+            _constraint = non_pad.logical_not_()
+            _constraint[:, 0] = 1
+
         if constraint is None or not self.use_constraint:
-            return (non_pad.logical_not_()[:, 1:]).unsqueeze(-1)
+            # mask out the cls position
+            return _constraint.unsqueeze(-1)
         elif self.use_constraint and constraint is not None:
-            return (
-                non_pad.logical_not_().logical_or_(constraint)[:, 1:]
-            ).unsqueeze(-1)
+            return _constraint.logical_or_(constraint).unsqueeze(-1)
         else:
             raise ValueError("Invalid constraint")
 
@@ -159,10 +170,15 @@ class IdlmLoss(LossFunction[IdlmBatch, IdlmLossDict]):
         target_ids = batch["target_ids"]
         if hasattr(target_ids, "to_dense"):
             # Convert sparse to dense for computation
-            batch_copy = batch.copy()
-            batch_copy["target_ids"] = target_ids.to_dense()
+            # batch_copy = batch.copy()
+            shallow_copy: IdlmBatch = {}
+            for k, v in batch.items():
+                if k not in ["target_ids", "n_drops"]:
+                    shallow_copy[k] = v
+                else:
+                    shallow_copy[k] = v.to_dense()
             loss_dict = self.loss_fn(
-                batch_copy, batch_idx, dataloader_idx, dataloader_name
+                shallow_copy, batch_idx, dataloader_idx, dataloader_name
             )
         else:
             loss_dict = self.loss_fn(
@@ -200,11 +216,10 @@ class IdlmLoss(LossFunction[IdlmBatch, IdlmLossDict]):
 
         assert self.model is not None
 
-        # Handle attention mask - since dropped tokens are physically removed,
         # we only need to consider padding
         non_pad = (
             batch["attention_mask"].to(dtype=torch.bool)
-            if not self.loss_on_padding
+            if not self.loss_on_padding  # TODO (loss_on_padding): Remove the loss_on_padding
             else torch.ones_like(batch["attention_mask"], dtype=torch.bool)
         )  # shape (batch, seq_len)
 
@@ -216,30 +231,27 @@ class IdlmLoss(LossFunction[IdlmBatch, IdlmLossDict]):
         logits, length_logits = model(
             x_t,
             t if self.send_t_to_model else total_noise,
-            non_pad,  # Use non_pad since no dropped tokens in the new approach
+            non_pad,
             positions=positions,
             cls_position=cls_position,
         )
 
         # Get number of drops from the batch (more efficient than computing from target_ids)
-        n_drops_tensor = batch["n_drops"]
-        if hasattr(n_drops_tensor, "to_dense"):
-            # Convert sparse tensor to dense and sum to get total drops per example
-            n_drops = n_drops_tensor.to_dense().sum(dim=1)
-        else:
-            # If already dense, sum along sequence dimension
-            n_drops = n_drops_tensor.sum(dim=1)
+        n_drops_tensor = batch["n_drops"]  # assume it will be a dense tensor
+        n_drops = n_drops_tensor.sum(dim=-1)  # shape (batch,)
 
         # Normalize target probabilities
         p_target = target_ids / (n_drops[:, None, None] + 1e-9)
 
         # Create loss mask (skip first position reserved for length prediction)
-        loss_mask = self.create_mask(non_pad, constraint)
+        loss_mask = self.create_mask(
+            non_pad, cls_position, constraint
+        )  # shape (batch, seq_len, vocab_size)
 
         # Compute cross-entropy loss using masked CE
         ce = masked_ce_last_two_dims(
-            logits[:, 1:, :],  # Skip first position
-            p_target[:, 1:, :],  # Skip first position
+            logits,  # Not need to skip anything, mask will handle it
+            p_target,
             loss_mask,
             min_value=self.min_value(logits),
             inplace=False,

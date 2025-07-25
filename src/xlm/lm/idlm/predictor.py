@@ -517,7 +517,10 @@ class IdlmPredictor(
             constraint = batch["constraint"]
         else:
             # CLS=0, BOS+REST>=1, prefix=1, non_prefix=2
-            constraint = batch["token_type_ids"] == 0
+            constraint = batch["token_type_ids"] <= 0
+        constraint = constraint.scatter(
+            -1, batch["cls_position"].unsqueeze(-1), 1
+        )
 
         step_results = {
             "x": batch["input_ids"],
