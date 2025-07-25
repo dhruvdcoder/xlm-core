@@ -13,10 +13,12 @@ num_dataloader_workers: 5
 global_components:
   noise_schedule:
     _target_: xlm.lm.idlm.noise_schedule.LogLinearNoiseSchedule
-    sigma_max: 1700  
-    sigma_min: 20   #  specific for owt
-    eps: 1e-3
+    sigma_max: 3000
+    sigma_min: 50   #  specific for owt
+    eps: 1e-4
 
+loss:
+  length_loss_weight: 0.001
 
 
 trainer:
@@ -26,7 +28,7 @@ trainer:
 
 
 optimizer:
-  lr: 0.0001
+  lr: 0.00005
 
 lr_scheduler:
   name: "constant_with_warmup" # https://github.com/huggingface/transformers/blob/main/src/transformers/trainer_utils.py#L435
