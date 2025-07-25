@@ -32,7 +32,8 @@ class MetricWrapper(torch.nn.Module):
         name: str,
         metric: Metric,
         update_fn: Union[
-            Callable[[Dict[str, Any], Dict[str, Any]], Dict[str, Any]], str
+            Callable[[Dict[str, Any], Dict[str, Any], Any], Dict[str, Any]],
+            str,
         ],
         prefix: str = "",
         on_step: bool = False,
@@ -50,16 +51,19 @@ class MetricWrapper(torch.nn.Module):
         self.add_dataloader_idx = add_dataloader_idx
         if isinstance(update_fn, str):
             self.update_fn: Callable[
-                [Dict[str, Any], Dict[str, Any]], Dict[str, Any]
+                [Dict[str, Any], Dict[str, Any], Any], Dict[str, Any]
             ] = get_function(update_fn)
         else:
             self.update_fn = update_fn
 
     def update(
-        self, batch: Dict[str, Any], loss_dict: Dict[str, Any]
+        self,
+        batch: Dict[str, Any],
+        loss_dict: Dict[str, Any],
+        tokenizer: Any = None,
     ) -> Dict[str, Any]:
         """Update the metric with the current batch and loss_dict."""
-        kwargs = self.update_fn(batch, loss_dict)
+        kwargs = self.update_fn(batch, loss_dict, tokenizer)
         self.metric.update(**kwargs)
         return loss_dict
 
@@ -102,7 +106,7 @@ class MetricWrapper(torch.nn.Module):
 
 
 def mean_metric_update_fn(
-    batch: Dict[str, Any], loss_dict: Dict[str, Any]
+    batch: Dict[str, Any], loss_dict: Dict[str, Any], tokenizer: Any = None
 ) -> Dict[str, Any]:
     return {
         "value": loss_dict["batch_loss"],
@@ -110,7 +114,7 @@ def mean_metric_update_fn(
 
 
 def seq2seq_exact_match_update_fn(
-    batch: Dict[str, Any], loss_dict: Dict[str, Any]
+    batch: Dict[str, Any], loss_dict: Dict[str, Any], tokenizer: Any = None
 ) -> Dict[str, Any]:
     """
     Args:
@@ -133,7 +137,7 @@ def seq2seq_exact_match_update_fn(
 
 
 def seq2seq_token_accuracy_update_fn(
-    batch: Dict[str, Any], loss_dict: Dict[str, Any]
+    batch: Dict[str, Any], loss_dict: Dict[str, Any], tokenizer: Any = None
 ) -> Dict[str, Any]:
     """
     Args:

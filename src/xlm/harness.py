@@ -553,7 +553,7 @@ class Harness(L.LightningModule):
                 dataloader_name, []
             ),
         ):
-            metric.update(batch, loss_dict)
+            metric.update(batch, loss_dict, self.tokenizer)
             metric.log(self, batch, loss_dict)
 
         for key in self.key_to_remove_after_logging:

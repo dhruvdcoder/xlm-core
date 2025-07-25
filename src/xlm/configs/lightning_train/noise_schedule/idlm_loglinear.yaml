@@ -1,12 +1,13 @@
 # @package _global_
 
-noise_schedule:
-  _target_: xlm.noise_schedule.idlm.LogLinearNoiseSchedule
-  sigma_min: 5
-  sigma_max: 200 # vstar_medium
-  antithetic_sampling: false
+global_components:
+  noise_schedule:
+    _target_: xlm.lm.idlm.noise_schedule.LogLinearNoiseSchedule
+    sigma_max: 35
+    sigma_min: 0.01
+    antithetic_sampling: false
 
 tags:
   noise_schedule: loglinear
-  correlated_t: ${noise_schedule.antithetic_sampling}
+  correlated_t: ${global_components.noise_schedule.antithetic_sampling}
   T: 1

@@ -1,0 +1,46 @@
+# @package _global_
+defaults:
+  - override /datamodule: lm1b
+  - override /noise_schedule: idlm_poisson_lm1b
+  - override /model_type: idlm
+  - override /model: idlm
+
+per_device_batch_size: 32
+global_batch_size: 512
+block_size: 128
+
+datamodule:
+  print_batch_fn: xlm.lm.idlm.collators.print_batch_idlm
+
+global_components:
+  tokenizer:
+    _target_: xlm.datamodule.BertTokenizerFast.from_pretrained
+    pretrained_model_name_or_path: bert-base-uncased
+
+trainer:
+  max_steps: 1000000
+  val_check_interval: 50000
+  num_sanity_val_steps: 5
+
+callbacks:
+  checkpoint_monitor:
+    monitor: val/lm/accumulated_loss
+
+optimizer:
+  lr: 0.0005
+  weight_decay: 0.01
+
+lr_scheduler:
+  name: "constant_with_warmup"
+  num_warmup_steps: 1000
+  num_training_steps: ${trainer.max_steps}
+  monitor: "train/loss"
+
+predictor:
+  sampling_method: sample_top_p
+  p: 0.9
+  max_steps: 100
+
+loss:
+  use_diffusion_weight_for_ce: true
+  use_diffusion_weight_for_length_loss: true 

@@ -1,12 +1,12 @@
 # @package _global_
 
 noise_schedule:
-  _target_: xlm.noise_schedule.idlm.GeometricNoiseSchedule
-  sigma_min: 1
-  sigma_max: 40 # vstar_medium
+  _target_: xlm.lm.idlm.noise_schedule.GeometricNoiseSchedule
+  sigma_max: 35
+  sigma_min: 0.01
   antithetic_sampling: false
 
 tags:
   noise_schedule: geometric
-  correlated_t: ${noise_schedule.antithetic_sampling}
+  correlated_t: ${global_components.noise_schedule.antithetic_sampling}
   T: 1

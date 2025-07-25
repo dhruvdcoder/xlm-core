@@ -26,7 +26,7 @@ trainer:
   enable_checkpointing: null
 
 optimizer:
-  lr: 0.0005
+  lr: 0.00005
 
 lr_scheduler:
   num_warmup_steps: 100
