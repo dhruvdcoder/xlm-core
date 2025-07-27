@@ -2,10 +2,10 @@ defaults:
   - _self_
   - paths: default
   - hydra: default
-  - datamodule: ??? # NEEDED
+  - datamodule: null # ??? # NEEDED
   - noise_schedule: dummy # default
-  - model_type: ??? #NEEDED: ilm_stopping # discrete_time_absorbing
-  - model: ??? # NEEDED: rotary_transformer_small_ilm_stopping # replace with ???
+  - model_type: null # ??? #NEEDED: ilm_stopping # discrete_time_absorbing
+  - model: null # ??? # NEEDED: rotary_transformer_small_ilm_stopping # replace with ???
   - callbacks: default_v2
   - loggers: default
   - trainer_strategy: single_device

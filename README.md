@@ -7,7 +7,21 @@
 conda create -n venv_xlm python=3.11.10 pip ipykernel -y
 conda activate venv_xlm
 ```
+## Install hydra from source
+If you want dynamic help messages, we need to build the latest hydra from source. To do this you will need jdk installed.
+If you are on a cluster, you may be able to load java using `module load jdk` or something similar.
+If your system does not have `java`, open `build_hydra.sh` and uncomment the lines that install jdk (don't worry, it will be removed after hydra is installed.)
+```bash
+cd requirements && chmod +x build_hydra.sh && ./build_hydra.sh && cd ..
+```
 
+## Install hydra from pypi
+This is the easier option but you will not get the dynamic help messages.
+```bash
+pip install hydra-core
+```
+
+## Install the rest of the requirements
 ```
 pip install -r requirements/core_requirements.txt && \
 pip install -r requirements/test_requirements.txt && \

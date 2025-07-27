@@ -1,0 +1,62 @@
+# base help sections
+# App name, override to match the name your app is known by
+app_name: xlm
+important_default_list_elements: unavailable
+# Help header, customize to describe your app to your users
+header: == ${hydra.help.app_name} job_type=${job_type} ==
+
+footer: |-
+  Powered by Hydra (https://hydra.cc)
+  For more information, on how to override config groups and values, see https://hydra.cc/docs/advanced/override_grammar/basic.
+  Use --hydra-help to view Hydra specific help
+
+# Basic Hydra flags:
+#   $FLAGS_HELP
+#
+# Config groups, choose one of:
+#   $APP_CONFIG_GROUPS: All config groups that does not start with hydra/.
+#   $HYDRA_CONFIG_GROUPS: All the Hydra config groups (starts with hydra/)
+#
+# Configuration generated with overrides:
+#   $CONFIG : Generated config
+#
+template: |-
+  ${hydra.help.header}
+
+  This is ${hydra.help.app_name}!
+
+  ======= Mandatory configuration groups =======
+  You need to specify your choice for each of the following groups using `group=value` syntax.
+  1. datamodule
+  2. model_type
+  3. model
+
+  Currently selected groups:
+  ${hydra.help.important_default_list_elements}
+
+  ======= Mandatory overrides =======
+  1. job_type: train, generate, evaluate
+
+  OR you can collect all config groups and other overrides in a single experiment config file and point to it with `experiment=experiment_name` syntax.
+
+  We recomment using an experiment config to specify this. You can create an experiment config, place it in `configs/experiments` directory and then use it with `experiment=experiment_name` syntax. See `configs/lightning_train/experiment/owt_ilm.yaml` for an example. Then you don't need to specify the config groups individually.
+
+  ======= List of all available config groups and their values =======
+
+  $APP_CONFIG_GROUPS
+
+  ======= Config =======
+  This is the config generated for this run.
+  You can override any value using the dot notation, for example:
+  xlm "job_type=train" "job_name=owt_ilm" "experiment=owt_ilm" \
+    "datamodule.dataset_managers.val.unconditional_prediction.dataset_constructor_str=xlm.lm.ilm.datamodule_ilm.ILMEmptyDataset"
+  
+  Here we are overriding the dataset constructor for the validation set.
+
+  Following is the config generated for this run.
+
+  -------
+  $CONFIG
+  -------
+  
+  ${hydra.help.footer}

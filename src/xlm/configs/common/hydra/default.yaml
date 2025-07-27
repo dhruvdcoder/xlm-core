@@ -1,8 +1,10 @@
-
 # enable color logging
 defaults:
+  - /hydra/callbacks: [dynamic_help]
+  - override help: xlm
   - override hydra_logging: colorlog
   - override job_logging: colorlog
+
 
 # output directory, generated dynamically on each run
 run:

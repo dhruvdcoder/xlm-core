@@ -1,0 +1,5 @@
+# @package _global_
+hydra:
+  callbacks:
+    dynamic_help:
+      _target_: xlm.commands.hydra_callbacks.LogComposeCallback

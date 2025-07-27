@@ -12,7 +12,7 @@ torch>=2.7.0,<2.8.0
 # --index-url https://download.pytorch.org/whl/cu124 ; torch==2.5.1+cu124
 # you can change the cuda version but make sure to use torch 2.5.1
 jupyter
-hydra-core
+#hydra-core # we install this separately
 hydra-colorlog
 hydra-joblib-launcher
 hydra-submitit-launcher
