@@ -96,7 +96,6 @@ class LogComposeCallback(Callback):
             for d in defaults_list.defaults
             if not d.package.startswith("hydra")
         ]
-        job_type_missing = "job_type" not in overrides
 
         important_default_list_elements = _get_important_default_list_elements(
             non_hydra_defaults
@@ -119,8 +118,3 @@ class LogComposeCallback(Callback):
                     )
                 else:
                     self.log.warning(f"No defaults found for {key}")
-
-        if job_type_missing:
-            raise ConfigCompositionException(
-                "Please provide `job_type=type`. Available types are: train, generate, evaluate"
-            )

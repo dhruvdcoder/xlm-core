@@ -197,7 +197,7 @@ def prepare_prefix_ids(
         "input_ids": torch.tensor(input_ids, dtype=torch.long),
         "attention_mask": torch.tensor(attention_mask, dtype=torch.bool),
         "token_type_ids": torch.tensor(token_type_ids, dtype=torch.long),
-        "cls_positions": torch.tensor(cls_positions, dtype=torch.long),
+        "cls_position": torch.tensor(cls_positions, dtype=torch.long),
     }
 
 
@@ -644,7 +644,11 @@ def print_batch_ilm(
         else None
     )
     print("constraint:")
-    print(batch["constraint"][0] if batch["constraint"] is not None else None)
+    print(
+        batch["constraint"][0]
+        if batch.get("constraint", None) is not None
+        else None
+    )
     print("cls_position:")
     print(
         batch["cls_position"][0] if batch["cls_position"] is not None else None

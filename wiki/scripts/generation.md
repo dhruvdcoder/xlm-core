@@ -11,3 +11,10 @@ xlm "job_type=generate" \
 ```
 
 # Debugging
+
+
+# Demo
+
+```bash
+python src/xlm/commands/cli_demo.py "job_type=demo" "job_name=owt_ilm_demo" "experiment=owt_ilm" predictor.stopping_threshold=0.9 +global_flags.DEBUG_PRINT_PREDS=true +hub/checkpoint=ilm_owt
+```

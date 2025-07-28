@@ -155,13 +155,14 @@ def generate(cfg: DictConfig):
     lightning_module = instantiate_model(cfg, datamodule, tokenizer)
 
     # get user input and predict in a loop
-    while True:
-        user_input = input("Enter your prompt (or 'exit' to quit): ")
-        if user_input == "exit":
-            break
-        user_input_list = [user_input]
-        preds = lightning_module.predictor.generate(user_input_list)
-        print(preds[0])
+    with torch.inference_mode():
+        while True:
+            user_input = input("Enter your prompt (or 'exit' to quit): ")
+            if user_input == "exit":
+                break
+            user_input_list = [user_input]
+            preds = lightning_module.predictor.generate(user_input_list)
+            print(preds[0])
 
 
 # Hydra configuration parameters for CLI demo

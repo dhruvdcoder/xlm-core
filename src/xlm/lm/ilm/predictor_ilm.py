@@ -14,7 +14,7 @@ from .types_ilm import (
 )
 from xlm.harness import Predictor
 from xlm.noise import NoiseSchedule
-from .datamodule_ilm import prepare_prefix_ids
+from .datamodule_ilm import prepare_prefix_ids, print_batch_ilm
 from .nn import (
     _remove_tokens,
     remove_tokens,
@@ -861,11 +861,13 @@ class ILMPredictorWithLengthClassification(
             prepare_prefix_ids(
                 token_ids,
                 self.tokenizer.pad_token_id,
-                self.tokenizer.cls_token_id,
-                self.tokenizer.bos_token_id,
+                max_seq_len=None,
+                cls_token_id=self.tokenizer.cls_token_id,
+                bos_token_id=self.tokenizer.bos_token_id,
                 bos_side="left",
             ),
         )
+
         batch["target_ids"] = None
         constraint = torch.ones_like(batch["attention_mask"], dtype=torch.bool)
         constraint[:, -1] = False
@@ -878,8 +880,11 @@ class ILMPredictorWithLengthClassification(
                 device=batch["input_ids"].device,
             ),
         )
+
         constraint = constraint.scatter(-1, cls_position.unsqueeze(-1), 1)
         batch["cls_position"] = cls_position
+        if flags.DEBUG_PRINT_PREDS:
+            print_batch_ilm(batch, "predict", self.tokenizer)
         # move to device
         batch = {
             k: v.to("cuda")
