@@ -245,7 +245,9 @@ def sample_from_top_p(p: float, logits: torch.Tensor) -> torch.Tensor:
     )  # Shape: (*batch, seq_len, vocab_size)
 
     # Sort the probabilities and corresponding logits in descending order
-    sorted_probs, sorted_indices = torch.sort(probs, descending=True, dim=-1)
+    # BUG descending=True is not correct, should be descending=False
+    # sorted_probs, sorted_indices = torch.sort(probs, descending=True, dim=-1)
+    sorted_probs, sorted_indices = torch.sort(probs, descending=False, dim=-1)
     sorted_logits = torch.gather(logits, dim=-1, index=sorted_indices)
 
     # Compute the cumulative sum of the sorted probabilities
