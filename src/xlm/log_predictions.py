@@ -22,6 +22,8 @@ logger = RankedLogger(__name__, rank_zero_only=True)
 class _PredictionWriter:
     """Base class for prediction writers that handle the actual output."""
 
+    supports_reading: bool = False
+
     def __init__(
         self,
         fields_to_keep_in_output: Optional[List[str]] = None,
@@ -37,16 +39,19 @@ class _PredictionWriter:
         """Filter fields from the output dictionary."""
         if self.fields_to_keep_in_output is None:
             return out_dict
-        return {
-            k: v
-            for k, v in out_dict.items()
-            if k in self.fields_to_keep_in_output
-        }
+
+        def keep(k):
+            for field in self.fields_to_keep_in_output:
+                if k.startswith(field) and k != "text_with_spl_tokens":
+                    return True
+            return False
+
+        return {k: v for k, v in out_dict.items() if keep(k)}
 
     def write(
         self,
         predictions: List[Dict[str, Any]],
-        ground_truth_text: List[str],
+        ground_truth_text: Optional[List[str]],
         step: int,
         epoch: int,
         split: Literal["train", "val", "test", "predict"],
@@ -72,6 +77,13 @@ class _PredictionWriter:
         """Attach loggers to the writer if it uses them."""
         pass
 
+    def read(self) -> List[Dict[str, Any]]:
+        """Read predictions from a file."""
+        if not self.supports_reading:
+            raise ValueError(
+                "This writer does not support reading predictions"
+            )
+
 
 class FilePredictionWriter(_PredictionWriter):
     """Writer that outputs predictions to JSONL files."""
@@ -91,12 +103,38 @@ class FilePredictionWriter(_PredictionWriter):
         """
         super().__init__(fields_to_keep_in_output)
         self.file_path_ = file_path_
+        self.supports_reading = True
+
+    def get_file_path(
+        self,
+        pl_module: L.LightningModule,
+        split: Literal["train", "val", "test", "predict"],
+        dataloader_name: str,
+        epoch: int,
+        step: int,
+    ) -> Optional[Path]:
+        file_path: Path
+        if self.file_path_ == "from_pl_module":
+            file_path = Path(
+                pl_module.predictions_dir  # type: ignore
+                / f"{split}/{dataloader_name}/{epoch=}_{step=}.jsonl"
+            )
+        elif self.file_path_ == "none":
+            return None
+        elif isinstance(self.file_path_, Path):
+            file_path = Path(self.file_path_)
+        else:
+            raise ValueError(f"Invalid file_path_: {self.file_path_}")
+
+        self.file_path_ = Path(file_path)
+
+        return file_path
 
     @rank_zero_only
     def write(
         self,
         predictions: List[Dict[str, Any]],
-        ground_truth_text: List[str],
+        ground_truth_text: Optional[List[str]],
         step: int,
         epoch: int,
         split: Literal["train", "val", "test", "predict"],
@@ -116,17 +154,9 @@ class FilePredictionWriter(_PredictionWriter):
             pl_module: The Lightning module.
             trainer: The Lightning trainer.
         """
-        if self.file_path_ == "from_pl_module":
-            file_path: Optional[Path] = (
-                pl_module.predictions_dir  # type: ignore
-                / f"{split}/{dataloader_name}/{epoch=}_{step=}.jsonl"
-            )
-        elif self.file_path_ == "none":
-            file_path = None
-        elif isinstance(self.file_path_, Path):
-            file_path = Path(self.file_path_)
-        else:
-            raise ValueError(f"Invalid file_path_: {self.file_path_}")
+        file_path = self.get_file_path(
+            pl_module, split, dataloader_name, epoch, step
+        )
 
         if file_path is None:
             return
@@ -135,9 +165,28 @@ class FilePredictionWriter(_PredictionWriter):
 
         # Write to file
         with open(file_path, "a") as f:
-            for dict_, gt in zip(predictions, ground_truth_text):
-                dict_["truth"] = gt
+            for i, dict_ in enumerate(predictions):
+                if ground_truth_text:
+                    dict_["truth"] = ground_truth_text[i]
                 f.write(json.dumps(self.filter_fields(dict_)) + "\n")
+
+    def read(
+        self,
+        step: int,
+        epoch: int,
+        split: Literal["train", "val", "test", "predict"],
+        dataloader_name: str,
+        pl_module: L.LightningModule,
+    ) -> List[Dict[str, Any]]:
+        """Read predictions from a JSONL file."""
+        file_path = self.get_file_path(
+            pl_module, split, dataloader_name, epoch, step
+        )
+        if file_path is None:
+            return []
+        logger.debug(f"Reading predictions from {file_path}")
+        with open(file_path, "r") as f:
+            return [json.loads(line) for line in f]
 
 
 class LoggerPredictionWriter(_PredictionWriter):
@@ -159,6 +208,7 @@ class LoggerPredictionWriter(_PredictionWriter):
         super().__init__(fields_to_keep_in_output)
         self.n_rows = n_rows
         self.logger_ = logger_
+        self.supports_reading = False
 
     @rank_zero_only
     def write(
@@ -259,6 +309,7 @@ class ConsolePredictionWriter(_PredictionWriter):
             fields_to_keep_in_output: List of fields to keep in the output. If None, all fields are kept.
         """
         super().__init__(fields_to_keep_in_output)
+        self.supports_reading = False
 
     @rank_zero_only
     def write(
@@ -427,4 +478,45 @@ class LogPredictions:
                 dataloader_name=dataloader_name,
                 pl_module=pl_module,
                 trainer=trainer,
+            )
+
+    def read(
+        self,
+        step: int,
+        epoch: int,
+        split: Literal["train", "val", "test", "predict"],
+        dataloader_name: str,
+        pl_module: L.LightningModule,
+    ) -> List[Dict[str, Any]]:
+        """Read predictions from the writers."""
+        for writer in self.writers:
+            if writer.supports_reading:
+                return writer.read(
+                    step, epoch, split, dataloader_name, pl_module
+                )
+        logger.warning(
+            "No writer supports reading, returning empty list. "
+            "You can add a FilePredictionWriter to your writers list to enable reading."
+        )
+        return []
+
+    def update_predictions(
+        self,
+        predictions: List[Dict[str, Any]],
+        step: int,
+        epoch: int,
+        split: Literal["train", "val", "test", "predict"],
+        dataloader_name: str,
+        pl_module: L.LightningModule,
+    ) -> None:
+        for writer in self.writers:
+            writer.write(
+                predictions=predictions,
+                ground_truth_text=None,
+                step=step,
+                epoch=epoch,
+                split=split,
+                dataloader_name=dataloader_name,
+                pl_module=pl_module,
+                trainer=None,
             )

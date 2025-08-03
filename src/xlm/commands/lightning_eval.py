@@ -3,10 +3,6 @@ import os
 import torch
 
 
-from xlm.callbacks import (
-    GenerativePerplexityCallback,
-)
-
 if "PROJECT_ROOT" not in os.environ:
     os.environ["PROJECT_ROOT"] = "."
 os.environ["HYDRA_FULL_ERROR"] = "1"
@@ -60,13 +56,14 @@ def evaluate(cfg: DictConfig):
                 logger.info(f"Instantiating callback <{cb_conf._target_}>")
                 callbacks.append(hydra.utils.instantiate(cb_conf))
 
-    if cfg.generative_perplexity.evaluators is not None:
-        for (
-            evaluator_name,
-            evaluator_conf,
-        ) in cfg.generative_perplexity.evaluators.items():
-            evaluator = hydra.utils.instantiate(evaluator_conf)
-            callbacks.append(GenerativePerplexityCallback(evaluator))
+    # REMOVE: moved to inside the harness
+    # if cfg.generative_perplexity.evaluators is not None:
+    #    for (
+    #        evaluator_name,
+    #        evaluator_conf,
+    #    ) in cfg.generative_perplexity.evaluators.items():
+    #        evaluator = hydra.utils.instantiate(evaluator_conf)
+    #        callbacks.append(GenerativePerplexityCallback(evaluator))
 
     # instantiate the loggers
     loggers: List[Logger] = []

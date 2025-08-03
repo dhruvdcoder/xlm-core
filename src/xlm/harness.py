@@ -1,6 +1,7 @@
 from collections.abc import Generator
 from itertools import chain
 from pathlib import Path
+import re
 from typing import (
     Any,
     Callable,
@@ -35,6 +36,11 @@ import lightning as L
 # Import LogPredictions classes from the new module
 from xlm.log_predictions import (
     LogPredictions,
+)
+from xlm.generative_perplexity import (
+    GenerativePerplexityEvaluator,
+    compute_entropy_and_length_for_sample,
+    compute_nll_for_sample,
 )
 
 logger = RankedLogger(__name__, rank_zero_only=True)
@@ -199,6 +205,7 @@ class Harness(L.LightningModule):
     # ]
     key_to_remove_after_logging: List[str]
     log_predictions: Optional[LogPredictions]
+    generative_perplexity_evaluators: Dict[str, GenerativePerplexityEvaluator]
 
     def __init__(
         self,
@@ -239,6 +246,7 @@ class Harness(L.LightningModule):
         self.instantiate_loss_function()
         self.setup_dataloader_names()
         self.setup_metrics(cfg)
+        self.setup_generative_perplexity(cfg)
         self.predictions_dir = Path(cfg.paths.run_dir) / "predictions"
         # validate and save config at the end
         self.validate_config(self.config)
@@ -343,6 +351,26 @@ class Harness(L.LightningModule):
             self.log_predictions = hydra.utils.instantiate(cfg.log_predictions)
         else:
             self.log_predictions = None
+
+    def setup_generative_perplexity(self, cfg: DictConfig):
+        self.generative_perplexity_evaluators: Dict[
+            str, GenerativePerplexityEvaluator
+        ] = {}
+        if (
+            cfg.get("generative_perplexity", {}).get("evaluators", None)
+            is not None
+        ):
+            for (
+                evaluator_name,
+                evaluator_conf,
+            ) in cfg.generative_perplexity.evaluators.items():
+                evaluator = hydra.utils.instantiate(evaluator_conf)
+                self.generative_perplexity_evaluators[evaluator_name] = (
+                    evaluator
+                )
+                logger.info(
+                    f"Instantiated generative perplexity evaluator: {evaluator_name}"
+                )
 
     def validate_config(self, cfg: DictConfig):
         return
@@ -598,6 +626,125 @@ class Harness(L.LightningModule):
         assert dataloader_idx is not None
         return self._step(batch, batch_idx, dataloader_idx, "predict")
 
+    def compute_generative_perplexity(
+        self,
+        split: Literal["train", "val", "test", "predict"],
+        dataloader_name: str,
+        epoch: int,
+        step: int,
+        update_logged_predictions: bool = True,
+    ) -> Optional[Dict[str, Any]]:
+        if not self.generative_perplexity_evaluators:
+            return None
+        # read predictions
+        predictions: List[Dict[str, Any]] = self.log_predictions.read(
+            step, epoch, split, dataloader_name, self
+        )
+        if not predictions:
+            logger.warning(
+                f"No predictions found for {split} {dataloader_name} {epoch} {step}"
+            )
+            return None
+        # get lengths and entropies
+        for pred in predictions:
+            string = pred["text"]
+            entropy, length = compute_entropy_and_length_for_sample(
+                string, self.tokenizer
+            )
+            pred["entropy"] = entropy
+            pred["length"] = length
+        # generate perplexities and prepare for aggregation
+        data = {
+            "length": [],
+            "entropy": [],  # models, own tokenizer
+        }
+
+        def add_keys(evaluator_name: str):
+            data[f"nll_{evaluator_name}"] = []  # per sample mean nll
+            data[f"total_nll_{evaluator_name}"] = []  # per sample sum nll
+            data[f"length_{evaluator_name}"] = []  # per sample length
+            data[f"entropy_{evaluator_name}"] = []  # per sample entropy
+            data[f"perplexity_{evaluator_name}"] = []  # per sample perplexity
+
+        for evaluator_name in self.generative_perplexity_evaluators:
+            add_keys(evaluator_name)
+
+        with torch.no_grad():
+            for (
+                evaluator_name,
+                evaluator,
+            ) in self.generative_perplexity_evaluators.items():
+                with evaluator.loaded(
+                    self.tokenizer,
+                    self.device,
+                ):
+                    for pred in predictions:
+                        string = pred["text"]
+                        nll, _len, entropy = compute_nll_for_sample(
+                            string, evaluator
+                        )
+                        pred[f"total_nll_{evaluator_name}"] = nll
+                        pred[f"total_length_{evaluator_name}"] = _len
+                        pred[f"entropy_{evaluator_name}"] = entropy
+                        # per sample mean nll and perplexity
+                        mean_nll = nll / _len
+                        pred[f"nll_{evaluator_name}"] = mean_nll
+                        perplexity = torch.exp(torch.tensor(mean_nll)).item()
+                        pred[f"perplexity_{evaluator_name}"] = perplexity
+                        data[f"nll_{evaluator_name}"].append(mean_nll)
+                        data[f"total_nll_{evaluator_name}"].append(nll)
+                        data[f"length_{evaluator_name}"].append(_len)
+                        data[f"entropy_{evaluator_name}"].append(entropy)
+                        data[f"perplexity_{evaluator_name}"].append(perplexity)
+                        data["entropy"].append(pred["entropy"])
+                        data["length"].append(pred["length"])
+        # aggregate
+        aggregated_data = {}
+        for key in data:
+            if not key.startswith("total_nll_"):
+                aggregated_data[key] = torch.tensor(data[key]).double().mean()
+                self.log(
+                    f"{split}/{key}",
+                    aggregated_data[key],
+                    prog_bar=False,
+                    sync_dist=False,
+                    rank_zero_only=True,
+                    logger=True,
+                    add_dataloader_idx=False,
+                )
+            else:
+                evaluator_name = re.sub(r"total_nll_", "", key)
+                total_length = (
+                    torch.tensor(data[f"length_{evaluator_name}"])
+                    .double()
+                    .sum()
+                )
+                total_nll = torch.tensor(data[key]).double().sum()
+                perplexity = torch.exp(total_nll / total_length).item()
+                aggregated_data[f"total_perplexity_{evaluator_name}"] = (
+                    perplexity
+                )
+                self.log(
+                    f"{split}/total_perplexity_{evaluator_name}",
+                    perplexity,
+                    prog_bar=False,
+                    sync_dist=False,
+                    rank_zero_only=True,
+                    logger=True,
+                    add_dataloader_idx=False,
+                )
+
+        if update_logged_predictions:
+            self.log_predictions.update_predictions(
+                predictions,
+                step,
+                epoch,
+                split,
+                dataloader_name,
+                self,
+            )
+        return aggregated_data
+
     # endregion: Task-specific methods
     ############################################################
 
@@ -704,7 +851,14 @@ class Harness(L.LightningModule):
 
     def on_validation_epoch_end(self) -> None:
         # reset val metrics if not passing metric objects to the log()
-        pass
+        if self.trainer.is_global_zero:
+            self.compute_generative_perplexity(
+                "val",
+                "unconditional_prediction",
+                self.trainer.current_epoch,
+                self.trainer.global_step,
+                update_logged_predictions=True,
+            )
 
     def on_test_epoch_start(self) -> None:
         self.model.eval()
@@ -712,6 +866,15 @@ class Harness(L.LightningModule):
     def on_test_epoch_end(self) -> None:
         # reset test metrics if not passing metric objects to the log()
         pass
+
+    def on_predict_end(self) -> None:
+        self.compute_generative_perplexity(
+            "predict",
+            "unconditional_prediction",
+            self.trainer.current_epoch,
+            self.trainer.global_step,
+            update_logged_predictions=True,
+        )
 
     # endregion: Lightning Hooks
     ############################################################

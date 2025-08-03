@@ -1,28 +1,40 @@
+import json
 import logging
+from contextlib import contextmanager
+from pathlib import Path
 from typing import (
+    ContextManager,
+    Counter,
+    Iterator,
     List,
     Optional,
     Protocol,
+    Tuple,
     TypedDict,
-    ContextManager,
     Union,
     cast,
 )
 
-from torch import Tensor as TT
-from jaxtyping import Float, Integer
-import logging
+import lightning as L
 import torch
+from jaxtyping import Float, Integer
+from torch import Tensor as TT
+from torchmetrics import Perplexity
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     PreTrainedTokenizer,
     PreTrainedTokenizerFast,
 )
+
+from xlm.datamodule import Tokenizer
 from xlm.utils.rank_zero import rank_zero_info, rank_zero_warn, warn_once
-from contextlib import contextmanager
 
 logger = logging.getLogger(__name__)
+
+
+############################################################
+# region: Evaluators
 
 
 class GenerativePerplexityEvaluatorResult(TypedDict):
@@ -132,6 +144,10 @@ class AutoModelForCausalLMGenerativePerplexityEvaluator(
             Some models like GPT2 only have EOS token. In those cases, we will not be able to evaluate EOS generation
             because PAD will be set to EOS and the EOS token will be lost.
         """
+        # Need to hardcode this here because of sporadic 401 errors from huggingface.
+        lookup_cache = {
+            "gpt2-large": "/scratch3/workspace/dhruveshpate_umass_edu-text_diffusion/hf_cache/hub/models--gpt2-large/snapshots/32b71b12589c2f8d625668d2335a01cac3249519"
+        }
         self.pretrained_model = (
             cast(
                 torch.nn.Module,
@@ -140,7 +156,10 @@ class AutoModelForCausalLMGenerativePerplexityEvaluator(
             .to(device)
             .eval()
         )
-        self.tokenizer = AutoTokenizer.from_pretrained(self.name)
+        path_ = lookup_cache.get(self.name, self.name)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            path_, local_files_only=True
+        )
         self.device = device
         original_vocab_size = self.tokenizer.vocab_size
         # eos token
@@ -162,10 +181,13 @@ class AutoModelForCausalLMGenerativePerplexityEvaluator(
     def __call__(
         self, samples: List[str]
     ) -> Optional[GenerativePerplexityEvaluatorResult]:
+        if len(samples) != 1:
+            raise ValueError("batching is not supported yet.")
+
         encoding = self.tokenizer(  # pyright: ignore[reportOptionalCall]
             samples,
-            padding=True,
-            truncation=True,
+            padding="longest",
+            truncation=False,
             return_attention_mask=True,
             return_tensors="pt",
             add_special_tokens=False,
@@ -176,6 +198,7 @@ class AutoModelForCausalLMGenerativePerplexityEvaluator(
         attention_mask: Integer[TT, " *batch seq_len-1"] = (
             encoding.attention_mask[:, :-1]
         )
+        lengths = attention_mask.sum(dim=-1)  # (batch)
         target: Integer[TT, " *batch seq_len-1"] = encoding.input_ids[
             :, 1:
         ].clone()
@@ -191,13 +214,35 @@ class AutoModelForCausalLMGenerativePerplexityEvaluator(
                 "Empty input received for generative perplexity evaluation. Skipped.",
             )
             return None
-        outputs = self.pretrained_model(  # pyright: ignore[reportOptionalCall]
-            inputs, attention_mask=attention_mask
+        with torch.autocast(
+            device_type=self.device.type, dtype=torch.bfloat16
+        ):
+            outputs = (
+                self.pretrained_model(  # pyright: ignore[reportOptionalCall]
+                    inputs, attention_mask=attention_mask
+                )
+            )
+        logits = outputs.logits  # (batch, seq_len, vocab_size)
+        nlls = torch.nn.functional.cross_entropy(
+            logits.transpose(-1, -2),
+            target,
+            reduction="none",
+            ignore_index=self.ignore_index,
         )
-        logits = outputs.logits
+        counts = torch.tensor(
+            list(Counter(target[0].tolist()).values())
+        )  # count the tokens
+        total = counts.sum()
+        if total != lengths.item():
+            raise RuntimeError
+        p_for_entropy = counts / total
+        entropy = -torch.sum(p_for_entropy * torch.log(p_for_entropy))
         return {
             "logits": logits,
             "target": target,
+            "lengths": lengths,
+            "nlls": nlls,
+            "entropy": entropy,
         }
 
     def unload(self) -> None:
@@ -236,3 +281,117 @@ class GPT2GenerativePerplexityEvaluator(
         # If not, make another existing token the pad token.
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = "<|pad|>"
+
+
+# endregion: Evaluators
+############################################################
+
+
+def _compute_generative_perplexity(
+    evaluator: GenerativePerplexityEvaluator,
+    device: torch.device,
+    tokenizer: Tokenizer,
+    file_path: Path,
+) -> Optional[TT]:
+    """
+    Depricated version because it works with file path.
+    """
+    if not file_path.exists():
+        logger.error(
+            f"No samples found at {file_path}. "
+            "If you are using a callback like UnconditionalSampleGenerator, to generate samples, "
+            "make sure that it is placed before GenerativePerplexity in the callbacks list."
+        )
+        return None
+
+    # Load samples from file and evaluate in batches
+    samples = []
+    generative_perplexity_metric = Perplexity(
+        ignore_index=evaluator.ignore_index
+    ).to(device)
+    generative_perplexity_metric.reset()
+    with evaluator.loaded(
+        tokenizer,  # type: ignore
+        device,
+    ):  # load it on the same device for now
+        with open(file_path) as f:
+            for line in f:
+                sample = json.loads(line)
+                text = sample["text"]
+                samples.append(text)
+
+                if len(samples) == evaluator.batch_size:
+                    result: Optional[GenerativePerplexityEvaluatorResult] = (
+                        evaluator(samples)
+                    )
+                    # reset the samples list for the next batch
+                    samples = []
+                    if result is None:
+                        continue
+                    logits = result["logits"]
+                    target = result["target"]
+                    generative_perplexity_metric.update(logits, target)
+
+            # Handle remaining samples in last batch if any
+            if samples:
+                result = evaluator(samples)
+                if result is not None:
+                    logits = result["logits"]
+                    target = result["target"]
+                    generative_perplexity_metric.update(logits, target)
+
+    perplexity = generative_perplexity_metric.compute()
+    return perplexity
+
+
+def _compute_nll_for_sample(
+    string: str,
+    evaluator: GenerativePerplexityEvaluator,
+    device: torch.device,
+    tokenizer: Tokenizer,
+) -> float:
+    # support batching maybe later
+    inputs = tokenizer([string], return_tensors="pt")
+    length = inputs.input_ids.shape[1] - 1
+    inputs.to(device)
+    with torch.autocast(device_type=device.type, dtype=torch.bfloat16):
+        evaluator = cast(
+            AutoModelForCausalLMGenerativePerplexityEvaluator, evaluator
+        )
+        outputs = evaluator.pretrained_model(
+            **inputs
+        )  # only works with AutoModelForCausalLM
+    all_log_probs = torch.log_softmax(outputs.logits, dim=-1)[0, :-1, :]
+    log_p = all_log_probs[
+        torch.arange(all_log_probs.shape[0], device=all_log_probs.device),
+        inputs.input_ids[0, 1:],
+    ]
+    nll = -log_p.mean().item()
+    return nll, length
+
+
+def compute_nll_for_sample(
+    string: str,
+    evaluator: GenerativePerplexityEvaluator,
+) -> Tuple[float, int, float]:
+    # support batching maybe later
+    eval_result = evaluator([string])
+    total_nll_per_sample: float = eval_result["nlls"].sum(-1).item()
+    total_length: int = eval_result["lengths"].sum().item()
+    entropy: float = eval_result["entropy"].item()
+    return total_nll_per_sample, total_length, entropy
+
+
+def compute_entropy_and_length_for_sample(
+    string: str,
+    tokenizer: Tokenizer,
+) -> Tuple[float, int]:
+    inputs = tokenizer([string], return_tensors="pt")
+    length = inputs.input_ids.shape[1] - 1
+    counts = torch.tensor(
+        list(Counter(inputs.input_ids[0, 1:].tolist()).values())
+    )
+    total = counts.sum()
+    p_for_entropy = counts / total
+    entropy = -torch.sum(p_for_entropy * torch.log(p_for_entropy)).item()
+    return entropy, length

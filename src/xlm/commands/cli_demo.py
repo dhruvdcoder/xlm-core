@@ -36,17 +36,9 @@ from xlm.harness import Harness
 from xlm.utils.rich_utils import print_config_tree
 from lightning import seed_everything
 from xlm.utils.rank_zero import RankedLogger
+from .cli_demo import replace_model
 
 logger = RankedLogger(__name__, rank_zero_only=True)
-
-
-def replace_model(cfg: DictConfig) -> DictConfig:
-    if "hub_model" in cfg:
-        cfg.model = cfg.hub_model
-        del cfg.hub_model
-        if "generation" in cfg:
-            del cfg.generation
-    return cfg
 
 
 def instantiate_model(

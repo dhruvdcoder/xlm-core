@@ -87,13 +87,16 @@ lr_scheduler:
   monitor: "train/loss"
 
 generative_perplexity:
-  num_samples: 64 # total samples
   evaluators: null
 
 log_predictions:
   _target_: xlm.log_predictions.LogPredictions
   fields_to_keep_in_output:
     - text
+    - length
+    - perplexity
+    - entropy
+    - nll
   writers:
     - file
     - logger

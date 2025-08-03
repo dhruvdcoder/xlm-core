@@ -1,0 +1,21 @@
+# @package _global_
+defaults:
+  - override /callbacks: debug_v2
+  - override /loggers: debug
+
+paths:
+  log_dir: ${paths.root_dir}/debug_logs/
+
+num_dataset_workers: 1 # does not accept 0
+global_batch_size: 5
+num_dataloader_workers: 0
+per_device_batch_size: 5
+dataloader_prefetch_factor: null
+dataloader_persistent_workers: False
+
+
+trainer:
+  log_every_n_steps: 1
+  limit_train_batches: 5
+  limit_val_batches: 5
+  limit_test_batches: 5

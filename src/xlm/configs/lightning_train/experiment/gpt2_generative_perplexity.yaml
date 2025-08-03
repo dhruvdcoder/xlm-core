@@ -1,0 +1,4 @@
+# @package _global_
+defaults:
+  - /generative_perplexity@generative_perplexity.evaluators: [gpt2-large]
+  

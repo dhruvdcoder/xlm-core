@@ -7,6 +7,17 @@
 # print("Waiting for debugger attach...")
 # debugpy.wait_for_client()
 
+# fmt: off
+import dotenv
+# read env variables before anything else is imported
+dotenv.load_dotenv(
+    override=True
+)  # set env variables from .env file, override=True is important
+found_secretes = dotenv.load_dotenv(".secrets.env", override=True)
+if not found_secretes:
+    print("Warning: .secrets.env not found")
+# fmt: on
+
 import os
 import json
 
@@ -22,7 +33,6 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 from xlm.utils import omegaconf_resolvers
 from xlm.external_models import setup_external_models
-import dotenv
 
 # endregion
 
@@ -39,13 +49,6 @@ _HYDRA_PARAMS = {
     "config_name": "config.yaml",
 }
 
-# region: other global constants and functions
-dotenv.load_dotenv(
-    override=True
-)  # set env variables from .env file, override=True is important
-found_secretes = dotenv.load_dotenv(".secrets.env", override=True)
-if not found_secretes:
-    print("Warning: .secrets.env not found")
 # Register a temporary resolver so that early calls to resolve() don't fail
 omegaconf_resolvers.register_resolvers()
 OmegaConf.register_new_resolver(
@@ -99,8 +102,6 @@ def main(cfg: DictConfig) -> None:
         else:
             print(data)
         return
-    # INFO: delay the import until after main() to help with hydra auto-completion speed
-    # Read more here: https://github.com/facebookresearch/hydra/issues/934
     from xlm.utils.rich_utils import print_config_tree
 
     if cfg.job_type == "name":
@@ -111,11 +112,7 @@ def main(cfg: DictConfig) -> None:
         return
 
     if cfg.job_type == "length_analysis":
-        from xlm.commands.length_analysis import length_analysis
-
-        # print_config_tree(cfg, resolve=True, save_to_file=False)
-        length_analysis(cfg)
-        return
+        raise NotImplementedError("Length analysis is not implemented yet")
 
     from xlm.utils.debug import set_flags
     from xlm.commands.lightning_train import train

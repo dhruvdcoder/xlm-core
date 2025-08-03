@@ -181,6 +181,15 @@ def push_to_hub(cfg: DictConfig):
     model.push_to_hub(**hub_config, token=os.getenv("HF_HUB_KEY"))
 
 
+def replace_model(cfg: DictConfig) -> DictConfig:
+    if "hub_model" in cfg:
+        cfg.model = cfg.hub_model
+        del cfg.hub_model
+        if "generation" in cfg:
+            del cfg.generation
+    return cfg
+
+
 # Hydra configuration parameters for CLI demo
 _HYDRA_PARAMS = {
     "version_base": "1.3",

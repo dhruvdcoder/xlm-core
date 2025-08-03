@@ -513,6 +513,7 @@ class ILMPredictorWithLengthClassification(
         model: Optional[ILMModel] = None,
         force_predict_first_step: bool = False,
         input_constraint: bool = False,
+        use_high_precision: bool = False,
     ):
         """Constructor for ILMPredictor.
 
@@ -599,6 +600,7 @@ class ILMPredictorWithLengthClassification(
         self.return_history = return_history
         self.force_predict_first_step = force_predict_first_step
         self.input_constraint = input_constraint
+        self.use_high_precision = use_high_precision
 
     def _compute_stopping_mask(
         self,
@@ -694,6 +696,8 @@ class ILMPredictorWithLengthClassification(
                 "predict": predict,
                 "cls_position": cls_position,
             }
+        if self.use_high_precision:
+            logits = logits.to(dtype=torch.float64)
         pred_seq_index, pred_vocab_index = general_sample_over_last_two_dims(
             logits, self.sampling_function, self.second_sampling_function
         )  # shape (batch,), (batch,)
