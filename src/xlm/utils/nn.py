@@ -244,21 +244,19 @@ def sample_from_top_p(p: float, logits: torch.Tensor) -> torch.Tensor:
         logits, dim=-1
     )  # Shape: (*batch, seq_len, vocab_size)
 
-    # Sort the probabilities and corresponding logits in descending order
-    # BUG descending=True is not correct, should be descending=False
-    # sorted_probs, sorted_indices = torch.sort(probs, descending=True, dim=-1)
-    sorted_probs, sorted_indices = torch.sort(probs, descending=False, dim=-1)
-    sorted_logits = torch.gather(logits, dim=-1, index=sorted_indices)
+    # Sort the probabilities in descending order (highest first)
+    sorted_probs, sorted_indices = torch.sort(probs, descending=True, dim=-1)
 
     # Compute the cumulative sum of the sorted probabilities
     cumulative_probs = torch.cumsum(
         sorted_probs, dim=-1
     )  # Shape: (*batch, seq_len, vocab_size)
 
-    # Create a mask for tokens to keep: cumulative_probs >= p
-    sorted_indices_to_keep = cumulative_probs >= p
+    # Create a mask for tokens to keep: cumulative_probs <= p
+    # This keeps the top tokens until we reach cumulative probability p
+    sorted_indices_to_keep = cumulative_probs <= p
 
-    # Ensure that at least one token is kept
+    # Ensure that at least one token is kept (the highest probability one)
     sorted_indices_to_keep[..., 0] = True
 
     # Initialize a mask for the original logits
