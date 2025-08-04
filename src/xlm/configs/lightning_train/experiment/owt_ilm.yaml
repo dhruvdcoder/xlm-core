@@ -42,7 +42,7 @@ lr_scheduler:
 
 predictor:
   sampling_method: sample_top_p
-  p: 0.2
+  p: 0.9
   second_sampling_method: sample_top_k
   second_top: 1
   max_steps: 1024

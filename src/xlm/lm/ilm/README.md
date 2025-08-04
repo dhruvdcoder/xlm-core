@@ -1,10 +1,16 @@
 
 
-# Demo
+# Conditional Generation
 
 ```bash
 python src/xlm/commands/cli_demo.py "job_type=demo" "job_name=owt_ilm_demo" "experiment=owt_ilm" predictor.stopping_threshold=0.9 +hub/checkpoint=ilm_owt
 ```
+
+# Unconditional Generation
+```bash
+python src/xlm/commands/lightning_main.py "job_type=generate" "job_name=owt_ilm" "experiment=owt_ilm" "debug=[overfit,print_predictions]" "+generation.ckpt_path=logs/owt_ilm5/checkpoints/57-600000.ckpt" datamodule.dataset_managers.predict.unconditional_prediction.num_examples=5
+```
+
 
 # Evaluate
 
