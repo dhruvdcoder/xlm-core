@@ -80,6 +80,7 @@ def instantiate_model(
             tokenizer=tokenizer,
             datamodule=datamodule,
             cfg=cfg,  # chance to override the config of the checkpoint
+            manual_ema_restore=True,
         )
     else:
         lightning_module = hydra.utils.instantiate(
@@ -88,6 +89,7 @@ def instantiate_model(
             datamodule=datamodule,
             cfg=cfg,
             _recursive_=False,
+            manual_ema_restore=True,
         )
     lightning_module = cast(Harness, lightning_module)
     lightning_module = lightning_module.to("cuda")
@@ -113,7 +115,8 @@ def instantiate_model(
             torch.load(model_only_ckpt_path)
         )
         logger.warning(
-            f"Loading weights for `model` from a pretrained model at {model_only_ckpt_path} before generation"
+            f"Loading weights for `model` from a pretrained model at {model_only_ckpt_path} before generation. "
+            "Make sure that the model weights were saved with EMA applied."
         )
         logger.warning(message)
     return lightning_module

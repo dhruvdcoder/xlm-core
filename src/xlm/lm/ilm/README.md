@@ -15,6 +15,5 @@ python src/xlm/commands/lightning_main.py "job_type=generate" "job_name=owt_ilm"
 # Evaluate
 
 ```bash
-xlm "job_type=eval" "job_name=owt_ilm_eval" "experiment=[owt_ilm,gpt2_generative_perplexity]" "++eval.checkpoint_path=logs/owt_ilm
-5/checkpoints/66-702500.ckpt" "debug=eval_unconditional_preds" +predictor.use_high_precision=true predictor.p=0.9
+xlm "job_type=eval" "job_name=owt_ilm_eval" "experiment=[owt_ilm,gpt2_generative_perplexity]" "++eval.checkpoint_path=logs/owt_ilm5/checkpoints/66-702500.ckpt" "debug=eval_unconditional_preds" +predictor.use_high_precision=true predictor.p=0.9 trainer.limit_val_batches=20 ~datamodule.dataset_managers.val.lm datamodule.dataset_managers.val.unconditional_prediction.num_examples=100
 ```

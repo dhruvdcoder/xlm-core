@@ -123,24 +123,25 @@ def train(cfg: DictConfig):
     trainer = hydra.utils.instantiate(
         cfg.trainer, callbacks=callbacks, logger=loggers
     )
-    # set the number of samples for the sample generator
-    num_samples = int(cfg.generative_perplexity.num_samples) // (
-        trainer.num_devices * trainer.num_nodes
-    )
-    if (
-        int(cfg.generative_perplexity.num_samples)
-        % (trainer.num_devices * trainer.num_nodes)
-        != 0
-    ):
-        logger.warning(
-            f"The number of samples for generative perplexity ({cfg.generative_perplexity.num_samples}) is not divisible by the (number of devices * number of nodes)=({trainer.num_devices * trainer.num_nodes}). "
-        )
-    logger.info(
-        f"Setting the total number of samples for generative perplexity to {num_samples*trainer.num_devices*trainer.num_nodes}"
-    )
-    logger.info(
-        f"Setting per device number of samples for generative perplexity to {num_samples}"
-    )
+    # REMOVE this. The number of samples are set from the datamodule.
+    ## set the number of samples for the sample generator
+    # num_samples = int(cfg.generative_perplexity.num_samples) // (
+    #    trainer.num_devices * trainer.num_nodes
+    # )
+    # if (
+    #    int(cfg.generative_perplexity.num_samples)
+    #    % (trainer.num_devices * trainer.num_nodes)
+    #    != 0
+    # ):
+    #    logger.warning(
+    #        f"The number of samples for generative perplexity ({cfg.generative_perplexity.num_samples}) is not divisible by the (number of devices * number of nodes)=({trainer.num_devices * trainer.num_nodes}). "
+    #    )
+    # logger.info(
+    #    f"Setting the total number of samples for generative perplexity to {num_samples*trainer.num_devices*trainer.num_nodes}"
+    # )
+    # logger.info(
+    #    f"Setting per device number of samples for generative perplexity to {num_samples}"
+    # )
     # instantiate the model
     torch.set_float32_matmul_precision("medium")
     lightning_module = hydra.utils.instantiate(

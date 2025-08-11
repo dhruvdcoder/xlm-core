@@ -97,6 +97,7 @@ def evaluate(cfg: DictConfig):
     # cls = hydra.utils.get_class(cfg.lightning_module._target_)
     torch.set_float32_matmul_precision("medium")
     module_cls = hydra.utils.get_class(cfg.lightning_module._target_)
+    # We don't need to manually restore the EMA weights when loading from checkpoint for evaluation because we have callbacks.
     lightning_module = module_cls.load_from_checkpoint(
         checkpoint_path=ckpt_path,
         tokenizer=tokenizer,

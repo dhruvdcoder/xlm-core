@@ -82,6 +82,19 @@ class EMACallback(Callback):
         if self.ema is not None:
             self.ema.restore()
 
+    def on_predict_start(
+        self, trainer: Trainer, pl_module: LightningModule
+    ) -> None:
+        if self.ema is not None:
+            self.ema.store()
+            self.ema.copy_to()
+
+    def on_predict_end(
+        self, trainer: Trainer, pl_module: LightningModule
+    ) -> None:
+        if self.ema is not None:
+            self.ema.restore()
+
     def on_save_checkpoint(
         self,
         trainer: Trainer,

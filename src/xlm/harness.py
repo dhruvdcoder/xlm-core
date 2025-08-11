@@ -260,6 +260,12 @@ class Harness(L.LightningModule):
         else:
             self.write_per_sample_metrics = write_per_sample_metrics
         self.key_to_remove_after_logging = []
+        # We need to manually restore the EMA weights when loading from checkpoint for evaluation
+        # because we will not have ema callback then.
+        if kwargs.get("manual_ema_restore", False):
+            self.manual_ema_restore = True
+        else:
+            self.manual_ema_restore = False
 
     ############################################################
     # region: Setup methods
@@ -875,6 +881,25 @@ class Harness(L.LightningModule):
             self.trainer.global_step,
             update_logged_predictions=True,
         )
+
+    def on_load_checkpoint(self, checkpoint: dict) -> None:
+        if self.manual_ema_restore:
+            if "ema" not in checkpoint:
+                raise ValueError(
+                    "EMA weights not found in checkpoint but manual_ema_restore is True"
+                )
+            from torch_ema import ExponentialMovingAverage
+
+            # same code as in EMACallback.on_train_start
+            ema = ExponentialMovingAverage(
+                [p for p in self.parameters() if p.requires_grad],
+                decay=self.decay,
+                use_num_updates=self.use_num_updates,
+            )
+            ema.load_state_dict(checkpoint["ema"])
+            ema.to(self.device)
+            ema.copy_to()  # copy ema weights to model
+            del ema
 
     # endregion: Lightning Hooks
     ############################################################
