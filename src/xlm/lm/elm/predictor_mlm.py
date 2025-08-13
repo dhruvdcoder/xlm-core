@@ -9,6 +9,7 @@ from typing import (
 )
 from functools import partial
 import torch
+import torch.nn.functional as F
 from jaxtyping import Bool, Integer, Float
 from xlm.datamodule import Tokenizer
 from torch import Tensor as TT
@@ -122,7 +123,7 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
         self,
         step_results: MLMStepResults,
     ) -> Bool[TT, " batch"]:
-        return step_results["done"]
+        return step_results["done"].all().item()
 
     def predict_single_step(
         self,
@@ -130,32 +131,25 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
         final_step: bool = False,
     ) -> MLMStepResults:
         # fmt: off
+        threshold = 0.8
         attention_mask: Bool[TT, " batch seq_len"] = step_results["attention_mask"]
         x = step_results["x"]
         positions = step_results["positions"]
+        output_start_idx = step_results["output_start_idx"]
+        done = step_results["done"]
         # fmt: on
         # TODO (efficiency): Logits can be cached if nothing in the input changes
         assert self.model is not None, "Model is not initialized"
         logits = self.model(x, attention_mask, positions)
-        masked = x == self.tokenizer.mask_token_id
-        steps_left = self.max_steps - step_results["steps_taken"]
-        if not final_step:
-            num_unmask = (
-                masked.sum(dim=-1) / (steps_left).clamp(min=1)
-            ).long()
-            unmask = select_random_indices(
-                inp_shape=x.shape,
-                num_unmask=num_unmask,
-                select_from_mask=masked,
-                selection_score=None,  # uniform
-                selection_mode="sample",
-            )
-        else:
-            unmask = masked
-        x[unmask] = self.sampling_function(logits[unmask])
+        probs = F.softmax(logits, dim=-1)
+        max_probs, token_indices = torch.max(probs, dim=-1)
+        x_updated = torch.where(max_probs >= threshold, token_indices, torch.full_like(token_indices, self.tokenizer.mask_token_id))
+        should_update = (done == False)
+        should_update_expanded = should_update.unsqueeze(1).expand(-1, x.shape[-1])
+        x[:, output_start_idx:] = torch.where(should_update_expanded, x_updated, x)[:, output_start_idx:]
         # compute stopping condition
-        step_results["steps_taken"] += 1
-        done = step_results["steps_taken"] >= self.max_steps
+        step_results["steps_taken"][should_update] += 1
+        done[should_update] = (step_results["steps_taken"] >= self.max_steps)
         return {
             "x": x,
             "attention_mask": attention_mask,
@@ -185,6 +179,22 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
                 }
             )
         return dicts
+    
+    def postprocess(
+            self,
+            x: Integer[TT, " batch seq_len"],
+            prefix_len: int,
+    ) -> Integer[TT, " batch seq_len"]:
+        n, l = x.shape
+        prefix = x[:, :prefix_len]
+        suffix = x[:, prefix_len:]
+        suffix = torch.where(suffix == self.tokenizer.pad_token_id, torch.full_like(suffix, self.tokenizer.mask_token_id), suffix)
+        key = (suffix == self.tokenizer.mask_token_id).long()
+        sorted_indices = torch.argsort(key, dim=1, stable=True)
+        batch_indices = torch.arange(n, device=x.device).unsqueeze(1).expand(-1, l - prefix_len)
+        sorted_suffix =suffix[batch_indices, sorted_indices]
+        out = torch.cat([prefix, sorted_suffix], dim=1)
+        return out
 
     @torch._dynamo.disable()
     def predict(
@@ -228,20 +238,18 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
             "x": x,
             "attention_mask": attention_mask,
             "positions": positions,
+            "output_start_idx": output_start_idx,
             "logits": None,  # type: ignore # ok for first step
             "steps_taken": torch.zeros(
                 x.shape[0], dtype=torch.int, device=x.device
             ),
-            "done": torch.zeros(x.shape[0], dtype=torch.bool, device=x.device),
+            "done": torch.tensor([False] * x.shape[0], dtype=torch.bool, device=x.device),
         }
         while not self.stop(step_results):
             step_results = self.predict_single_step(
                 step_results,
             )
-        step_results = self.predict_single_step(
-            step_results,
-            final_step=True,
-        )
+            step_results["x"] = self.postprocess(step_results["x"], output_start_idx)
         # decode the final step
         (
             out,

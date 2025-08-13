@@ -149,7 +149,6 @@ def prepare_prefix_suffix_ids(
     max_seq_len: Optional[int] = None,
     truncate: Literal["max", "block", None] = "block",
     loss_on_padding: bool = True,
-    target_type: Literal["pos", "neg"] = "pos",
 ) -> MLMBatch:
     """Prepare concatenated prefix and suffix ids for seq2seq tasks with padding on the right only
 
@@ -214,16 +213,6 @@ def prepare_prefix_suffix_ids(
             _input_ids = torch.cat([_unmasked_inp, _masked_inp])
             input_ids.append(_input_ids)
             _target_ids = temp.clone()
-            masked_indices = torch.nonzero(_mask, as_tuple=True)[0]
-            num_to_unmask = torch.randint(1, mask_len+1, (1,)).item()
-            perm = torch.randperm(mask_len)
-            masked_indices = masked_indices[perm[num_to_unmask:]]
-            _target_ids[masked_indices] = mask_token_id
-            if target_type == "neg":
-                indices_to_unmask = masked_indices[perm[:num_to_unmask]]
-                values_to_unmask = temp[indices_to_unmask]
-                shuffled_values = values_to_unmask[torch.randperm(num_to_unmask)]
-                _target_ids[indices_to_unmask] = shuffled_values
             target_ids.append(_target_ids)
         else:
             temp = torch.tensor(temp, dtype=torch.long)
@@ -252,22 +241,13 @@ def prepare_prefix_suffix_ids(
             _unmasked_inp = _input_ids[_mask==0]
             _masked_inp = torch.full((mask_len,), mask_token_id)
             _input_ids = torch.cat([_unmasked_inp, _masked_inp])
+            _target_ids = temp.clone()
             pad_len = max(max_len - len(_input_ids), 0)
             if pad_len > 0:
-                _padded_inp = torch.full((pad_len,), pad_token_id)
-                _input_ids = torch.cat([_input_ids, _padded_inp])
+                _padded_ids = torch.full((pad_len,), pad_token_id)
+                _input_ids = torch.cat([_input_ids, _padded_ids])
+                _target_ids = torch.cat([_target_ids, _padded_ids])
             input_ids.append(_input_ids)
-            _target_ids = temp.clone()
-            masked_indices = torch.nonzero(_mask, as_tuple=True)[0]
-            num_to_unmask = torch.randint(1, mask_len+1, (1,)).item()
-            perm = torch.randperm(mask_len)
-            masked_indices = masked_indices[perm[num_to_unmask:]]
-            _target_ids[masked_indices] = mask_token_id
-            if target_type == "neg":
-                indices_to_unmask = masked_indices[perm[:num_to_unmask]]
-                values_to_unmask = temp[indices_to_unmask]
-                shuffled_values = values_to_unmask[torch.randperm(num_to_unmask)]
-                _target_ids[indices_to_unmask] = shuffled_values
             target_ids.append(_target_ids)
     target_ids = torch.stack(target_ids, dim=0)
     attention_mask = torch.stack(attention_mask, dim=0)
