@@ -514,6 +514,7 @@ class ILMPredictorWithLengthClassification(
         force_predict_first_step: bool = False,
         input_constraint: bool = False,
         use_high_precision: bool = False,
+        stopping_temperature: float = 1.0,
     ):
         """Constructor for ILMPredictor.
 
@@ -601,6 +602,7 @@ class ILMPredictorWithLengthClassification(
         self.force_predict_first_step = force_predict_first_step
         self.input_constraint = input_constraint
         self.use_high_precision = use_high_precision
+        self.stopping_temperature = stopping_temperature
 
     def _compute_stopping_mask(
         self,
@@ -609,7 +611,9 @@ class ILMPredictorWithLengthClassification(
         length_logits = step_results["length_logits"]
         if length_logits is not None:  # graph break?
             attention_mask = step_results["attention_mask"]
-            p = torch.softmax(length_logits, dim=-1)[:, 0]
+            p = torch.softmax(length_logits / self.stopping_temperature, dim=-1)[
+                :, 0
+            ]
             predict = p < self.stopping_threshold
             predict.logical_and_(attention_mask.sum(-1) < self.max_length)
         else:

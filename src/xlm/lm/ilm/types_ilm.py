@@ -77,6 +77,21 @@ class ILMUncondtionalPredictionBatch(TypedDict):
     token_type_ids: Integer[TT, " batch 2"]
 
 
+class ILMInfillPredictionBatch(TypedDict):
+    """Input to the ILM for infilling.
+
+    Attributes:
+        input_ids (Integer[TT, " batch prefix_seq_len"]): The input ids to the model with tokens to be infilled dropped.
+        attention_mask (Integer[TT, " batch prefix_seq_len"]): 1 for tokens that are not padding.
+        gap_positions (Integer[TT, " batch max_gap_positions"]): The positions of the gaps in the input_ids which specify locations to be filled in. Padded using value -1.
+        target_ids (Integer[TT, " total_gaps_in_batch max_infill_length"]): The target ids to be filled in. One can map the targets to the exact gap using the gap_positions.
+    """
+
+    input_ids: Integer[TT, " batch 2"]
+    attention_mask: Integer[TT, " batch 2"]
+    token_type_ids: Integer[TT, " batch 2"]
+
+
 class ILMLossDict(TypedDict):
     """Output of the LossFunction Callable.
 
