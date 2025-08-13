@@ -161,7 +161,6 @@ def prepare_prefix_suffix_ids(
     input_ids: List[TT] = []
     attention_mask: List[TT] = []
     target_ids: List[TT] = []
-    mask: List[TT] = []
     add_eos = int(eos_token_id is not None)
     add_bos = int(
         bos_token_id is not None
@@ -193,7 +192,7 @@ def prepare_prefix_suffix_ids(
                 1,
                 pad_left=False,
             )
-            _input_ids = torch.tensor(
+            temp = torch.tensor(
                     pad_truncate_list(
                     temp,
                     max_len,
@@ -202,6 +201,7 @@ def prepare_prefix_suffix_ids(
                 ),
                 dtype=torch.long,
             )
+            _input_ids = temp.clone()
             _mask = (torch.rand(len(_input_ids)) < t[i]).logical_and(
                 torch.tensor(suffix_mask, dtype=torch.bool)
             )
@@ -213,20 +213,24 @@ def prepare_prefix_suffix_ids(
             _masked_inp = torch.full((mask_len,), mask_token_id)
             _input_ids = torch.cat([_unmasked_inp, _masked_inp])
             input_ids.append(_input_ids)
-            _target_ids = _input_ids.clone()
+            _target_ids = temp.clone()
             masked_indices = torch.nonzero(_mask, as_tuple=True)[0]
             num_to_unmask = torch.randint(1, mask_len+1, (1,)).item()
             perm = torch.randperm(mask_len)
             masked_indices = masked_indices[perm[num_to_unmask:]]
             _target_ids[masked_indices] = mask_token_id
             if target_type == "neg":
-                indices_to_unmask = masked_indices[perm[num_to_unmask:]]
-                values_to_unmask = _input_ids[indices_to_unmask]
+                indices_to_unmask = masked_indices[perm[:num_to_unmask]]
+                values_to_unmask = temp[indices_to_unmask]
                 shuffled_values = values_to_unmask[torch.randperm(num_to_unmask)]
                 _target_ids[indices_to_unmask] = shuffled_values
-            target_ids.append(_input_ids.clone())
+            target_ids.append(_target_ids)
         else:
-            _mask = (torch.rand(len(temp)) < t[i]).logical_and(suffix_mask)
+            temp = torch.tensor(temp, dtype=torch.long)
+            _input_ids = temp.clone()
+            _mask = (torch.rand(len(_input_ids)) < t[i]).logical_and(
+                torch.tensor(suffix_mask, dtype=torch.bool)
+            )
             attention_mask.append(
                 torch.tensor(
                     pad_truncate_list(
@@ -243,24 +247,31 @@ def prepare_prefix_suffix_ids(
                     ),
                     dtype=torch.bool,
                 )
-            )
-            last_idx_before_pad = len(_prefix_ids) + add_bos + len(suffix_ids) + add_eos - 1
-            total_mask = _mask.sum.item()
-            _mask.zero_()
-            _mask[last_idx_before_pad - total_mask + 1 :last_idx_before_pad] = 1
-            mask.append(_mask)  # no input masks in padding
-            if target_type == "pos":
-                _target_ids = _input_ids.clone()
-            else:
-                # TODO : include negative target
-                _target_ids = _input_ids.clone()  
-            _target_ids[~attention_mask[-1]] = -100  # no loss on padding
+            )          
+            mask_len = (_mask==1).sum(dim=-1)
+            _unmasked_inp = _input_ids[_mask==0]
+            _masked_inp = torch.full((mask_len,), mask_token_id)
+            _input_ids = torch.cat([_unmasked_inp, _masked_inp])
+            pad_len = max(max_len - len(_input_ids), 0)
+            if pad_len > 0:
+                _padded_inp = torch.full((pad_len,), pad_token_id)
+                _input_ids = torch.cat([_input_ids, _padded_inp])
+            input_ids.append(_input_ids)
+            _target_ids = temp.clone()
+            masked_indices = torch.nonzero(_mask, as_tuple=True)[0]
+            num_to_unmask = torch.randint(1, mask_len+1, (1,)).item()
+            perm = torch.randperm(mask_len)
+            masked_indices = masked_indices[perm[num_to_unmask:]]
+            _target_ids[masked_indices] = mask_token_id
+            if target_type == "neg":
+                indices_to_unmask = masked_indices[perm[:num_to_unmask]]
+                values_to_unmask = temp[indices_to_unmask]
+                shuffled_values = values_to_unmask[torch.randperm(num_to_unmask)]
+                _target_ids[indices_to_unmask] = shuffled_values
             target_ids.append(_target_ids)
     target_ids = torch.stack(target_ids, dim=0)
     attention_mask = torch.stack(attention_mask, dim=0)
     input_ids = torch.stack(input_ids, dim=0)
-    mask = torch.stack(mask, dim=0)
-    input_ids[mask] = mask_token_id
     return {
         "input_ids": input_ids,
         "attention_mask": attention_mask,
@@ -369,18 +380,8 @@ class MLMSeq2SeqTrainCollator(Collator):
         return prefix_suffix
 
 
-class MLMSeq2SeqCollator(Collator):
-    """MLM training for seq2seq tasks.
-
-    Batch:
-        1. input_ids: Integer[TT, " batch seq_len"]: The input for the model with masks.
-        2. attention_mask: Integer[TT, " batch seq_len"]: 1 for tokens that are not padding.
-        3. target_ids: Integer[TT, " batch seq_len"]: The target ids to the model where the input if copied as is and masks are replaced with the correct token.
-
-    Padding:
-        - There is padding on both sides because all prefixes end at the same position.
-        TODO (efficiency): This is not ideal for seq2seq training as we will be wasting a lot of tokens in padding. For training, we should only pad on one side.
-    """
+class MLMSeq2SeqPredCollator(Collator):
+    """Input contains only the prefix and target_ids contain only the suffix if present."""
 
     def __init__(
         self,
@@ -403,80 +404,6 @@ class MLMSeq2SeqCollator(Collator):
         self.add_eos = add_eos
         self.truncate = truncate
         self.loss_on_padding = loss_on_padding
-
-    def __call__(
-        self,
-        examples: List[Seq2SeqCollatorInput],
-    ) -> MLMBatch:
-        prefix = prepare_prefix_ids(
-            [e["prompt_ids"] for e in examples],
-            self.tokenizer.pad_token_id,
-            max_seq_len=self.input_block_size,
-        )
-        suffix = mlm_single_segment_collate_fn(
-            [e["input_ids"] for e in examples],
-            self.tokenizer.pad_token_id,
-            self.tokenizer.mask_token_id,
-            bos_token_id=self.tokenizer.bos_token_id if self.add_bos else None,
-            eos_token_id=self.tokenizer.eos_token_id if self.add_eos else None,
-            max_seq_len=self.block_size,
-            truncate=self.truncate,
-            loss_on_padding=self.loss_on_padding,
-        )
-        return MLMBatch(
-            input_ids=torch.cat(
-                [prefix["input_ids"], suffix["input_ids"]], dim=1
-            ),
-            attention_mask=torch.cat(
-                [prefix["attention_mask"], suffix["attention_mask"]], dim=1
-            ),
-            target_ids=torch.cat(
-                [prefix["input_ids"], suffix["target_ids"]], dim=1
-            ),
-        )
-
-
-class _MLMSeq2SeqPredCollator(MLMSeq2SeqCollator):
-    """Identical to MLMSeq2SeqCollator but masks all the suffix tokens in the input_ids.
-    Use this when you want to compute exact match metrics.
-    """
-
-    def __call__(
-        self,
-        examples: List[Seq2SeqCollatorInput],
-    ) -> MLMBatch:
-        prefix = prepare_prefix_ids(
-            [e["prompt_ids"] for e in examples],
-            self.tokenizer.pad_token_id,
-            max_seq_len=self.input_block_size,
-        )
-        suffix = mlm_single_segment_collate_fn(
-            [e["input_ids"] for e in examples],
-            self.tokenizer.pad_token_id,
-            self.tokenizer.mask_token_id,
-            bos_token_id=self.tokenizer.bos_token_id if self.add_bos else None,
-            eos_token_id=self.tokenizer.eos_token_id if self.add_eos else None,
-            max_seq_len=self.block_size,
-            truncate=self.truncate,
-            loss_on_padding=True,  # don't replace target pads by -100
-            mask_all=True,
-        )
-
-        return MLMBatch(
-            input_ids=torch.cat(
-                [prefix["input_ids"], suffix["input_ids"]], dim=1
-            ),
-            attention_mask=torch.cat(
-                [prefix["attention_mask"], suffix["attention_mask"]], dim=1
-            ),
-            target_ids=torch.cat(
-                [prefix["input_ids"], suffix["target_ids"]], dim=1
-            ),
-        )
-
-
-class MLMSeq2SeqPredCollator(MLMSeq2SeqCollator):
-    """Input contains only the prefix and target_ids contain only the suffix if present."""
 
     def __call__(
         self,
