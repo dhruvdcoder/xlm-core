@@ -21,7 +21,7 @@ logger = RankedLogger(__name__, rank_zero_only=True)
 # region: Rotary Transformer
 
 
-class RotaryTransformerMLMModel(torch.nn.Module):
+class RotaryTransformerELMModel(torch.nn.Module):
     "Rotary embedding based transformer decoder."
 
     def __init__(

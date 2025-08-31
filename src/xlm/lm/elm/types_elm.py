@@ -9,8 +9,8 @@ from xlm.utils.rank_zero import RankedLogger
 logger = RankedLogger(__name__, rank_zero_only=True)
 
 
-class MLMBatch(TypedDict):
-    """Input to the MLM.
+class ELMBatch(TypedDict):
+    """Input to the ELM.
     Attributes:
         input_ids (Integer[TT, " batch seq_len"]): The input ids to the model.
         attention_mask (Integer[TT, " batch seq_len"]): 1 for tokens that are not padding.
@@ -22,16 +22,16 @@ class MLMBatch(TypedDict):
     target_ids: Optional[Integer[TT, " batch seq_len"]]
 
 
-class MLMSeq2SeqPredictionBatch(TypedDict):
-    """Input to the MLM for predicting suffix given the prefix."""
+class ELMSeq2SeqPredictionBatch(TypedDict):
+    """Input to the ELM for predicting suffix given the prefix."""
 
     input_ids: Integer[TT, " batch prefix_seq_len"]  # left-padded
     attention_mask: Integer[TT, " batch prefix_seq_len"]
     target_ids: Integer[TT, " batch suffix_seq_len"]
 
 
-class MLMUncondtionalPredictionBatch:
-    """Input to the MLM for unconditional generation.
+class ELMUncondtionalPredictionBatch:
+    """Input to the ELM for unconditional generation.
 
     Attributes:
         input_ids (Integer[TT, " batch seq_len"]): The input ids to the model. All masks.
@@ -42,7 +42,7 @@ class MLMUncondtionalPredictionBatch:
     attention_mask: Integer[TT, " batch seq_len"]
 
 
-class MLMLossDict(TypedDict):
+class ELMLossDict(TypedDict):
     """Output of the LossFunction Callable.
 
     Attributes:
@@ -52,7 +52,7 @@ class MLMLossDict(TypedDict):
     loss: Float[TT, ""]
 
 
-class MLMModel(Protocol):
+class ELMModel(Protocol):
     def __call__(
         self,
         input_ids: Integer[TT, " batch seq_len"],
@@ -61,8 +61,8 @@ class MLMModel(Protocol):
     ) -> Float[TT, " batch seq_len vocab_size"]: ...
 
 
-class MLMPredictionDict(TypedDict):
-    """Output of the Predictor for MLM.
+class ELMPredictionDict(TypedDict):
+    """Output of the Predictor for ELM.
 
     Attributes:
         loss (Optional[Float[TT, "batch"]]): The loss value. Typically None.

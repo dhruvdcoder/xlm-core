@@ -9,7 +9,7 @@ from jaxtyping import Float, Integer
 from torch import Tensor as TT
 from xlm.noise import NoiseSchedule
 from typing import Callable, Dict, List, Literal, Optional, Any
-from .types_mlm import MLMBatch
+from .types_elm import ELMBatch
 from xlm.utils.nn import pad_truncate_list
 from xlm.utils.rank_zero import RankedLogger
 
@@ -19,7 +19,7 @@ logger = RankedLogger(__name__, rank_zero_only=True)
 # region: Collators
 
 
-def mlm_single_segment_collate_fn(
+def elm_single_segment_collate_fn(
     examples: List[List[int]],
     pad_token_id: int,
     mask_token_id: int,
@@ -29,7 +29,7 @@ def mlm_single_segment_collate_fn(
     truncate: Literal["max", "block", None] = "block",
     loss_on_padding: bool = True,
     mask_all: bool = False,
-) -> MLMBatch:
+) -> ELMBatch:
     # determine max_seq_len
     add_bos = int(bos_token_id is not None)
     add_eos = int(eos_token_id is not None)
@@ -149,7 +149,7 @@ def prepare_prefix_suffix_ids(
     max_seq_len: Optional[int] = None,
     truncate: Literal["max", "block", None] = "block",
     loss_on_padding: bool = True,
-) -> MLMBatch:
+) -> ELMBatch:
     """Prepare concatenated prefix and suffix ids for seq2seq tasks with padding on the right only
 
     Args:
@@ -183,13 +183,16 @@ def prepare_prefix_suffix_ids(
     ):
         # bos should not be masked
         suffix_mask = [0] * (len(_prefix_ids) + add_bos) + [1] * (len(_suffix_ids) + add_eos)
-        temp = _prefix_ids + add_bos + _suffix_ids + add_eos
+        temp = _prefix_ids + ([bos_token_id] * add_bos) + _suffix_ids + ([eos_token_id] * add_eos)
         if loss_on_padding:
-            suffix_mask = pad_truncate_list(
-                suffix_mask,
-                max_len,
-                1,
-                pad_left=False,
+            suffix_mask = torch.tensor(
+                    pad_truncate_list(
+                    suffix_mask,
+                    max_len,
+                    1,
+                    pad_left=False,
+                ),
+                dtype=torch.bool,
             )
             temp = torch.tensor(
                     pad_truncate_list(
@@ -201,9 +204,7 @@ def prepare_prefix_suffix_ids(
                 dtype=torch.long,
             )
             _input_ids = temp.clone()
-            _mask = (torch.rand(len(_input_ids)) < t[i]).logical_and(
-                torch.tensor(suffix_mask, dtype=torch.bool)
-            )
+            _mask = (torch.rand(len(_input_ids)) < t[i]).logical_and(suffix_mask)
             attention_mask.append(
                 torch.tensor([1] * len(temp), dtype=torch.bool)
             )
@@ -213,13 +214,13 @@ def prepare_prefix_suffix_ids(
             _input_ids = torch.cat([_unmasked_inp, _masked_inp])
             input_ids.append(_input_ids)
             _target_ids = temp.clone()
+            _target_ids[~suffix_mask] = -100
             target_ids.append(_target_ids)
         else:
+            suffix_mask = torch.tensor(suffix_mask, dtype=torch.bool)
             temp = torch.tensor(temp, dtype=torch.long)
             _input_ids = temp.clone()
-            _mask = (torch.rand(len(_input_ids)) < t[i]).logical_and(
-                torch.tensor(suffix_mask, dtype=torch.bool)
-            )
+            _mask = (torch.rand(len(_input_ids)) < t[i]).logical_and(suffix_mask)
             attention_mask.append(
                 torch.tensor(
                     pad_truncate_list(
@@ -242,6 +243,7 @@ def prepare_prefix_suffix_ids(
             _masked_inp = torch.full((mask_len,), mask_token_id)
             _input_ids = torch.cat([_unmasked_inp, _masked_inp])
             _target_ids = temp.clone()
+            _target_ids[~suffix_mask] = -100
             pad_len = max(max_len - len(_input_ids), 0)
             if pad_len > 0:
                 _padded_ids = torch.full((pad_len,), pad_token_id)
@@ -259,8 +261,8 @@ def prepare_prefix_suffix_ids(
     }
 
 
-class DefaultMLMCollator(Collator):
-    """Used for MLM pre-training with padded-truncated sequences.
+class DefaultELMCollator(Collator):
+    """Used for ELM pre-training with padded-truncated sequences.
 
     Batch:
         1. input_ids: Integer[TT, " batch seq_len"]: The input for the model with masks.
@@ -295,8 +297,8 @@ class DefaultMLMCollator(Collator):
     def __call__(
         self,
         examples: List[BaseCollatorInput],
-    ) -> MLMBatch:
-        return mlm_single_segment_collate_fn(
+    ) -> ELMBatch:
+        return elm_single_segment_collate_fn(
             [e["input_ids"] for e in examples],
             self.tokenizer.pad_token_id,
             self.tokenizer.mask_token_id,
@@ -308,8 +310,8 @@ class DefaultMLMCollator(Collator):
         )
 
 
-class MLMSeq2SeqTrainCollator(Collator):
-    """MLM training for seq2seq tasks.
+class ELMSeq2SeqTrainCollator(Collator):
+    """ELM training for seq2seq tasks.
 
     Batch:
         1. input_ids: Integer[TT, " batch seq_len"]: The input for the model with masks.
@@ -345,7 +347,7 @@ class MLMSeq2SeqTrainCollator(Collator):
     def __call__(
         self,
         examples: List[Seq2SeqCollatorInput],
-    ) -> MLMBatch:
+    ) -> ELMBatch:
         prefix_suffix = prepare_prefix_suffix_ids(
             [e["prompt_ids"] for e in examples],
             [e["input_ids"] for e in examples],
@@ -360,7 +362,7 @@ class MLMSeq2SeqTrainCollator(Collator):
         return prefix_suffix
 
 
-class MLMSeq2SeqPredCollator(Collator):
+class ELMSeq2SeqPredCollator(Collator):
     """Input contains only the prefix and target_ids contain only the suffix if present."""
 
     def __init__(
@@ -388,7 +390,7 @@ class MLMSeq2SeqPredCollator(Collator):
     def __call__(
         self,
         examples: List[Seq2SeqCollatorInput],
-    ) -> MLMBatch:
+    ) -> ELMBatch:
 
         prefix = prepare_prefix_ids(
             [
@@ -418,7 +420,7 @@ class MLMSeq2SeqPredCollator(Collator):
             for e in examples
         ]
 
-        return MLMBatch(
+        return ELMBatch(
             input_ids=prefix["input_ids"],
             attention_mask=prefix["attention_mask"],
             target_ids=torch.tensor(target_ids, dtype=torch.long),
@@ -431,13 +433,13 @@ def _replace_100_with_pad(ids: torch.Tensor, tokenizer: Tokenizer):
     return _ids
 
 
-def print_batch_mlm(
+def print_batch_elm(
     batch: Dict[str, Any],
     split: Literal["train", "val", "test", "predict"],
     tokenizer: Tokenizer,
     dataloader_name: str = "",
 ):
-    """Print batch information for debugging MLM batches.
+    """Print batch information for debugging ELM batches.
 
     Args:
         batch: The batch to print.

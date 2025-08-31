@@ -1,17 +1,17 @@
 from typing import Optional, cast
 
 import torch
-from .types_mlm import MLMBatch, MLMLossDict, MLMModel
+from .types_elm import ELMBatch, ELMLossDict, ELMModel
 from xlm.harness import LossFunction, Harness
 from xlm.datamodule import Tokenizer
 
 
-class MLMLoss(LossFunction[MLMBatch, MLMLossDict]):
+class ELMLoss(LossFunction[ELMBatch, ELMLossDict]):
     def __init__(
         self,
         loss_on_padding: bool = False,
         loss_on_visible_tokens: bool = False,
-        model: Optional[MLMModel] = None,
+        model: Optional[ELMModel] = None,
         tokenizer: Optional[Tokenizer] = None,
     ):
         self.loss_on_padding = loss_on_padding
@@ -29,11 +29,11 @@ class MLMLoss(LossFunction[MLMBatch, MLMLossDict]):
 
     def __call__(
         self,
-        batch: MLMBatch,
+        batch: ELMBatch,
         batch_idx: Optional[int] = None,
         dataloader_idx: Optional[int] = None,
         dataloader_name: Optional[str] = None,
-    ) -> MLMLossDict:
+    ) -> ELMLossDict:
         loss_dict = self.loss_fn(
             batch, batch_idx, dataloader_idx, dataloader_name
         )
@@ -41,11 +41,11 @@ class MLMLoss(LossFunction[MLMBatch, MLMLossDict]):
 
     def loss_fn(
         self,
-        batch: MLMBatch,
+        batch: ELMBatch,
         batch_idx: Optional[int] = None,
         dataloader_idx: Optional[int] = None,
         dataloader_name: Optional[str] = None,
-    ) -> MLMLossDict:
+    ) -> ELMLossDict:
 
         input_ids = batch["input_ids"]
         attention_mask = batch["attention_mask"].to(dtype=torch.bool)
@@ -54,9 +54,10 @@ class MLMLoss(LossFunction[MLMBatch, MLMLossDict]):
         positions = (attention_mask.cumsum(dim=1) - 1).clamp(min=0)
         positions *= attention_mask  # technically not needed
 
-        model = cast(MLMModel, self.model)
+        model = cast(ELMModel, self.model)
         logits = model(input_ids, attention_mask, positions)
 
+        '''
         ignore = torch.zeros_like(input_ids, dtype=torch.bool)
         if not self.loss_on_visible_tokens:
             ignore = ignore.logical_or(input_ids != self.mask_token_id_tensor)  # type: ignore
@@ -71,6 +72,7 @@ class MLMLoss(LossFunction[MLMBatch, MLMLossDict]):
                     requires_grad=True,
                 )
             }
+        '''
 
         logits_T = logits.transpose(1, 2)
 

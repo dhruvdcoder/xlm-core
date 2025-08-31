@@ -13,11 +13,11 @@ import torch.nn.functional as F
 from jaxtyping import Bool, Integer, Float
 from xlm.datamodule import Tokenizer
 from torch import Tensor as TT
-from .types_mlm import (
-    MLMBatch,
-    MLMPredictionDict,
-    MLMModel,
-    MLMSeq2SeqPredictionBatch,
+from .types_elm import (
+    ELMBatch,
+    ELMPredictionDict,
+    ELMModel,
+    ELMSeq2SeqPredictionBatch,
 )
 from xlm.harness import Predictor
 from xlm.noise import NoiseSchedule
@@ -30,9 +30,9 @@ from xlm.utils.nn import (
 )
 import time
 
-MLMStepResults = Dict[str, Any]
-# class MLMStepResults(TypedDict):
-#    """Step results for MLM.
+ELMStepResults = Dict[str, Any]
+# class ELMStepResults(TypedDict):
+#    """Step results for ELM.
 #
 #    Attributes:
 #        x: Integer[TT, " batch seq_len"] Current predicted sequence.
@@ -55,20 +55,20 @@ MLMStepResults = Dict[str, Any]
 #    positions: Integer[TT, " batch seq_len"]
 
 
-class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
-    """Base predictor for MLM. Stochastically selects positions to unmask based on max_steps and max_new_tokens."""
+class ELMPredictor(torch.nn.Module, Predictor[ELMBatch, ELMPredictionDict]):
+    """Base predictor for ELM. Stochastically selects positions to unmask based on max_steps and max_new_tokens."""
 
     def __init__(
         self,
         max_steps: int,
         max_new_tokens: Optional[int] = None,
         tokenizer: Optional[Tokenizer] = None,
-        model: Optional[MLMModel] = None,
+        model: Optional[ELMModel] = None,
         noise_schedule: Optional[NoiseSchedule] = None,
         top_k: Optional[int] = None,
         top_p: Optional[float] = None,
     ):
-        """Initialize MLM Predictor.
+        """Initialize ELM Predictor.
 
         Args:
             max_steps: Maximum number of prediction steps.
@@ -76,7 +76,7 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
             noise_schedule: Noise schedule for the diffusion process.
             top_k: Top-k sampling parameter.
             top_p: Top-p sampling parameter.
-            model: The MLM model to use for predictions.
+            model: The ELM model to use for predictions.
         """
         if tokenizer is None:
             raise ValueError("tokenizer is required")
@@ -101,7 +101,7 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
         # simple predictor has no state
         pass
 
-    def decode(self, results: MLMStepResults) -> Tuple[
+    def decode(self, results: ELMStepResults) -> Tuple[
         List[str],
         Integer[TT, " batch seq_len"],
     ]:
@@ -121,15 +121,15 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
 
     def stop(
         self,
-        step_results: MLMStepResults,
+        step_results: ELMStepResults,
     ) -> Bool[TT, " batch"]:
         return step_results["done"].all().item()
 
     def predict_single_step(
         self,
-        step_results: MLMStepResults,
+        step_results: ELMStepResults,
         final_step: bool = False,
-    ) -> MLMStepResults:
+    ) -> ELMStepResults:
         # fmt: off
         threshold = 0.8
         attention_mask: Bool[TT, " batch seq_len"] = step_results["attention_mask"]
@@ -137,32 +137,39 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
         positions = step_results["positions"]
         output_start_idx = step_results["output_start_idx"]
         done = step_results["done"]
+        k = step_results["k"] + 1
         # fmt: on
         # TODO (efficiency): Logits can be cached if nothing in the input changes
         assert self.model is not None, "Model is not initialized"
         logits = self.model(x, attention_mask, positions)
         probs = F.softmax(logits, dim=-1)
         max_probs, token_indices = torch.max(probs, dim=-1)
-        x_updated = torch.where(max_probs >= threshold, token_indices, torch.full_like(token_indices, self.tokenizer.mask_token_id))
-        should_update = (done == False)
-        should_update_expanded = should_update.unsqueeze(1).expand(-1, x.shape[-1])
-        x[:, output_start_idx:] = torch.where(should_update_expanded, x_updated, x)[:, output_start_idx:]
+        suffix_max_probs = max_probs[:, output_start_idx:]
+        topk_probs, topk_seq_indices = torch.topk(suffix_max_probs, k, dim=1)
+        topk_seq_indices = topk_seq_indices + output_start_idx
+        remove_mask = torch.zeros_like(x, dtype=torch.bool)
+        remove_mask.scatter_(1, topk_seq_indices, True)
+        x_updated = torch.full_like(x, self.tokenizer.mask_token_id)
+        x_updated[remove_mask] = token_indices[remove_mask]
+        ## x_updated = torch.where(max_probs >= threshold, token_indices, torch.full_like(token_indices, self.tokenizer.mask_token_id))
+        x[:, output_start_idx:] = x_updated[:, output_start_idx:]
         # compute stopping condition
-        step_results["steps_taken"][should_update] += 1
-        done[should_update] = (step_results["steps_taken"] >= self.max_steps)
+        if k == self.max_new_tokens:
+            done = True
         return {
             "x": x,
             "attention_mask": attention_mask,
             "positions": positions,
+            "output_start_idx": output_start_idx,
             "logits": logits,
-            "steps_taken": step_results["steps_taken"],
             "done": done,
+            "k": k,
         }
 
     def to_dict(
         self,
-        batch: MLMBatch,  # type: ignore
-        preds: MLMPredictionDict,
+        batch: ELMBatch,  # type: ignore
+        preds: ELMPredictionDict,
         batch_idx: Optional[int] = None,
         dataloader_idx: Optional[int] = None,
         dataloader_name: Optional[str] = None,
@@ -188,7 +195,8 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
         n, l = x.shape
         prefix = x[:, :prefix_len]
         suffix = x[:, prefix_len:]
-        suffix = torch.where(suffix == self.tokenizer.pad_token_id, torch.full_like(suffix, self.tokenizer.mask_token_id), suffix)
+        ## We treat pad token as normal token.
+        ## suffix = torch.where(suffix == self.tokenizer.pad_token_id, torch.full_like(suffix, self.tokenizer.mask_token_id), suffix)
         key = (suffix == self.tokenizer.mask_token_id).long()
         sorted_indices = torch.argsort(key, dim=1, stable=True)
         batch_indices = torch.arange(n, device=x.device).unsqueeze(1).expand(-1, l - prefix_len)
@@ -199,11 +207,11 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
     @torch._dynamo.disable()
     def predict(
         self,
-        batch: MLMBatch,  # type: ignore
+        batch: ELMBatch,  # type: ignore
         batch_idx: Optional[int] = None,
         dataloader_idx: Optional[int] = None,
         dataloader_name: Optional[str] = None,
-    ) -> MLMPredictionDict:
+    ) -> ELMPredictionDict:
         _start_time = time.time()
         x = batch["input_ids"].clone()
         attention_mask = batch["attention_mask"]
@@ -234,18 +242,16 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
             )
         positions = (attention_mask.cumsum(dim=-1) - 1).clamp(min=0).long()
 
-        step_results: MLMStepResults = {
+        step_results: ELMStepResults = {
             "x": x,
             "attention_mask": attention_mask,
             "positions": positions,
             "output_start_idx": output_start_idx,
             "logits": None,  # type: ignore # ok for first step
-            "steps_taken": torch.zeros(
-                x.shape[0], dtype=torch.int, device=x.device
-            ),
-            "done": torch.tensor([False] * x.shape[0], dtype=torch.bool, device=x.device),
+            "done": False,
+            "k": 0
         }
-        while not self.stop(step_results):
+        while not step_results["done"]:
             step_results = self.predict_single_step(
                 step_results,
             )
