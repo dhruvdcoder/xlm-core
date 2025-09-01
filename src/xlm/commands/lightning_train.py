@@ -172,33 +172,15 @@ def train(cfg: DictConfig):
     # See https://github.com/Lightning-AI/pytorch-lightning/discussions/12856
     ## test after training
     test_ckpt = None
-    testing_right_after_training = (
-        cfg.job_type == "train"
-        and cfg.datamodule.get("test_dataloader_kwargs") is not None
-    )
-    if testing_right_after_training:
-        test_ckpt = None
     ## separate test run
-    separate_test_run = cfg.job_type == "test"
-    if separate_test_run:
-        if cfg.datamodule.get("test_dataloader_kwargs") is None:
-            raise ValueError(
-                "test_dataloader_kwargs is not provided in the datamodule."
-                " Needed for separate test run."
-            )
+    if cfg.job_type == "test":  # if separate test run
         test_ckpt = ckpt_path or "last"
-    logger.info(f"Testing with checkpoint: {test_ckpt or 'last'}")
-    if testing_right_after_training or separate_test_run:
+    try:
+        logger.info(f"Testing with checkpoint: {test_ckpt or 'last'}")
         trainer.test(
             model=lightning_module,
             datamodule=datamodule,
             ckpt_path=test_ckpt,
         )
-
-    # endregion: test
-
-    # TODO (training script): Print the best checkpoint
-
-    # TODO (training script): Close the loggers like wandb, etc.
-
-    # TODO (training script): Return the tracked metric value
+    except Exception as e:
+        logger.error(f"Could not run test: {e}")
