@@ -313,3 +313,7 @@ configs_old/train/debug/profile.yaml
 configs_old/train/experiment/train_babylm_tokenizer.yaml
 tests/**/*.txt
 tests/**/*.out
+
+
+# don't push .env
+.env
