@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# fmt: off
+import dotenv
+# read env variables before anything else is imported
+dotenv.load_dotenv(
+    override=True
+)  # set env variables from .env file, override=True is important
+found_secretes = dotenv.load_dotenv(".secrets.env", override=True)
+if not found_secretes:
+    print("Warning: .secrets.env not found")
+# fmt: on
+
 import shlex
 import sys
 from typing import Dict
