@@ -100,12 +100,14 @@ class FilePredictionWriter(_PredictionWriter):
         Args:
             fields_to_keep_in_output: List of fields to keep in the output. If None, all fields are kept.
             file_path_: Path to the file or special values.
+                if "from_pl_module", query the pl_module for the predictions_file for the step and epoch
+                set to "none" to disable file writing
         """
         super().__init__(fields_to_keep_in_output)
         self.file_path_ = file_path_
         self.supports_reading = True
 
-    def get_file_path(
+    def _get_file_path(
         self,
         pl_module: L.LightningModule,
         split: Literal["train", "val", "test", "predict"],
@@ -125,8 +127,6 @@ class FilePredictionWriter(_PredictionWriter):
             file_path = Path(self.file_path_)
         else:
             raise ValueError(f"Invalid file_path_: {self.file_path_}")
-
-        self.file_path_ = Path(file_path)
 
         return file_path
 
@@ -154,7 +154,7 @@ class FilePredictionWriter(_PredictionWriter):
             pl_module: The Lightning module.
             trainer: The Lightning trainer.
         """
-        file_path = self.get_file_path(
+        file_path = self._get_file_path(
             pl_module, split, dataloader_name, epoch, step
         )
 
@@ -179,7 +179,7 @@ class FilePredictionWriter(_PredictionWriter):
         pl_module: L.LightningModule,
     ) -> List[Dict[str, Any]]:
         """Read predictions from a JSONL file."""
-        file_path = self.get_file_path(
+        file_path = self._get_file_path(
             pl_module, split, dataloader_name, epoch, step
         )
         if file_path is None:
