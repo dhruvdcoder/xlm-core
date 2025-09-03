@@ -5,15 +5,54 @@ defaults:
   - override /model_type: indigo
   - override /model: indigo
 
+# Training setup
 per_device_batch_size: 64
 global_batch_size: 512
 block_size: 128
 
+# Data module config
 datamodule:
   print_batch_fn: xlm.lm.indigo.datamodule_indigo.print_batch_indigo
-  # TODO (URV): Add indigo-specific experiment parameters
+  dataset:
+    _target_: xlm.lm.indigo.datamodule_indigo.IndigoEmptyDataset
+    tokenizer: ${tokenizer}           # reference to tokenizer object
+    num_examples: 1_000_000
+    min_len: 5                         # from paper: min sequence length
+    max_len: ${block_size}             # max sequence length
+    uniform: false
+  collator:
+    _target_: xlm.lm.indigo.datamodule_indigo.DefaultIndigoCollator
+    tokenizer: ${tokenizer}
+    block_size: ${block_size}
+    noise_schedule: ${noise_schedule}
+    truncate: block
+    seed: 42
 
+# Model config
+model:
+  _target_: xlm.lm.indigo.model_indigo.IndigoModel
+  num_embeddings: ${tokenizer.vocab_size}
+  d_model: 512
+  num_layers: 6
+  nhead: 8
+  padding_idx: ${tokenizer.pad_token_id}
+  dropout: 0.1
+  activation: relu
+  layer_norm_eps: 1e-5
+  max_length: ${block_size} + 2
+  force_flash_attn: false
+  final_layer_without_normalization: false
+
+# Loss function
+loss:
+  _target_: xlm.lm.indigo.loss_indigo.IndigoLoss
+  model: ${model}
+  tokenizer: ${tokenizer}
+
+# Trainer config
 trainer:
-  max_steps: 1000_000
-  val_check_interval: 50000
-  num_sanity_val_steps: 3 
+  max_steps: 1_000_000
+  val_check_interval: 50_000
+  num_sanity_val_steps: 3
+  gradient_clip_val: 1.0
+  log_every_n_steps: 100
