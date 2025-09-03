@@ -10,6 +10,7 @@ from xlm.harness import (
     LossFunction,
 )
 from xlm.utils.rank_zero import RankedLogger
+from .types_indigo import IndigoBatch, IndigoLossDict
 
 logger = RankedLogger(__name__, rank_zero_only=True)
 
@@ -18,7 +19,7 @@ logger = RankedLogger(__name__, rank_zero_only=True)
 # region: Loss functions
 
 
-class IndigoLoss(LossFunction[Dict[str, Any], Dict[str, Any]]):
+class IndigoLoss(LossFunction[IndigoBatch, IndigoLossDict]):
     def __init__(
         self,
         model=None,

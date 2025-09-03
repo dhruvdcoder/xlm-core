@@ -8,6 +8,7 @@ from xlm.datamodule import Tokenizer
 from torch import Tensor as TT
 from xlm.harness import Predictor
 from xlm.noise import NoiseSchedule
+from .types_indigo import IndigoBatch, IndigoPredictionDict
 
 import time
 
@@ -18,7 +19,7 @@ import time
 
 class IndigoPredictor(
     torch.nn.Module,
-    Predictor[Dict[str, Any], Dict[str, Any]],
+    Predictor[IndigoBatch, IndigoPredictionDict],
 ):
 
     def __init__(

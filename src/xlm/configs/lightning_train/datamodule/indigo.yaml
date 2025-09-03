@@ -1,0 +1,12 @@
+# @package _global_
+defaults:
+  - default
+  - /collator@datamodule.dataset_managers.train.lm.collator: default_indigo
+  - /collator@datamodule.dataset_managers.val.lm.collator: default_indigo
+
+datamodule:
+  print_batch_fn: xlm.lm.indigo.datamodule_indigo.print_batch_indigo
+  # TODO (URV): Add indigo-specific datamodule parameters
+
+tags:
+  dataset: indigo 

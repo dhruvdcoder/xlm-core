@@ -20,6 +20,7 @@ from xlm.datamodule import (
     BaseCollatorInput,
 )
 from xlm.utils.nn import pad_truncate_list
+from .types_indigo import IndigoBatch
 
 logger = RankedLogger(__name__, rank_zero_only=True)
 

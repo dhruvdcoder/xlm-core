@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict, Any
 
 import torch
 import torch.nn as nn
@@ -16,6 +16,7 @@ from xlm.modules.gpt2_transformer import GPT, GPTConfig
 
 from xlm.model import Model
 from xlm.utils.rank_zero import RankedLogger
+from .types_indigo import IndigoBatch
 
 logger = RankedLogger(__name__, rank_zero_only=True)
 
@@ -26,6 +27,25 @@ logger = RankedLogger(__name__, rank_zero_only=True)
 
 ########################################################
 # region: Indigo Transformer
+
+
+class IndigoModel(nn.Module):
+    """Indigo model implementation."""
+
+    def __init__(self, config: Dict[str, Any]):
+        super().__init__()
+        # TODO (URV): Initialize your model components
+        pass
+
+    def forward(
+        self,
+        input_ids: Integer[TT, " batch seq_len"],
+        attention_mask: Optional[Integer[TT, " batch seq_len"]] = None,
+        **kwargs,
+    ):
+        # TODO (URV): Implement your forward pass
+        pass
+
 
 # endregion: Indigo Transformer
 ########################################################

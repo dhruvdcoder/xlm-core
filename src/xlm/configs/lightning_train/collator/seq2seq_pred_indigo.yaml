@@ -1,0 +1,6 @@
+_target_: xlm.lm.indigo.datamodule_indigo.IndigoSeq2SeqPredCollator
+block_size: ${block_size}
+tokenizer: ${global_components:tokenizer}
+noise_schedule: ${global_components:noise_schedule}
+input_block_size: ${oc.select:input_block_size,0}
+# TODO (URV): Add indigo-specific seq2seq prediction collator parameters 
