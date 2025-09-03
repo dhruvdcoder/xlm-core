@@ -1,23 +1,12 @@
 from typing import Optional, Tuple, Dict, Any
-
+import copy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from jaxtyping import Bool, Float, Integer
 from torch import Tensor as TT
-
-from xlm.modules.rotary_transformer import (
-    RotaryTransformerFinalLayer,
-    RotaryTransformerFinalLayerForClassification,
-    RotaryTransformerLayer,
-    RotaryTransformerLayerList,
-    RotaryEmbedding,
-)
-from xlm.modules.gpt2_transformer import GPT, GPTConfig
-
+from typing import List, Optional
 from torch.nn.attention import SDPBackend
-
-from xlm.model import Model
 from xlm.utils.rank_zero import RankedLogger
 from .types_indigo import IndigoBatch
 import math
@@ -59,7 +48,7 @@ def add_bias_apply_dropout_scale(
 
 
 ########################################################
-# region: Indigo Transformer
+# region: Indigo Transformer Model
 
 
 class IndigoModel(nn.Module):
@@ -67,9 +56,20 @@ class IndigoModel(nn.Module):
 
     def __init__( 
             self,
+            num_embeddings: int,  # vocab plus padding and other special tokens
+            d_model: int,
+            num_layers: int,
+            nhead: int,
+            padding_idx: int = 0,
+            dim_feedforward: Optional[int] = None,
+            dropout: float = 0.1,
+            activation: str = "relu",
+            layer_norm_eps: float = 1e-5,
+            max_length: int = 1024,
+            force_flash_attn: bool = False,
+            final_layer_without_normalization: bool = False,
         ):
 
-        super().__init__()
         # TODO (URV): Initialize your model components
        
        # Initialize other things among the two layers below
@@ -78,17 +78,58 @@ class IndigoModel(nn.Module):
        # Get the IndigoTransformerPointerNetwork layer initialized 
        # get_position would use the IndigoTransformerPointerNetwork, it wont be used in forward
        # IndigoTransformerLayer, IndigoTransformerLayerList, IndigoTransformerFinalLayer are used in forward
-       
+
+
+        super().__init__()
+        self.padding_idx = padding_idx
+        self.embed_tokens = nn.Embedding(
+            num_embeddings, d_model, padding_idx=padding_idx
+        )
+        self.dim_feedforward = dim_feedforward or 4 * d_model
+        encoder_layer = IndigoTransformerLayer(
+            d_model,
+            nhead,
+            self.dim_feedforward,
+            dropout,
+            activation,
+            layer_norm_eps,
+            force_flash_attn=force_flash_attn,
+        )
+
+        self.max_length = max_length
+        self.encoder = IndigoTransformerLayerList.from_layer(
+            encoder_layer,
+            num_layers,
+        )
+        self.output_layer = IndigoTransformerFinalLayer(
+            d_model,
+            num_embeddings,
+            layer_norm_eps,
+            use_final_layer_norm=not final_layer_without_normalization,
+            zero_init=False,
+        )
         
 
     def forward(
         self,
-        input_ids: Integer[TT, " batch seq_len"],
-        attention_mask: Optional[Integer[TT, " batch seq_len"]] = None,
+        x_t: Integer[TT, " *batch seq_len"],
+        rel_matrix: torch.Tensor,
+        attention_mask: Optional[Bool[TT, " *batch seq_len seq_len"]] = None,
         **kwargs,
     ):
         # TODO (URV): Implement your forward pass
-        pass
+        if attention_mask is not None:
+            attention_mask = attention_mask.to(torch.bool)
+
+        x = self.embed_tokens(x_t)  # shape (batch_size, seq_len, d_model)
+
+        for block in self.encoder:
+            x = block(x, rel_matrix, attention_mask)
+
+        vocab_logits = self.output_layer(
+            x,
+        )  # shape (batch_size, seq_len, vocab_size)
+        return vocab_logits
     
     def get_position(self):
         pass
@@ -107,9 +148,13 @@ class IndigoModel(nn.Module):
                 yield (name, param)
 
 
-# endregion: Indigo Transformer
+# endregion: Indigo Transformer Model
 ########################################################
 
+
+
+########################################################
+# region: Indigo Transformer Utility Classes
 class IndigoTransformerLayer(nn.Module):
     def __init__(
         self,
@@ -121,15 +166,7 @@ class IndigoTransformerLayer(nn.Module):
         layer_norm_eps: float = 1e-5,
         force_flash_attn: bool = False,
     ):
-        """
-        Initialize the DDiTBlock.
 
-        Args:
-            d_model: the dimension of the input.
-            nhead: the number of attention heads.
-            mlp_ratio: the ratio of the hidden size of the MLP/feedforward layer to the input size.
-            dropout: the dropout rate.
-        """
         super().__init__()
         dim_feedforward = dim_feedforward or 4 * d_model
         self.n_heads = nhead
@@ -141,7 +178,6 @@ class IndigoTransformerLayer(nn.Module):
 
 
         self.attn_qkv = nn.Linear(d_model, 3 * d_model, bias=False) # gets you the Q,K,V matrices
-        #self.relative_position_emb_A = nn.Parameter(torch.randn(3, d_model // nhead)) #Matrix A from the paper (3, d_head)
         self.relative_position_emb_A = torch.nn.Embedding(3, d_model // nhead)  # Matrix A from the paper (3, d_head)
 
         self.o_proj = nn.Linear(d_model, d_model, bias=False)
@@ -317,36 +353,67 @@ class IndigoTransformerLayer(nn.Module):
         # attn_logits shape was: (bsz, nheads, seqlen, 1, seqlen)
         # attn_logits shape after this step: (bsz, nheads, seqlen, seqlen)
         attn_logits = attn_logits.squeeze(3) 
-        # Here after squeezing the useless dimension, we should have to correct logits as in normal attention methods.
-        # Now we divide by sqrt of dmodel, apply mask, softmax, matmul with v and apply attention dropout layer and then output logits
-
+       
         attn_logits = attn_logits / math.sqrt(self.head_dim)
-        attn_logits = attn_logits.masked_fill(attn_mask, -math.inf)  # if mask is given
-        attn_weights = F.softmax(attn_logits, dim=-1)  # attention scores
+        attn_logits = attn_logits.masked_fill(attn_mask, -math.inf) 
+        attn_weights = F.softmax(attn_logits, dim=-1)  
         attn_output = torch.matmul(attn_weights, v)
         attn_output = self.dropout_layer(attn_output) # Don't know if this would turn off dropout during inference. 
 
         # attn_output shape: (bsz, n_heads, seq_len, head_dim)
         return attn_output
-        # This returns the logits, and culminates the attention layer, now there would come a pre mlp norm, then mlp/feedforward, then another dropout
-        # Then Layer class ends
 
 class IndigoTransformerLayerList(nn.ModuleList):
-    def __init__(self):
-        pass
+    def __init__(
+        self, blocks: List[IndigoTransformerLayer]
+    ):
+        super().__init__(blocks)
 
     @classmethod
-    def from_layer(self):
-        pass
+    def from_layer(
+        cls,
+        layer: IndigoTransformerLayer,
+        num_layers: int,
+    ):
+        return cls(
+            [copy.deepcopy(layer) for _ in range(num_layers)]
+        )
 
 class IndigoTransformerFinalLayer(nn.Module):
-    def __init__(self):
-        pass
-    def forward(self):
-        pass
+    def __init__(
+        self,
+        d_model: int,
+        out_dims: int,
+        layer_norm_eps: float = 1e-5,
+        use_final_layer_norm: bool = True,
+        zero_init: bool = False,
+    ):
+        super().__init__()
+        self.norm_final = (
+            nn.LayerNorm(d_model, eps=layer_norm_eps)
+            if use_final_layer_norm
+            else None
+        )
+        self.linear = nn.Linear(d_model, out_dims, bias=False)
+        if zero_init:
+            with torch.no_grad():
+                self.linear.weight.zero_()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Args:
+            x: the input tensor of shape (bsz, seq_len, dim).
+        """
+        if self.norm_final is not None:
+            x = self.norm_final(x)
+        x = self.linear(x)
+        return x
 
 class IndigoTransformerPointerNetwork(nn.Module):
     def __init__(self):
         pass
     def forward(self):
         pass
+
+# endregion: Indigo Transformer Utility Classes
+########################################################
