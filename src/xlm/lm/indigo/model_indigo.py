@@ -106,17 +106,16 @@ class IndigoTransformerLayer(nn.Module):
 
     def forward(
         self,
-        inp: torch.Tensor,
+        inp: Float[TT, " bsz query_len dim"],
         attention_mask: torch.Tensor,
         rel_matrix: torch.Tensor,
     ) -> torch.Tensor:
         """
         Args:
-            x: the input tensor of shape (bsz, seq_len, dim).
+            x: the input tensor of shape (bsz, query_len, dim).
             attention_mask: the attention mask of shape (bsz, seq_len), which is True for non-padding tokens.
              It can also be of shape (bsz, seq_len (query), seq_len (key-value)), where the mask indicates which tokens are valid in the context.
-
-             rel_matrix shape would be: (bsz, n_heads, seq_len, seq_len)
+            rel_matrix shape would be: (bsz, n_heads, key_seq_len, query_seq_len)
         """
 
         # region: attention ie: inp = dropout(attn(norm(inp))) + inp
@@ -170,10 +169,10 @@ class IndigoTransformerLayer(nn.Module):
             q,
             k,
             v,
-            rel_matrix,
+            rel_matrix.transpose(-1, -2),
             attn_mask=attn_mask,
         )
-        # shape (bsz, n_heads, seq_len, head_dim)
+        # shape (bsz, n_heads, query_len, head_dim)
 
         # Reshape and project output
         attn_output = (
@@ -211,54 +210,48 @@ class IndigoTransformerLayer(nn.Module):
 
     def indigo_scaled_dot_product_attention(
         self,
-        q,  # shape:(bsz, nheads, seqlen, head_dim)
-        k,  # shape:(bsz, nheads, seqlen, head_dim)
-        v,  # shape:(bsz, nheads, seqlen, head_dim)
-        rel_matrix,  # shape:(bsz, seqlen, seqlen)
-        attn_mask,  # shape:?
-    ):
-        # Calculating attention logits
-        # We cannot use normal attention method from torch because here for each query vector, we have a different key vector to multiply, depending on their relation. We multiply a single query with a matrix of K for efficiency. For one Q_i in Indigo Attention, you need to mutliply it with a different K matrix, this K matrix is specific to that ith query vector. We first transform the relative matrix, hold the specific vectors from embedding rather than the relative positions. Then we when we add rel_emb and k, we have two broadcast rules. One deals with applying the same tertiary embedding structure to all heads, and the other deals with adding the K matrix to differnt tertiary positions of the Q_i vector possibilies.
-
-        # replaces -1, 0 or 1 with one of the 3 vectors in embedding. Encodes tertiary embeddings
-        # rel_emb shape: (bsz, seqlen, seqlen, head_dim)
+        q: Float[TT, " bsz nheads query_len head_dim"],
+        k: Float[TT, " bsz nheads key_len head_dim"],
+        v: Float[TT, " bsz nheads key_len head_dim"],
+        rel_matrix: Float[TT, " bsz query_len key_len"],
+        attn_mask: Bool[TT, " bsz nheads query_len key_len"],
+    ) -> Float[TT, " bsz nheads query_len head_dim"]:
+        # ternary relative embedding: (-1,0,1) -> vectors in R^{head_dim}
+        # rel_emb: (bsz, query_len, key_len, head_dim)
         rel_emb = self.relative_position_emb_A(rel_matrix + 1)
 
-        # rel_emb shape: (bsz, 1, seqlen, seqlen, head_dim)
-        rel_emb = rel_emb.unsqueeze(1)
+        # share same rel embeddings across heads (add a head dim of 1)
+        rel_emb = rel_emb.unsqueeze(
+            1
+        )  # (bsz, 1, query_len, key_len, head_dim)
 
-        # k shape: (bsz, nheads, 1, seqlen, head_dim)
-        k = k.unsqueeze(2)
+        # expand keys over query positions, then add relative embedding
+        k_aug = (
+            k.unsqueeze(-3) + rel_emb
+        )  # (bsz, nheads, query_len, key_len, head_dim)
 
-        # k_aug shape: (bsz, nheads, seqlen, seqlen, head_dim) BROADCASTED
-        k_aug = k + rel_emb
-        # Here k_aug, for all bsz, for all heads, a 3d tensor. Think of it as a 2d matrix of seqlen * seqlen, and the entries are a vector of head_dim
-        # This vector is one of the three from the embedding layer, we basically convert the entire rel_mat from -1,0,1 to the respective vectors,
-        # and then we just add it to k via broadcasting.
-        # Broadcasts:
-        # 1. The same multiple K matrix structure is added to all heads.
-        # 2. The same base K matrix is added to differnt versions of Q_i based tertiary embeddings
+        # dot(q, k_aug) over head_dim -> logits with shape (bsz, nheads, query_len, key_len)
+        # NOTE: no extra unsqueeze on q needed
+        attn_logits = torch.einsum(
+            "bhqkd,bhqd->bhqk", k_aug, q
+        )  # (bsz, nheads, query_len, key_len)
 
-        # q shape:(bsz, nheads, seqlen, 1, head_dim)
-        q = q.unsqueeze(3)
+        # scale
+        attn_logits = attn_logits / math.sqrt(
+            self.head_dim
+        )  # TODO: Use tensor instead of raw float in the division.
 
-        # attn_logits shape: (bsz, nheads, seqlen, 1, seqlen)
-        attn_logits = torch.matmul(q, k_aug.transpose(-2, -1))
-        # Every Q_i is matrix multiplied with its corresponding K matrix to get one row of attention logit. Example: Q_3 vector would be matrix multiplied with k_aug[:,:,3] matrix as k_aug[:,:,3] is k[:,:] + A[r_3,j + 1]
+        # ensure bool, broadcastable to (bsz, nheads, query_len, key_len)
+        attn_logits = attn_logits.masked_fill(~attn_mask, -torch.inf)
 
-        # attn_logits shape was: (bsz, nheads, seqlen, 1, seqlen)
-        # attn_logits shape after this step: (bsz, nheads, seqlen, seqlen)
-        attn_logits = attn_logits.squeeze(3)
+        # attention weights over keys
+        attn_weights = torch.softmax(attn_logits, dim=-1)
+        attn_weights = self.dropout_layer(attn_weights)
 
-        attn_logits = attn_logits / math.sqrt(self.head_dim)
-        attn_logits = attn_logits.masked_fill(attn_mask, -math.inf)
-        attn_weights = F.softmax(attn_logits, dim=-1)
-        attn_output = torch.matmul(attn_weights, v)
-        attn_output = self.dropout_layer(
-            attn_output
-        )  # Don't know if this would turn off dropout during inference.
-
-        # attn_output shape: (bsz, n_heads, seq_len, head_dim)
+        # weighted sum of values
+        attn_output = torch.matmul(
+            attn_weights, v
+        )  # (bsz, nheads, query_len, head_dim)
         return attn_output
 
 
@@ -371,28 +364,49 @@ class IndigoModel(nn.Module):
             use_final_layer_norm=not final_layer_without_normalization,
             zero_init=False,
         )
-        self.pointer_projection = nn.Linear(
-            3 * d_model, d_model, bias=False
-        )  # joint matrix for C,D,E projections
+        self.pointer_projection_query = nn.Linear(
+            d_model, d_model, bias=False
+        )  # joint matrix for E projections
+        self.pointer_projection_key = nn.Linear(
+            d_model, 2 * d_model, bias=False
+        )  # joint matrix for C,D projections
 
     def forward(
         self,
         x_t: Integer[TT, " *batch seq_len"],
         pi: Optional[Integer[TT, " *batch seq_len"]] = None,
-        attention_mask: Optional[Bool[TT, " *batch seq_len seq_len"]] = None,
-        rel_matrix: Optional[Integer[TT, " *batch seq_len seq_len"]] = None,
+        attention_mask: Optional[Bool[TT, " *batch query_len key_len"]] = None,
+        rel_matrix: Optional[Integer[TT, " *batch key_len query_len"]] = None,
     ):
         if rel_matrix is None and pi is None:
             raise ValueError("rel_matrix or pi must be provided")
         if attention_mask is not None:
             attention_mask = attention_mask.to(torch.bool)
 
+        # check the shape of attention_mask and expand to (bsz, query_len(1), key_len) if needed
+        # also make it lower triangular
+        if attention_mask.ndim == 2:
+            key_len = attention_mask.size(-1)
+            query_len = key_len
+            causal_attention_mask = torch.tril(
+                torch.ones(
+                    query_len,
+                    key_len,
+                    dtype=torch.bool,
+                    device=attention_mask.device,
+                )
+            )
+            attention_mask = (
+                attention_mask.unsqueeze(1) & causal_attention_mask
+            )
+
         x = self.embed_tokens(x_t)  # shape (batch_size, seq_len, d_model)
         if rel_matrix is None:
+            assert pi is not None
             rel_matrix = get_tertiary_relative_position_matrix(pi)
 
         for block in self.encoder:
-            x = block(x, rel_matrix, attention_mask)
+            x = block(x, attention_mask, rel_matrix)
 
         vocab_logits = self.output_layer(
             x,
@@ -401,8 +415,11 @@ class IndigoModel(nn.Module):
 
     def get_position_logits(
         self,
-        hidden_states: Float[TT, " *batch seq_len d_model"],
-        target_ids: Integer[TT, " *batch seq_len"],
+        hidden_states: Float[TT, " *batch key_seq_len d_model"],
+        target_ids: Integer[TT, " *batch query_seq_len"],
+        target_hidden_states: Optional[
+            Float[TT, " *batch query_seq_len d_model"]
+        ] = None,
     ) -> Float[TT, " *batch seq_len 2 seq_len"]:
         """
         Args:
@@ -412,21 +429,24 @@ class IndigoModel(nn.Module):
         Returns:
             logits: Logits for the position prediction. Note that these logits need to be masked before applying softmax because some positions are in the prompt (constrained) or in the future (during training).
         """
-        # seq_len = target_ids.size(1)
-        # d_model = hidden_states.size(-1)
+        if target_hidden_states is None:
+            target_hidden_states = hidden_states
         d_model = self.d_model
         embed_matrix = self.embed_tokens(
             target_ids
-        )  # shape (*batch_size, seq_len, d_model)
-        proj = self.pointer_projection(
+        )  # shape (*batch_size, query_seq_len, d_model)
+        proj_key = self.pointer_projection_key(
             hidden_states
-        )  # shape (*batch_size, seq_len, 3*d_model)
+        )  # shape (*batch_size, key_seq_len, 2*d_model)
+        proj_query = self.pointer_projection_query(
+            target_hidden_states
+        )  # shape (*batch_size, query_seq_len, d_model)
 
         queries = (
-            proj[..., :d_model] + embed_matrix
+            proj_query + embed_matrix
         )  # shape (*batch_size, query_seq_len, d_model)
-        keys = proj[..., d_model:].view(
-            *proj.shape[:-1], 2, d_model
+        keys = proj_key.view(
+            *proj_key.shape[:-1], 2, d_model
         )  # shape(*batch_size, key_seq_len, 2, d_model)
         # b,k,q,x,d = batch, key_seq_len, query_seq_len, 2, d_model
         # Note: for us query_seq_len = key_seq_len = seq_len

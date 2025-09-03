@@ -317,6 +317,8 @@ class IndigoSeq2SeqCollator:
                 pad_left=False,
             )
             pi = list(range(len(_prefix_ids))) + pi
+            pi = pi + list(range(len(pi), self.total_block_size))
+
             tgt_ids = pad_truncate_list(
                 tgt_ids[1:] + [-100],
                 self.total_block_size,
@@ -329,6 +331,7 @@ class IndigoSeq2SeqCollator:
                 self._pad,
                 pad_left=False,
             )
+            assert len(pi) == len(attn_mask) == len(_input_ids) == len(tgt_ids)
             input_ids.append(_input_ids)
             attention_mask.append(attn_mask)
             target_ids.append(tgt_ids)
@@ -366,16 +369,32 @@ class IndigoSeq2SeqPredCollator(IndigoSeq2SeqCollator):
                 0,
                 pad_left=True,
             )
-            pi = list(range(len(_prefix_ids)))
+            pi = list(range(len(prefix_ids)))
+            pi = pad_truncate_list(pi, self.input_block_size, 0, pad_left=True)
             pis.append(pi)
-            input_ids.append(_prefix_ids)
+            prefix_ids = pad_truncate_list(
+                prefix_ids, self.input_block_size, self._pad, pad_left=True
+            )
+            input_ids.append(prefix_ids)
             attention_mask.append(attn_mask)
             _suffix_ids = ex["input_ids"]
             if len(_suffix_ids) > self.block_size:
                 raise ValueError(
                     f"Suffix length {len(_suffix_ids)} exceeds block size {self.block_size}"
                 )
-            tgt_ids = prefix_ids + [self._bos] + _suffix_ids + [self._eos]
+            tgt_ids = (
+                pad_truncate_list(
+                    _prefix_ids + [self._bos],
+                    self.input_block_size - 1,
+                    self._pad,
+                    pad_left=True,
+                )
+            ) + pad_truncate_list(
+                _suffix_ids + [self._eos, self._eod],
+                self.block_size + 1,
+                self._pad,
+                pad_left=False,
+            )
             target_ids.append(tgt_ids)
         return {
             "input_ids": torch.tensor(input_ids, dtype=torch.long),

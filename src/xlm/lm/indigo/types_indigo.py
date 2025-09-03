@@ -89,12 +89,11 @@ class IndigoPredictionDict(TypedDict):
     """Output of the Indigo predictor."""
 
     text: list[str]
+    text_with_spl_tokens: list[str]
     ids: Integer[TT, " batch seq_len"]
-    relative_matrix: Optional[Integer[TT, "batch pred_plus2 pred_plus2"]]
-    # pointer softmax
-    pointer_scores: Optional[Float[TT, "batch steps max_slots"]]
-    word_scores: Optional[Float[TT, "batch steps vocab"]]
-    absolute_positions: Optional[Integer[TT, "batch pred_plus2"]]
+    attention_mask: Bool[TT, " batch seq_len"]
+    positions: Integer[TT, " batch seq_len"]
+    time_taken: list[float]
 
 
 class IndigoModelProtocol(Protocol):
@@ -118,4 +117,7 @@ class IndigoModelProtocol(Protocol):
         self,
         hidden_states: Float[TT, " *batch seq_len d_model"],
         target_ids: Integer[TT, " *batch seq_len"],
+        target_hidden_states: Optional[
+            Float[TT, " *batch seq_len d_model"]
+        ] = None,
     ): ...

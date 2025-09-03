@@ -30,6 +30,13 @@ class IndigoLoss(LossFunction[IndigoBatch, IndigoLossDict]):
     def __init__(
         self, model=None, tokenizer=None, position_loss_weight: float = 1.0
     ):
+        """Initialize the Indigo loss function.
+
+        Args:
+            model: The Indigo model instance
+            tokenizer: Tokenizer with cls_token_id and pad_token_id
+            position_loss_weight: Weight for position loss component
+        """
         self.model: IndigoModelProtocol = model
         self.tokenizer = tokenizer  # type: ignore
         self._min_value: Optional[float] = (
@@ -47,6 +54,7 @@ class IndigoLoss(LossFunction[IndigoBatch, IndigoLossDict]):
             raise ValueError(
                 "tokenizer must be provided and have cls_token_id and pad_token_id"
             )
+        # Create ignore_positions tensor on the correct device
         self.ignore_positions = torch.tensor(
             [-100, self.tokenizer.cls_token_id, self.tokenizer.pad_token_id],
             device=pl_module.device,  # type: ignore
@@ -85,7 +93,7 @@ class IndigoLoss(LossFunction[IndigoBatch, IndigoLossDict]):
                 device=attention_mask.device,
             )
         )
-        # Expand attention_mask to (batch, seq_len, seq_len) and combine with causal mask
+        # Expand attention_mask to (batch, query_len(1), key_len) and combine with causal mask
         expanded_attention_mask = attention_mask.unsqueeze(
             1
         )  # (batch, 1, seq_len)
@@ -111,10 +119,9 @@ class IndigoLoss(LossFunction[IndigoBatch, IndigoLossDict]):
         # region: pointer loss
         # target_ids contain -100 so we need to be carful while sending in those targets
         # ideally it should not matter because we will ingore those target positions anyway
-        # So, I'm passing raw target_ids here for now.
-        # dummy_target_ids = target_ids.clone()
-        # dummy_target_ids[dummy_target_ids == -100] = 0
-        dummy_target_ids = target_ids
+        # but -100 can still cause indexing errors for some datasets
+        dummy_target_ids = target_ids.clone()
+        dummy_target_ids[dummy_target_ids == -100] = 0
         # Obtain logits for lpl, and rpl of shape (bs, key_seq_len, query_seq_len) each.
         position_logits = self.model.get_position_logits(
             hidden_states, dummy_target_ids
@@ -125,6 +132,10 @@ class IndigoLoss(LossFunction[IndigoBatch, IndigoLossDict]):
         )  # (bs, key_seq_len, 2, query_seq_len)
         # 1. keys can't be in the future, make upper traingular
         # 2. identify positions for which we don't predict pointers like EOD and PAD tokens
+        if self.ignore_positions is None:
+            raise RuntimeError(
+                "Loss function not properly configured. Call configure() first."
+            )
         ignore = torch.isin(target_ids, self.ignore_positions).unsqueeze(
             -2
         )  # (bs, 1, query_seq_len)
@@ -134,32 +145,33 @@ class IndigoLoss(LossFunction[IndigoBatch, IndigoLossDict]):
         masked_position_logits = position_logits.masked_fill(
             mask, float("-inf")
         )
-        # reshape to (bs, key_seq_len*2, query_seq_len) for logsumexp
-        masked_position_logits = masked_position_logits.reshape(
-            mask.size(0), -1, mask.size(-1)
-        )  # (bs, 2*key_seq_len, query_seq_len) # note that this is an interleaved logits matrix and cannot be split
         lse = torch.logsumexp(
-            masked_position_logits, dim=-2
+            masked_position_logits.reshape(
+                mask.size(0),
+                -1,
+                mask.size(
+                    -1
+                ),  # (bs, 2*key_seq_len, query_seq_len) # note that this is an interleaved logits matrix and cannot be split
+            ),
+            dim=-2,
         )  # (bs, query_seq_len)
         # index using target_ids
         # We will get -inf in lse for PAD and EOD query positions. We will pluck them out later before computing the loss.
         lp, rp = get_left_right_pointer_position(
             pi,
-        )  # (bs, key_seq_len), (bs, key_seq_len)
+        )  # (bs, query_seq_len), (bs, query_seq_len)
 
         # logits for ground truth pointers
         left_logits = (
-            position_logits[:, :, 0]
-            .gather(dim=-1, index=lp.unsqueeze(-1))
-            .squeeze(-1)
+            position_logits[:, :, 0]  # (bs, key_seq_len, query_seq_len)
+            .gather(dim=-2, index=lp.unsqueeze(-2))
+            .squeeze(-2)
         )  # (bs, query_seq_len)
         right_logits = (
             position_logits[:, :, 1]
-            .gather(dim=-1, index=rp.unsqueeze(-1))
-            .squeeze(-1)
+            .gather(dim=-2, index=rp.unsqueeze(-2))
+            .squeeze(-2)
         )  # (bs, query_seq_len)
-        left_logits = left_logits.squeeze(-2)  # (bs, query_seq_len)
-        right_logits = right_logits.squeeze(-2)  # (bs, query_seq_len)
         lae = torch.logaddexp(left_logits, right_logits)  # (bs, query_seq_len)
         positions_to_compute_pos_loss = (
             mask.reshape(mask.size(0), -1, mask.size(-1)).all(dim=-2)
@@ -171,8 +183,8 @@ class IndigoLoss(LossFunction[IndigoBatch, IndigoLossDict]):
         total_loss = token_ce_loss + self.position_loss_weight * position_loss
         return {
             "loss": total_loss,
-            "token_loss": token_ce_loss,
-            "position_loss": position_loss,
+            "token_loss": token_ce_loss.detach(),
+            "position_loss": position_loss.detach(),
         }
 
 

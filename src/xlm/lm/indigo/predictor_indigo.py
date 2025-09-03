@@ -82,6 +82,10 @@ class IndigoPredictor(
         self.max_length = max_length
         self.noise_schedule = noise_schedule
         self.model = model
+        self._bos = tokenizer.bos_token_id
+        self._eos = tokenizer.eos_token_id
+        self._eod = tokenizer.cls_token_id
+        self._pad = tokenizer.pad_token_id
         if sampling_method == "sample":
             self.sampling_function = sample_from_logits
         elif sampling_method == "sample_top_k":
@@ -129,7 +133,7 @@ class IndigoPredictor(
         batch_idx: Optional[int] = None,
         dataloader_idx: Optional[int] = None,
         dataloader_name: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> IndigoPredictionDict:
         t0 = time.time()
         # fmt: off
         attention_mask = batch['attention_mask'].to(dtype=torch.bool)
@@ -142,12 +146,14 @@ class IndigoPredictor(
         # b) left_pads BOS prompt EOS
         # In all the above cases pi should simply be increasing
         pi = (attention_mask.cumsum(dim=-1) - 1).clamp(min=0)
-        # TODO: Support contraints?
 
         state: Dict[str, TT] = {
             "x": input_ids,
             "pi": pi,
             "attention_mask": attention_mask.bool(),
+            "finished": torch.zeros(
+                input_ids.size(0), dtype=torch.bool, device=input_ids.device
+            ),
         }
 
         step = 0
@@ -161,7 +167,7 @@ class IndigoPredictor(
 
         return {
             "text": texts,
-            "text_w_token": texts_with,
+            "text_with_spl_tokens": texts_with,
             "ids": final_ids,
             "attention_mask": final_mask,
             "positions": final_pos,
@@ -180,10 +186,11 @@ class IndigoPredictor(
         attention_mask = state['attention_mask']
         finished = state['finished']
         # fmt: on
-        rel_matrix = get_tertiary_relative_position_matrix(pi)
         assert self.model is not None
         model = cast(IndigoModelProtocol, self.model)
-        hidden_states, vocab_logits = model(x, rel_matrix, attention_mask)
+        hidden_states, vocab_logits = model(
+            x, pi=pi, attention_mask=attention_mask
+        )  # shape (batch, seq_len, d_model), (batch, seq_len, vocab_size)
 
         next_token_logits = vocab_logits[:, -1, :]
         # TODO: suppress special tokens?
@@ -191,14 +198,12 @@ class IndigoPredictor(
             next_token_logits
         )  # shape (batch,)
         # if allready finished, set predicted token to pad
-        next_token = next_token.where(
-            finished.unsqueeze(-1), self.tokenizer.pad_token_id
-        )
-        finished = finished.logical_or(
-            next_token == self.tokenizer.cls_token_id
-        )  # cls is EOD
+        next_token = torch.where(finished, self._pad, next_token)
+        finished = finished.logical_or(next_token == self._eod)  # cls is EOD
         position_logits = model.get_position_logits(
-            hidden_states, next_token.unsqueeze(-1)
+            hidden_states,
+            next_token.unsqueeze(-1),
+            target_hidden_states=hidden_states[:, -1:, :],
         ).squeeze(
             -1
         )  # shape (batch, key_seq_len, 2)
@@ -207,11 +212,24 @@ class IndigoPredictor(
         # a valid slot is a pair (i, right_neighbor_of_i)
         is_on_right = pi.unsqueeze(-1) < pi.unsqueeze(
             -2
-        )  # shape (batch, key_seq_len, query_seq_len)
+        )  # shape (batch, query_seq_len, key_seq_len)
         # is_on_right[*, i, j] = 1 if pi[i] < pi[j]
+        # ignore the lower triangle including the diagonal, ie query itself and its left
+        tril_mask = torch.ones_like(is_on_right, dtype=torch.bool).tril_(
+            diagonal=0
+        )
+        positions_on_the_right = is_on_right * pi.unsqueeze(-2)
+        positions_on_the_right = positions_on_the_right.masked_fill(
+            tril_mask, 100000
+        )
         right_neighbor_idx, right_neighbor_abs_pos = torch.min(
-            is_on_right * pi.unsqueeze(-1), dim=-1
-        )  # shape (batch, query_seq_len)
+            positions_on_the_right, dim=-1
+        )  # shape (batch, key_seq_len)
+        # we expect at least one query position for which there is no right neighbor
+        # and one query position for which there is no left neighbor
+        # due to padding, there could be more
+        suppress_mask = right_neighbor_idx == 100000
+        right_neighbor_idx[suppress_mask] = 0
         slot_left_logits = position_logits[
             :, :, 0
         ]  # shape (batch, key_seq_len)
@@ -220,17 +238,18 @@ class IndigoPredictor(
         )
         # suppress slots that are right of EOS
         # get the absolute position of EOS
-        eos_idx = (
-            (x == self.tokenizer.eos_token_id).int().argmax(dim=-1)
-        )  # shape (batch,)
+        eos_idx = (x == self._eos).int().argmax(dim=-1)  # shape (batch,)
         after_eos = (
             pi.gather(-1, eos_idx.unsqueeze(-1)) < pi
         )  # shape (batch, seq_len)
+        suppress_mask = suppress_mask.logical_or(after_eos)
         # unnormalized log-probabilities, ie logits. Finally!
         lae = torch.logaddexp(
             slot_left_logits, slot_right_logits
         )  # shape (batch, key_seq_len, 1)
-        lae.masked_fill_(after_eos, -torch.inf)  # shape (batch, key_seq_len)
+        lae.masked_fill_(
+            suppress_mask, -torch.inf
+        )  # shape (batch, key_seq_len)
         sampled_slot = self.position_sampling_function(lae)  # shape (batch,)
         # extend x, pi, and attention_mask
         # pi
@@ -238,11 +257,13 @@ class IndigoPredictor(
             -1, sampled_slot.unsqueeze(-1)
         )  # shape (batch,1)
         # for finished sequences, set sampled_abs_pos to max(pi) + 1
-        sampled_abs_pos = sampled_abs_pos.where(
-            finished.unsqueeze(-1), pi.max(dim=-1, keepdim=True).values
+        sampled_abs_pos = torch.where(
+            finished.unsqueeze(-1),
+            pi.max(dim=-1, keepdim=True).values,
+            sampled_abs_pos,
         )
         # everything to the right of sampled_slot is shifted by +1
-        pi = pi.where(sampled_abs_pos < pi, pi + 1)
+        pi = torch.where(sampled_abs_pos < pi, pi + 1, pi)
         pi = torch.cat([pi, sampled_abs_pos + 1], dim=-1)
         x = torch.cat([x, next_token.unsqueeze(-1)], dim=-1)
         attention_mask = torch.cat(
@@ -289,6 +310,45 @@ class IndigoPredictor(
             x_sorted, skip_special_tokens=False
         )
         return out, out_with_spl_tokens, x_sorted, mask_sorted, sorted_pos
+
+    def to_dict(
+        self,
+        batch: Dict[str, Any],  # type: ignore
+        preds: IndigoPredictionDict,
+        batch_idx: Optional[int] = None,
+        dataloader_idx: Optional[int] = None,
+        dataloader_name: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Convert predictions to dictionary format.
+
+        Args:
+            batch: Input batch.
+            preds: Prediction results.
+            batch_idx: Batch index.
+            dataloader_idx: Dataloader index.
+            dataloader_name: Dataloader name.
+
+        Returns:
+            List of dictionaries containing prediction results.
+        """
+        preds_list: List[Tuple[str, str, List[int]]] = list(
+            zip(
+                preds["text"],
+                preds["text_with_spl_tokens"],
+                preds["ids"].tolist(),
+            )
+        )
+
+        dicts: List[Dict[str, Any]] = []
+        for text, text_with_spl_tokens, ids in preds_list:
+            dicts.append(
+                {
+                    "text": text,
+                    "text_with_spl_tokens": text_with_spl_tokens,
+                    "ids": ids,
+                }
+            )
+        return dicts
 
 
 # endregion: Predictors

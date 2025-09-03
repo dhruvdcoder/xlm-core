@@ -25,17 +25,17 @@ reported_metrics:
     lm:
       accumulated_loss:
         prefix: train/lm
-        update_fn: xlm.lm.indigo.metrics_indigo.mean_metric_update_fn
+        update_fn: xlm.lm.indigo.metrics_indigo.mean_loss_update_fn
   val:
     lm:
       accumulated_loss:
         prefix: val/lm
-        update_fn: xlm.lm.indigo.metrics_indigo.mean_metric_update_fn
+        update_fn: xlm.lm.indigo.metrics_indigo.mean_loss_update_fn
   test:
     lm:
       accumulated_loss:
         prefix: test/lm
-        update_fn: xlm.lm.indigo.metrics_indigo.mean_metric_update_fn
+        update_fn: xlm.lm.indigo.metrics_indigo.mean_loss_update_fn
   
 diagnostic_metrics: null
 
