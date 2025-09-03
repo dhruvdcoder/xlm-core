@@ -1,4 +1,4 @@
-# ILM
+
 
 
 1. Create a new environment using conda.
@@ -32,9 +32,16 @@ pip install -e .
 
 If you are working on Unity in a scratch space, I recommend creating an environment in your `/work/pi_*/user/*` directory or in the scratch workspace itself and not in your home directory.
 
+# ARLM
 
+```bash
+########################################################
+# region: Star Easy
+# debug run on an interactive node
+python src/xlm/commands/lightning_main.py "job_type=train" "job_name=star_easy_arlm" "experiment=star_easy_arlm" "debug=overfit"
+```
 
-
+# ILM
 
 #### Star Graphs
 
