@@ -39,12 +39,16 @@ class IndigoLoss(LossFunction[IndigoBatch, IndigoLossDict]):
         self.position_loss_weight = position_loss_weight
 
     def configure(self, pl_module: Harness):
-        if self.tokenizer is None or self.tokenizer.cls_token_id is None:
+        if (
+            self.tokenizer is None
+            or self.tokenizer.cls_token_id is None
+            or self.tokenizer.pad_token_id is None
+        ):
             raise ValueError(
-                "tokenizer must be provided and have cls_token_id"
+                "tokenizer must be provided and have cls_token_id and pad_token_id"
             )
         self.ignore_positions = torch.tensor(
-            [-100, self.tokenizer.cls_token_id],
+            [-100, self.tokenizer.cls_token_id, self.tokenizer.pad_token_id],
             device=self.model.device,  # type: ignore
             dtype=torch.long,
         )
@@ -123,10 +127,12 @@ class IndigoLoss(LossFunction[IndigoBatch, IndigoLossDict]):
             position_logits, dtype=torch.bool
         )  # (bs, key_seq_len, 2, query_seq_len)
         # 1. keys can't be in the future, make upper traingular
-        mask[..., 0, :].tril_(diagonal=-1)
-        mask[..., 1, :].tril_(diagonal=-1)
         # 2. identify positions for which we don't predict pointers like EOD and PAD tokens
-        mask = mask.logical_or(torch.isin(target_ids, self.ignore_positions))
+        ignore = torch.isin(target_ids, self.ignore_positions).unsqueeze(
+            -2
+        )  # (bs, 1, query_seq_len)
+        mask[..., 0, :].tril_(diagonal=-1).logical_or_(ignore)
+        mask[..., 1, :].tril_(diagonal=-1).logical_or_(ignore)
         # min_value = self.min_value(position_logits)
         masked_position_logits = position_logits.masked_fill(
             mask, float("-inf")
@@ -144,12 +150,17 @@ class IndigoLoss(LossFunction[IndigoBatch, IndigoLossDict]):
             pi,
         )  # (bs, key_seq_len), (bs, key_seq_len)
 
-        left_logits = position_logits[:, :, 0].gather(
-            dim=-1, index=lp.unsqueeze(-1)
-        )  # (bs, 1, query_seq_len)
-        right_logits = position_logits[:, :, 1].gather(
-            dim=-1, index=rp.unsqueeze(-1)
-        )  # shape (bs, 1, query_seq_len)
+        # logits for ground truth pointers
+        left_logits = (
+            position_logits[:, :, 0]
+            .gather(dim=-1, index=lp.unsqueeze(-1))
+            .squeeze(-1)
+        )  # (bs, query_seq_len)
+        right_logits = (
+            position_logits[:, :, 1]
+            .gather(dim=-1, index=rp.unsqueeze(-1))
+            .squeeze(-1)
+        )  # (bs, query_seq_len)
         left_logits = left_logits.squeeze(-2)  # (bs, query_seq_len)
         right_logits = right_logits.squeeze(-2)  # (bs, query_seq_len)
         lae = torch.logaddexp(left_logits, right_logits)  # (bs, query_seq_len)
@@ -223,6 +234,7 @@ if __name__ == "__main__":
 
     class DummyTokenizer:
         cls_token_id = 2
+        pad_token_id = 10
 
     model = DummyModel()
     tokenizer = DummyTokenizer()
