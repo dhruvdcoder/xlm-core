@@ -108,6 +108,9 @@ class IndigoModel(nn.Module):
             use_final_layer_norm=not final_layer_without_normalization,
             zero_init=False,
         )
+        self.E = nn.Linear(d_model, d_model, bias=False) #Pointer Network's Layer for Position Prediction
+        self.C = nn.Linear(d_model, d_model, bias=False) #Pointer Network's Layer for Position Prediction
+        self.D = nn.Linear(d_model, d_model, bias=False) #Pointer Network's Layer for Position Prediction
         
 
     def forward(
@@ -125,14 +128,29 @@ class IndigoModel(nn.Module):
 
         for block in self.encoder:
             x = block(x, rel_matrix, attention_mask)
-
+   
         vocab_logits = self.output_layer(
             x,
         )  # shape (batch_size, seq_len, vocab_size)
-        return vocab_logits
+        return x, vocab_logits
     
-    def get_position(self):
-        pass
+    def get_position(self, 
+                     H: torch.Tensor, # shape (batch_size, seq_len, d_model). NOTE: The paper describes H as (d_model, seq_len), our model already outputs transpose of this, so we dont transpose it again.
+                     
+                     # We would pass embed_matrix as (bsz, seq_len, d_model) when calling by constructing ourselves for training, for each batch, we would have different sequences and therefore for each batch a different (seq_len, d_model) matrix is present
+                     embed_matrix, # shape (batch_size, seq_len, d_model)
+                     ):
+        post_layer_H = self.E(H) # shape (batch_size, seq_len, d_model)
+        pointer_queries = post_layer_H.transpose(1,2) + embed_matrix # shape (batch_size, seq_len, d_model)
+
+        left_keys = self.C(H) # shape (batch_size, seq_len, d_model)
+        right_keys = self.D(H) # shape (batch_size, seq_len, d_model)
+
+        pointer_keys = torch.cat([left_keys, right_keys], dim=1) # shape (batch_size, 2 * seq_len, d_model)
+
+        #Before softmax, the paper's vector is supposed to be of shape (1, 2 * seq_len), but we are multiplying the whole H, which as seq_len vectors, so our output is (seq_len, 2 * seq_len) instead of (1, 2 * seq_len)
+        # Softmax/Sampling must be done row_wise, and each row gives the position prediction of the that word. Last row should be the new word, I am not sure. 
+        return pointer_queries @ pointer_keys.transpose(1,2) # shape (batch_size, seq_len, 2 * seq_len)
 
     def get_named_params_for_weight_decay(self):
         """Get parameters for weight decay (all parameters except biases and layer-norm parameters)."""
@@ -407,13 +425,8 @@ class IndigoTransformerFinalLayer(nn.Module):
         if self.norm_final is not None:
             x = self.norm_final(x)
         x = self.linear(x)
-        return x
 
-class IndigoTransformerPointerNetwork(nn.Module):
-    def __init__(self):
-        pass
-    def forward(self):
-        pass
+        return x
 
 # endregion: Indigo Transformer Utility Classes
 ########################################################
