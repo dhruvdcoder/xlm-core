@@ -136,9 +136,7 @@ class IndigoModel(nn.Module):
     
     def get_position(self, 
                      H: torch.Tensor, # shape (batch_size, seq_len, d_model). NOTE: The paper describes H as (d_model, seq_len), our model already outputs transpose of this, so we dont transpose it again.
-                     
-                     # We would pass embed_matrix as (bsz, seq_len, d_model) when calling by constructing ourselves for training, for each batch, we would have different sequences and therefore for each batch a different (seq_len, d_model) matrix is present
-                     embed_matrix, # shape (batch_size, seq_len, d_model)
+                     embed_matrix, # shape (batch_size, seq_len, d_model). NOTE: This is looked up from embedding matrix in before it's called, and then passed to this function.
                      ):
         post_layer_H = self.E(H) # shape (batch_size, seq_len, d_model)
         pointer_queries = post_layer_H.transpose(1,2) + embed_matrix # shape (batch_size, seq_len, d_model)
