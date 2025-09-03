@@ -9,6 +9,9 @@ def get_tertiary_relative_position_matrix(
 ) -> Integer[TT, "batch_size seq_len seq_len"]:
     """
     Get the tertiary relative position matrix for a given permutation with entries -1, 0, 1.
+    r_ij = 1 if pi_i > pi_j,
+           -1 if pi_i < pi_j,
+           0 if pi_i == pi_j.
     """
     pi1 = pi.unsqueeze(-1)  # (batch_size, seq_len, 1)
     pi2 = pi.unsqueeze(-2)  # (batch_size, 1, seq_len)
@@ -133,6 +136,20 @@ def masked_logsumexp(
     logits_masked = logits.masked_fill(mask, min_value)
     lse = torch.logsumexp(logits_masked, dim=-1)
     return lse
+
+
+def get_closest_right_neighbor(
+    pi: Integer[TT, "batch_size seq_len"]
+) -> Integer[TT, "batch_size seq_len"]:
+    """
+    Get the index of the closest right neightbor.
+    """
+    is_on_right = pi.unsqueeze(-1) < pi.unsqueeze(-2)
+    # is_on_right[*, i, j] = 1 if pi[i] < pi[j]
+    r = get_tertiary_relative_position_matrix(pi)
+    m = get_absolute_position_matrix(r)
+    rp = _get_right_pointer_position(m)
+    return rp
 
 
 if __name__ == "__main__":

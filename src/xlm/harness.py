@@ -98,10 +98,6 @@ class LossFunction(Generic[T_in, T_out], Protocol):
         dataloader_name: Optional[str] = None,
     ) -> T_out: ...
 
-    """Compilable part of the loss function."""
-
-    def get_compilable_functions(self) -> List[Callable]: ...
-
     """Break the logic in __call__ into smaller functions that are compilable and return them here.
     """
 

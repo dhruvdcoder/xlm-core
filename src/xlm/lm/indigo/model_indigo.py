@@ -167,7 +167,6 @@ class IndigoTransformerLayer(nn.Module):
                 )
 
         attn_output = self.indigo_scaled_dot_product_attention(
-            self,
             q,
             k,
             v,
@@ -375,28 +374,22 @@ class IndigoModel(nn.Module):
         self.pointer_projection = nn.Linear(
             3 * d_model, d_model, bias=False
         )  # joint matrix for C,D,E projections
-        # self.E = nn.Linear(
-        #    d_model, d_model, bias=False
-        # )  # Pointer Network's Layer for Position Prediction
-        # self.C = nn.Linear(
-        #    d_model, d_model, bias=False
-        # )  # Pointer Network's Layer for Position Prediction
-        # self.D = nn.Linear(
-        #    d_model, d_model, bias=False
-        # )  # Pointer Network's Layer for Position Prediction
 
     def forward(
         self,
         x_t: Integer[TT, " *batch seq_len"],
-        pi: Integer[TT, " *batch seq_len"],
+        pi: Optional[Integer[TT, " *batch seq_len"]] = None,
         attention_mask: Optional[Bool[TT, " *batch seq_len seq_len"]] = None,
-        **kwargs,
+        rel_matrix: Optional[Integer[TT, " *batch seq_len seq_len"]] = None,
     ):
+        if rel_matrix is None and pi is None:
+            raise ValueError("rel_matrix or pi must be provided")
         if attention_mask is not None:
             attention_mask = attention_mask.to(torch.bool)
 
         x = self.embed_tokens(x_t)  # shape (batch_size, seq_len, d_model)
-        rel_matrix = get_tertiary_relative_position_matrix(pi)
+        if rel_matrix is None:
+            rel_matrix = get_tertiary_relative_position_matrix(pi)
 
         for block in self.encoder:
             x = block(x, rel_matrix, attention_mask)
@@ -429,16 +422,16 @@ class IndigoModel(nn.Module):
             hidden_states
         )  # shape (*batch_size, seq_len, 3*d_model)
 
-        keys = (
+        queries = (
             proj[..., :d_model] + embed_matrix
-        )  # shape (*batch_size, key_seq_len, d_model)
-        queries = proj[..., d_model:].view(
+        )  # shape (*batch_size, query_seq_len, d_model)
+        keys = proj[..., d_model:].view(
             *proj.shape[:-1], 2, d_model
-        )  # shape(*batch_size, query_seq_len, 2, d_model)
+        )  # shape(*batch_size, key_seq_len, 2, d_model)
         # b,k,q,x,d = batch, key_seq_len, query_seq_len, 2, d_model
-        # Note: for use query_seq_len = key_seq_len = seq_len
+        # Note: for us query_seq_len = key_seq_len = seq_len
         logits = torch.einsum(
-            "...kd,...qxd->...kxq", keys, queries
+            "...kxd,...qd->...kxq", keys, queries
         )  # shape(batch_size, key_seq_len, 2, query_seq_len)
         return logits
 

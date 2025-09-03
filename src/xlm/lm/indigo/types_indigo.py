@@ -31,6 +31,14 @@ class IndigoBatch(TypedDict):
     # right_pointer_labels: Integer[TT, "batch steps"]
 
 
+class IndigoPredBatch(TypedDict):
+    """Input batch for predicting using the Indigo model"""
+
+    input_ids: Integer[TT, " batch seq_len"]
+    attention_mask: Integer[TT, " batch seq_len"]
+    target_ids: Optional[Integer[TT, "batch seq_len"]]
+
+
 class IndigoSeq2SeqBatch(TypedDict):
     """Input batch for training the Indigo model in seq2seq mode.
     Follows similar format at ARLM but with additional permuation related fields.
@@ -73,12 +81,8 @@ class IndigoLossDict(TypedDict):
     """Output of the Indigo loss function."""
 
     loss: Float[TT, ""]
-    batch_loss: Float[TT, "batch"]
-    word_loss: Float[TT, ""]
+    token_loss: Float[TT, ""]
     position_loss: Float[TT, ""]
-    word_acc: Float[TT, ""]
-    pointer_acc: Float[TT, ""]
-    ppl: Float[TT, ""]
 
 
 class IndigoPredictionDict(TypedDict):
@@ -94,12 +98,20 @@ class IndigoPredictionDict(TypedDict):
 
 
 class IndigoModelProtocol(Protocol):
+    def __call__(
+        self,
+        x_t: Integer[TT, " batch seq_len"],
+        pi: Optional[Integer[TT, " batch seq_len"]] = None,
+        attention_mask: Optional[Bool[TT, " batch seq_len seq_len"]] = None,
+        rel_matrix: Optional[Integer[TT, " batch seq_len seq_len"]] = None,
+    ): ...
+
     def forward(
         self,
         x_t: Integer[TT, " *batch seq_len"],
-        pi: Integer[TT, " *batch seq_len"],
+        pi: Optional[Integer[TT, " *batch seq_len"]] = None,
         attention_mask: Optional[Bool[TT, " *batch seq_len seq_len"]] = None,
-        **kwargs,
+        rel_matrix: Optional[Integer[TT, " *batch seq_len seq_len"]] = None,
     ): ...
 
     def get_position_logits(

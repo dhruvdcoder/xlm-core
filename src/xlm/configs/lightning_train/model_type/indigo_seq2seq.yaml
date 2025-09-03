@@ -36,6 +36,8 @@ reported_metrics:
       accumulated_loss:
         prefix: test/lm
         update_fn: xlm.lm.indigo.metrics_indigo.mean_metric_update_fn
+  
+diagnostic_metrics: null
 
 tags:
   model_type: indigo 

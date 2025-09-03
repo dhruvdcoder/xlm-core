@@ -1,6 +1,6 @@
 from numpy import logical_and
 import torch
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 from xlm.harness import Harness, LossFunction
 from xlm.utils.nn import masked_mean
 from xlm.utils.rank_zero import RankedLogger
@@ -49,7 +49,7 @@ class IndigoLoss(LossFunction[IndigoBatch, IndigoLossDict]):
             )
         self.ignore_positions = torch.tensor(
             [-100, self.tokenizer.cls_token_id, self.tokenizer.pad_token_id],
-            device=self.model.device,  # type: ignore
+            device=pl_module.device,  # type: ignore
             dtype=torch.long,
         )
 
@@ -60,7 +60,7 @@ class IndigoLoss(LossFunction[IndigoBatch, IndigoLossDict]):
         dataloader_idx: Optional[int] = None,
         dataloader_name: Optional[str] = None,
     ) -> Dict[str, Any]:
-        return self.loss_fn(batch)
+        return self.loss_fn(batch)  # type: ignore
 
     def min_value(self, logits) -> float:
         if self._min_value is None:
@@ -93,13 +93,10 @@ class IndigoLoss(LossFunction[IndigoBatch, IndigoLossDict]):
             expanded_attention_mask & causal_attention_mask
         )  # (batch, seq_len, seq_len)
 
-        # prepare relative position matrix
-        rel_matrix = get_tertiary_relative_position_matrix(pi)
-
         # forward pass
         hidden_states, vocab_logits = self.model(
             x_t=input_ids,
-            rel_matrix=rel_matrix,
+            pi=pi,
             attention_mask=causal_attention_mask,
         )  # (bs, seq_len, d_model), (bs, seq_len, vocab_size)
 

@@ -302,7 +302,7 @@ class IndigoSeq2SeqCollator:
                 _suffix_ids,
                 eos_token_id=self._eos,
                 eod_token_id=self._eod,
-                bos_token_id=None,
+                bos_token_id=self._bos if self.bos_before_prefix else None,
                 global_offset=len(_prefix_ids),
             )
             # joint sequence

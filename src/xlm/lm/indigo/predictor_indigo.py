@@ -1,14 +1,32 @@
-from typing import Any, Dict, List, Optional, Tuple, cast, Literal, Callable
-from itertools import cycle
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    cast,
+    Literal,
+    Union,
+)
 from functools import partial
 import torch
 from jaxtyping import Bool, Integer
-from xlm import flags
 from xlm.datamodule import Tokenizer
 from torch import Tensor as TT
 from xlm.harness import Predictor
 from xlm.noise import NoiseSchedule
-from .types_indigo import IndigoBatch, IndigoPredictionDict
+from .types_indigo import (
+    IndigoBatch,
+    IndigoPredictionDict,
+    IndigoSeq2SeqPredBatch,
+    IndigoPredBatch,
+    IndigoModelProtocol,
+)
+from xlm.utils.nn import (
+    sample_from_logits,
+    sample_from_top_k,
+    sample_from_top_p,
+)
 
 import time
 
@@ -16,12 +34,9 @@ import time
 ###############################################################
 # region: Predictors
 
-#import functions from utils
+# import functions from utils
 from xlm.lm.indigo.utils import (
-    get_absolute_position_matrix,
     get_tertiary_relative_position_matrix,
-    get_left_pointer_posisiotn,
-    get_right_pointer_position
 )
 
 
@@ -36,9 +51,29 @@ class IndigoPredictor(
         max_length: int,
         tokenizer: Optional[Tokenizer] = None,
         noise_schedule: Optional[NoiseSchedule] = None,
-        model, 
+        model: Optional[IndigoModelProtocol] = None,
+        sampling_method: Literal[
+            "sample", "sample_top_k", "sample_top_p"
+        ] = "sample",
+        top: Optional[int] = None,
+        position_sampling_method: Literal[
+            "sample", "sample_top_k", "sample_top_p"
+        ] = "sample",
+        position_top: Optional[int] = None,
     ):
-        """Constructor for IndigoPredictor."""
+        """Constructor for IndigoPredictor.
+
+        Args:
+            max_steps: Maximum number of prediction steps.
+            max_length: Maximum sequence length.
+            tokenizer: The tokenizer to use.
+            noise_schedule: Noise schedule (not used in Indigo but kept for interface consistency).
+            model: The Indigo model to use for predictions.
+            sampling_method: Sampling method to use.
+            top: Top-p or top-k parameter for sampling depending on the selected sampling_method.
+            position_sampling_method: Sampling method to use for position sampling.
+            position_top: Top-p or top-k parameter for position sampling depending on the selected position_sampling_method.
+        """
         if tokenizer is None:
             raise ValueError("tokenizer is required")
         super().__init__()
@@ -46,180 +81,179 @@ class IndigoPredictor(
         self.max_steps = max_steps
         self.max_length = max_length
         self.noise_schedule = noise_schedule
-        
-        self.register_buffer("_devref", torch.tensor(0), persistent=False)
-
-        self.pad_id: int = getattr(tokenizer, "pad_token_id", 0)
-        self.bos_id: int = getattr(
-            tokenizer, "bos_token_id",
-            getattr(tokenizer, "cls_token_id", self.pad_id)
-        )
-        self.eos_id: int = getattr(
-            tokenizer, "eos_token_id",
-            getattr(tokenizer, "sep_token_id", self.pad_id)
-        )
-        self.eod_id: Optional[int] = getattr(tokenizer, "eod_token_id", None)
-        
         self.model = model
+        if sampling_method == "sample":
+            self.sampling_function = sample_from_logits
+        elif sampling_method == "sample_top_k":
+            if top is None:
+                raise ValueError(
+                    "top is required when sampling_method is sample_top_k"
+                )
+            self.sampling_function = partial(sample_from_top_k, top)
+        elif sampling_method == "sample_top_p":
+            if top is None:
+                raise ValueError(
+                    "top is required when sampling_method is sample_top_p"
+                )
+            self.sampling_function = partial(sample_from_top_p, top)
+        else:
+            raise ValueError(f"Invalid sampling method: {sampling_method}")
+
+        if position_sampling_method == "sample":
+            self.position_sampling_function = sample_from_logits
+        elif position_sampling_method == "sample_top_k":
+            if position_top is None:
+                raise ValueError(
+                    "position_top is required when position_sampling_method is sample_top_k"
+                )
+            self.position_sampling_function = partial(
+                sample_from_top_k, position_top
+            )
+        elif position_sampling_method == "sample_top_p":
+            if position_top is None:
+                raise ValueError(
+                    "position_top is required when position_sampling_method is sample_top_p"
+                )
+            self.position_sampling_function = partial(
+                sample_from_top_p, position_top
+            )
+        else:
+            raise ValueError(
+                f"Invalid position sampling method: {position_sampling_method}"
+            )
 
     @torch._dynamo.disable()
     def predict(
         self,
-        batch: Dict[str, Any],  # type: ignore
+        batch: Union[IndigoSeq2SeqPredBatch, IndigoPredBatch],  # type: ignore
         batch_idx: Optional[int] = None,
         dataloader_idx: Optional[int] = None,
         dataloader_name: Optional[str] = None,
     ) -> Dict[str, Any]:
-        # TODO (URV): Implement the predictor.
-        device = self._devref.device
-        
         t0 = time.time()
-        
-        if isinstance(batch.get('input_ids', None), torch.Tensor):
-            x = batch['input_ids'].to(device=device, dtype=torch.long)
-            if isinstance(batch.get('attention_mask', None), torch.Tensor):
-                attention_mask = batch['attention_mask'].to(device=device, dtype=torch.bool)
-            else:
-                attention_mask = ( x != self.pad_id)
-                
-            need_bos = (x.size(1) == 0) or x[:, 0].ne(self.bos_id).any()
-            if need_bos:
-                x = torch.cat(
-                    [torch.full((x.size(0), 1), self.bos_id, device=device, dtype=torch.long), x],
-                    dim=1,
-                )
-                attention_mask = torch.cat(
-                    [torch.ones((attention_mask.size(0), 1), device=device, dtype=torch.bool), attention_mask],
-                    dim=1,
-                )
-        else:
-            B = 1
-            for v in batch.values():
-                if isinstance(v, torch.Tensor) and v.dim() > 0:
-                    B = v.size(0)
-                    break
-            x = torch.tensor([[self.bos_id, self.eos_id]] * B, device=device, dtype=torch.long)
-            attention_mask = torch.ones((B, 2), device=device, dtype=torch.bool)
-            
-        if x.size(1) > self.max_length:
-            x = x[:, : self.max_length]
-            attention_mask = attention_mask[:, : self.max_length]
-            
-        positions = torch.arange(x.size(1), device = device, dtype=torch.long).unsqueeze(0).expand(s.zie(0), -1)
-        
+        # fmt: off
+        attention_mask = batch['attention_mask'].to(dtype=torch.bool)
+        input_ids = batch['input_ids']
+        # fmt: on
+        # create increasing pi for the input ids
+        # Case 1: Unconditional prediction: input_ids are all BOS EOS
+        # Case 2: there is prompt: input_ids are:
+        # a) left_pads promt_ids BOS EOS
+        # b) left_pads BOS prompt EOS
+        # In all the above cases pi should simply be increasing
+        pi = (attention_mask.cumsum(dim=-1) - 1).clamp(min=0)
+        # TODO: Support contraints?
+
         state: Dict[str, TT] = {
-            'x': x,
-            'positions': positions,
-            'attention_mask': attention_mask.bool(),
-            'finished': torch.zeros(s.size(0), dtype=torch.bool, device=device),
+            "x": input_ids,
+            "pi": pi,
+            "attention_mask": attention_mask.bool(),
         }
-        
+
         step = 0
         while not self.stop(state, step):
-            state = self.predict_step(state)
+            state = self.predict_single_step(state)
             step += 1
-            
-        texts, texts_with, final_ids, final_mask, final_pos = self.decode(state)
-        
+
+        texts, texts_with, final_ids, final_mask, final_pos = self.decode(
+            state
+        )
+
         return {
-            'text': texts,
-            'text_w_token': texts_with,
-            'ids': final_ids,
-            'attention_mask': final_mask,
-            'positions': final_pos,
-            'loss': None,
-            'time_taken': [time.time() - t0] * len(texts),
+            "text": texts,
+            "text_w_token": texts_with,
+            "ids": final_ids,
+            "attention_mask": final_mask,
+            "positions": final_pos,
+            "loss": None,
+            "time_taken": [time.time() - t0] * len(texts),
         }
-        
+
     @torch.no_grad()
-    def predict_step(self, state: Dict[str, TT]) -> Dict[str, TT]:
+    def predict_single_step(self, state: Dict[str, TT]) -> Dict[str, TT]:
         """
-        build R from absolute position, forward model, predict next token, choose pointer, compute z,
-        update
+        Single step prediction for Indigo.
         """
+        # fmt: off
         x = state['x']
-        position = state['positions']
-        amask = state['attention_mask']
+        pi = state['pi']
+        attention_mask = state['attention_mask']
         finished = state['finished']
-        B, L = x.shape
-        device = x.device
-        
-        R = get_tertiary_relative_position_matrix(positions)
-        M = get_absolute_position_matrix(R)
-        H, vocab_logits = self._call_model(x, R, amask)
-        
+        # fmt: on
+        rel_matrix = get_tertiary_relative_position_matrix(pi)
+        assert self.model is not None
+        model = cast(IndigoModelProtocol, self.model)
+        hidden_states, vocab_logits = model(x, rel_matrix, attention_mask)
+
         next_token_logits = vocab_logits[:, -1, :]
-        for tok in (self.bos_id, self.pad_id):
-            if 0 <= tok < next_token_logits.size(-1):
-                next_token_logits[:, tok] = -torch.inf
-        next_token = torch.argmax(next_token_logits, dim = - 1)
-        
-        model = self.model
-        q = torch.matmul(h_t, model.E.weight.T)
-        w_y = model.embed_tokens(next_tok)
-        left_keys  = torch.matmul(H, model.C.weight.T)
-        right_keys = torch.matmul(H, model.D.weight.T)
-
-        keys = torch.cat([left_keys, right_keys], dim = 1)
-        ptr_logits = torch.einsum('bd, bkd->bk', q, keys)
-        
-        def _unique_index_per_row(tok_id: int) -> Optional[TT]:
-            where = (x == tok_id).nonzero(as_tuple=False)
-            if where.numel() == 0:
-                return None
-            counts = torch.bincount(where[:0], minlenght = B)
-            if not torch.all(counts == 1):
-                return None
-            idx = torch.empty(B, dtype=torch.long, device=device)
-            idx[where[:, 0]] = where{:, 1}
-            return idx
-        
-        bos_seq_idx = _unique_index_per_row(self.bos_id)
-        eos_seq_idx = _unique_index_per_row(self.eos_id)
-        arangeB = torch.arange(B, device=device)
-        if bos_seq_idx is not None:
-            bos_left_slot = bos_seq_idx * 2 # left of bos
-            ptr_logits[arangeB, bos_left_slot] = -torch.inf
-        if eos_seq_idx is not None:
-            eos_right_slot = eos_seq_idx * 2 + 1
-            ptr_logits[arangeB, eos_right_slot] = -torch.inf 
-            
-        slot = torch.argmax(ptr_logits, dim=-1)
-        anchor_idx = slot // 2
-        side_right = (slot % 2 == 1) # B false = left, true = right
-        
-        try:
-            left_abs = get_left_pointer_posisiotn(M)
-            right_abs = get_right_pointer_position(M)
-            z_anchor_left = left_abs.gather(1, anchor_idx.unsqueeze(1)).squeeze(1)
-            a_anchor_right = right_abs.gather(1, anchor_idx.unsqueeze(1)).squeeze(1)
-            insert_abs = torch.where(side_right, z_anchor_right, z_anchor_left)
-        except Exception :
-            anchor_abs = positions.gather(1, anchor_idx.unsqueeze(1)).squeeze(1)
-            insert_abs = anchor_abs + side_right.long()
-            
-        can_grow = (~finished) & (amask.sum(dim=1) < self.max_length) # [B]
-        appended = torch.where(can_grow, next_token, torch.full_like(next_token, self.pad_id))
-        x_new = torch.cat([x, appended.unsqueeze(1)], dim=1) # [B, L+1]
-        amask_new = torch.cat([amask, can_grow.unsqueeze(1)], dim=1) # [B, L+1]
-
-        # shift existing abs positions >= insert_abs by +1, then append z_new
-        shift_mask = positions >= insert_abs.unsqueeze(1) 
-        positions_shifted = positions + shift_mask.to(positions.dtype)
-        positions_new = torch.cat([positions_shifted, insert_abs.unsqueeze(1)], dim=1) # [B, L+1]
-
-        if self.eod_id is not None:
-            ended_now = can_grow & (next_token == self.eod_id)
-        else:
-            ended_now = can_grow & (next_token == self.eos_id)
-        finished_new = finished | ended_now
-
+        # TODO: suppress special tokens?
+        next_token = self.sampling_function(
+            next_token_logits
+        )  # shape (batch,)
+        # if allready finished, set predicted token to pad
+        next_token = next_token.where(
+            finished.unsqueeze(-1), self.tokenizer.pad_token_id
+        )
+        finished = finished.logical_or(
+            next_token == self.tokenizer.cls_token_id
+        )  # cls is EOD
+        position_logits = model.get_position_logits(
+            hidden_states, next_token.unsqueeze(-1)
+        ).squeeze(
+            -1
+        )  # shape (batch, key_seq_len, 2)
+        # TODO (constraints): Can add constraints here
+        # construct unnormalized log-probabilities i.e, logits for VALID slots
+        # a valid slot is a pair (i, right_neighbor_of_i)
+        is_on_right = pi.unsqueeze(-1) < pi.unsqueeze(
+            -2
+        )  # shape (batch, key_seq_len, query_seq_len)
+        # is_on_right[*, i, j] = 1 if pi[i] < pi[j]
+        right_neighbor_idx, right_neighbor_abs_pos = torch.min(
+            is_on_right * pi.unsqueeze(-1), dim=-1
+        )  # shape (batch, query_seq_len)
+        slot_left_logits = position_logits[
+            :, :, 0
+        ]  # shape (batch, key_seq_len)
+        slot_right_logits = position_logits[:, :, 1].gather(
+            -1, right_neighbor_idx
+        )
+        # suppress slots that are right of EOS
+        # get the absolute position of EOS
+        eos_idx = (
+            (x == self.tokenizer.eos_token_id).int().argmax(dim=-1)
+        )  # shape (batch,)
+        after_eos = (
+            pi.gather(-1, eos_idx.unsqueeze(-1)) < pi
+        )  # shape (batch, seq_len)
+        # unnormalized log-probabilities, ie logits. Finally!
+        lae = torch.logaddexp(
+            slot_left_logits, slot_right_logits
+        )  # shape (batch, key_seq_len, 1)
+        lae.masked_fill_(after_eos, -torch.inf)  # shape (batch, key_seq_len)
+        sampled_slot = self.position_sampling_function(lae)  # shape (batch,)
+        # extend x, pi, and attention_mask
+        # pi
+        sampled_abs_pos = pi.gather(
+            -1, sampled_slot.unsqueeze(-1)
+        )  # shape (batch,1)
+        # for finished sequences, set sampled_abs_pos to max(pi) + 1
+        sampled_abs_pos = sampled_abs_pos.where(
+            finished.unsqueeze(-1), pi.max(dim=-1, keepdim=True).values
+        )
+        # everything to the right of sampled_slot is shifted by +1
+        pi = pi.where(sampled_abs_pos < pi, pi + 1)
+        pi = torch.cat([pi, sampled_abs_pos + 1], dim=-1)
+        x = torch.cat([x, next_token.unsqueeze(-1)], dim=-1)
+        attention_mask = torch.cat(
+            [attention_mask, ~finished.unsqueeze(-1)], dim=-1
+        )
         return {
-            "x": x_new,
-            "positions": positions_new,
-            "attention_mask": amask_new,
-            "finished": finished_new,
-        }   
+            "x": x,
+            "pi": pi,
+            "attention_mask": attention_mask,
+            "finished": finished,
+        }
 
     def stop(self, state: Dict[str, TT], step: int) -> bool:
         if step >= self.max_steps:
@@ -230,56 +264,31 @@ class IndigoPredictor(
             return True
         return False
 
-    def decode(
-        self, state: Dict[str, TT]
-    ) -> Tuple[List[str], List[str], Integer[TT, "B L"], Bool[TT, "B L"], Integer[TT, "B L"]]:
+    def decode(self, state: Dict[str, TT]) -> Tuple[
+        List[str],
+        List[str],
+        Integer[TT, "B L"],
+        Bool[TT, "B L"],
+        Integer[TT, "B L"],
+    ]:
         """
         Sort tokens by absolute positions, strip specials, and decode.
         Returns (clean text, text with specials, ids, mask, positions) in sorted order.
         """
-        x = state["x"]                  
-        pos = state["positions"]        
-        amask = state["attention_mask"]  
+        x = state["x"]
+        pos = state["pi"]
+        amask = state["attention_mask"]
 
         # reorder by absolute positions
-        sorted_pos, sort_idx = torch.sort(pos, dim=1)      
-        x_sorted = torch.gather(x, 1, sort_idx)            
-        mask_sorted = torch.gather(amask, 1, sort_idx)     
-
-        # keep = mask & not special
-        keep = mask_sorted.clone()
-        for tok in (self.pad_id, self.bos_id, self.eos_id):
-            keep &= (x_sorted != tok)
-
-        cleaned_ids = torch.where(keep, x_sorted, torch.full_like(x_sorted, self.pad_id))
-
-        if hasattr(self.tokenizer, "batch_decode"):
-            out_with = self.tokenizer.batch_decode(cleaned_ids.tolist(), skip_special_tokens=False)
-            out = self.tokenizer.batch_decode(cleaned_ids.tolist(), skip_special_tokens=True)
-        else:
-            def _to_txt(ids_row, keep_row):
-                return " ".join(str(t) for t, k in zip(ids_row, keep_row) if k)
-            out_with = [_to_txt(r, k.tolist()) for r, k in zip(cleaned_ids.tolist(), keep)]
-            out = out_with
-
-        return out, out_with, cleaned_ids, mask_sorted, sorted_pos
-
-    def _resolve_model(self):
-        return self.model
-
-    def _call_model(
-        self,
-        x_t: Integer[TT, "B L"],
-        rel_matrix: Integer[TT, "B L L"],
-        attention_mask: Optional[Bool[TT, "B L"]] = None,
-    ) -> Tuple[TT, TT]:
-        """
-        Calls IndigoModel.forward(x_t, rel_matrix, attention_mask) -> (H, logits).
-        """
-        H, logits = self.model(x_t, rel_matrix, attention_mask)
-        if isinstance((H, logits), tuple) and H is not None and logits is not None:
-            return H, logits
-        raise RuntimeError("IndigoModel must return (hidden_states, vocab_logits).")
+        sorted_pos, sort_idx = torch.sort(pos, dim=-1)
+        x_sorted = torch.gather(x, -1, sort_idx)
+        mask_sorted = torch.gather(amask, -1, sort_idx)
+        # No need for removing special tokens
+        out = self.tokenizer.batch_decode(x_sorted, skip_special_tokens=True)
+        out_with_spl_tokens = self.tokenizer.batch_decode(
+            x_sorted, skip_special_tokens=False
+        )
+        return out, out_with_spl_tokens, x_sorted, mask_sorted, sorted_pos
 
 
 # endregion: Predictors
