@@ -48,4 +48,46 @@ class IndigoLoss(LossFunction[IndigoBatch, IndigoLossDict]):
         dataloader_name: Optional[str] = None,
     ) -> Dict[str, Any]:
         # TODO (URV): Implement the loss function.
-        pass
+
+        # 1. Unpack inputs
+        input_ids = batch["input_ids"]                       
+        attention_mask = batch["attention_mask"]            
+        target_token_ids = batch["target_token_ids"]         
+        target_positions = batch["target_positions"]         
+    
+        assert self.model is not None
+        
+
+        # 2. Forward pass
+        outputs = self.model(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+        )
+
+        token_logits = outputs["token_logits"]               
+        position_logits = outputs["position_logits"]        
+
+        # 3. Compute token loss
+        token_loss = torch.nn.functional.cross_entropy(
+            token_logits,
+            target_token_ids,
+            ignore_index=-100,
+            reduction="mean"
+        )
+
+        # 4. Compute position loss
+        position_loss = torch.nn.functional.cross_entropy(
+            position_logits,
+            target_positions,
+            ignore_index=-100,
+            reduction="mean"
+        )
+
+        # 5. Combine losses
+        total_loss = token_loss + position_loss
+
+        return {
+            "loss": total_loss,
+            "token_loss": token_loss.detach(),
+            "position_loss": position_loss.detach(),
+        }
