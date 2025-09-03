@@ -1,9 +1,20 @@
+from numpy import logical_and
 import torch
-import torch.nn.functional as F
 from typing import Any, Dict, Optional
 from xlm.harness import Harness, LossFunction
+from xlm.utils.nn import masked_mean
 from xlm.utils.rank_zero import RankedLogger
-from .types_indigo import IndigoBatch, IndigoLossDict
+from xlm.lm.indigo.types_indigo import (
+    IndigoBatch,
+    IndigoLossDict,
+    IndigoModelProtocol,
+)
+from xlm.lm.indigo.utils import (
+    get_absolute_position_matrix,
+    get_tertiary_relative_position_matrix,
+    get_left_right_pointer_position,
+    masked_logsumexp,
+)
 
 logger = RankedLogger(__name__, rank_zero_only=True)
 
@@ -12,16 +23,31 @@ class IndigoLoss(LossFunction[IndigoBatch, IndigoLossDict]):
     """
     Indigo Loss = word prediction CE + position prediction CE
 
-    Each term is computed per step and masked. We report total loss, 
+    Each term is computed per step and masked. We report total loss,
     individual components, perplexity, and accuracies.
     """
 
-    def __init__(self, model=None, tokenizer=None):
-        self.model = model
+    def __init__(
+        self, model=None, tokenizer=None, position_loss_weight: float = 1.0
+    ):
+        self.model: IndigoModelProtocol = model
         self.tokenizer = tokenizer  # type: ignore
+        self._min_value: Optional[float] = (
+            None  # will be configured in the first call to loss_fn
+        )
+        self.ignore_positions: Optional[torch.Tensor] = None
+        self.position_loss_weight = position_loss_weight
 
     def configure(self, pl_module: Harness):
-        pass
+        if self.tokenizer is None or self.tokenizer.cls_token_id is None:
+            raise ValueError(
+                "tokenizer must be provided and have cls_token_id"
+            )
+        self.ignore_positions = torch.tensor(
+            [-100, self.tokenizer.cls_token_id],
+            device=self.model.device,  # type: ignore
+            dtype=torch.long,
+        )
 
     def __call__(
         self,
@@ -32,87 +58,182 @@ class IndigoLoss(LossFunction[IndigoBatch, IndigoLossDict]):
     ) -> Dict[str, Any]:
         return self.loss_fn(batch)
 
+    def min_value(self, logits) -> float:
+        if self._min_value is None:
+            self._min_value = torch.finfo(logits.dtype).min
+        return self._min_value
+
     def loss_fn(self, batch: IndigoBatch) -> IndigoLossDict:
         assert self.model is not None, "model must be attached before training"
 
         # Inputs
-        input_ids = batch["input_ids"]                      # (bs, seq_len)
-        attention_mask = batch["attention_mask"]            # (bs, seq_len)
-        word_labels = batch["word_labels"]                  # (bs, steps)
-        word_labels_mask = batch["word_labels_mask"]        # (bs, steps)
-        pointer_labels = batch["pointer_labels"]            # (bs, steps)
-        pointer_labels_mask = batch["pointer_labels_mask"]  # (bs, steps)
-        rel_matrix = batch["relative_matrix"]               # (bs, L, L)
-        abs_pos = batch["absolute_positions"]               # (bs, steps)
+        input_ids = batch["input_ids"]  # (bs, seq_len)
+        attention_mask = batch["attention_mask"]  # (bs, seq_len)
+        target_ids = batch["target_ids"]  # (bs, seq_len)
+        pi = batch["pi"]  # (bs, seq_len)
+        # Create causal attention mask with padding consideration
+        _, seq_len = attention_mask.shape
+        causal_attention_mask = torch.tril(
+            torch.ones(
+                seq_len,
+                seq_len,
+                dtype=torch.bool,
+                device=attention_mask.device,
+            )
+        )
+        # Expand attention_mask to (batch, seq_len, seq_len) and combine with causal mask
+        expanded_attention_mask = attention_mask.unsqueeze(
+            1
+        )  # (batch, 1, seq_len)
+        causal_attention_mask = (
+            expanded_attention_mask & causal_attention_mask
+        )  # (batch, seq_len, seq_len)
 
-        bs, steps = word_labels.shape
-        vocab_size = self.model.output_layer.linear.out_features
-        max_slots = rel_matrix.size(1) * 2  # Maximum pointer slots
+        # prepare relative position matrix
+        rel_matrix = get_tertiary_relative_position_matrix(pi)
 
-        # Forward pass
+        # forward pass
         hidden_states, vocab_logits = self.model(
             x_t=input_ids,
             rel_matrix=rel_matrix,
-            attention_mask=attention_mask,
-        )  # vocab_logits: (bs, seq_len, V)
+            attention_mask=causal_attention_mask,
+        )  # (bs, seq_len, d_model), (bs, seq_len, vocab_size)
 
-        gather_idx = abs_pos.unsqueeze(-1).expand(-1, -1, vocab_size)
-        step_token_logits = torch.gather(vocab_logits, 1, gather_idx)  # (bs, steps, V)
+        # token loss
+        # Transpose logits for cross_entropy (expects [N, C, ...] format)
+        logits_T = vocab_logits.transpose(1, 2)
+        # Compute cross-entropy loss ( ignores -100 positions)
+        token_ce_loss = torch.nn.functional.cross_entropy(
+            logits_T, target_ids, reduction="mean", ignore_index=-100
+        )  # (batch, seq_len)
 
-        # --- Word (token) cross-entropy ---
-        word_ce = F.cross_entropy(
-            step_token_logits.view(-1, vocab_size),
-            word_labels.view(-1),
-            ignore_index=-100,
-            reduction="none",
-        ).view(bs, steps)
-        word_ce = word_ce * word_labels_mask.float()
-        word_loss = word_ce.sum() / word_labels_mask.float().sum()
+        # region: pointer loss
+        # target_ids contain -100 so we need to be carful while sending in those targets
+        # ideally it should not matter because we will ingore those target positions anyway
+        # So, I'm passing raw target_ids here for now.
+        # dummy_target_ids = target_ids.clone()
+        # dummy_target_ids[dummy_target_ids == -100] = 0
+        dummy_target_ids = target_ids
+        # Obtain logits for lpl, and rpl of shape (bs, key_seq_len, query_seq_len) each.
+        position_logits = self.model.get_position_logits(
+            hidden_states, dummy_target_ids
+        )  # shape (bs, key_seq_len, 2, query_seq_len)
+        # perform masking on the logits, mask out future positions' logits, ie, set lower-triangular elements to -inf
+        mask = torch.ones_like(
+            position_logits, dtype=torch.bool
+        )  # (bs, key_seq_len, 2, query_seq_len)
+        # 1. keys can't be in the future, make upper traingular
+        mask[..., 0, :].tril_(diagonal=-1)
+        mask[..., 1, :].tril_(diagonal=-1)
+        # 2. identify positions for which we don't predict pointers like EOD and PAD tokens
+        mask = mask.logical_or(torch.isin(target_ids, self.ignore_positions))
+        # min_value = self.min_value(position_logits)
+        masked_position_logits = position_logits.masked_fill(
+            mask, float("-inf")
+        )
+        # reshape to (bs, key_seq_len*2, query_seq_len) for logsumexp
+        masked_position_logits = masked_position_logits.reshape(
+            mask.size(0), -1, mask.size(-1)
+        )  # (bs, 2*key_seq_len, query_seq_len) # note that this is an interleaved logits matrix and cannot be split
+        lse = torch.logsumexp(
+            masked_position_logits, dim=-2
+        )  # (bs, query_seq_len)
+        # index using target_ids
+        # We will get -inf in lse for PAD and EOD query positions. We will pluck them out later before computing the loss.
+        lp, rp = get_left_right_pointer_position(
+            pi,
+        )  # (bs, key_seq_len), (bs, key_seq_len)
 
-        # --- Word accuracy ---
-        with torch.no_grad():
-            pred_tokens = step_token_logits.argmax(-1)  # (bs, steps)
-            word_correct = (pred_tokens == word_labels) & word_labels_mask
-            word_acc = word_correct.sum().float() / word_labels_mask.sum()
-
-        # --- Pointer logits ---
-        gt_word_embeds = self.model.embed_tokens(word_labels)  # (bs, steps, d_model)
-        gather_h_idx = abs_pos.unsqueeze(-1).expand(-1, -1, hidden_states.size(-1))
-        step_hidden = torch.gather(hidden_states, 1, gather_h_idx)  # (bs, steps, d_model)
-
-        pointer_logits_full = self.model.get_position(
-            H=step_hidden,
-            embed_matrix=gt_word_embeds,
-        )  # (bs, steps, 2*seq_len)
-        pointer_logits = pointer_logits_full[:, :, :max_slots]  # clip
-
-        # --- Pointer (position) cross-entropy ---
-        pointer_ce = F.cross_entropy(
-            pointer_logits.view(-1, max_slots),
-            pointer_labels.view(-1),
-            ignore_index=-100,
-            reduction="none",
-        ).view(bs, steps)
-        pointer_ce = pointer_ce * pointer_labels_mask.float()
-        position_loss = pointer_ce.sum() / pointer_labels_mask.float().sum()
-
-        # --- Pointer accuracy ---
-        with torch.no_grad():
-            pred_slots = pointer_logits.argmax(-1)
-            pointer_correct = (pred_slots == pointer_labels) & pointer_labels_mask
-            pointer_acc = pointer_correct.sum().float() / pointer_labels_mask.sum()
-
-        # --- Aggregate ---
-        total_loss = word_loss + position_loss
-        batch_loss = (word_ce + pointer_ce).detach()
-        ppl = torch.exp(word_loss)
-
+        left_logits = position_logits[:, :, 0].gather(
+            dim=-1, index=lp.unsqueeze(-1)
+        )  # (bs, 1, query_seq_len)
+        right_logits = position_logits[:, :, 1].gather(
+            dim=-1, index=rp.unsqueeze(-1)
+        )  # shape (bs, 1, query_seq_len)
+        left_logits = left_logits.squeeze(-2)  # (bs, query_seq_len)
+        right_logits = right_logits.squeeze(-2)  # (bs, query_seq_len)
+        lae = torch.logaddexp(left_logits, right_logits)  # (bs, query_seq_len)
+        positions_to_compute_pos_loss = (
+            mask.reshape(mask.size(0), -1, mask.size(-1)).all(dim=-2)
+        ).logical_not()  # (bs, query_seq_len)
+        position_loss = (
+            lse[positions_to_compute_pos_loss]
+            - lae[positions_to_compute_pos_loss]
+        ).mean()
+        total_loss = token_ce_loss + self.position_loss_weight * position_loss
         return {
             "loss": total_loss,
-            "batch_loss": batch_loss,
-            "word_loss": word_loss.detach(),
-            "position_loss": position_loss.detach(),
-            "word_acc": word_acc.detach(),
-            "pointer_acc": pointer_acc.detach(),
-            "ppl": ppl.detach(),
+            "token_loss": token_ce_loss,
+            "position_loss": position_loss,
         }
+
+
+if __name__ == "__main__":
+    torch.manual_seed(42)
+    d_model = 2
+    seq_len = 3
+    vocab_size = 11
+    effective_seq_len = seq_len + 3
+    bs = 2
+
+    # BOS, EOS, EOD = 0, 1, 2, PAD = 10
+    # fmt: off
+    pre_input_ids = torch.tensor(
+        [
+            [0, 1, 4, 5, 6, 2, 10, 10], # last two tokens are PAD
+            [0, 1, 7, 8, 9, 7, 4,  2],
+        ]
+    ) # the joint permuted sequence
+    input_ids = pre_input_ids[:, :-1]
+    pi = torch.tensor(
+        [
+            [0, 4, 3, 1, 2, 5, 6],
+            [0, 5, 3, 4, 2, 1, 6],
+        ]
+    )
+    attention_mask = torch.tensor(
+        [
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1],
+        ]
+    )
+    target_ids = pre_input_ids[:, 1:]
+    # target_ids will be:
+    # torch.tensor(
+    #    [
+    #        [1, 4, 5, 6, 2, 10, 10],
+    #        [1, 7, 8, 9, 2, 7, 4],
+    #    ]
+    # )
+    # fmt: on
+    class DummyModel:
+        def __call__(self, x_t, rel_matrix, attention_mask):
+            _bs, _seq_len = x_t.shape
+            return torch.rand(_bs, _seq_len, d_model), torch.rand(
+                _bs, _seq_len, vocab_size
+            )
+
+        @property
+        def device(self):
+            return torch.device("cpu")
+
+        def get_position_logits(self, hidden_states, target_ids):
+            _bs, _seq_len = target_ids.shape
+            return torch.rand(_bs, _seq_len, 2, _seq_len)
+
+    class DummyTokenizer:
+        cls_token_id = 2
+
+    model = DummyModel()
+    tokenizer = DummyTokenizer()
+    loss = IndigoLoss(model=model, tokenizer=tokenizer)
+    loss.configure(model)
+    loss_dict = loss(
+        {
+            "input_ids": input_ids,
+            "attention_mask": attention_mask,
+            "target_ids": target_ids,
+            "pi": pi,
+        }
+    )
+    print(loss_dict)

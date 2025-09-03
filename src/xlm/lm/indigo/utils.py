@@ -1,4 +1,5 @@
-from jaxtyping import Integer
+from typing import Optional, Tuple
+from jaxtyping import Integer, Float, Bool
 from torch import Tensor as TT
 import torch
 
@@ -53,7 +54,7 @@ def get_absolute_position_matrix(
     return m
 
 
-def get_right_pointer_position(
+def _get_right_pointer_position(
     m: Integer[TT, "batch_size seq_len seq_len"],
 ) -> Integer[TT, "batch_size seq_len"]:
     """
@@ -77,7 +78,7 @@ def get_right_pointer_position(
     return right_pointer_position
 
 
-def get_left_pointer_position(
+def _get_left_pointer_position(
     m: Integer[TT, "batch_size seq_len seq_len"],
 ) -> Integer[TT, "batch_size seq_len"]:
     """
@@ -90,6 +91,48 @@ def get_left_pointer_position(
     )  # Fill the lower triangle and any position not on the left by a large negative number
     left_pointer_position = torch.argmax(temp, dim=-2)  # maximum over column
     return left_pointer_position
+
+
+def get_left_right_pointer_position(
+    pi: Integer[TT, "batch_size seq_len"],
+    roll_over_fill_value: Optional[int] = None,
+) -> Tuple[
+    Integer[TT, "batch_size seq_len"], Integer[TT, "batch_size seq_len"]
+]:
+    """
+    Get the position of the closest token on the left and right of the token being inserted.
+
+    Args:
+        pi: The permutation of the input sequence.
+        roll_over_fill_value: If provided, move the pointer matrix by one to left and fill the rightmost column with fill_value.
+    Returns:
+        lp: The position of the closest token on the left of the token being inserted.
+        rp: The position of the closest token on the right of the token being inserted.
+    """
+    m = get_absolute_position_matrix(get_tertiary_relative_position_matrix(pi))
+    lp = _get_left_pointer_position(m)
+    rp = _get_right_pointer_position(m)
+    if roll_over_fill_value is not None:
+        lp = lp.roll(shifts=-1, dims=-1)
+        rp = rp.roll(shifts=-1, dims=-1)
+        lp[..., -1] = roll_over_fill_value
+        rp[..., -1] = roll_over_fill_value
+    return lp, rp
+
+
+def masked_logsumexp(
+    logits: Float[TT, "*batch num_classes"],
+    mask: Bool[TT, "*batch num_classes"],
+    min_value: float,
+) -> Float[TT, "batch seq_len"]:
+    """
+    Compute the logsumexp of the logits, ignoring the masked positions.
+    """
+    # if all items are masked, we don't manually place a fill-value.
+    # the later computation can generate NaNs in that case.
+    logits_masked = logits.masked_fill(mask, min_value)
+    lse = torch.logsumexp(logits_masked, dim=-1)
+    return lse
 
 
 if __name__ == "__main__":
@@ -111,56 +154,68 @@ if __name__ == "__main__":
     # )
     pi = torch.tensor(
         [
-            [0, 4, 3, 1, 2],
-            [0, 4, 2, 3, 1],
+            [0, 4, 3, 1, 2, 5, 6],
+            [0, 6, 3, 4, 2, 1, 5],
         ]
     )
-    is_valid_pi(pi)
+    # is_valid_pi(pi)
     print(f"pi:\n {pi}")
 
     r = get_tertiary_relative_position_matrix(pi)
     print(f"r:\n {r}")
     m = get_absolute_position_matrix(r)
     print(f"m:\n {m}")
-    rp = get_right_pointer_position(m)
+    rp = _get_right_pointer_position(m)
     print(f"rp:\n {rp}")
 
-    lp = get_left_pointer_position(m)
+    lp = _get_left_pointer_position(m)
     print(f"lp:\n {lp}")
 
     """
     Expected output:
+    tokens: [
+            [BOS,EOS, a, b, c, EOD, PAD]
+            [BOS,EOS, e, f, g, h, EOD]
+    ]
     pi:
-    tensor([[0, 4, 3, 1, 2],
-            [0, 4, 2, 3, 1]])
+    tensor([[0, 4, 3, 1, 2, 5, 6],
+            [0, 5, 3, 4, 2, 1, 6]])
     r:
-    tensor([[[ 0, -1, -1, -1, -1],
-            [ 1,  0,  1,  1,  1],
-            [ 1, -1,  0,  1,  1],
-            [ 1, -1, -1,  0, -1],
-            [ 1, -1, -1,  1,  0]],
+    tensor([[[ 0, -1, -1, -1, -1, -1, -1],
+            [ 1,  0,  1,  1,  1, -1, -1],
+            [ 1, -1,  0,  1,  1, -1, -1],
+            [ 1, -1, -1,  0, -1, -1, -1],
+            [ 1, -1, -1,  1,  0, -1, -1],
+            [ 1,  1,  1,  1,  1,  0, -1],
+            [ 1,  1,  1,  1,  1,  1,  0]],
 
-            [[ 0, -1, -1, -1, -1],
-            [ 1,  0,  1,  1,  1],
-            [ 1, -1,  0, -1,  1],
-            [ 1, -1,  1,  0,  1],
-            [ 1, -1, -1, -1,  0]]])
+            [[ 0, -1, -1, -1, -1, -1, -1],
+            [ 1,  0,  1,  1,  1,  1,  1],
+            [ 1, -1,  0, -1,  1,  1, -1],
+            [ 1, -1,  1,  0,  1,  1, -1],
+            [ 1, -1, -1, -1,  0,  1, -1],
+            [ 1, -1, -1, -1, -1,  0, -1],
+            [ 1, -1,  1,  1,  1,  1,  0]]])
     m:
-    tensor([[[0, 0, 0, 0, 0],
-            [0, 1, 2, 3, 4],
-            [0, 0, 1, 2, 3],
-            [0, 0, 0, 1, 1],
-            [0, 0, 0, 0, 2]],
+    tensor([[[0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 2, 3, 4, 4, 4],
+            [0, 0, 1, 2, 3, 3, 3],
+            [0, 0, 0, 1, 1, 1, 1],
+            [0, 0, 0, 0, 2, 2, 2],
+            [0, 0, 0, 0, 0, 5, 5],
+            [0, 0, 0, 0, 0, 0, 6]],
 
-            [[0, 0, 0, 0, 0],
-            [0, 1, 2, 3, 4],
-            [0, 0, 1, 1, 2],
-            [0, 0, 0, 2, 3],
-            [0, 0, 0, 0, 1]]])
+            [[0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 2, 3, 4, 5, 6],
+            [0, 0, 1, 1, 2, 3, 3],
+            [0, 0, 0, 2, 3, 4, 4],
+            [0, 0, 0, 0, 1, 2, 2],
+            [0, 0, 0, 0, 0, 1, 1],
+            [0, 0, 0, 0, 0, 0, 5]]])
     rp:
-    tensor([[0, 0, 1, 2, 2],
-            [0, 0, 1, 1, 2]])
+    tensor([[0, 0, 1, 2, 2, 0, 0],
+            [0, 0, 1, 1, 2, 4, 1]])
     lp:
-    tensor([[0, 0, 0, 0, 3],
-            [0, 0, 0, 2, 0]])
+    tensor([[0, 0, 0, 0, 3, 1, 5],
+            [0, 0, 0, 2, 0, 0, 3]])
     """
