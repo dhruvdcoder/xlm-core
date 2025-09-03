@@ -256,6 +256,7 @@ class IndigoSeq2SeqCollator:
         self.block_size = block_size
         self.noise_schedule = noise_schedule
         self.input_block_size = input_block_size
+        self.total_block_size = input_block_size + block_size
         self._vocab_size = (
             len(self.tokenizer) if self.tokenizer is not None else None
         )
@@ -302,7 +303,7 @@ class IndigoSeq2SeqCollator:
                 _suffix_ids,
                 eos_token_id=self._eos,
                 eod_token_id=self._eod,
-                bos_token_id=self._bos if self.bos_before_prefix else None,
+                bos_token_id=self._bos if not self.bos_before_prefix else None,
                 global_offset=len(_prefix_ids),
             )
             # joint sequence
@@ -311,18 +312,24 @@ class IndigoSeq2SeqCollator:
             tgt_ids = [-100] * len(_prefix_ids) + permuted_suffix_ids
             attn_mask = pad_truncate_list(
                 [1] * len(ids),
-                len(_prefix_ids) + self.block_size,
+                self.total_block_size,
                 0,
                 pad_left=False,
             )
             pi = list(range(len(_prefix_ids))) + pi
             tgt_ids = pad_truncate_list(
                 tgt_ids[1:] + [-100],
-                len(_prefix_ids) + self.block_size,
+                self.total_block_size,
                 -100,
                 pad_left=False,
             )
-            input_ids.append(ids)
+            _input_ids = pad_truncate_list(
+                ids,
+                self.total_block_size,
+                self._pad,
+                pad_left=False,
+            )
+            input_ids.append(_input_ids)
             attention_mask.append(attn_mask)
             target_ids.append(tgt_ids)
             pis.append(pi)
