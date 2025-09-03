@@ -35,7 +35,6 @@ class IndigoEmptyDataset(IterableDataset):
         self,
         tokenizer: Tokenizer,
         num_examples: int,
-        # add:
         min_len: int,
         max_len: int,
         uniform: bool = False,
@@ -89,8 +88,8 @@ class IndigoEmptyDataset(IterableDataset):
             yield {"target_ids": ids}
 
 
-################################################################################
 # endregion: Dataset
+################################################################################
 
 
 def prepare_single_suffix_sequence_indigo(

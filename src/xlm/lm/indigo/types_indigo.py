@@ -10,39 +10,21 @@ class IndigoBatch(TypedDict):
         input_ids (Integer[TT, " batch seq_len"]): Permuted input ids. The permutation is the order of insertion. This is $z$ in our notation.
         attention_mask (Integer[TT, " batch seq_len"]): 1 for valid tokens, 0 for padding tokens.
         target_ids (Integer[TT, "batch seq_len"]): Target ids. Same as input_ids but shifted by 1, and -100 for pad tokens.
-        x_to_z: (Integer[TT, "batch seq_len seq_len"]): Indices such that $z = x[x_to_z]$.
-        pointer_labels (Integer[TT, "batch steps"]): Pointer labels in generation trajectory
-        pointer_labels_mask (Bool[TT, "batch steps"]): 1 for valid labels, 0 for padding labels
+        pi: (Integer[TT, "batch seq_len"]): (alias x_to_z) Indices such that $z = x[x_to_z]$.
+        left_pointer_labels (Integer[TT, "batch steps"]): Pointer labels in generation trajectory
+        right_pointer_labels (Integer[TT, "batch steps"]): Pointer labels in generation trajectory
+        left_pointer_labels_mask (Bool[TT, "batch steps"]): 1 for valid labels, 0 for padding labels
+        right_pointer_labels_mask (Bool[TT, "batch steps"]): 1 for valid labels, 0 for padding labels
     """
 
     input_ids: Integer[TT, " batch seq_len"]  # permuted
     attention_mask: Integer[TT, " batch seq_len"]
+    target_ids: Integer[TT, "batch seq_len"]
+    pi: Integer[TT, "batch seq_len"]
 
-    target_ids: Integer[TT, "batch tgt_seq"]
-    target_attention_mask: Integer[TT, "batch tgt_seq"]
 
-    # Generation order, each row is a permutation of [0..tgt_len-1]
-    order_indices: Integer[TT, "batch tgt_seq"]
-
-    # Word (token) labels in generation trajectory
-    word_labels: Integer[TT, "batch steps"]
-    word_labels_mask: Bool[TT, "batch steps"]
-
-    pointer_labels: Integer[TT, "batch steps"]
-    pointer_labels_mask: Bool[TT, "batch steps"]
-
-    # with -1s, 0s, and 1s
-    relative_matrix: Integer[TT, "batch final_plus2 final_plus2"]
-
-    # sbsolute positions derived from relative matrix after mapping back
-    absolute_positions: Optional[Integer[TT, "batch final_plus2"]]
-
-    # Sequence length tensors
-    target_lengths: Integer[TT, "batch"]
-    trajectory_lengths: Integer[TT, "batch"]
-
-    # Misc meta, e.g. ["L2R", "R2L", ...] for each example
-    order_name: List[str]
+class IndigoSeq2SeqBatch(TypedDict):
+    """Input batch for training the Indigo model in seq2seq mode."""
 
 
 class IndigoLossDict(TypedDict):
