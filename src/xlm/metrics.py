@@ -123,6 +123,7 @@ def seq2seq_exact_match_update_fn(
             - "input_ids": Integer[TT, " *batch input_seq_len"]
         loss_dict: Dict[str, Any]. Should contain the following keys:
             - "ids": Integer[TT, " *batch input_seq_len+target_seq_len"]
+    Note: We rely on having same number right pads in target and pred, which may not be true for ARLM.
     """
     target = torch.cat([batch["input_ids"], batch["target_ids"]], dim=-1)
     pred = loss_dict["ids"]
