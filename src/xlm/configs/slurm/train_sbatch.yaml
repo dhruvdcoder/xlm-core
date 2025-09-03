@@ -39,7 +39,7 @@ slurm:
     - FAIL
     - REQUEUE
     - TIME_LIMIT_80
-  mail_user: dhruveshpate@umass.edu
+  mail_user: ${oc.env:USER,dhruveshpate@umass.edu}
 
 # Environment variables
 env:
