@@ -8,8 +8,7 @@ from typing import Optional, List, Callable, Literal, cast
 import torch
 from xlm.harness import LossFunction, Harness
 from xlm.datamodule import Tokenizer
-from xlm.lm.ilm.nn import masked_ce_last_two_dims
-from .nn import incomplete_gamma_factor_using_series
+from .nn import incomplete_gamma_factor_using_series, masked_ce_last_two_dims
 from .types import IdlmBatch, IdlmLossDict, IdlmModel
 from jaxtyping import Bool
 from torch import Tensor as TT

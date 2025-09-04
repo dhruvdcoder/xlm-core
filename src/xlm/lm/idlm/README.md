@@ -26,6 +26,8 @@ pip install hydra-core
 pip install -r requirements/core_requirements.txt && \
 pip install -r requirements/test_requirements.txt && \
 pip install -r requirements/lint_requirements.txt && \
+pip install -r requirements/extra_requirements.txt && \
+pip install -r requirements/plot_requirements.txt && \
 pip install -e .
 ```
 
