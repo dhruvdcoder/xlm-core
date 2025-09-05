@@ -4,6 +4,24 @@ defaults:
   - /datasets@datamodule.dataset_managers.train.lm: lm1b_train
   - /datasets@datamodule.dataset_managers.val.lm: lm1b_test
   - /datasets@datamodule.dataset_managers.val.unconditional_prediction: text_uncoditional_prediction
+  - /datasets@datamodule.dataset_managers.predict.unconditional_prediction: text_uncoditional_prediction
+
+
+global_components:
+  tokenizer:
+    _target_: xlm.datamodule.BertTokenizerFast.from_pretrained
+    pretrained_model_name_or_path: bert-base-uncased
+
+
+datamodule:
+  print_batch_fn: ???
+  dataset_managers:
+    val:
+      unconditional_prediction:
+        dataset_constructor_str: ???
+    predict:
+      unconditional_prediction:
+        dataset_constructor_str: ???
 
 
 tags:

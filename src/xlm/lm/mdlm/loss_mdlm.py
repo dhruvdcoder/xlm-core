@@ -4,6 +4,7 @@ import torch
 from .types_mdlm import MDLMBatch, MDLMLossDict, MDLMModel
 from xlm.harness import LossFunction, Harness
 from xlm.datamodule import Tokenizer
+from xlm.utils.nn import masked_mean
 
 
 class MDLMLoss(LossFunction[MDLMBatch, MDLMLossDict]):
@@ -74,17 +75,11 @@ class MDLMLoss(LossFunction[MDLMBatch, MDLMLossDict]):
         )  # (batch, seq_len)
         weight = noise_rate / torch.expm1(total_noise)  #
         kl = ce * weight.unsqueeze(-1)  # (batch, seq_len)
-        not_ignore = ~ignore
-        if ignore.all():
-            # Need to do this manually because pytorch doesn't do the logical thing. See https://github.com/pytorch/pytorch/issues/70348
-            loss = torch.tensor(
-                0.0,
-                device=logits.device,
-                dtype=logits.dtype,
-                requires_grad=True,
-            )
-        else:
-            loss = kl[not_ignore].mean()
-        nlls = kl[not_ignore]
+        loss = masked_mean(
+            kl.flatten(), ~ignore.flatten(), dim=-1
+        )  # 0 for masking out
+        # if ignore.all() is true then mean() on empty tensor will give nan. We will replace it with zero.
+        # loss = torch.where(ignore.all(), torch.zeros_like(loss), loss)
+        # nlls = kl[not_ignore]
         # we can compute nlls by indexing using non-ignored tokens, but right now we will just use reduction=mean
-        return {"loss": loss, "nlls": nlls}
+        return {"loss": loss}
