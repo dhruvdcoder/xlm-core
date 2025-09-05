@@ -763,6 +763,7 @@ class UnconditionalGenerationDatasetManager:
         num_examples: int,
         dataloader_kwargs: DataLoaderKwargs,
         split_by_node: bool = True,
+        dataset_kwargs: Optional[Dict[str, Any]] = None,
     ):
         self.num_examples = num_examples
         self.split_by_node = split_by_node
@@ -771,6 +772,7 @@ class UnconditionalGenerationDatasetManager:
         ] = get_function(dataset_constructor_str)
         self.collator = collator
         self.dataloader_kwargs = dataloader_kwargs
+        self.dataset_kwargs = dataset_kwargs or {}
 
     def __repr__(self) -> str:
         return f"ILMUnconditionalGenerationDatasetManager()"
@@ -808,6 +810,7 @@ class UnconditionalGenerationDatasetManager:
         dataset = self.dataset_constructor(
             tokenizer,
             examples_per_node,
+            **self.dataset_kwargs,
         )
         self.dataset = dataset
 

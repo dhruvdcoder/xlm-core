@@ -1,17 +1,18 @@
 # @package _global_
 defaults:
-  - override /datamodule: owt_mlm
-  - override /noise_schedule: dummy
-  - override /model_type: mlm
-  - override /model: rotary_transformer_mlm
+  - text_mdlm
+  - override /datamodule: owt_mdlm
 
 per_device_batch_size: 32
 global_batch_size: 512
 block_size: 1024
 num_dataloader_workers: 5
 
+model:
+  force_flash_attn: true
+
 datamodule:
-  print_batch_fn: xlm.lm.mlm.datamodule_mlm.print_batch_mlm
+  print_batch_fn: xlm.lm.mdlm.datamodule_mdlm.print_batch_mdlm
 
 trainer:
   max_steps: 1000_000

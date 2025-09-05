@@ -415,22 +415,22 @@ class DDiTLayer(nn.Module):
         # due to the new default of `torch.load(weights_only=True)`,
         # torch 2.6.0 will not work with lightning 2.3, 2.4 or 2.5.
         # So untill lightning supports torch 2.6, we cannot use this context manager.
-        # with torch.nn.attention.sdpa_kernel(self.attn_backend):
-        #    attn_output = F.scaled_dot_product_attention(
-        #        q_rotary,
-        #        k_rotary,
-        #        v,
-        #        attn_mask=attn_mask,
-        #        dropout_p=self.dropout if self.training else 0.0,
-        #    )  # shape (bsz, n_heads, seq_len, head_dim)
+        with torch.nn.attention.sdpa_kernel(self.attn_backend):
+            attn_output = F.scaled_dot_product_attention(
+                q_rotary,
+                k_rotary,
+                v,
+                attn_mask=attn_mask,
+                dropout_p=self.dropout if self.training else 0.0,
+            )  # shape (bsz, n_heads, seq_len, head_dim)
 
-        attn_output = F.scaled_dot_product_attention(
-            q_rotary,
-            k_rotary,
-            v,
-            attn_mask=attn_mask,
-            dropout_p=self.dropout if self.training else 0.0,
-        )  # shape (bsz, n_heads, seq_len, head_dim)
+        # attn_output = F.scaled_dot_product_attention(
+        #    q_rotary,
+        #    k_rotary,
+        #    v,
+        #    attn_mask=attn_mask,
+        #    dropout_p=self.dropout if self.training else 0.0,
+        # )  # shape (bsz, n_heads, seq_len, head_dim)
 
         # Reshape and project output
         attn_output = (

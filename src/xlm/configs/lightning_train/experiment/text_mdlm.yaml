@@ -1,0 +1,31 @@
+# @package _global_
+defaults:
+  - override /noise_schedule: mdlm_loglinear # default
+  - override /model_type: mdlm 
+  - override /model: ddit_mdlm
+  
+
+per_device_batch_size: 64
+global_batch_size: 512
+block_size: ???
+
+
+
+
+log_predictions:
+  fields_to_keep_in_output:
+    - text
+    - time_taken
+
+callbacks:
+  checkpoint_monitor:
+    monitor: val/lm/accumulated_loss
+  checkpoint_every_n_steps:
+    every_n_train_steps: 2500
+    keep_multiple: 40 # Keep every (keep_multiple * every_n_train_steps) permanently = 2500 * 40 = 100_000
+
+
+trainer:
+  max_steps: 1000_000 # 1M
+  val_check_interval: 50000
+  num_sanity_val_steps: 3
