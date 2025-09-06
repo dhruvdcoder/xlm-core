@@ -21,6 +21,7 @@ from typing import (
 import hydra
 
 from xlm.metrics import MetricWrapper
+from lightning.pytorch.utilities import grad_norm
 
 import torch
 import torch.nn as nn
@@ -752,6 +753,23 @@ class Harness(L.LightningModule):
 
     ############################################################
     # region: Lightning Hooks
+
+    def on_before_optimizer_step(self, optimizer: Optimizer) -> None:
+        norm_order = 2.0
+        norms = grad_norm(self, norm_type=norm_order)
+        self.log(
+            "Total gradient (norm)",
+            norms[f"grad_{norm_order}_norm_total"],
+            on_step=True,
+            on_epoch=False,
+            prog_bar=False,
+            sync_dist=False,
+            rank_zero_only=True,
+            logger=True,
+            add_dataloader_idx=False,
+        )
+
+        pass
 
     def on_train_batch_start(
         self, batch: Dict[str, Any], batch_idx: int
