@@ -216,6 +216,23 @@ def idlm_single_segment_collate_target_fn(
 
     max_seq_len_in_batch = 0
     results: List[Dict[str, Any]] = []
+    # Determine final max length, and truncate before dropping
+    num_special_tokens = 2 if cls_token_id is not None else 1
+    for e in examples:
+        max_seq_len_in_batch = max(max_seq_len_in_batch, len(e))
+    if truncate == "max":
+        max_len = max_seq_len_in_batch + num_special_tokens
+    elif truncate == "block":
+        if max_seq_len is None:
+            raise ValueError(
+                "max_seq_len must be provided when truncate='block'"
+            )
+        max_len = max_seq_len
+    elif truncate is None:
+        max_len = max_seq_len_in_batch + num_special_tokens
+    else:
+        raise ValueError(f"Invalid truncate value: {truncate}")
+    max_available_len = max_len - num_special_tokens
 
     # First pass: process each example and determine max length
     for e, (_example, t) in enumerate(zip(examples, t_samples)):
@@ -224,6 +241,8 @@ def idlm_single_segment_collate_target_fn(
         noise_rate, total_noise = noise_schedule(t_tensor)
         noise_rates.append(noise_rate.item())
         total_noises.append(total_noise.item())
+        # truncate before dropping to avoid out of bounds indices in insertion targets
+        _example = _example[:max_available_len]
 
         # Process this example with dropping
         single_seq_drop_result = idlm_drop_fn(
@@ -246,20 +265,6 @@ def idlm_single_segment_collate_target_fn(
             len(single_seq_drop_result["segment_input_ids_with_drops"]),
         )
         results.append(single_seq_drop_result)
-
-    # Determine final max length
-    if truncate == "max":
-        max_len = max_seq_len_in_batch
-    elif truncate == "block":
-        if max_seq_len is None:
-            raise ValueError(
-                "max_seq_len must be provided when truncate='block'"
-            )
-        max_len = max_seq_len
-    elif truncate is None:
-        max_len = max_seq_len_in_batch
-    else:
-        raise ValueError(f"Invalid truncate value: {truncate}")
 
     # Second pass: pad and create final tensors
     for e, single_seq_drop_result in enumerate(results):
