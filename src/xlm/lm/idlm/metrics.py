@@ -85,7 +85,7 @@ def seq2seq_exact_match_update_fn(
     input_end_idx = batch["input_ids"].shape[-1]
     pred_ids = preds["ids"][:, input_end_idx:]
     # extend the length to the longer of the two
-    pred_ids, target_ids = _extend(
+    pred_ids, target_ids, longer = _extend(
         pred_ids, target_ids, tokenizer.pad_token_id
     )
     assert pred_ids.shape == target_ids.shape
