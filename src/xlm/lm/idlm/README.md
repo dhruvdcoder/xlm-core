@@ -77,6 +77,8 @@ python scripts/submit_train.py "do=submit" "job_name=star_hard_idlm" "train.expe
 ```bash
 python src/xlm/commands/lightning_main.py "job_type=prepare_data" "job_name=lm1b_prepare_data"
 python src/xlm/commands/lightning_main.py "job_type=train" "job_name=lm1b" "experiment=lm1b_idlm" "debug=overfit"
+# final run
+python scripts/submit_train.py "do=submit" "job_name=lm1b_idlm" "train.experiment=lm1b_idlm" "train.batch_size=128" "train.compile=true" "train.precision=bf16-mixed" "hardware=ddp_4_node_1_gpu" "slurm.constraint=\"vram80,bf16,ib\"" "++slurm.exclude=gpu016"
 ```
 
 
@@ -96,7 +98,7 @@ python scripts/submit_train.py "do=submit" "job_name=owt_idlm_debug_multinode_co
 
 # final run
 NUM_NODES=4 # or 8
-python scripts/submit_train.py "do=submit" "job_name=owt_idlm" "train.experiment=owt_idlm" "train.batch_size=32" "hardware=ddp_${NUM_NODES}_node_1_gpu" "slurm.constraint=\"vram80,bf16,ib\"" --- "compile=true" "trainer.precision=bf16-mixed" "trainer.num_nodes=$NUM_NODES" "trainer.devices=1" "trainer_strategy=ddp_multinode"
+python scripts/submit_train.py "do=submit" "job_name=owt_idlm" "train.experiment=owt_idlm" "train.batch_size=32" "train.compile=false" "train.precision=bf16-mixed" "hardware=ddp_${NUM_NODES}_node_1_gpu" "slurm.constraint=\"vram80,bf16,ib\"" "++slurm.exclude=gpu016"
 
 python scripts/submit_train.py "do=submit" "job_name=owt_idlm5" "train.experiment=owt_idlm" "train.batch_size=32" "hardware=ddp_4_node_1_gpu" "slurm.constraint=\"vram80,bf16,ib\""  "++slurm.exclude=gpu016" --- "compile=true" "trainer.precision=bf16-mixed" "trainer.num_nodes=4" "trainer.devices=1" "trainer_strategy=ddp_multinode" "optimizer.lr=0.0001"
 
@@ -109,7 +111,18 @@ python src/xlm/commands/push_to_hub.py "job_type=push_to_hub" "job_name=owt_ilm_
 # run the demo
 python src/xlm/commands/cli_demo.py "job_type=demo" "job_name=owt_ilm_demo" "experiment=owt_ilm" predictor.stopping_threshold=0.9 +global_flags.DEBUG_PRINT_PREDS=true +hub/checkpoint=ilm_owt
 ```
+# Demo
 
+```bash
+python src/xlm/commands/cli_demo.py "job_type=demo" "job_name=owt_ilm_demo" "experiment=owt_ilm" predictor.stopping_threshold=0.9 +hub/checkpoint=ilm_owt
+```
+
+# Evaluate
+
+```bash
+xlm "job_type=eval" "job_name=owt_ilm_eval" "experiment=[owt_ilm,gpt2_generative_perplexity]" "++eval.checkpoint_path=logs/owt_ilm
+5/checkpoints/66-702500.ckpt" "debug=eval_unconditional_preds" +predictor.use_high_precision=true predictor.p=0.9
+```
 
 # Logs
 - Faulty nodes. Some runs are 3x slower for no apparent reason. 

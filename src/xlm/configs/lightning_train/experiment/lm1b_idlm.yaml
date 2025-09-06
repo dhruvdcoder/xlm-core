@@ -23,7 +23,7 @@ global_components:
 trainer:
   max_steps: 1000_000
   val_check_interval: 50000
-  num_sanity_val_steps: 3
+  num_sanity_val_steps: 0
   gradient_clip_val: 0.5
 
 callbacks:

@@ -12,7 +12,7 @@ columns_to_remove:
     - text
 stages:
     - fit
-iterable_dataset_shards: 256
+iterable_dataset_shards: 120
 shuffle_buffer_size: 10000
 shuffle_seed: 42
 split_by_node: true

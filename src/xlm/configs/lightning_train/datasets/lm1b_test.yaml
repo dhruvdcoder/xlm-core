@@ -8,6 +8,6 @@ stages:
   - fit
   - validate
 
-iterable_dataset_shards: 16
+iterable_dataset_shards: 32
 shuffle_buffer_size: null # no shuffling
 split_by_node: true
