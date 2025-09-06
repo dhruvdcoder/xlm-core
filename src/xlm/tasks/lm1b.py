@@ -45,4 +45,6 @@ def preprocess_fn(
         example["text"],
         add_special_tokens=False,
     )
+    # truncate to 128
+    example["token_ids"] = example["token_ids"][:128]
     return example
