@@ -41,6 +41,16 @@ class _PredictionWriter:
             return out_dict
 
         def keep(k):
+            # keep any metrics if present
+            if (
+                "length" in k
+                or "entropy" in k
+                or "nll" in k
+                or "perplexity" in k
+                or "steps" in k
+                or "time" in k
+            ):
+                return True
             for field in self.fields_to_keep_in_output:
                 if k.startswith(field) and k != "text_with_spl_tokens":
                     return True
