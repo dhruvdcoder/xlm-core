@@ -53,11 +53,10 @@ def _parse_gpu_count(gres: str) -> int:
 
 
 def _determine_trainer_strategy(ntasks_per_node: int, nodes: int) -> str:
-    if ntasks_per_node > 1:
-        if nodes > 1:
-            return "ddp_multinode"
-        else:
-            return "ddp"
+    if ntasks_per_node >= 1 and nodes > 1:
+        return "ddp_multinode"
+    if ntasks_per_node >= 1 and nodes == 1:
+        return "ddp"
     return "single_device"
 
 
