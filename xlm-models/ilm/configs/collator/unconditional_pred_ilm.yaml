@@ -1,0 +1,5 @@
+_target_: ilm.datamodule_ilm.DefaultILMCollator
+block_size: 2
+tokenizer: ${global_components:tokenizer}
+noise_schedule: ${global_components:noise_schedule}
+truncate: max

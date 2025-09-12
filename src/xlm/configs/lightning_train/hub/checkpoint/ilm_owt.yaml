@@ -1,4 +1,0 @@
-# @package hub_model
-
-_target_: xlm.lm.ilm.model_ilm.RotaryTransformerILMModelWithStoppingClassification.from_pretrained
-pretrained_model_name_or_path: dhruveshpatel/ilm-owt

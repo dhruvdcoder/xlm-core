@@ -1,0 +1,13 @@
+# @package _global_
+
+global_components:
+  noise_schedule:
+    _target_: idlm.noise_schedule.LogLinearNoiseSchedule
+    sigma_max: 35
+    sigma_min: 0.01
+    antithetic_sampling: false
+
+tags:
+  noise_schedule: loglinear
+  correlated_t: ${global_components.noise_schedule.antithetic_sampling}
+  T: 1

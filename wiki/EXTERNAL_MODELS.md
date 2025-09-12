@@ -24,7 +24,7 @@ xlm-scaffold my_awesome_model
 ```
 
 This creates scaffolding for the model which includes:
-- A complete Python package with skeleton implementation for `model.py`, `loss.py`, `predictor.py`, `collators.py`, `metrics.py` and `types.py`
+- A complete Python package with skeleton implementation for `model_<model_name>.py`, `loss_<model_name>.py`, `predictor_<model_name>.py`, `datamodule_<model_name>.py`, `metrics_<model_name>.py` and `types_<model_name>.py`
 - All necessary Hydra configuration files for the model
 - Adds model to `.xlm_models` file (this is a simple text file that lists the models to load)
 
@@ -32,13 +32,12 @@ This creates scaffolding for the model which includes:
 
 The scaffolded files contain detailed TODOs and docstrings. Key files to implement:
 
-
-- `my_awesome_model/types.py` - Type definitions that used across all the other files
-- `my_awesome_model/model.py` - Neural network architecture
-- `my_awesome_model/loss.py` - Loss computation
-- `my_awesome_model/predictor.py` - Inference/generation logic
-- `my_awesome_model/collators.py` - Data preprocessing
-- `my_awesome_model/metrics.py` - Metrics computation
+- `my_awesome_model/types_my_awesome_model.py` - Type definitions that used across all the other files
+- `my_awesome_model/model_my_awesome_model.py` - Neural network architecture
+- `my_awesome_model/loss_my_awesome_model.py` - Loss computation
+- `my_awesome_model/predictor_my_awesome_model.py` - Inference/generation logic
+- `my_awesome_model/datamodule_my_awesome_model.py` - Data preprocessing
+- `my_awesome_model/metrics_my_awesome_model.py` - Metrics computation
 
 ### 3. Test Your Model
 
@@ -57,13 +56,13 @@ Each external model follows this structure:
 ```
 my_awesome_model/                    # External model directory
 ├── my_awesome_model/                # Python package
-│   ├── __init__.py                 # Package exports
-│   ├── types.py                    # Type definitions
-│   ├── model.py                    # Neural network
-│   ├── loss.py                     # Loss function
-│   ├── predictor.py                # Inference logic
-│   ├── collators.py                # Data preprocessing
-│   └── metrics.py                  # Metrics computation
+│   ├── __init__.py                                 # Package exports
+│   ├── types_my_awesome_model.py                   # Type definitions
+│   ├── model_my_awesome_model.py                   # Neural network
+│   ├── loss_my_awesome_model.py                    # Loss function
+│   ├── predictor_my_awesome_model.py               # Inference logic
+│   ├── datamodule_my_awesome_model.py              # Data preprocessing
+│   └── metrics_my_awesome_model.py                 # Metrics computation
 ├── configs/                        # Hydra configurations
 │   ├── model/
 │   │   └── my_awesome_model.yaml  # Model config
@@ -82,7 +81,7 @@ my_awesome_model/                    # External model directory
 
 ### 1. Python Package Components
 
-#### **Types** (`types.py`)
+#### **Types** (`types_<model_name>.py`)
 Define data structures using `TypedDict`:
 
 ```python
@@ -99,7 +98,7 @@ class MyModelPredictionDict(TypedDict):
     ids: Integer[TT, " batch seq_len"]
 ```
 
-#### **Model** (`model.py`)
+#### **Model** (`model_<model_name>.py`)
 Neural network implementation:
 
 ```python
@@ -109,7 +108,7 @@ class MyAwesomeModel(nn.Module):
         return logits
 ```
 
-#### **Loss Function** (`loss.py`)
+#### **Loss Function** (`loss_<model_name>.py`)
 Training loss computation:
 
 ```python
@@ -119,7 +118,7 @@ class MyAwesomeLoss(LossFunction[MyModelBatch, MyModelLossDict]):
         return {"loss": loss, "batch_loss": batch_loss}
 ```
 
-#### **Predictor** (`predictor.py`)
+#### **Predictor** (`predictor_<model_name>.py`)
 Inference and generation:
 
 ```python
@@ -129,7 +128,7 @@ class MyAwesomePredictor(Predictor[MyModelBatch, MyModelPredictionDict]):
         return {"text": generated_text, "ids": generated_ids}
 ```
 
-#### **Collators** (`collators.py`)
+#### **Data Module** (`datamodule_<model_name>.py`)
 Data preprocessing and batching:
 
 ```python
@@ -214,11 +213,11 @@ ls -la
 1. 
 ```bash
 # Edit core components
-my_model/types.py      # Define types
-my_model/model.py      # Implement architecture
-my_model/loss.py       # Implement loss
-my_model/predictor.py  # Implement generation
-my_model/collators.py  # Implement data processing
+my_model/types_my_model.py       # Define types
+my_model/model_my_model.py       # Implement architecture
+my_model/loss_my_model.py        # Implement loss
+my_model/predictor_my_model.py   # Implement generation
+my_model/datamodule_my_model.py  # Implement data processing
 ```
 
 2. Edit the config files

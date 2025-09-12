@@ -1,0 +1,84 @@
+# @package _global_
+
+defaults:
+  - /metrics@reported_metrics.train.lm.accumulated_loss: accumulated_loss
+  - /metrics@reported_metrics.val.lm.accumulated_loss: accumulated_loss
+  - /metrics@reported_metrics.test.lm.accumulated_loss: accumulated_loss
+  - /metrics@reported_metrics.val.prediction.exact_match: seq2seq_exact_match
+  - /metrics@reported_metrics.test.prediction.exact_match: seq2seq_exact_match
+  - /metrics@reported_metrics.val.prediction.token_accuracy: seq2seq_token_accuracy
+  - /metrics@reported_metrics.test.prediction.token_accuracy: seq2seq_token_accuracy
+  - /metrics@diagnostic_metrics.train.lm.length_loss: seq2seq_length_loss
+  - /metrics@diagnostic_metrics.val.lm.length_loss: seq2seq_length_loss
+  - /metrics@diagnostic_metrics.train.lm.token_ce: seq2seq_token_ce
+  - /metrics@diagnostic_metrics.val.lm.token_ce: seq2seq_token_ce
+
+lightning_module:
+  _target_: xlm.harness.Harness
+
+loss:
+  _target_: ilm.loss_ilm.ILMLossWithMaskedCE
+  length_loss: binary_ce
+
+predictor:
+  _target_: ilm.predictor_ilm.ILMPredictorWithStoppingClassification
+  tokenizer: ${lightning_module:tokenizer}
+  noise_schedule: ${lightning_module:noise_schedule}
+  max_steps: ${block_size} # depends on the dataset, set in
+  max_length: ${eval:${block_size}+${oc.select:input_block_size,0}} # depends on the dataset
+  sampling_method: sample_top_p
+  p: 0.5
+  second_sampling_method: sample_top_k
+  second_top: 2
+
+diagnostic_metrics:
+  train:
+    lm:
+      length_loss:
+        prefix: train/lm
+        update_fn: ilm.metrics_ilm.length_loss_metric_update_fn
+      token_ce:
+        prefix: train/lm
+        update_fn: ilm.metrics_ilm.token_ce_metric_update_fn
+  val:
+    lm:
+      length_loss:
+        prefix: val/lm
+        update_fn: ilm.metrics_ilm.length_loss_metric_update_fn
+      token_ce:
+        prefix: val/lm
+        update_fn: ilm.metrics_ilm.token_ce_metric_update_fn
+
+reported_metrics:
+  train:
+    lm:
+      accumulated_loss:
+        prefix: train/lm
+        update_fn: ilm.metrics_ilm.mean_metric_update_fn
+  val:
+    lm:
+      accumulated_loss:
+        prefix: val/lm
+        update_fn: ilm.metrics_ilm.mean_metric_update_fn
+    prediction:
+      exact_match:
+        prefix: val/prediction
+        update_fn: xlm.metrics.seq2seq_exact_match_update_fn
+      token_accuracy:
+        prefix: val/prediction
+        update_fn: xlm.metrics.seq2seq_token_accuracy_update_fn
+  test:
+    lm:
+      accumulated_loss:
+        prefix: test/lm
+        update_fn: ilm.metrics_ilm.mean_metric_update_fn
+    prediction:
+      exact_match:
+        prefix: test/prediction
+        update_fn: xlm.metrics.seq2seq_exact_match_update_fn
+      token_accuracy:
+        prefix: test/prediction
+        update_fn: xlm.metrics.seq2seq_token_accuracy_update_fn
+
+tags:
+  model_type: ilm_stopping

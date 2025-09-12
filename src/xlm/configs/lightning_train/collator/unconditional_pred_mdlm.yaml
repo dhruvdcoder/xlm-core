@@ -1,8 +1,0 @@
-_target_: xlm.lm.mdlm.datamodule_mdlm.DefaultMDLMCollator
-block_size: ${block_size}
-tokenizer: ${global_components:tokenizer}
-noise_schedule: ${global_components:noise_schedule}
-loss_on_padding: true
-truncate: max
-add_bos: false
-add_eos: true 

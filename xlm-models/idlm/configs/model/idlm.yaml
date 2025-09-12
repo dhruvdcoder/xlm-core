@@ -1,0 +1,24 @@
+# @package _global_
+
+model:
+  _target_: idlm.model.IdlmModel
+  num_embeddings: ${tokenizer:full_vocab_size}
+  d_model: 768
+  num_layers: 12
+  nhead: 12
+  padding_idx: ${tokenizer:pad_token_id}
+  mask_idx: ${tokenizer:mask_token_id}
+  dim_feedforward: ${eval:${.d_model}*4}
+  dropout: 0.1
+  activation: relu
+  layer_norm_eps: 1e-5
+  d_cond: ${eval:${.d_model}//2}
+  rotary_emb_dim: 64
+  num_special_tokens: 2
+  max_length: ${predictor.max_length}
+  force_flash_attn: false
+  period_for_time_embedding: 0.5
+  use_bias_in_length_output_layer: false
+
+tags:
+  model: idlm

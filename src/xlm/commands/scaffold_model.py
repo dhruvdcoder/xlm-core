@@ -39,7 +39,7 @@ def create_template_context(model_name: str) -> Dict[str, Any]:
 
 
 def generate_types_file(model_dir: Path, context: Dict[str, Any]) -> None:
-    """Generate the types.py file with TypedDict definitions."""
+    """Generate the types_{model_name}.py file with TypedDict definitions."""
     content = f'''"""Type definitions for {context['model_class_name']} model.
 
 This file defines the data structures used throughout the {context['model_class_name']} implementation.
@@ -136,11 +136,11 @@ class {context['model_class_name']}Model(Protocol):
         ...
 '''
 
-    (model_dir / "types.py").write_text(content)
+    (model_dir / f"types_{context['model_name']}.py").write_text(content)
 
 
 def generate_model_file(model_dir: Path, context: Dict[str, Any]) -> None:
-    """Generate the model.py file with the neural network implementation."""
+    """Generate the model_{model_name}.py file with the neural network implementation."""
     content = f'''"""Neural network implementation for {context['model_class_name']} model.
 
 This file contains the main model architecture. Based on ARLM implementation -
@@ -277,11 +277,11 @@ class RotaryTransformer{context['model_class_name']}Model(torch.nn.Module):
                 yield (name, param)
 '''
 
-    (model_dir / "model.py").write_text(content)
+    (model_dir / f"model_{context['model_name']}.py").write_text(content)
 
 
 def generate_loss_file(model_dir: Path, context: Dict[str, Any]) -> None:
-    """Generate the loss.py file with loss computation."""
+    """Generate the loss_{model_name}.py file with loss computation."""
     content = f'''"""Loss function implementation for {context['model_class_name']} model.
 
 This file implements the training loss computation. Modify the loss_fn method
@@ -293,7 +293,7 @@ import torch
 import torch.nn.functional as F
 from xlm.harness import LossFunction, Harness
 from xlm.datamodule import Tokenizer
-from .types import {context['model_class_name']}Batch, {context['model_class_name']}LossDict, {context['model_class_name']}Model
+from .types_{context['model_name']} import {context['model_class_name']}Batch, {context['model_class_name']}LossDict, {context['model_class_name']}Model
 
 
 class {context['model_class_name']}Loss(LossFunction[{context['model_class_name']}Batch, {context['model_class_name']}LossDict]):
@@ -402,11 +402,11 @@ class {context['model_class_name']}Loss(LossFunction[{context['model_class_name'
         pass
 '''
 
-    (model_dir / "loss.py").write_text(content)
+    (model_dir / f"loss_{context['model_name']}.py").write_text(content)
 
 
 def generate_predictor_file(model_dir: Path, context: Dict[str, Any]) -> None:
-    """Generate the predictor.py file with inference logic."""
+    """Generate the predictor_{model_name}.py file with inference logic."""
     content = f'''"""Predictor implementation for {context['model_class_name']} model.
 
 This file implements the inference/generation logic.
@@ -420,7 +420,7 @@ from torch import Tensor as TT
 from xlm.harness import Predictor
 from xlm.datamodule import Tokenizer
 from xlm.noise import NoiseSchedule
-from .types import {context['model_class_name']}Batch, {context['model_class_name']}PredictionDict, {context['model_class_name']}Model
+from .types_{context['model_name']} import {context['model_class_name']}Batch, {context['model_class_name']}PredictionDict, {context['model_class_name']}Model
 
 
 class {context['model_class_name']}Predictor(Predictor[{context['model_class_name']}Batch, {context['model_class_name']}PredictionDict]):
@@ -618,11 +618,11 @@ class {context['model_class_name']}Predictor(Predictor[{context['model_class_nam
         return results
 '''
 
-    (model_dir / "predictor.py").write_text(content)
+    (model_dir / f"predictor_{context['model_name']}.py").write_text(content)
 
 
-def generate_collators_file(model_dir: Path, context: Dict[str, Any]) -> None:
-    """Generate the collators.py file with data processing logic."""
+def generate_datamodule_file(model_dir: Path, context: Dict[str, Any]) -> None:
+    """Generate the datamodule_<model_name>.py file with data processing logic."""
     content = f'''"""Data collation logic for {context['model_class_name']} model.
 
 This file implements the data preprocessing and batching logic.
@@ -631,10 +631,10 @@ Based on ARLM implementation - modify as needed.
 
 from typing import List, Dict, Any, Optional, Literal
 import torch
-from xlm.datamodule import Collator, Tokenizer, Seq2SeqCollatorInput
+from xlm.datamodule import Collator, Tokenizer, Seq2SeqCollatorInput, BaseCollatorInput
 from xlm.noise import NoiseSchedule
 from xlm.utils.nn import pad_truncate_list
-from .types import {context['model_class_name']}Batch, {context['model_class_name']}Seq2SeqBatch
+from .types_{context['model_name']} import {context['model_class_name']}Batch, {context['model_class_name']}Seq2SeqBatch
 
 
 class Default{context['model_class_name']}Collator(Collator):
@@ -675,12 +675,12 @@ class Default{context['model_class_name']}Collator(Collator):
             self._vocab_size = len(self.tokenizer)
         return self._vocab_size
 
-    def get_max_len(self, batch: List[Dict[str, Any]]) -> int:
+    def get_max_len(self, batch: List[BaseCollatorInput]) -> int:
         return self.block_size
 
     def __call__(
         self,
-        examples: List[Dict[str, Any]],
+        examples: List[BaseCollatorInput],
     ) -> {context['model_class_name']}Batch:
         """Collate examples into a batch for {context['model_class_name']} training.
 
@@ -762,11 +762,155 @@ class Default{context['model_class_name']}Collator(Collator):
         }}
 
 
-# Import necessary ARLM components
-from xlm.lm.arlm.datamodule_arlm import (
-    prepare_prefix_ids_arlm,
-    prepare_suffix_ids_arlm,
-)
+################################################################################
+# region: Helper Functions
+
+
+def prepare_prefix_ids_{context['model_name']}(
+    prefix_ids: List[List[int]],
+    pad_token_id: int,
+    bos_token_id: Optional[int] = None,
+    eos_token_id: Optional[int] = None,
+    max_seq_len: Optional[int] = None,
+    truncate: Literal["max", "block", None] = "block",
+    add_bos: Optional[str] = None,
+    add_eos: bool = False,
+) -> Dict[str, List[List[int]]]:
+    """
+    Prepare prefix ids for {context['model_class_name']} seq2seq tasks.
+
+    Args:
+        prefix_ids: List of prefix token sequences.
+        pad_token_id: Padding token ID.
+        bos_token_id: BOS token ID.
+        eos_token_id: EOS token ID.
+        max_seq_len: Maximum sequence length.
+        truncate: Truncation strategy.
+        add_bos: Where to add BOS token ("input" for prefix, "output" for after prefix, None for no BOS).
+        add_eos: Whether to add EOS token at the end of the prefix.
+
+    Returns:
+        Dictionary with input_ids and attention_mask as lists.
+    """
+    input_ids: List[List[int]] = []
+    attention_mask: List[List[int]] = []
+
+    # Determine max length
+    if truncate in ["max", None]:
+        max_len = max(len(_prefix_ids) for _prefix_ids in prefix_ids)
+        if truncate == "max" and max_seq_len is not None:
+            max_len = max(max_len, max_seq_len)
+    elif truncate == "block" and max_seq_len is not None:
+        max_len = max_seq_len
+    else:
+        raise ValueError(f"Invalid truncate, max_seq_len: {{max_seq_len}}")
+
+    assert max_len is not None
+
+    for _prefix_ids in prefix_ids:
+        # Add BOS to prefix if requested
+        if add_bos == "input" and bos_token_id is not None:
+            temp = [bos_token_id] + _prefix_ids
+        elif add_bos == "output" and bos_token_id is not None:
+            temp = _prefix_ids + [bos_token_id]  # Add BOS to the right
+        else:
+            temp = _prefix_ids
+
+        # Add EOS token at the end if requested
+        if add_eos and eos_token_id is not None:
+            temp = temp + [eos_token_id]
+
+        # Pad/truncate
+        padded_seq = pad_truncate_list(
+            temp, max_len, pad_token_id, pad_left=True
+        )
+        input_ids.append(padded_seq)
+
+        # Create attention mask (1 for real tokens, 0 for padding on the left)
+        mask = [0] * (max_len - len(temp)) + [1] * len(temp)
+        attention_mask.append(mask)
+
+    return {{
+        "input_ids": input_ids,
+        "attention_mask": attention_mask,
+    }}
+
+
+def prepare_suffix_ids_{context['model_name']}(
+    suffix_ids: List[List[int]],
+    pad_token_id: int,
+    bos_token_id: Optional[int] = None,
+    eos_token_id: Optional[int] = None,
+    max_seq_len: Optional[int] = None,
+    truncate: Literal["max", "block", None] = "block",
+    add_bos: Optional[str] = None,
+    add_eos: bool = False,
+) -> Dict[str, List[List[int]]]:
+    """
+    Prepare suffix ids for {context['model_class_name']} seq2seq tasks.
+
+    Args:
+        suffix_ids: List of suffix token sequences.
+        pad_token_id: Padding token ID.
+        bos_token_id: BOS token ID.
+        eos_token_id: EOS token ID.
+        max_seq_len: Maximum sequence length.
+        truncate: Truncation strategy.
+        add_bos: Where to add BOS token ("input" for prefix, "output" for after prefix, None for no BOS).
+        add_eos: Whether to add EOS token at the end of the suffix.
+
+    Returns:
+        Dictionary with input_ids, attention_mask, and target_ids as lists.
+    """
+    input_ids: List[List[int]] = []
+    attention_mask: List[List[int]] = []
+    target_ids: List[List[int]] = []
+
+    # Determine max length
+    if truncate in ["max", None]:
+        max_len = max(len(_suffix_ids) for _suffix_ids in suffix_ids)
+        if truncate == "max" and max_seq_len is not None:
+            max_len = max(max_len, max_seq_len)
+    elif truncate == "block" and max_seq_len is not None:
+        max_len = max_seq_len
+    else:
+        raise ValueError(f"Invalid truncate, max_seq_len: {{max_seq_len}}")
+
+    assert max_len is not None
+
+    for _suffix_ids in suffix_ids:
+        # Add BOS before suffix if requested
+        if add_bos == "output" and bos_token_id is not None:
+            temp = [bos_token_id] + _suffix_ids
+        else:
+            temp = _suffix_ids
+
+        # Add EOS token at the end if requested
+        if add_eos and eos_token_id is not None:
+            temp = temp + [eos_token_id]
+
+        # Pad/truncate
+        padded_seq = pad_truncate_list(
+            temp, max_len, pad_token_id, pad_left=False
+        )
+        input_ids.append(padded_seq)
+
+        # Create attention mask
+        mask = [1] * len(temp) + [0] * (max_len - len(temp))
+        attention_mask.append(mask)
+
+        # Create target_ids (unshifted - will be shifted in collator if needed)
+        target_ids.append(padded_seq)
+
+    return {{
+        "input_ids": input_ids,
+        "attention_mask": attention_mask,
+        "target_ids": target_ids,
+    }}
+
+
+################################################################################
+# region: Collators
 
 
 class {context['model_class_name']}Seq2SeqCollator:
@@ -828,7 +972,7 @@ class {context['model_class_name']}Seq2SeqCollator:
             {context['model_class_name']}Seq2SeqBatch with input_ids, attention_mask, target_ids.
         """
         # Prepare prefix (prompt)
-        prefix = prepare_prefix_ids_arlm(
+        prefix = prepare_prefix_ids_{context['model_name']}(
             [e["prompt_ids"] for e in examples],
             self.tokenizer.pad_token_id,
             bos_token_id=self.tokenizer.bos_token_id,
@@ -840,7 +984,7 @@ class {context['model_class_name']}Seq2SeqCollator:
         )
 
         # Prepare suffix (target)
-        suffix = prepare_suffix_ids_arlm(
+        suffix = prepare_suffix_ids_{context['model_name']}(
             [e["input_ids"] for e in examples],
             self.tokenizer.pad_token_id,
             bos_token_id=self.tokenizer.bos_token_id,
@@ -901,7 +1045,7 @@ class {context['model_class_name']}Seq2SeqPredCollator({context['model_class_nam
         """
         # For prediction, we only need the prefix (prompt) and the target_ids
         # Prepare prefix (prompt)
-        prefix = prepare_prefix_ids_arlm(
+        prefix = prepare_prefix_ids_{context['model_name']}(
             [e["prompt_ids"] for e in examples],
             self.tokenizer.pad_token_id,
             bos_token_id=self.tokenizer.bos_token_id,
@@ -913,7 +1057,7 @@ class {context['model_class_name']}Seq2SeqPredCollator({context['model_class_nam
         )
 
         # Prepare target_ids (the full suffix sequence)
-        target_ids = prepare_suffix_ids_arlm(
+        target_ids = prepare_suffix_ids_{context['model_name']}(
             [e["input_ids"] for e in examples],
             self.tokenizer.pad_token_id,
             bos_token_id=self.tokenizer.bos_token_id,
@@ -996,11 +1140,11 @@ def print_batch_{context['model_name']}(
 ################################################################################
 '''
 
-    (model_dir / "collators.py").write_text(content)
+    (model_dir / f"datamodule_{context['model_name']}.py").write_text(content)
 
 
 def generate_metrics_file(model_dir: Path, context: Dict[str, Any]) -> None:
-    """Generate the metrics.py file with metric computation logic."""
+    """Generate the metrics_{model_name}.py file with metric computation logic."""
     content = f'''"""Metrics computation for {context['model_class_name']} model.
 
 This file implements metric update functions used by the training framework.
@@ -1154,7 +1298,7 @@ def valid_tokens_metric_update_fn(
     }}
 '''
 
-    (model_dir / "metrics.py").write_text(content)
+    (model_dir / f"metrics_{context['model_name']}.py").write_text(content)
 
 
 def generate_init_file(
@@ -1166,21 +1310,21 @@ def generate_init_file(
 {context['model_class_name']} - Core Language Model for XLM Framework
 
 This module implements the {context['model_class_name']} model with all necessary components:
-- Model architecture (model.py)
-- Loss function (loss.py) 
-- Predictor for inference (predictor.py)
-- Data collators (collators.py)
-- Metrics computation (metrics.py)
-- Type definitions (types.py)
+- Model architecture (model_{context['model_name']}.py)
+- Loss function (loss_{context['model_name']}.py) 
+- Predictor for inference (predictor_{context['model_name']}.py)
+- Data module (datamodule_{context['model_name']}.py)
+- Metrics computation (metrics_{context['model_name']}.py)
+- Type definitions (types_{context['model_name']}.py)
 
 This is a core model that is part of the XLM library.
 """
 
-from .model import {context['model_class_name']}Model
-from .loss import {context['model_class_name']}Loss
-from .predictor import {context['model_class_name']}Predictor
-from .collators import Default{context['model_class_name']}Collator, {context['model_class_name']}Seq2SeqCollator
-from .types import (
+from .model_{context['model_name']} import RotaryTransformer{context['model_class_name']}Model
+from .loss_{context['model_name']} import {context['model_class_name']}Loss
+from .predictor_{context['model_name']} import {context['model_class_name']}Predictor
+from .datamodule_{context['model_name']} import Default{context['model_class_name']}Collator, {context['model_class_name']}Seq2SeqCollator
+from .types_{context['model_name']} import (
     {context['model_class_name']}Batch,
     {context['model_class_name']}Seq2SeqBatch, 
     {context['model_class_name']}LossDict,
@@ -1188,7 +1332,7 @@ from .types import (
 )
 
 __all__ = [
-    "{context['model_class_name']}Model",
+    "RotaryTransformer{context['model_class_name']}Model",
     "{context['model_class_name']}Loss", 
     "{context['model_class_name']}Predictor",
     "Default{context['model_class_name']}Collator",
@@ -1204,23 +1348,23 @@ __all__ = [
 {context['model_class_name']} - External Language Model for XLM Framework
 
 This package implements the {context['model_class_name']} model with all necessary components:
-- Model architecture (model.py)
-- Loss function (loss.py) 
-- Predictor for inference (predictor.py)
-- Data collators (collators.py)
-- Metrics computation (metrics.py)
-- Type definitions (types.py)
+- Model architecture (model_{context['model_name']}.py)
+- Loss function (loss_{context['model_name']}.py) 
+- Predictor for inference (predictor_{context['model_name']}.py)
+- Data module (datamodule_{context['model_name']}.py)
+- Metrics computation (metrics_{context['model_name']}.py)
+- Type definitions (types_{context['model_name']}.py)
 
 To use this model:
 1. Add '{context['model_name']}' to your .xlm_models file
 2. Use model_type={context['model_name']} and model={context['model_name']} in your config
 """
 
-from .model import {context['model_class_name']}Model
-from .loss import {context['model_class_name']}Loss
-from .predictor import {context['model_class_name']}Predictor
-from .collators import Default{context['model_class_name']}Collator, {context['model_class_name']}Seq2SeqCollator
-from .types import (
+from .model_{context['model_name']} import RotaryTransformer{context['model_class_name']}Model
+from .loss_{context['model_name']} import {context['model_class_name']}Loss
+from .predictor_{context['model_name']} import {context['model_class_name']}Predictor
+from .datamodule_{context['model_name']} import Default{context['model_class_name']}Collator, {context['model_class_name']}Seq2SeqCollator
+from .types_{context['model_name']} import (
     {context['model_class_name']}Batch,
     {context['model_class_name']}Seq2SeqBatch, 
     {context['model_class_name']}LossDict,
@@ -1228,7 +1372,7 @@ from .types import (
 )
 
 __all__ = [
-    "{context['model_class_name']}Model",
+    "RotaryTransformer{context['model_class_name']}Model",
     "{context['model_class_name']}Loss", 
     "{context['model_class_name']}Predictor",
     "Default{context['model_class_name']}Collator",
@@ -1249,25 +1393,27 @@ def generate_config_files(
     """Generate all configuration files."""
     # Model config
     if is_core:
-        model_target = f"xlm.lm.{context['model_name']}.model.RotaryTransformer{context['model_class_name']}Model"
-        loss_target = f"xlm.lm.{context['model_name']}.loss.{context['model_class_name']}Loss"
-        predictor_target = f"xlm.lm.{context['model_name']}.predictor.{context['model_class_name']}Predictor"
-        collator_target = f"xlm.lm.{context['model_name']}.collators.Default{context['model_class_name']}Collator"
-        seq2seq_collator_target = f"xlm.lm.{context['model_name']}.collators.{context['model_class_name']}Seq2SeqCollator"
-        seq2seq_pred_collator_target = f"xlm.lm.{context['model_name']}.collators.{context['model_class_name']}Seq2SeqPredCollator"
-        print_batch_fn = f"xlm.lm.{context['model_name']}.collators.print_batch_{context['model_name']}"
-        metrics_prefix = f"xlm.lm.{context['model_name']}.metrics"
-    else:
-        model_target = f"{context['model_name']}.model.RotaryTransformer{context['model_class_name']}Model"
-        loss_target = (
-            f"{context['model_name']}.loss.{context['model_class_name']}Loss"
+        model_target = f"xlm.lm.{context['model_name']}.model_{context['model_name']}.RotaryTransformer{context['model_class_name']}Model"
+        loss_target = f"xlm.lm.{context['model_name']}.loss_{context['model_name']}.{context['model_class_name']}Loss"
+        predictor_target = f"xlm.lm.{context['model_name']}.predictor_{context['model_name']}.{context['model_class_name']}Predictor"
+        collator_target = f"xlm.lm.{context['model_name']}.datamodule_{context['model_name']}.Default{context['model_class_name']}Collator"
+        seq2seq_collator_target = f"xlm.lm.{context['model_name']}.datamodule_{context['model_name']}.{context['model_class_name']}Seq2SeqCollator"
+        seq2seq_pred_collator_target = f"xlm.lm.{context['model_name']}.datamodule_{context['model_name']}.{context['model_class_name']}Seq2SeqPredCollator"
+        print_batch_fn = f"xlm.lm.{context['model_name']}.datamodule_{context['model_name']}.print_batch_{context['model_name']}"
+        metrics_prefix = (
+            f"xlm.lm.{context['model_name']}.metrics_{context['model_name']}"
         )
-        predictor_target = f"{context['model_name']}.predictor.{context['model_class_name']}Predictor"
-        collator_target = f"{context['model_name']}.collators.Default{context['model_class_name']}Collator"
-        seq2seq_collator_target = f"{context['model_name']}.collators.{context['model_class_name']}Seq2SeqCollator"
-        seq2seq_pred_collator_target = f"{context['model_name']}.collators.{context['model_class_name']}Seq2SeqPredCollator"
-        print_batch_fn = f"{context['model_name']}.collators.print_batch_{context['model_name']}"
-        metrics_prefix = f"{context['model_name']}.metrics"
+    else:
+        model_target = f"{context['model_name']}.model_{context['model_name']}.RotaryTransformer{context['model_class_name']}Model"
+        loss_target = f"{context['model_name']}.loss_{context['model_name']}.{context['model_class_name']}Loss"
+        predictor_target = f"{context['model_name']}.predictor_{context['model_name']}.{context['model_class_name']}Predictor"
+        collator_target = f"{context['model_name']}.datamodule_{context['model_name']}.Default{context['model_class_name']}Collator"
+        seq2seq_collator_target = f"{context['model_name']}.datamodule_{context['model_name']}.{context['model_class_name']}Seq2SeqCollator"
+        seq2seq_pred_collator_target = f"{context['model_name']}.datamodule_{context['model_name']}.{context['model_class_name']}Seq2SeqPredCollator"
+        print_batch_fn = f"{context['model_name']}.datamodule_{context['model_name']}.print_batch_{context['model_name']}"
+        metrics_prefix = (
+            f"{context['model_name']}.metrics_{context['model_name']}"
+        )
 
     model_config = f"""# @package _global_
 
@@ -1546,27 +1692,27 @@ This is a scaffolded implementation. You need to complete the following:
 
 ### Required Implementations
 
-1. **Model Architecture** (`{context['model_name']}/model.py`):
-   - [ ] Implement the neural network architecture in `{context['model_class_name']}Model.forward()`
+1. **Model Architecture** (`{context['model_name']}/model_{context['model_name']}.py`):
+   - [ ] Implement the neural network architecture in `RotaryTransformer{context['model_class_name']}Model.forward()`
    - [ ] Add any custom layers or components your model needs
    - [ ] Configure model parameters in the `__init__` method
 
-2. **Loss Function** (`{context['model_name']}/loss.py`):
+2. **Loss Function** (`{context['model_name']}/loss_{context['model_name']}.py`):
    - [ ] Implement loss computation in `{context['model_class_name']}Loss.loss_fn()`
    - [ ] Add any additional metrics you want to track
    - [ ] Configure loss-specific parameters
 
-3. **Predictor** (`{context['model_name']}/predictor.py`):
+3. **Predictor** (`{context['model_name']}/predictor_{context['model_name']}.py`):
    - [ ] Implement generation logic in `{context['model_class_name']}Predictor.predict()`
    - [ ] Implement sampling methods (`_sample_top_k`, `_sample_top_p`)
    - [ ] Add stopping criteria and post-processing
 
-4. **Data Collators** (`{context['model_name']}/collators.py`):
+4. **Data Module** (`{context['model_name']}/datamodule_{context['model_name']}.py`):
    - [ ] Implement data preprocessing in `Default{context['model_class_name']}Collator.__call__()`
    - [ ] Implement seq2seq preprocessing in `{context['model_class_name']}Seq2SeqCollator.__call__()`
    - [ ] Add any task-specific data transformations
 
-5. **Metrics** (`{context['model_name']}/metrics.py`):
+5. **Metrics** (`{context['model_name']}/metrics_{context['model_name']}.py`):
    - [ ] Customize metric update functions for your model
    - [ ] Add any model-specific metrics
 
@@ -1616,13 +1762,13 @@ The model can be configured through Hydra configs:
 ```
 {context['model_name']}/
 ├── {context['model_name']}/           # Python package
-│   ├── __init__.py          # Package exports
-│   ├── types.py             # Type definitions
-│   ├── model.py             # Neural network architecture
-│   ├── loss.py              # Loss function
-│   ├── predictor.py         # Inference logic
-│   ├── collators.py         # Data preprocessing
-│   └── metrics.py           # Metrics computation
+│   ├── __init__.py                   # Package exports
+│   ├── types_{context['model_name']}.py              # Type definitions
+│   ├── model_{context['model_name']}.py              # Neural network architecture
+│   ├── loss_{context['model_name']}.py               # Loss function
+│   ├── predictor_{context['model_name']}.py          # Inference logic
+│   ├── datamodule_{context['model_name']}.py         # Data preprocessing
+│   └── metrics_{context['model_name']}.py            # Metrics computation
 ├── configs/                 # Hydra configurations
 │   ├── model/
 │   ├── model_type/
@@ -1672,7 +1818,7 @@ def update_xlm_models_file(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Scaffold a new language model (external or core)"
+        description="Scaffold a new external language model for XLM framework"
     )
     parser.add_argument(
         "model_name", help="Name of the new model (e.g., 'my_transformer')"
@@ -1680,7 +1826,7 @@ def main():
     parser.add_argument(
         "--core",
         action="store_true",
-        help="Generate a core model that gets added to the XLM library (default: external model)",
+        help="Generate a core model that gets added to the XLM library (deprecated - external models are recommended)",
     )
     parser.add_argument(
         "--dry-run",
@@ -1690,8 +1836,8 @@ def main():
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("."),
-        help="Directory to create the model in (for external models only)",
+        default=Path("xlm-models"),
+        help="Directory to create the model in (default: xlm-models)",
     )
     parser.add_argument(
         "--no-xlm-models",
@@ -1737,12 +1883,12 @@ def main():
                 print(f"\n📂 Python files in {core_model_dir}:")
                 python_files = [
                     "__init__.py",
-                    "types.py",
-                    "model.py",
-                    "loss.py",
-                    "predictor.py",
-                    "collators.py",
-                    "metrics.py",
+                    f"types_{model_name}.py",
+                    f"model_{model_name}.py",
+                    f"loss_{model_name}.py",
+                    f"predictor_{model_name}.py",
+                    f"datamodule_{model_name}.py",
+                    f"metrics_{model_name}.py",
                 ]
                 for py_file in python_files:
                     print(f"  📄 {core_model_dir / py_file}")
@@ -1802,7 +1948,7 @@ def main():
             generate_model_file(temp_model_dir / model_name, context)
             generate_loss_file(temp_model_dir / model_name, context)
             generate_predictor_file(temp_model_dir / model_name, context)
-            generate_collators_file(temp_model_dir / model_name, context)
+            generate_datamodule_file(temp_model_dir / model_name, context)
             generate_metrics_file(temp_model_dir / model_name, context)
 
             # Generate config files
@@ -1854,10 +2000,10 @@ def main():
         print("📁 Config files created in: src/xlm/configs/lightning_train/")
         print("📝 Next steps:")
         print(
-            f"1. Review and implement the model architecture in src/xlm/lm/{model_name}/model.py"
+            f"1. Review and implement the model architecture in src/xlm/lm/{model_name}/model_{model_name}.py"
         )
         print(
-            f"2. Review and implement the loss function in src/xlm/lm/{model_name}/loss.py"
+            f"2. Review and implement the loss function in src/xlm/lm/{model_name}/loss_{model_name}.py"
         )
         print(
             f"3. Test with: xlm job_type=train experiment=star_easy_{model_name} debug=overfit"
@@ -1878,12 +2024,12 @@ def main():
             print(f"\n📂 Python files in {python_dir}:")
             python_files = [
                 "__init__.py",
-                "types.py",
-                "model.py",
-                "loss.py",
-                "predictor.py",
-                "collators.py",
-                "metrics.py",
+                f"types_{model_name}.py",
+                f"model_{model_name}.py",
+                f"loss_{model_name}.py",
+                f"predictor_{model_name}.py",
+                f"datamodule_{model_name}.py",
+                f"metrics_{model_name}.py",
             ]
             for py_file in python_files:
                 print(f"  📄 {python_dir / py_file}")
@@ -1955,7 +2101,7 @@ def main():
         generate_model_file(model_dir / model_name, context)
         generate_loss_file(model_dir / model_name, context)
         generate_predictor_file(model_dir / model_name, context)
-        generate_collators_file(model_dir / model_name, context)
+        generate_datamodule_file(model_dir / model_name, context)
         generate_metrics_file(model_dir / model_name, context)
 
         # Generate config files
@@ -1976,8 +2122,12 @@ def main():
         print("📝 Next steps:")
         print(f"1. cd {model_dir}")
         print("2. Read README.md for implementation guidance")
-        print(f"3. Implement the model architecture in {model_name}/model.py")
-        print(f"4. Implement the loss function in {model_name}/loss.py")
+        print(
+            f"3. Implement the model architecture in {model_name}/model_{model_name}.py"
+        )
+        print(
+            f"4. Implement the loss function in {model_name}/loss_{model_name}.py"
+        )
         print(
             f"5. Test with: xlm job_type=train experiment=star_easy_{model_name} debug=overfit"
         )

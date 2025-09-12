@@ -1,0 +1,20 @@
+# @package _global_
+defaults:
+  - owt
+  - /collator@datamodule.dataset_managers.train.lm.collator: default_ilm
+  - /collator@datamodule.dataset_managers.val.lm.collator: default_ilm
+  - /collator@datamodule.dataset_managers.val.unconditional_prediction.collator: unconditional_pred_ilm
+  - /collator@datamodule.dataset_managers.predict.unconditional_prediction.collator: unconditional_pred_ilm
+
+datamodule:
+  print_batch_fn: ilm.datamodule_ilm.print_batch_ilm
+  dataset_managers:
+    val:
+      unconditional_prediction:
+        dataset_constructor_str: ilm.datamodule_ilm.ILMEmptyDataset
+    predict:
+      unconditional_prediction:
+        dataset_constructor_str: ilm.datamodule_ilm.ILMEmptyDataset
+
+tags:
+  dataset: owt

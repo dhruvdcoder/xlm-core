@@ -1,0 +1,39 @@
+# @package _global_
+defaults:
+  - default
+  - /collator@datamodule.dataset_managers.train.lm.collator: seq2seq_mlm
+  - /collator@datamodule.dataset_managers.val.lm.collator: seq2seq_mlm
+  - /collator@datamodule.dataset_managers.test.lm.collator: seq2seq_mlm
+  - /collator@datamodule.dataset_managers.val.prediction.collator: seq2seq_pred_mlm
+  - /collator@datamodule.dataset_managers.test.prediction.collator: seq2seq_pred_mlm
+  - /collator@datamodule.dataset_managers.predict.prediction.collator: seq2seq_pred_mlm
+
+datamodule:
+  print_batch_fn: mlm.datamodule_mlm.print_batch_mlm
+  dataset_managers:
+    train:
+      lm:
+        collator:
+          add_bos: true
+    val:
+      lm:
+        collator:
+          add_bos: true
+      prediction:
+        collator:
+          add_bos: true
+    test:
+      lm:
+        collator:
+          add_bos: true
+      prediction:
+        collator:
+          add_bos: true
+    predict:
+      prediction:
+        collator:
+          add_bos: true
+
+
+tags:
+  dataset: ??? 

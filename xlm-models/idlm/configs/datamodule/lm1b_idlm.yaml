@@ -1,0 +1,21 @@
+# @package _global_
+defaults:
+  - lm1b
+  - /collator@datamodule.dataset_managers.train.lm.collator: default_idlm
+  - /collator@datamodule.dataset_managers.val.lm.collator: default_idlm
+  - /collator@datamodule.dataset_managers.val.unconditional_prediction.collator: unconditional_pred_idlm
+  - /collator@datamodule.dataset_managers.predict.unconditional_prediction.collator: unconditional_pred_idlm
+
+datamodule:
+  print_batch_fn: idlm.datamodule.print_batch_idlm
+  dataset_managers:
+    val:
+      unconditional_prediction:
+        dataset_constructor_str: idlm.datamodule.IdlmEmptyDataset
+    predict:
+      unconditional_prediction:
+        dataset_constructor_str: idlm.datamodule.IdlmEmptyDataset
+
+
+tags:
+  dataset: lm1b

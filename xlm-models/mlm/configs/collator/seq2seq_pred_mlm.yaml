@@ -1,0 +1,9 @@
+_target_: mlm.datamodule_mlm.MLMSeq2SeqPredCollator
+input_block_size: ${input_block_size} # we expect input_block_size to be set in the experiment config
+block_size: ${block_size}
+tokenizer: ${global_components:tokenizer}
+noise_schedule: ${global_components:noise_schedule}
+add_bos: false
+add_eos: true
+truncate: block
+loss_on_padding: true 

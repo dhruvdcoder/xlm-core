@@ -1,0 +1,47 @@
+# @package _global_
+
+defaults:
+  - /metrics@reported_metrics.train.lm.accumulated_loss: accumulated_loss
+  - /metrics@reported_metrics.val.lm.accumulated_loss: accumulated_loss
+  - /metrics@reported_metrics.test.lm.accumulated_loss: accumulated_loss
+
+lightning_module:
+  _target_: xlm.harness.Harness
+
+loss:
+  _target_: mlm.loss_mlm.MLMLoss
+  loss_on_padding: true
+  loss_on_visible_tokens: false
+
+predictor:
+  _target_: mlm.predictor_mlm.MLMPredictor
+  tokenizer: ${global_components:tokenizer}
+  noise_schedule: ${global_components:noise_schedule}
+  max_steps: ${block_size}
+  # max_new_tokens should be non-null only for seq2seq, i.e. when input_block_size is set
+  #max_new_tokens: ${if_else:${oc.select:input_block_size,false},${block_size},null}
+  # assume non-seq2seq here
+  max_new_tokens: null
+  top_k: 2 
+  top_p: null
+
+diagnostic_metrics: null
+reported_metrics:
+  train:
+    lm:
+      accumulated_loss:
+        prefix: train/lm
+        update_fn: mlm.metrics_mlm.mean_metric_update_fn
+  val:
+    lm:
+      accumulated_loss:
+        prefix: val/lm
+        update_fn: mlm.metrics_mlm.mean_metric_update_fn
+  test:
+    lm:
+      accumulated_loss:
+        prefix: test/lm
+        update_fn: mlm.metrics_mlm.mean_metric_update_fn
+
+tags:
+  model_type: mlm 

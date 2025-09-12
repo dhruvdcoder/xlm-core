@@ -1,7 +1,0 @@
-# @package _global_
-defaults:
-  - rotary_transformer_small_ilm
-
-model:
-  _target_: xlm.lm.ilm.model_ilm.RotaryTransformerILMModelWithStoppingClassification
-  final_layer_without_normalization: true

@@ -36,7 +36,8 @@ def validate_model_names(model_names: List[str]) -> None:
         )
 
     # Check for conflicts with core XLM model names
-    core_xlm_models = {"arlm", "ilm", "mlm"}  # Add more as needed
+    # NOTE: All models have been migrated to external, so no core conflicts expected
+    core_xlm_models = set()  # All models are now external
     conflicts = seen_names.intersection(core_xlm_models)
     if conflicts:
         logger.warning(
@@ -180,16 +181,27 @@ def discover_external_models(
     if search_dirs is None:
         search_dirs = [
             ".",  # Current directory
+            "xlm-models",  # Standard xlm-models directory
             os.environ.get("XLM_MODELS_PATH", ""),  # Environment variable
         ]
 
     model_dirs = []
 
-    # Check if .xlm_models file exists
-    xlm_models_path = Path(xlm_models_file)
-    if not xlm_models_path.exists():
+    # Check if .xlm_models file exists - try multiple locations
+    xlm_models_path = None
+    possible_locations = [
+        Path(xlm_models_file),  # Current directory
+        Path("xlm-models") / xlm_models_file,  # In xlm-models directory
+    ]
+
+    for location in possible_locations:
+        if location.exists():
+            xlm_models_path = location
+            break
+
+    if xlm_models_path is None:
         logger.info(
-            f"No {xlm_models_file} file found, no external models to load"
+            f"No {xlm_models_file} file found in any location, no external models to load"
         )
         return model_dirs
 

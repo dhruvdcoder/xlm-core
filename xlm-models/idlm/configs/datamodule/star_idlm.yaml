@@ -1,0 +1,15 @@
+# @package _global_
+defaults:
+  - default
+  - /collator@datamodule.dataset_managers.train.lm.collator: seq2seq_idlm
+  - /collator@datamodule.dataset_managers.val.lm.collator: seq2seq_idlm
+  - /collator@datamodule.dataset_managers.test.lm.collator: seq2seq_idlm
+  - /collator@datamodule.dataset_managers.val.prediction.collator: seq2seq_pred_idlm
+  - /collator@datamodule.dataset_managers.test.prediction.collator: seq2seq_pred_idlm
+  - /collator@datamodule.dataset_managers.predict.prediction.collator: seq2seq_pred_idlm
+
+datamodule:
+  print_batch_fn: idlm.datamodule.print_batch_idlm
+
+tags:
+  dataset: ???

@@ -1,5 +1,0 @@
-_target_: xlm.lm.idlm.collators.DefaultIdlmCollator
-block_size: 3
-tokenizer: ${global_components:tokenizer}
-noise_schedule: ${global_components:noise_schedule}
-truncate: max
