@@ -329,9 +329,16 @@ class SimpleSpaceTokenizer(PreTrainedTokenizer):
     def full_vocab_size(self) -> int:
         return len(self._vocab_str_to_int)
 
-    def tokenize(self, text: str) -> List[str]:
+    def tokenize(self, text: str, **kwargs) -> List[str]:
         # suppose text is a like "split1 split2 split3", convert to character if split* not in vocab
-        return text.split(" ")
+        tokens = []
+        for token in text.split(" "):
+            if not token:  # skip empty tokens
+                continue
+            if token not in self._vocab_str_to_int:
+                raise ValueError(f"Token {token} not in vocab")
+            tokens.append(token)
+        return tokens
 
     def _convert_token_to_id(self, token: str) -> int:
         return self._vocab_str_to_int[token]  # let it raise keyerror
@@ -369,6 +376,13 @@ class SimpleSpaceTokenizer(PreTrainedTokenizer):
         cls, save_directory: Union[str, os.PathLike], **kwargs
     ):
         raise NotImplementedError
+
+    def from_txt(cls, txt_file: Union[str, os.PathLike], **kwargs):
+        vocab = []
+        with open(txt_file, "r") as f:
+            for line in f:
+                vocab.append(line.strip())
+        return cls(vocab=vocab, **kwargs)
 
 
 # endregion: Tokenizers
@@ -1218,6 +1232,11 @@ class Seq2SeqCollatorInput(TypedDict):
 
     input_ids: List[int]
     prompt_ids: List[int]
+
+
+class InfillingCollatorInput(TypedDict):
+    input_ids: List[int]  # inputs with blanks (masks)
+    target_ids: List[int]  # targets with all tokens
 
 
 class DefaultCollator(Collator):
