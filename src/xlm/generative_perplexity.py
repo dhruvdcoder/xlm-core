@@ -186,7 +186,8 @@ class AutoModelForCausalLMGenerativePerplexityEvaluator(
 
         encoding = self.tokenizer(  # pyright: ignore[reportOptionalCall]
             samples,
-            padding="longest",
+            # padding="longest",
+            padding=False,
             truncation=False,
             return_attention_mask=True,
             return_tensors="pt",
@@ -373,9 +374,11 @@ def _compute_nll_for_sample(
 def compute_nll_for_sample(
     string: str,
     evaluator: GenerativePerplexityEvaluator,
-) -> Tuple[float, int, float]:
+) -> Optional[Tuple[float, int, float]]:
     # support batching maybe later
     eval_result = evaluator([string])
+    if eval_result is None:
+        return None
     total_nll_per_sample: float = eval_result["nlls"].sum(-1).item()
     total_length: int = eval_result["lengths"].sum().item()
     entropy: float = eval_result["entropy"].item()
