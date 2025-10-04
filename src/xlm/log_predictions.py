@@ -194,6 +194,9 @@ class FilePredictionWriter(_PredictionWriter):
         )
         if file_path is None:
             return []
+        if not file_path.exists():
+            logger.warning(f"File {file_path} does not exist")
+            return []
         logger.debug(f"Reading predictions from {file_path}")
         with open(file_path, "r") as f:
             return [json.loads(line) for line in f]
@@ -257,11 +260,14 @@ class LoggerPredictionWriter(_PredictionWriter):
             return
 
         # Add truth to predictions first, then filter
-        predictions_with_truth = []
-        for pred, gt in zip(predictions, ground_truth_text):
-            pred_with_truth = pred.copy()
-            pred_with_truth["truth"] = gt
-            predictions_with_truth.append(pred_with_truth)
+        if ground_truth_text is not None:
+            predictions_with_truth = []
+            for pred, gt in zip(predictions, ground_truth_text):
+                pred_with_truth = pred.copy()
+                pred_with_truth["truth"] = gt
+                predictions_with_truth.append(pred_with_truth)
+        else:
+            predictions_with_truth = predictions
 
         # Filter predictions if needed
         filtered_predictions = []
@@ -368,6 +374,7 @@ class LogPredictions:
             ]
         ] = None,
         inject_target: Optional[str] = None,
+        additional_fields_from_batch: Optional[List[str]] = None,
         fields_to_keep_in_output: Optional[List[str]] = None,
     ) -> None:
         """Initialize LogPredictions.
@@ -414,6 +421,7 @@ class LogPredictions:
                 f"Got: {[type(w) for w in writers]}"
             )
         self.inject_target = inject_target
+        self.additional_fields_from_batch = additional_fields_from_batch
 
     def _get_trainer_info(
         self, pl_module: L.LightningModule, trainer: Optional[L.Trainer]
@@ -431,9 +439,26 @@ class LogPredictions:
         epoch = trainer.current_epoch if trainer is not None else 0
         return step, epoch
 
+    def _place_additional_fields_in_predictions(
+        self, predictions: List[Dict[str, Any]], batch: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """Place additional fields in the predictions from the batch.
+        Args:
+            predictions: The predictions.
+            batch: The input batch.
+
+        Returns:
+            The predictions with additional fields.
+        """
+        if self.additional_fields_from_batch is not None:
+            for field in self.additional_fields_from_batch:
+                for i, pred in enumerate(predictions):
+                    pred[field] = batch[field][i]
+        return predictions
+
     def _get_ground_truth_text(
         self, pl_module: L.LightningModule, batch: Dict[str, Any]
-    ) -> List[str]:
+    ) -> str:
         """Get ground truth text from batch.
 
         Args:
@@ -476,6 +501,10 @@ class LogPredictions:
         step, epoch = self._get_trainer_info(pl_module, trainer)
         ground_truth_text = self._get_ground_truth_text(pl_module, batch)
         predictions = pl_module.predictor.to_dict(batch, preds)
+        # place additional fields in the predictions from the batch
+        predictions = self._place_additional_fields_in_predictions(
+            predictions, batch
+        )
 
         # Delegate to writers
         for writer in self.writers:
