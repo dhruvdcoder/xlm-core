@@ -40,6 +40,7 @@ class MetricWrapper(torch.nn.Module):
         on_epoch: bool = True,
         prog_bar: bool = False,
         add_dataloader_idx: bool = False,
+        **pass_to_update_fn,
     ):
         super().__init__()
         self.name = name
@@ -56,6 +57,11 @@ class MetricWrapper(torch.nn.Module):
         else:
             self.update_fn = update_fn
 
+        if pass_to_update_fn:
+            self.pass_to_update_fn = pass_to_update_fn
+        else:
+            self.pass_to_update_fn = {}
+
     def update(
         self,
         batch: Dict[str, Any],
@@ -63,7 +69,9 @@ class MetricWrapper(torch.nn.Module):
         tokenizer: Any = None,
     ) -> Dict[str, Any]:
         """Update the metric with the current batch and loss_dict."""
-        kwargs = self.update_fn(batch, loss_dict, tokenizer)
+        kwargs = self.update_fn(
+            batch, loss_dict, tokenizer, **self.pass_to_update_fn
+        )
         self.metric.update(**kwargs)
         return loss_dict
 
