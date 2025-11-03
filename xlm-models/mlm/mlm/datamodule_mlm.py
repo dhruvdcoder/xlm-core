@@ -77,7 +77,7 @@ def mlm_single_segment_collate_fn(
         # input already contains masks, just identify the masks
         mask = input_ids == mask_token_id
     else:
-        mask = torch.rand_like(input_ids) < t[:, None]
+        mask = torch.rand_like(input_ids, dtype=t.dtype) < t[:, None]
     if not loss_on_padding:
         mask = mask.logical_and(attention_mask)
     input_ids[mask] = mask_token_id
@@ -500,9 +500,10 @@ class MLMSeq2SeqPredCollator(MLMSeq2SeqCollator):
             target_ids=torch.tensor(target_ids, dtype=torch.long),
         )
 
+
 class MLMInfillWithExactTargetPredCollator(DefaultMLMCollator):
-    """Identical to DefaultMLMCollator but expects the prompt_ids to already contain masks.
-    """
+    """Identical to DefaultMLMCollator but expects the prompt_ids to already contain masks."""
+
     def __call__(
         self,
         examples: List[BaseCollatorInput],
@@ -516,17 +517,27 @@ class MLMInfillWithExactTargetPredCollator(DefaultMLMCollator):
             max_seq_len=self.block_size,
             truncate=self.truncate,
             loss_on_padding=self.loss_on_padding,
-            mask_none=True, # This is the only difference from the default collator
+            mask_none=True,  # This is the only difference from the default collator
         )
         # replace the target_ids
-        batch["target_ids"] = torch.tensor([pad_truncate_list(
-            [self.tokenizer.bos_token_id] * int(self.add_bos) + e["input_ids"]  + [self.tokenizer.eos_token_id] * int(self.add_eos),
-            self.block_size,
-            self.tokenizer.pad_token_id,
-            pad_left=False,
-        ) for e in examples], dtype=torch.long)
+        batch["target_ids"] = torch.tensor(
+            [
+                pad_truncate_list(
+                    [self.tokenizer.bos_token_id] * int(self.add_bos)
+                    + e["input_ids"]
+                    + [self.tokenizer.eos_token_id] * int(self.add_eos),
+                    self.block_size,
+                    self.tokenizer.pad_token_id,
+                    pad_left=False,
+                )
+                for e in examples
+            ],
+            dtype=torch.long,
+        )
         if batch["target_ids"].shape != batch["input_ids"].shape:
-            raise RuntimeError(f"Target ids and input ids have different shapes. {batch['target_ids'].shape} != {batch['input_ids'].shape}")
+            raise RuntimeError(
+                f"Target ids and input ids have different shapes. {batch['target_ids'].shape} != {batch['input_ids'].shape}"
+            )
         return batch
 
 
