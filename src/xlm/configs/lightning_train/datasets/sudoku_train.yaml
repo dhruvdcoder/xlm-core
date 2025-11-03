@@ -1,12 +1,14 @@
 defaults:
     - default_text
 
-_target_: xlm.datamodule.LocalDatasetManager
+_target_: xlm.tasks.sudoku.LocalDatasetManager
+ds_type: "csv"
+load_kwargs: null
 collator: ??? # model specific collator
-full_name: /Users/dhruveshpatel/Files/IESL/NAR/code/xlm-learned-noise-mdlm/data/sudoku/train # <repo>/<ds_name>/<split_to_download> .
-full_name_debug: /Users/dhruveshpatel/Files/IESL/NAR/code/xlm-learned-noise-mdlm/data/sudoku/train
+full_name: ${oc.env:DATA_DIR,.}/sudoku/train # <repo>/<ds_name>/<split_to_download> .
+full_name_debug: ${oc.env:DATA_DIR,.}/sudoku/train
 preprocess_function: xlm.tasks.sudoku.sudoku_preprocess_fn
-on_the_fly_processor: xlm.datamodule.token_ids_to_input_ids
+on_the_fly_processor: xlm.datamodule.token_ids_to_input_ids_and_prompt_ids
 on_the_fly_group_processor: null
 columns_to_remove:
     - quizzes

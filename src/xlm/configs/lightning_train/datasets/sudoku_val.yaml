@@ -2,8 +2,8 @@ defaults:
     - sudoku_train
     - _self_
 
-full_name: /Users/dhruveshpatel/Files/IESL/NAR/code/xlm-learned-noise-mdlm/data/sudoku/test # <repo>/<ds_name>/<split_to_download> .
-full_name_debug: /Users/dhruveshpatel/Files/IESL/NAR/code/xlm-learned-noise-mdlm/data/sudoku/train
+full_name: ${oc.env:DATA_DIR,.}/sudoku/test # <repo>/<ds_name>/<split_to_download> .
+full_name_debug: ${oc.env:DATA_DIR,.}/sudoku/test
 stages:
     - fit
     - validate

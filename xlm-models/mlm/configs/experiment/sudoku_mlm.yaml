@@ -12,6 +12,11 @@ block_size: 83
 datamodule:
   print_batch_fn: mlm.datamodule_mlm.print_batch_mlm
 
+global_components:
+  tokenizer:
+    _target_: xlm.datamodule.SimpleSpaceTokenizer.for_numbers
+    vocab_size: 10
+
 trainer:
   max_steps: 1000_000
   val_check_interval: 50000

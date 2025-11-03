@@ -318,5 +318,5 @@ tests/**/*.out
 # don't push .env
 .env
 
-
+data/**
 temp_*.pdf
