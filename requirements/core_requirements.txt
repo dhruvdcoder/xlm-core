@@ -16,7 +16,7 @@ jupyter
 hydra-colorlog
 hydra-joblib-launcher
 hydra-submitit-launcher
-datasets >= 3.3.2 < 4.0.0 # was using 2.15.0 earlier due to some bug. Then used 3.3.2 successfully. With 4.0.0, one cannot use script based datasets but lm1b is script based as of Sep 5, 2025.
+datasets >= 3.3.2, < 4.0.0 # was using 2.15.0 earlier due to some bug. Then used 3.3.2 successfully. With 4.0.0, one cannot use script based datasets but lm1b is script based as of Sep 5, 2025.
 transformers
 more-itertools
 torchdata>=0.9.0

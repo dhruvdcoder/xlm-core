@@ -17,26 +17,30 @@ This directory contains all language models for the XLM framework. Each model is
 
 ## Installation
 
-### Install All Models
-```bash
-pip install xlm-models[all]
-```
-
 ### Install Specific Models
 ```bash
-# Install individual models
-pip install xlm-models[arlm]
-pip install xlm-models[idlm,mlm]
+# Install individual models from subdirectories
+pip install ./xlm-models/arlm
+pip install ./xlm-models/idlm
+pip install ./xlm-models/mlm
+```
 
-# Or install from subdirectories
-pip install ./arlm
-pip install ./idlm
+### Install All Models
+```bash
+# Install all models at once
+pip install ./xlm-models/arlm ./xlm-models/idlm ./xlm-models/ilm ./xlm-models/mlm ./xlm-models/mdlm ./xlm-models/elm ./xlm-models/indigo
 ```
 
 ### Development Installation
 ```bash
-# Install in development mode
+# Install in development mode (from project root)
+pip install -e ./xlm-models/arlm
+pip install -e ./xlm-models/mdlm
+
+# Or if you're already in the xlm-models directory
+cd xlm-models
 pip install -e ./arlm
+pip install -e ./mdlm
 ```
 
 ## Usage
@@ -80,7 +84,7 @@ When adding a new model:
 1. Create the model directory structure
 2. Implement all required components
 3. Add the model name to `.xlm_models`
-4. Update the main `setup.py` extras_require
+4. Create a `setup.py` for the model package
 5. Test installation and functionality
 
 ## Migration Status

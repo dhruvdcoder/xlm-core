@@ -23,23 +23,17 @@ setup(
         "xlm",  # Core XLM framework dependency
     ],
     extras_require={
-        "arlm": ["./arlm"],  # Auto-Regressive Language Model
-        "idlm": ["./idlm"],  # Iterative Diffusion Language Model
-        "ilm": ["./ilm"],  # Infilling Language Model
-        "mlm": ["./mlm"],  # Masked Language Model
-        "mdlm": ["./mdlm"],  # Masked Diffusion Language Model
-        "elm": ["./elm"],  # Edit Language Model
-        "indigo": ["./indigo"],  # Indigo Model
+        # Note: Each model is a separate package and should be installed separately
+        # Example: pip install -e ./arlm
+        "arlm": [],  # Auto-Regressive Language Model
+        "idlm": [],  # Iterative Diffusion Language Model
+        "ilm": [],  # Infilling Language Model
+        "mlm": [],  # Masked Language Model
+        "mdlm": [],  # Masked Diffusion Language Model
+        "elm": [],  # Edit Language Model
+        "indigo": [],  # Indigo Model
         "zlm": [],  # Zero Language Model (placeholder)
-        "all": [  # Install all available models
-            "./arlm",
-            "./idlm",
-            "./ilm",
-            "./mlm",
-            "./mdlm",
-            "./elm",
-            "./indigo",
-        ],
+        "all": [],  # Install all available models separately
     },
     python_requires=">=3.11",
     author="XLM Team",
