@@ -1,0 +1,15 @@
+# @package _global_
+defaults:
+  - default
+  - /datasets@datamodule.dataset_managers.train.lm: sudoku_train
+  - /datasets@datamodule.dataset_managers.val.lm: sudoku_val
+  - /datasets@datamodule.dataset_managers.val.infill_prediction.lm: sudoku_val_pred
+  - /collator@datamodule.dataset_managers.train.lm.collator: default_mlm
+  - /collator@datamodule.dataset_managers.val.lm.collator: default_mlm
+  - /collator@datamodule.dataset_managers.val.infill_prediction.collator: infill_with_target_mlm
+
+datamodule:
+  print_batch_fn: mlm.datamodule_mlm.print_batch_mlm
+
+tags:
+  dataset: sudoku

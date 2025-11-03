@@ -1,0 +1,27 @@
+# @package _global_
+defaults:
+  - override /datamodule: sudoku_mlm
+  - override /noise_schedule: dummy
+  - override /model_type: mlm
+  - override /model: rotary_transformer_xtiny_mlm
+
+per_device_batch_size: 64
+global_batch_size: 512
+block_size: 83
+
+datamodule:
+  print_batch_fn: mlm.datamodule_mlm.print_batch_mlm
+
+trainer:
+  max_steps: 1000_000
+  val_check_interval: 50000
+  num_sanity_val_steps: 3
+
+optimizer:
+  lr: 0.0005
+
+lr_scheduler:
+  name: "constant_with_warmup"
+  num_warmup_steps: 1000
+  num_training_steps: ${trainer.max_steps}
+  monitor: "train/loss"

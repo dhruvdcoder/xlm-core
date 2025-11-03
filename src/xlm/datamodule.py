@@ -764,6 +764,27 @@ class DatasetManager:
         )
         return dataloader
 
+class LocalDatasetManager(DatasetManager):
+    def __init__(self, *args, ds_type: str = None, load_kwargs: Dict[str, Any] = None, **kwargs):
+        if ds_type is None:
+            raise ValueError("ds_type is required")
+        if load_kwargs is None:
+            raise ValueError("load_kwargs is required")
+        super().__init__(*args, **kwargs)
+        self.load_kwargs = load_kwargs or {}
+        self.ds_type = ds_type
+
+
+    def _download(self) -> datasets.Dataset:
+        if self.ds_type == "csv":
+            file_name = f"{self._split_to_download}.csv"
+            data_files = {
+                self._split_to_download: self.full_name + file_name
+            }
+            return datasets.load_dataset("csv", data_files=data_files, **self.load_kwargs)
+        else:
+            raise ValueError(f"Unsupported dataset type: {self.ds_type}")
+
 
 class UnconditionalGenerationDatasetManager:
     """

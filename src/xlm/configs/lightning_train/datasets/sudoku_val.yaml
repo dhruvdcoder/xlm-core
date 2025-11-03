@@ -1,0 +1,9 @@
+defaults:
+    - sudoku_train
+    - _self_
+
+full_name: /Users/dhruveshpatel/Files/IESL/NAR/code/xlm-learned-noise-mdlm/data/sudoku/test # <repo>/<ds_name>/<split_to_download> .
+full_name_debug: /Users/dhruveshpatel/Files/IESL/NAR/code/xlm-learned-noise-mdlm/data/sudoku/train
+stages:
+    - fit
+    - validate
