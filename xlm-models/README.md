@@ -1,6 +1,6 @@
 # XLM Models
 
-This directory contains all language models for the XLM framework. Each model is implemented as an independent Python package that can be installed separately.
+This directory contains all language models for the XLM framework. All models are bundled together in a single `xlm-models` package.
 
 ## Available Models
 
@@ -17,35 +17,31 @@ This directory contains all language models for the XLM framework. Each model is
 
 ## Installation
 
-### Install Specific Models
+All models are bundled in a single `xlm-models` package.
+
 ```bash
-# Install individual models from subdirectories
-pip install ./xlm-models/arlm
-pip install ./xlm-models/idlm
-pip install ./xlm-models/mlm
+# Install from local repo (all models included)
+pip install -e ./xlm-models
+
+# Or from PyPI once published (all models included)
+pip install xlm-models
 ```
 
-### Install All Models
-```bash
-# Install all models at once
-pip install ./xlm-models/arlm ./xlm-models/idlm ./xlm-models/ilm ./xlm-models/mlm ./xlm-models/mdlm ./xlm-models/elm ./xlm-models/indigo
-```
-
-### Development Installation
-```bash
-# Install in development mode (from project root)
-pip install -e ./xlm-models/arlm
-pip install -e ./xlm-models/mdlm
-
-# Or if you're already in the xlm-models directory
-cd xlm-models
-pip install -e ./arlm
-pip install -e ./mdlm
-```
+**Note:** All models are always installed. There is no selective installation - you get everything in one package.
 
 ## Usage
 
-After installation, models can be used in XLM configs:
+After installation, models can be imported directly:
+
+```python
+# Import from any model
+from mlm import RotaryTransformerMLMModel, MLMLoss, MLMPredictor
+from arlm import RotaryTransformerARLMModel, ARLMLoss, ARLMPredictor
+from mdlm import MDLMModel, MDLMLoss, MDLMPredictor
+# etc.
+```
+
+Or used in Hydra configs:
 
 ```yaml
 # Model configuration
@@ -80,12 +76,65 @@ model_name/
 
 ## Development
 
-When adding a new model:
-1. Create the model directory structure
-2. Implement all required components
+### Adding a Model to xlm-models Package
+
+To contribute a new model to the bundled `xlm-models` package:
+
+1. Create the model directory structure (e.g., `newmodel/newmodel/`)
+2. Implement all required components (`__init__.py`, model files, etc.)
 3. Add the model name to `.xlm_models`
-4. Create a `setup.py` for the model package
+4. Update the main `xlm-models/setup.py`:
+   - Add model name to the `packages` list
+   - Add mapping to `package_dir` dict (e.g., `"newmodel": "newmodel/newmodel"`)
+   - Update the model list in `long_description`
 5. Test installation and functionality
+
+Example for adding a model called `newmodel`:
+```python
+# In xlm-models/setup.py
+packages=["arlm", "idlm", "ilm", "mlm", "mdlm", "elm", "indigo", "newmodel"],
+package_dir={
+    "arlm": "arlm/arlm",
+    "idlm": "idlm/idlm",
+    "ilm": "ilm/ilm",
+    "mlm": "mlm/mlm",
+    "mdlm": "mdlm/mdlm",
+    "elm": "elm/elm",
+    "indigo": "indigo/indigo",
+    "newmodel": "newmodel/newmodel",
+}
+```
+
+### Creating a Standalone Model Package
+
+To create your own independent model package (for personal use or separate release):
+
+1. Create your model directory structure following the same pattern:
+   ```
+   mymodel/
+   ├── mymodel/              # Python package
+   │   ├── __init__.py
+   │   ├── model_mymodel.py
+   │   ├── loss_mymodel.py
+   │   └── ...
+   ├── configs/              # Hydra configurations
+   ├── setup.py              # Package installation
+   └── README.md
+   ```
+
+2. Create a `setup.py` in your model directory (see existing models for reference)
+
+3. Install independently:
+   ```bash
+   pip install -e ./mymodel
+   ```
+
+4. Your model can be used without being part of `xlm-models`:
+   ```python
+   from mymodel import MyModelClass
+   ```
+
+This approach allows you to develop and release your model independently without modifying the main `xlm-models` package.
 
 ## Migration Status
 
