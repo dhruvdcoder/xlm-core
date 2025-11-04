@@ -52,9 +52,15 @@ def _parse_gpu_count(gres: str) -> int:
     raise ValueError(f"Invalid gres: {gres}")
 
 
-def _determine_trainer_strategy(ntasks_per_node: int, nodes: int) -> str:
-    if ntasks_per_node >= 1 and nodes > 1:
+def _determine_trainer_strategy(
+    ntasks_per_node: int, nodes: int, hooks: bool = True
+) -> str:
+    if ntasks_per_node == 1 and nodes == 1:
+        return "single_device"
+    if ntasks_per_node >= 1 and nodes > 1 and hooks:
         return "ddp_multinode"
+    if ntasks_per_node >= 1 and nodes > 1 and not hooks:
+        return "ddp_multinode_no_hooks"
     if ntasks_per_node >= 1 and nodes == 1:
         return "ddp"
     return "single_device"
@@ -70,17 +76,11 @@ def validate_config(cfg: DictConfig) -> None:
     if cfg.train.debug is not None:
         # check the trainer_strategy, devices, num_nodes, precision, compile
         if cfg.train.trainer_strategy in ["ddp_multinode", "ddp"]:
-            raise ValueError(
-                "debug mode is not supported for multi-node training"
-            )
+            print("[Warning] Using debug mode with multi-node training")
         if cfg.train.devices > 1:
-            raise ValueError(
-                "debug mode is not supported for multi-GPU training"
-            )
+            print("[Warning] Using debug mode with multi-GPU training")
         if cfg.train.num_nodes > 1:
-            raise ValueError(
-                "debug mode is not supported for multi-node training"
-            )
+            print("[Warning] Using debug mode with multi-node training")
 
 
 @hydra.main(**_HYDRA_PARAMS)
@@ -114,33 +114,28 @@ def main(cfg: DictConfig) -> None:
     # )
 
     # Main training command with srun
-    if cfg.train.debug is None:
-        cmd = [
-            "python",
-            "-O",
-            "src/xlm/commands/lightning_main.py",
-            f"job_name={job_name}",
-            f"job_type={cfg.train.job_type}",
-            f"experiment={cfg.train.experiment}",
-            f"per_device_batch_size={cfg.train.batch_size}",
-            f"trainer_strategy={cfg.train.trainer_strategy}",
-            f"trainer.devices={cfg.train.devices}",
-            f"trainer.num_nodes={cfg.train.num_nodes}",
-            f"++trainer.precision={cfg.train.precision}",
-            f"compile={cfg.train.compile}",
-            "+loggers.wandb.resume=allow",
-            f"+loggers.wandb.id={job_name}",
-        ]
-    else:
-        cmd = [
-            "python",
-            "-O",
-            "src/xlm/commands/lightning_main.py",
-            f"job_name={job_name}",
-            f"job_type={cfg.train.job_type}",
-            f"experiment={cfg.train.experiment}",
-            f"debug={cfg.train.debug}",
-        ]
+    cmd = [
+        "python",
+        "-O",
+        "src/xlm/commands/lightning_main.py",
+        f"job_name={job_name}",
+        f"job_type={cfg.train.job_type}",
+        f"experiment={cfg.train.experiment}",
+    ]
+
+    debug = cfg.train.get("debug")
+    if debug is not None:
+        cmd += [f"debug={debug}"]
+    cmd += [
+        f"per_device_batch_size={cfg.train.batch_size}",
+        f"trainer_strategy={cfg.train.trainer_strategy}",
+        f"trainer.devices={cfg.train.devices}",
+        f"trainer.num_nodes={cfg.train.num_nodes}",
+        f"++trainer.precision={cfg.train.precision}",
+        f"compile={cfg.train.compile}",
+        "+loggers.wandb.resume=allow",
+        f"+loggers.wandb.id={job_name if cfg.get('use_job_name_as_id', True) else 'null'}",
+    ]
 
     if INNER_ARGS:
         cmd += INNER_ARGS

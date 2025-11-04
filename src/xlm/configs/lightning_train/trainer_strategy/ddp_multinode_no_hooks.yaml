@@ -1,0 +1,13 @@
+# @package trainer.strategy
+# see: https://lightning.ai/docs/pytorch/stable/advanced/ddp_optimizations.html#ddp-static-graph
+_target_: lightning.pytorch.strategies.DDPStrategy
+#find_unused_parameters: true
+#static_graph: false # See if https://github.com/pytorch/pytorch/issues/143580 is fixed before using true
+#gradient_as_bucket_view: true
+#ddp_comm_hook:
+#  _target_: xlm.utils.ddp.get_powerSGD_hook
+#ddp_comm_state:
+#  _target_: xlm.utils.ddp.get_powerSGD_state
+#ddp_comm_wrapper:
+#  _target_: xlm.utils.ddp.get_ddp_precision_wrapper
+#  precision: ${trainer.precision} #fp16
