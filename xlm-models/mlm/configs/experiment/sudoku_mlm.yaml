@@ -1,11 +1,15 @@
 # @package _global_
 defaults:
+  - /metrics@reported_metrics.val.infill_prediction.exact_match: exact_match
+  - /metrics@reported_metrics.val.infill_prediction.token_accuracy: token_accuracy
+  - /metrics@reported_metrics.test.infill_prediction.exact_match: exact_match
+  - /metrics@reported_metrics.test.infill_prediction.token_accuracy: token_accuracy
   - override /datamodule: sudoku_mlm
   - override /noise_schedule: dummy
   - override /model_type: mlm
   - override /model: rotary_transformer_xtiny_mlm
 
-per_device_batch_size: 64
+per_device_batch_size: 512
 global_batch_size: 512
 block_size: 83
 
@@ -17,9 +21,21 @@ global_components:
     _target_: xlm.datamodule.SimpleSpaceTokenizer.for_numbers
     vocab_size: 10
 
+log_predictions:
+  _target_: xlm.log_predictions.LogPredictions
+  fields_to_keep_in_output:
+    - text
+    - truth
+  inject_target: target_ids
+  writers:
+    - file
+    - logger
+
+
 trainer:
-  max_steps: 1000_000
-  val_check_interval: 50000
+  max_steps: 80_000
+  val_check_interval: null
+  check_val_every_n_epoch: 10
   num_sanity_val_steps: 3
 
 optimizer:
@@ -30,3 +46,21 @@ lr_scheduler:
   num_warmup_steps: 1000
   num_training_steps: ${trainer.max_steps}
   monitor: "train/loss"
+
+reported_metrics:
+  val:
+    infill_prediction:
+      exact_match:
+        prefix: val/prediction
+        update_fn: mlm.metrics_mlm.exact_match_update_fn
+      token_accuracy:
+        prefix: val/prediction
+        update_fn: mlm.metrics_mlm.infill_token_accuracy_update_fn
+  test:
+    infill_prediction:
+      exact_match:
+        prefix: test/prediction
+        update_fn: mlm.metrics_mlm.exact_match_update_fn
+      token_accuracy:
+        prefix: test/prediction
+        update_fn: mlm.metrics_mlm.infill_token_accuracy_update_fn

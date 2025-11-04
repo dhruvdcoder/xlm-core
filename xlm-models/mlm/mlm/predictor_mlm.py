@@ -66,6 +66,7 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
         noise_schedule: Optional[NoiseSchedule] = None,
         top_k: Optional[int] = None,
         top_p: Optional[float] = None,
+        skip_special_tokens: bool = True,
     ):
         """Initialize MLM Predictor.
 
@@ -95,6 +96,7 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
             raise ValueError("Both top_k and top_p cannot be non-None")
 
         self.noise_schedule = noise_schedule
+        self.skip_special_tokens = skip_special_tokens
 
     def reset(self):
         # simple predictor has no state
@@ -114,7 +116,7 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
         """
         x: Integer[TT, " batch seq_len"] = results["x"]
         out_with_spl_tokens: List[str] = self.tokenizer.batch_decode(
-            x, skip_special_tokens=False
+            x, skip_special_tokens=self.skip_special_tokens
         )
         return out_with_spl_tokens, x
 
@@ -122,7 +124,11 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
         self,
         step_results: MLMStepResults,
     ) -> Bool[TT, " batch"]:
-        return step_results["done"]
+        steps_done = bool(step_results["done"].all())
+        all_filled = bool(
+            (step_results["x"] != self.tokenizer.mask_token_id).all()
+        )
+        return steps_done or all_filled
 
     def predict_single_step(
         self,

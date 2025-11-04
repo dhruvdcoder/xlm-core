@@ -55,3 +55,11 @@ predictor:
 
 ### Types (`types_mlm.py`)
 - Type definitions for batches, predictions, and model interfaces
+
+
+# Commands
+
+```bash
+# Sudoku (debug overfit)
+python src/xlm/commands/lightning_main.py "job_type=train" "job_name=sudoku_mlm" "experiment=sudoku_mlm" "debug=overfit"
+```
