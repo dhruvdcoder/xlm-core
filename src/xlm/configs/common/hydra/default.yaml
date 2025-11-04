@@ -5,7 +5,6 @@ defaults:
   - override hydra_logging: colorlog
   - override job_logging: colorlog
 
-
 # output directory, generated dynamically on each run
 run:
   dir: ${paths.output_dir}/runs/${now:%Y-%m-%d}_${now:%H-%M-%S}
@@ -19,9 +18,9 @@ job_logging:
   # colorlog will set two formatters: simple and colorlog. We just override the format for simple which is for file.
   formatters:
     simple:
-      format: '[%(asctime)s][%(name)s:%(lineno)d][%(levelname)s] - %(message)s'
+      format: "[%(asctime)s][%(name)s:%(lineno)d][%(levelname)s] - %(message)s"
     colorlog:
-      format: '[%(cyan)s%(asctime)s%(reset)s][%(blue)s%(name)s:%(lineno)d%(reset)s][%(log_color)s%(levelname)s%(reset)s] - %(message)s'
+      format: "[%(cyan)s%(asctime)s%(reset)s][%(blue)s%(name)s:%(lineno)d%(reset)s][%(log_color)s%(levelname)s%(reset)s] - %(message)s"
   handlers:
     file:
       # Incorporates fix from https://github.com/facebookresearch/hydra/pull/2242
@@ -39,5 +38,4 @@ job_logging:
 job:
   env_set:
     PROJECT_ROOT: "."
-    HF_HOME: "/work/pi_mccallum_umass_edu/dhruveshpate_umass_edu/hf_cache"
     TQDM_MINITERS: 100 # lightning uses this

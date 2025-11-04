@@ -12,6 +12,8 @@ def determine_accumulate_grad_batches(
     num_nodes: int,
 ):
     # global_batch_size should be divisible by per_device_batch_size * num_devices * num_nodes
+    if not num_devices: # cpu
+        num_devices = 1
     if (
         global_batch_size % (per_device_batch_size * num_devices * num_nodes)
         != 0
