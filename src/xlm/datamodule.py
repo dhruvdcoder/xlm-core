@@ -499,7 +499,7 @@ class DatasetManager:
             name,
             split=self._split_to_download,
             num_proc=num_proc,
-            token=os.environ.get("HF_HUB_KEY"),
+            token=os.environ.get("HF_TOKEN"),
         )
         return ds
 

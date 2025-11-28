@@ -10,6 +10,7 @@ per_device_batch_size: 64
 global_batch_size: 64
 input_block_size: 28
 block_size: 14
+monitored_metric: val/lm/accumulated_loss
 
 datamodule:
   print_batch_fn: arlm.datamodule_arlm.print_batch_arlm
@@ -24,7 +25,7 @@ trainer:
   val_check_interval: null
   num_sanity_val_steps: 3
   check_val_every_n_epoch: 2
-
+  
 log_predictions:
   _target_: xlm.log_predictions.LogPredictions
   fields_to_keep_in_output:

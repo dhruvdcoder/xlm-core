@@ -67,14 +67,23 @@ OmegaConf.register_new_resolver(
 
 # Setup external models before Hydra initialization
 # This adds external model directories to sys.path for imports
-external_model_dirs = setup_external_models()
 
+from hydra.core.plugins import Plugins
+from hydra.plugins.search_path_plugin import SearchPathPlugin
+from hydra.core.config_search_path import ConfigSearchPath
+
+hydra_plugins = Plugins.instance()
+class HydraSearchPathPlugin(SearchPathPlugin):
+        def manipulate_search_path(
+            self, search_path: ConfigSearchPath
+        ) -> None:
+            search_path.append("file", str(Path(__file__).parent.parent / "configs/common"))
+
+hydra_plugins.register(HydraSearchPathPlugin)
+
+external_model_dirs = setup_external_models()
 # Register our SearchPathPlugin manually with Hydra
 if external_model_dirs:
-    from hydra.core.plugins import Plugins
-    from hydra.plugins.search_path_plugin import SearchPathPlugin
-    from hydra.core.config_search_path import ConfigSearchPath
-
     class ExternalModelsSearchPathPlugin(SearchPathPlugin):
         def manipulate_search_path(
             self, search_path: ConfigSearchPath
@@ -85,7 +94,7 @@ if external_model_dirs:
                     search_path.append("file", str(config_dir))
 
     # Register the plugin
-    Plugins.instance().register(ExternalModelsSearchPathPlugin)
+    hydra_plugins.register(ExternalModelsSearchPathPlugin)
 
 
 @hydra.main(**_HYDRA_PARAMS)

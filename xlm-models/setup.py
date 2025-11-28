@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="xlm-models",
@@ -9,32 +9,30 @@ setup(
     
     Available models:
     - arlm: Auto-Regressive Language Model
-    - idlm: Iterative Diffusion Language Model  
-    - ilm: Infilling Language Model
-    - mlm: Masked Language Model
+    - mlm : Masked Language Model
+    - ilm : Infilling Language Model
     - mdlm: Masked Diffusion Language Model
-    - elm: Edit Language Model
-    - indigo: Indigo Model
-    - zlm: Zero Language Model
-    
-    All models are included when you install this package.
     
     Usage:
         pip install xlm-models
     """,
-    packages=["arlm", "idlm", "ilm", "mlm", "mdlm", "elm", "indigo"],
+    packages=["arlm","mlm"],
     package_dir={
-        "arlm": "arlm/arlm",
-        "idlm": "idlm/idlm",
-        "ilm": "ilm/ilm",
-        "mlm": "mlm/mlm",
-        "mdlm": "mdlm/mdlm",
-        "elm": "elm/elm",
-        "indigo": "indigo/indigo",
+        "arlm": "arlm",
+        "mlm": "mlm",
+        "ilm": "ilm",
+        "mdlm": "mdlm",
+    },
+    package_data={
+        "arlm": ["configs/**/*.yaml", "configs/**/*.yml"],
+        "mlm": ["configs/**/*.yaml", "configs/**/*.yml"],
+        "ilm": ["configs/**/*.yaml", "configs/**/*.yml"],
+        "mdlm": ["configs/**/*.yaml", "configs/**/*.yml"],
     },
     install_requires=[
         "xlm",  # Core XLM framework dependency
     ],
+    include_package_data=True,
     python_requires=">=3.11",
     author="XLM Team",
     classifiers=[
