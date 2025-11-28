@@ -16,7 +16,7 @@ setup(
     Usage:
         pip install xlm-models
     """,
-    packages=["arlm","mlm"],
+    packages=["arlm","mlm","ilm","mdlm"],
     package_dir={
         "arlm": "arlm",
         "mlm": "mlm",
