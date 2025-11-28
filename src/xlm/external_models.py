@@ -289,8 +289,9 @@ def setup_external_models(
         sys.path.insert(0,str(Path("xlm-models")))
     else:
         for model_dir in model_dirs:
-            if model_dir not in sys.path:
-                sys.path.insert(0,str(model_dir.parent.resolve()))
+            import_path = str(model_dir.parent.resolve())
+            if import_path not in sys.path:
+                sys.path.insert(0,import_path)
 
     # Log discovered models
     if model_dirs:
