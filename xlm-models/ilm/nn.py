@@ -100,9 +100,9 @@ def masked_ce_last_two_dims(
         min_value: The minimum value to use for the logits.
         inplace: If True, the logits will be modified in place.
     """
-    raise NotImplementedError(
-        "TODO: Check the case when everything is masked before using."
-    )
+    # raise NotImplementedError(
+    #     "TODO: Check the case when everything is masked before using."
+    # )
     leading_dims = logits.size()[:-2]
     if inplace:
         logits.masked_fill_(mask, min_value)

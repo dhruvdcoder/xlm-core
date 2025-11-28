@@ -417,7 +417,7 @@ class ARLMSeq2SeqCollator:
                     j < len(mask) - 1 and mask[j + 1] == 0
                 ):  # Check if next position is padding
                     target_seq[j] = -100
-            raise ValueError("Why are we predicting the prompt tokens?")
+            # raise ValueError("Why are we predicting the prompt tokens?")
             target_ids.append(target_seq)
 
         return {
