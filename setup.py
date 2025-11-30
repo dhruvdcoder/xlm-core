@@ -7,11 +7,7 @@ VERSION = {}  # type: ignore
 with open("src/xlm/version.py", "r") as version_file:
     exec(version_file.read(), VERSION)
 
-
 PATH_ROOT = os.path.dirname(__file__)
-
-with open("README.md", "r") as fh:
-    long_description = fh.read()
 
 def load_requirements(
     path_dir: str = PATH_ROOT, comment_char: str = "#"
@@ -25,7 +21,7 @@ install_requires = load_requirements()
 setup(
     name="xlm",
     version=VERSION["VERSION"],
-    author="Dhruvesh Patel",
+    author="Dhruvesh Patel, Benjamin Rozonoyer, Sai Sreenivas Chintha, Durga Prasad Maram",
     packages=find_packages(
         where="src",
         exclude=[
@@ -35,6 +31,18 @@ setup(
             "tests",
         ],
     ),
+    description='XLM Framework',
+    long_description="""
+    XLM is a unified framework for developing and comparing small non-autoregressive language models. It uses PyTorch as the deep learning framework, PyTorch Lightning for training utilities, and Hydra for configuration management. XLM provides core components for flexible data handling and training, useful architectural implementations for non-autoregressive workflows, and support for arbitrary runtime code injection. Custom model implementations that leverage the core components of xlm can be found in the xlm-models package. The package also includes a few preconfigured synthetic planning and language-modeling datasets.
+
+    Usage:
+        pip install xlm
+
+    Command usage:
+        xlm job_type=[JOB_TYPE] job_name=[JOB_NAME] experiment=[CONFIG_PATH]
+       
+        The job_type argument can be one of train ,eval and generate. The experiment argument should point to the root hydra config file.
+""",
     install_requires = install_requires,
     project_urls={
         "Source Code": "https://github.com/dhruvdcoder/xlm-core"
@@ -48,6 +56,7 @@ setup(
         "ML",
         "Machine Learning",
         "Deep Learning",
+        "None Autoregressive Language Models",
     ],
     include_package_data=True,
     entry_points={

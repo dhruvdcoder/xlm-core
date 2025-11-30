@@ -17,6 +17,7 @@ setup(
         pip install xlm-models
     """,
     packages=["arlm","mlm","ilm","mdlm"],
+    author="Dhruvesh Patel, Benjamin Rozonoyer, Sai Sreenivas Chintha, Durga Prasad Maram",
     package_dir={
         "arlm": "arlm",
         "mlm": "mlm",
@@ -32,9 +33,18 @@ setup(
     install_requires=[
         "xlm",  # Core XLM framework dependency
     ],
+    project_urls={
+        "Source Code": "https://github.com/dhruvdcoder/xlm-core/tree/main/xlm-models"
+    },
     include_package_data=True,
     python_requires=">=3.11",
-    author="XLM Team",
+    keywords=[
+        "AI",
+        "ML",
+        "Machine Learning",
+        "Deep Learning",
+        "None Autoregressive Language Models",
+    ],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",

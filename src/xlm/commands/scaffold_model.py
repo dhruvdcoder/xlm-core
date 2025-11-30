@@ -1653,9 +1653,7 @@ setup(
     description="{context['model_class_name']} - External Language Model for XLM framework",
     packages=find_packages(),
     install_requires=[
-        "xlm",  # Main XLM package dependency
-        "torch",
-        "transformers",  # Add any other dependencies your model needs
+        "xlm",  # Main XLM package dependency. Add any other dependencies your model needs
     ],
     package_data={{
         "{context['model_name']}": ["configs/**/*.yaml"],
@@ -1836,8 +1834,8 @@ def main():
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("xlm-models"),
-        help="Directory to create the model in (default: xlm-models)",
+        default=Path("."),
+        help="Directory to create the model in (default: Current Directory)",
     )
     parser.add_argument(
         "--no-xlm-models",
