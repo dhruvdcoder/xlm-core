@@ -18,9 +18,10 @@ from xlm.modules.ddit_simple import (
 from jaxtyping import Integer, Float, Bool
 from torch import Tensor as TT
 from transformers import PreTrainedTokenizer
+from xlm.model import Model
 
 
-class Model(torch.nn.Module):
+class BaseMDLMModel(torch.nn.Module, Model):
 
     def forward(
         self,
@@ -44,7 +45,7 @@ class Model(torch.nn.Module):
                 yield (name, param)
 
 
-class MDLMModel(Model):
+class MDLMModel(BaseMDLMModel):
     """DDiT based transformer that represents time/noise using AdaLN and uses rotary positional embeddings."""
 
     def __init__(

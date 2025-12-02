@@ -318,9 +318,10 @@ def ilm_single_segment_collate_target_fn(
             pad_truncate_list(
                 (
                     [0, 2]
-                    + [type_extension_id]
-                    * (
-                        (
+                    + 
+                    (
+                        [type_extension_id]
+                        * (
                             len(
                                 single_seq_drop_result[
                                     "segment_input_ids_with_drops"
@@ -566,7 +567,7 @@ class ILMSeq2SeqCollator:
             "target_ids": suffix["target_ids"],
             "n_drops": suffix["n_drops"],
             "constraint": None,
-            "cls_position": prefix["cls_positions"],
+            "cls_position": prefix["cls_position"],
             "target_attention_mask": None,
         }
 
@@ -585,7 +586,7 @@ class ILMSeq2SeqPredCollator(ILMSeq2SeqCollator):
             self.tokenizer.pad_token_id,
             max_seq_len=self.input_block_size,
             cls_token_id=cls_token_id,
-            bos_token_id=self.tokenizer.bos_token_id,
+            bos_token_id=self.tokenizer.bos_token_id
         )
         target_ids = prepare_target_ids_for_test(
             [e["input_ids"] for e in examples],
@@ -601,7 +602,7 @@ class ILMSeq2SeqPredCollator(ILMSeq2SeqCollator):
             "target_attention_mask": target_ids["attention_mask"],
             "n_drops": None,
             "constraint": None,
-            "cls_position": prefix["cls_positions"],
+            "cls_position": prefix["cls_position"],
         }
 
 

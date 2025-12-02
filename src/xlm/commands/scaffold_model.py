@@ -1643,7 +1643,7 @@ predictor:
     ).write_text(experiment_config)
 
 
-def generate_setup_file(model_dir: Path, context: Dict[str, Any]) -> None:
+def generate_setup_file(model_dir: Path,context: Dict[str, Any]) -> None:
     """Generate setup.py for the external model."""
     content = f"""from setuptools import setup, find_packages
 
@@ -1653,9 +1653,7 @@ setup(
     description="{context['model_class_name']} - External Language Model for XLM framework",
     packages=find_packages(),
     install_requires=[
-        "xlm",  # Main XLM package dependency
-        "torch",
-        "transformers",  # Add any other dependencies your model needs
+        "xlm-core",  # Main xlm-core package dependency. Add any other dependencies your model needs
     ],
     package_data={{
         "{context['model_name']}": ["configs/**/*.yaml"],
@@ -1671,7 +1669,7 @@ setup(
     ],
 )
 """
-    (model_dir / "setup.py").write_text(content)
+    (model_dir.parent / "setup.py").write_text(content)
 
 
 def generate_documentation(model_dir: Path, context: Dict[str, Any]) -> None:
@@ -1788,7 +1786,7 @@ The model can be configured through Hydra configs:
 
 Good luck with your model development!
 """
-    (model_dir / "README.md").write_text(readme_content)
+    (model_dir.parent / "README.md").write_text(readme_content)
 
 
 def update_xlm_models_file(
@@ -1836,8 +1834,8 @@ def main():
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("xlm-models"),
-        help="Directory to create the model in (default: xlm-models)",
+        default=Path("."),
+        help="Directory to create the model in (default: Current Directory)",
     )
     parser.add_argument(
         "--no-xlm-models",
@@ -2088,7 +2086,6 @@ def main():
 
         # Create directory structure
         model_dir.mkdir(exist_ok=True)
-        (model_dir / model_name).mkdir(exist_ok=True)
         (model_dir / "configs" / "model").mkdir(parents=True, exist_ok=True)
         (model_dir / "configs" / "model_type").mkdir(exist_ok=True)
         (model_dir / "configs" / "collator").mkdir(exist_ok=True)
@@ -2096,13 +2093,13 @@ def main():
 
         # Generate Python files
         print("Generating Python package...")
-        generate_init_file(model_dir / model_name, context)
-        generate_types_file(model_dir / model_name, context)
-        generate_model_file(model_dir / model_name, context)
-        generate_loss_file(model_dir / model_name, context)
-        generate_predictor_file(model_dir / model_name, context)
-        generate_datamodule_file(model_dir / model_name, context)
-        generate_metrics_file(model_dir / model_name, context)
+        generate_init_file(model_dir, context)
+        generate_types_file(model_dir, context)
+        generate_model_file(model_dir, context)
+        generate_loss_file(model_dir, context)
+        generate_predictor_file(model_dir, context)
+        generate_datamodule_file(model_dir, context)
+        generate_metrics_file(model_dir, context)
 
         # Generate config files
         print("Generating configuration files...")
@@ -2110,7 +2107,7 @@ def main():
 
         # Generate package files
         print("Generating package files...")
-        generate_setup_file(model_dir, context)
+        generate_setup_file(model_dir,context)
         generate_documentation(model_dir, context)
 
         # Update .xlm_models file

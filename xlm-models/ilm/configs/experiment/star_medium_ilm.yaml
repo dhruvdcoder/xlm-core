@@ -7,6 +7,7 @@ defaults:
 
 input_block_size: 36
 block_size: 16
+monitored_metric: val/lm/accumulated_loss
 
 datamodule:
   print_batch_fn: ilm.datamodule_ilm.print_batch_ilm

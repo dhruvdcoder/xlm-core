@@ -8,7 +8,7 @@ defaults:
 per_device_batch_size: 64
 global_batch_size: 512
 block_size: ???
-
+monitored_metric: val/lm/accumulated_loss
 
 
 

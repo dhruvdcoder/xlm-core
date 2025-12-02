@@ -1,3 +1,4 @@
+# v2
 from typing import Optional
 
 import torch
@@ -13,23 +14,24 @@ from xlm.modules.rotary_transformer import (
 )
 
 from xlm.utils.rank_zero import RankedLogger
-
+from xlm.model import Model
 logger = RankedLogger(__name__, rank_zero_only=True)
 
 ########################################################
-# region: ARLM Transformer
+# region: Rotary Transformer
 
 
-class RotaryTransformerARLMModel(torch.nn.Module):
-    """Rotary embedding based transformer decoder for auto-regressive language modeling."""
+class RotaryTransformerMLMModel(torch.nn.Module, Model):
+    "Rotary embedding based transformer decoder."
 
     def __init__(
         self,
-        num_embeddings: int,  # vocab plus padding and other special tokens
+        num_embeddings: int,  # vocab plus mask and padding other special tokens
         d_model: int,
         num_layers: int,
         nhead: int,
         padding_idx: int = 0,
+        mask_idx: int = 1,
         dim_feedforward: Optional[int] = None,
         dropout: float = 0.1,
         activation: str = "relu",
@@ -39,25 +41,9 @@ class RotaryTransformerARLMModel(torch.nn.Module):
         force_flash_attn: bool = False,
         final_layer_without_normalization: bool = False,
     ):
-        """Initialize the ARLM transformer model.
-
-        Args:
-            num_embeddings: Size of the vocabulary.
-            d_model: Dimension of the model.
-            num_layers: Number of transformer layers.
-            nhead: Number of attention heads.
-            padding_idx: Index of the padding token.
-            dim_feedforward: Dimension of the feedforward network.
-            dropout: Dropout rate.
-            activation: Activation function.
-            layer_norm_eps: Epsilon for layer normalization.
-            rotary_emb_dim: Dimension of rotary embeddings.
-            max_length: Maximum sequence length.
-            force_flash_attn: Whether to force flash attention.
-            final_layer_without_normalization: Whether to use final layer without normalization.
-        """
         super().__init__()
         self.padding_idx = padding_idx
+        self.mask_idx = mask_idx
         self.embed_tokens = nn.Embedding(
             num_embeddings, d_model, padding_idx=padding_idx
         )
@@ -84,28 +70,21 @@ class RotaryTransformerARLMModel(torch.nn.Module):
             num_embeddings,
             layer_norm_eps,
             use_final_layer_norm=not final_layer_without_normalization,
-            zero_init=False,
+            zero_init=False,  # zero init important for mdlm, mlm?
         )
 
     def forward(
         self,
         x_t: Integer[TT, " *batch seq_len"],
-        attention_mask: Optional[Bool[TT, " *batch seq_len seq_len"]] = None,
+        attention_mask: Optional[Bool[TT, " *batch seq_len"]] = None,
         positions: Optional[Integer[TT, " *batch seq_len"]] = None,
         token_type_ids: Optional[Integer[TT, " *batch seq_len"]] = None,
     ) -> Float[TT, " *batch seq_len vocab_size"]:
         """
-        Forward pass of the ARLM model.
-
         Args:
             x_t: The input tokens of shape (*batch, seq_len)
-            attention_mask: The attention mask of shape (*batch, seq_len, seq_len) for full attention matrix,
-                          or (*batch, seq_len) for simple mask. True for non-padding tokens.
+            attention_mask: The attention mask of shape (*batch, seq_len), which is True for non-padding tokens.
             positions: The positions of the tokens of shape (*batch, seq_len)
-            token_type_ids: The token type ids of shape (*batch, seq_len)
-
-        Returns:
-            vocab_logits: The vocabulary logits of shape (*batch, seq_len, vocab_size)
         """
         if attention_mask is not None:
             attention_mask = attention_mask.to(torch.bool)
@@ -121,18 +100,14 @@ class RotaryTransformerARLMModel(torch.nn.Module):
         return vocab_logits
 
     def get_named_params_for_weight_decay(self):
-        """Get parameters for weight decay (all parameters except biases and layer-norm parameters)."""
+        # all parameters except biases and layer-norm parameters
         for name, param in self.named_parameters():
             if "bias" in name or "norm" in name:
                 continue
             yield (name, param)
 
     def get_named_params_for_no_weight_decay(self):
-        """Get parameters for no weight decay (biases and layer-norm parameters)."""
+        # biases and layer-norm parameters
         for name, param in self.named_parameters():
             if "bias" in name or "norm" in name:
                 yield (name, param)
-
-
-# endregion: ARLM Transformer
-########################################################

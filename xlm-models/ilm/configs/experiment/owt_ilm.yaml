@@ -8,6 +8,7 @@ per_device_batch_size: 32
 global_batch_size: 512
 input_block_size: null
 block_size: 1024
+monitored_metric: val/lm/accumulated_loss
 num_dataloader_workers: 5
 
 datamodule:

@@ -9,6 +9,7 @@ per_device_batch_size: 64
 global_batch_size: 64
 input_block_size: 28
 block_size: 14
+monitored_metric: val/lm/accumulated_loss
 
 datamodule:
   print_batch_fn: mlm.datamodule_mlm.print_batch_mlm

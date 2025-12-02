@@ -1,0 +1,21 @@
+lightning==2.5.2
+fsspec
+torch
+jupyter
+hydra-core
+hydra-colorlog
+hydra-joblib-launcher
+hydra-submitit-launcher
+datasets >= 3.3.2, < 4.0.0
+transformers
+more-itertools
+torchdata>=0.9.0
+rich
+python-dotenv
+jaxtyping
+tensorboard
+torch-ema
+pydot
+tabulate
+pandas
+simple_slurm
