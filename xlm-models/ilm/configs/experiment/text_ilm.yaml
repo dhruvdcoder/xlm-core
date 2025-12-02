@@ -8,7 +8,7 @@ defaults:
 per_device_batch_size: 64
 global_batch_size: 512
 block_size: 128
-
+monitored_metric: val/lm/accumulated_loss
 
 log_predictions:
   _target_: xlm.log_predictions.LogPredictions
