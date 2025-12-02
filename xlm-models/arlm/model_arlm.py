@@ -11,7 +11,7 @@ from xlm.modules.rotary_transformer import (
     RotaryTransformerLayerList,
     RotaryEmbedding,
 )
-
+from xlm.model import Model
 from xlm.utils.rank_zero import RankedLogger
 
 logger = RankedLogger(__name__, rank_zero_only=True)
@@ -20,7 +20,7 @@ logger = RankedLogger(__name__, rank_zero_only=True)
 # region: ARLM Transformer
 
 
-class RotaryTransformerARLMModel(torch.nn.Module):
+class RotaryTransformerARLMModel(torch.nn.Module, Model):
     """Rotary embedding based transformer decoder for auto-regressive language modeling."""
 
     def __init__(

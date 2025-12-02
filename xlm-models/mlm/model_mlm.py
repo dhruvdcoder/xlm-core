@@ -14,14 +14,14 @@ from xlm.modules.rotary_transformer import (
 )
 
 from xlm.utils.rank_zero import RankedLogger
-
+from xlm.model import Model
 logger = RankedLogger(__name__, rank_zero_only=True)
 
 ########################################################
 # region: Rotary Transformer
 
 
-class RotaryTransformerMLMModel(torch.nn.Module):
+class RotaryTransformerMLMModel(torch.nn.Module, Model):
     "Rotary embedding based transformer decoder."
 
     def __init__(
