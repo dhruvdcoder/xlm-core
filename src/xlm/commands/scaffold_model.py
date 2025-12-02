@@ -1653,7 +1653,7 @@ setup(
     description="{context['model_class_name']} - External Language Model for XLM framework",
     packages=find_packages(),
     install_requires=[
-        "xlm",  # Main XLM package dependency. Add any other dependencies your model needs
+        "xlm-core",  # Main xlm-core package dependency. Add any other dependencies your model needs
     ],
     package_data={{
         "{context['model_name']}": ["configs/**/*.yaml"],

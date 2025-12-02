@@ -15,6 +15,8 @@ setup(
     
     Usage:
         pip install xlm-models
+
+        Model package names must be specified in the XLM_MODEL_PACKAGES environment variable as a colon-separated list (e.g., arlm:mlm:ilm:mdlm)
     """,
     packages=["arlm","mlm","ilm","mdlm"],
     author="Dhruvesh Patel, Benjamin Rozonoyer, Sai Sreenivas Chintha, Durga Prasad Maram",
@@ -31,7 +33,7 @@ setup(
         "mdlm": ["configs/**/*.yaml", "configs/**/*.yml"],
     },
     install_requires=[
-        "xlm",  # Core XLM framework dependency
+        "xlm-core",  # Core XLM framework dependency
     ],
     project_urls={
         "Source Code": "https://github.com/dhruvdcoder/xlm-core/tree/main/xlm-models"
@@ -43,7 +45,7 @@ setup(
         "ML",
         "Machine Learning",
         "Deep Learning",
-        "None Autoregressive Language Models",
+        "Non-Autoregressive Language Models",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",

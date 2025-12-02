@@ -19,7 +19,7 @@ def load_requirements(
 install_requires = load_requirements()
 
 setup(
-    name="xlm",
+    name="xlm-core",
     version=VERSION["VERSION"],
     author="Dhruvesh Patel, Benjamin Rozonoyer, Sai Sreenivas Chintha, Durga Prasad Maram",
     packages=find_packages(
@@ -36,7 +36,7 @@ setup(
     XLM is a unified framework for developing and comparing small non-autoregressive language models. It uses PyTorch as the deep learning framework, PyTorch Lightning for training utilities, and Hydra for configuration management. XLM provides core components for flexible data handling and training, useful architectural implementations for non-autoregressive workflows, and support for arbitrary runtime code injection. Custom model implementations that leverage the core components of xlm can be found in the xlm-models package. The package also includes a few preconfigured synthetic planning and language-modeling datasets.
 
     Usage:
-        pip install xlm
+        pip install xlm-core
 
     Command usage:
         xlm job_type=[JOB_TYPE] job_name=[JOB_NAME] experiment=[CONFIG_PATH]
@@ -56,13 +56,13 @@ setup(
         "ML",
         "Machine Learning",
         "Deep Learning",
-        "None Autoregressive Language Models",
+        "Non-Autoregressive Language Models",
     ],
     include_package_data=True,
     entry_points={
         "console_scripts": [
             "xlm=xlm.__main__:main",
-            "xlm-scaffold=xlm.commands.scaffold_model:main",
+            "xlm-scaffold=xlm.commands.scaffold_model:main"
         ],
     },
     python_requires=">=3.11",
