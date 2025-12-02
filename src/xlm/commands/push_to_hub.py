@@ -2,6 +2,7 @@ import os
 
 from xlm.model import Model
 from xlm.utils.debug import set_flags
+from xlm.external_models import setup_external_models
 
 if "PROJECT_ROOT" not in os.environ:
     os.environ["PROJECT_ROOT"] = "."
@@ -190,17 +191,50 @@ def replace_model(cfg: DictConfig) -> DictConfig:
     return cfg
 
 
-# Hydra configuration parameters for CLI demo
+# Hydra configuration parameters
+# Use absolute path to configs directory within the package
 _HYDRA_PARAMS = {
     "version_base": "1.3",
-    "config_path": str(Path("../../../configs") / "lightning_train"),
+    "config_path": str(
+        (
+            Path(__file__).parent.parent / "configs" / "lightning_train"
+        ).resolve()
+    ),
     "config_name": "config.yaml",
 }
+
+from hydra.core.plugins import Plugins
+from hydra.plugins.search_path_plugin import SearchPathPlugin
+from hydra.core.config_search_path import ConfigSearchPath
+
+hydra_plugins = Plugins.instance()
+class HydraSearchPathPlugin(SearchPathPlugin):
+        def manipulate_search_path(
+            self, search_path: ConfigSearchPath
+        ) -> None:
+            search_path.append("file", str(Path(__file__).parent.parent / "configs/common"))
+
+hydra_plugins.register(HydraSearchPathPlugin)
+
+external_model_dirs = setup_external_models()
+# Register our SearchPathPlugin manually with Hydra
+if external_model_dirs:
+    class ExternalModelsSearchPathPlugin(SearchPathPlugin):
+        def manipulate_search_path(
+            self, search_path: ConfigSearchPath
+        ) -> None:
+            for model_dir in external_model_dirs:
+                config_dir = model_dir / "configs"
+                if config_dir.exists():
+                    search_path.append("file", str(config_dir))
+
+    # Register the plugin
+    hydra_plugins.register(ExternalModelsSearchPathPlugin)
 
 
 @hydra.main(**_HYDRA_PARAMS)
 def main(cfg: DictConfig) -> None:
-    """Main function for CLI demo."""
+    """Main function for Push to Hub."""
     # global flags
     set_flags(cfg)
     # Register resolvers

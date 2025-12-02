@@ -62,7 +62,8 @@ setup(
     entry_points={
         "console_scripts": [
             "xlm=xlm.__main__:main",
-            "xlm-scaffold=xlm.commands.scaffold_model:main"
+            "xlm-scaffold=xlm.commands.scaffold_model:main",
+            "xlm-push-to-hub=xlm.commands.push_to_hub:main"
         ],
     },
     python_requires=">=3.11",
