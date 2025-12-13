@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XLM Wildcard Animation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #264690 0%, #97AEE4 100%);
+            font-family: 'Courier New', monospace;
+        }
+        
+        .container {
+            background: white;
+            padding: 60px 80px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .logo-text {
+            font-size: 72px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        
+        .first-letter {
+            color: #264690;
+            min-width: 50px;
+            display: inline-block;
+            position: relative;
+            text-align: left;
+        }
+        
+        .rest-letters {
+            color: #264690;
+        }
+        
+        .wildcard {
+            color: #990000;
+        }
+        
+        .cursor {
+            display: inline-block;
+            width: 3px;
+            height: 60px;
+            background-color: #264690;
+            margin-left: 2px;
+            animation: blink 0.7s infinite;
+            position: absolute;
+            top: 10px;
+            opacity: 1;
+        }
+        
+        .cursor.hidden {
+            opacity: 0;
+        }
+        
+        .cursor.wildcard-cursor {
+            background-color: #990000;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .subtitle {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 20px;
+            color: #64748b;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo-text">
+            <span class="first-letter" id="firstLetter">A</span><span class="rest-letters">LM</span>
+            <span class="cursor" id="cursor"></span>
+        </div>
+        <div class="subtitle">any language model</div>
+    </div>
+
+    <script>
+        const firstLetter = document.getElementById('firstLetter');
+        const cursor = document.getElementById('cursor');
+        const sequence = [
+            { letter: 'A', duration: 1000, showCursor: true },
+            { letter: '', duration: 150, showCursor: true },
+            { letter: 'M', duration: 1000, showCursor: true },
+            { letter: '', duration: 150, showCursor: true },
+            { letter: 'I', duration: 1000, showCursor: true },
+            { letter: '', duration: 150, showCursor: true },
+            { letter: 'X', duration: 2000, isWildcard: true, showCursor: true }
+        ];
+        
+        let currentIndex = 0;
+        
+        function animate() {
+            const current = sequence[currentIndex];
+            
+            // Update letter
+            firstLetter.textContent = current.letter;
+            
+            // Calculate cursor position based on letter width
+            const letterWidth = current.letter ? firstLetter.offsetWidth : 0;
+            cursor.style.left = letterWidth + 'px';
+            
+            // Toggle wildcard class
+            if (current.isWildcard) {
+                firstLetter.classList.add('wildcard');
+                cursor.classList.add('wildcard-cursor');
+            } else {
+                firstLetter.classList.remove('wildcard');
+                cursor.classList.remove('wildcard-cursor');
+            }
+            
+            // Show cursor (always visible now)
+            cursor.classList.remove('hidden');
+            
+            // Move to next step
+            currentIndex = (currentIndex + 1) % sequence.length;
+            
+            // Schedule next update
+            setTimeout(animate, current.duration);
+        }
+        
+        // Start animation
+        animate();
+    </script>
+</body>
+</html>
