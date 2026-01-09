@@ -144,10 +144,7 @@ class AutoModelForCausalLMGenerativePerplexityEvaluator(
             Some models like GPT2 only have EOS token. In those cases, we will not be able to evaluate EOS generation
             because PAD will be set to EOS and the EOS token will be lost.
         """
-        # Need to hardcode this here because of sporadic 401 errors from huggingface.
-        lookup_cache = {
-            "gpt2-large": "/scratch3/workspace/dhruveshpate_umass_edu-text_diffusion/hf_cache/hub/models--gpt2-large/snapshots/32b71b12589c2f8d625668d2335a01cac3249519"
-        }
+        
         self.pretrained_model = (
             cast(
                 torch.nn.Module,
@@ -156,9 +153,9 @@ class AutoModelForCausalLMGenerativePerplexityEvaluator(
             .to(device)
             .eval()
         )
-        path_ = lookup_cache.get(self.name, self.name)
+        
         self.tokenizer = AutoTokenizer.from_pretrained(
-            path_, local_files_only=True
+            self.name
         )
         self.device = device
         original_vocab_size = self.tokenizer.vocab_size
