@@ -61,6 +61,7 @@ class MetricWrapper(torch.nn.Module):
             self.pass_to_update_fn = pass_to_update_fn
         else:
             self.pass_to_update_fn = {}
+        self._computed_value = None
 
     def update(
         self,
@@ -73,6 +74,10 @@ class MetricWrapper(torch.nn.Module):
             batch, loss_dict, tokenizer, **self.pass_to_update_fn
         )
         self.metric.update(**kwargs)
+        if hasattr(self.metric, "_computed_value"):
+            self._computed_value = self.metric._computed_value
+        else:
+            self._computed_value = None
         return loss_dict
 
     @property
@@ -220,6 +225,7 @@ class ExactMatch(MeanMetric):
         if pred_length is not None and target_length is not None:
             matches = matches * (pred_length == target_length)
         super().update(matches)
+        self._computed_value = matches
 
 
 class TokenAccuracy(MeanMetric):

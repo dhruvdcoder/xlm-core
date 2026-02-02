@@ -54,10 +54,16 @@ def train(cfg: DictConfig):
     # instantiate the callbacks
     callbacks: List[Callback] = []
     if "callbacks" in cfg:
-        for _, cb_conf in cfg.callbacks.items():
-            if cb_conf is not None and "_target_" in cb_conf:
-                logger.info(f"Instantiating callback <{cb_conf._target_}>")
-                callbacks.append(hydra.utils.instantiate(cb_conf))
+        if cfg.get("callbacks_creator", None) is None:
+            for _, cb_conf in cfg.callbacks.items():
+                if cb_conf is not None and "_target_" in cb_conf:
+                    logger.info(f"Instantiating callback <{cb_conf._target_}>")
+                    callbacks.append(hydra.utils.instantiate(cb_conf))
+        else:
+            creator = hydra.utils.instantiate(
+                cfg.callbacks_creator, cfg=cfg, _recursive_=False
+            )
+            callbacks = creator(cfg)
 
     # REMOVE: moved to inside the harness
     # if cfg.generative_perplexity.evaluators is not None:

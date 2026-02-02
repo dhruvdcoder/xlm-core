@@ -1,0 +1,7 @@
+_target_: xlm.tasks.molgen.DeNovoEval
+use_bracket_safe: ${oc.select:use_bracket_safe,true}
+compute_diversity: True
+compute_validity: True
+compute_uniqueness: True
+compute_qed: True
+compute_sa: True

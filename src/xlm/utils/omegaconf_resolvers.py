@@ -12,7 +12,7 @@ def determine_accumulate_grad_batches(
     num_nodes: int,
 ):
     # global_batch_size should be divisible by per_device_batch_size * num_devices * num_nodes
-    if not num_devices: # cpu
+    if not num_devices:  # cpu
         num_devices = 1
     if (
         global_batch_size % (per_device_batch_size * num_devices * num_nodes)
@@ -49,6 +49,18 @@ def register_resolvers():
     omegaconf.OmegaConf.register_new_resolver(
         "if_else",
         lambda cond, true_val, false_val: true_val if cond else false_val,
+    )
+    omegaconf.OmegaConf.register_new_resolver(
+        "min", lambda *args: min(float(arg) for arg in args)
+    )
+    omegaconf.OmegaConf.register_new_resolver(
+        "max", lambda *args: max(float(arg) for arg in args)
+    )
+    omegaconf.OmegaConf.register_new_resolver(
+        "min_int", lambda *args: min(int(arg) for arg in args)
+    )
+    omegaconf.OmegaConf.register_new_resolver(
+        "max_int", lambda *args: max(int(arg) for arg in args)
     )
 
 

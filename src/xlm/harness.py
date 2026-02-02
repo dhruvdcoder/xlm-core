@@ -116,7 +116,6 @@ T_out_pred = TypeVar("T_out_pred")
 
 class Predictor(Generic[T_in, T_out_pred], Protocol):
     tokenizer: Tokenizer
-    noise_schedule: NoiseSchedule
     model: Any
 
     def predict(
@@ -139,6 +138,203 @@ class Predictor(Generic[T_in, T_out_pred], Protocol):
         ...
 
     def generate(self, prompts: List[str]) -> List[str]: ...
+
+
+class PredictorHistoryMixin:
+    """Mixin class for adding history tracking to predictors.
+
+    This mixin provides generic history tracking capabilities that can be
+    used by any predictor that implements iterative generation. History is
+    stored as a list of tuples: (decoded_text, confidence_score, step_number).
+
+    Usage:
+        class MyPredictor(torch.nn.Module, PredictorHistoryMixin, Predictor[...]):
+            def __init__(self, ..., return_history: bool = False):
+                super().__init__()
+                self.init_history(return_history=return_history)
+                ...
+
+            def predict(self, batch):
+                history = self.create_history(batch_size)
+                for step in range(steps):
+                    # ... generation logic ...
+                    history = self.update_history_from_state(history, state, step)
+                return {"text": ..., "history": history}
+    """
+
+    return_history: bool
+
+    def init_history(
+        self,
+        return_history: bool = False,
+        decode_fn: Optional[Callable] = None,
+    ):
+        """Initialize history tracking.
+
+        Args:
+            return_history: Whether to track history during generation.
+            decode_fn: Optional custom decode function. If None, will use self.decode.
+        """
+        self.return_history = return_history
+        self._history_decode_fn = decode_fn
+
+    def _get_decode_function(self):
+        """Get the appropriate decode function.
+
+        Returns:
+            Decode function to use for converting state to text.
+
+        Raises:
+            NotImplementedError: If no decode function is available.
+        """
+        if (
+            hasattr(self, "_history_decode_fn")
+            and self._history_decode_fn is not None
+        ):
+            return self._history_decode_fn
+        elif hasattr(self, "decode"):
+            return self.decode
+        else:
+            raise NotImplementedError(
+                "Must provide decode_fn to init_history() or implement decode() method"
+            )
+
+    def create_history(
+        self, batch_size: int
+    ) -> List[List[Tuple[str, float, int]]]:
+        """Create empty history for a batch.
+
+        Args:
+            batch_size: Number of sequences in the batch.
+
+        Returns:
+            Empty history list for each batch element.
+        """
+        return [[] for _ in range(batch_size)]
+
+    def update_history_from_state(
+        self,
+        history: List[List[Tuple[str, float, int]]],
+        state: Dict[str, Any],
+        step: int,
+        confidence_key: str = "confidence",
+        active_mask_key: Optional[str] = None,
+    ) -> List[List[Tuple[str, float, int]]]:
+        """Update history from a state dictionary.
+
+        Args:
+            history: Current history list.
+            state: Dictionary containing the current state (must be decodable).
+            step: Current step number.
+            confidence_key: Key in state dict for confidence values (default: "confidence").
+            active_mask_key: Optional key for mask indicating which samples are still active.
+
+        Returns:
+            Updated history.
+        """
+        if not self.return_history:
+            return history
+
+        # Get decode function
+        decode_fn = self._get_decode_function()
+
+        # Decode current state
+        decoded = decode_fn(state)
+
+        # Handle different decode return formats
+        if isinstance(decoded, tuple):
+            decoded_texts = decoded[0]  # Assume first element is the text list
+        else:
+            decoded_texts = decoded
+
+        # Get confidence values
+        if confidence_key in state:
+            confidences = state[confidence_key]
+            if hasattr(confidences, "tolist"):
+                confidences = confidences.tolist()
+        else:
+            confidences = [1.0] * len(decoded_texts)
+
+        # Determine which samples are active
+        if active_mask_key is not None and active_mask_key in state:
+            active_mask = state[active_mask_key]
+            if hasattr(active_mask, "tolist"):
+                active_mask = active_mask.tolist()
+        else:
+            active_mask = [True] * len(decoded_texts)
+
+        # Update history only for active samples
+        for batch_idx, (text, conf, active) in enumerate(
+            zip(decoded_texts, confidences, active_mask)
+        ):
+            if active:
+                if isinstance(conf, (list, tuple)):
+                    conf = float(conf[0]) if len(conf) > 0 else 1.0
+                history[batch_idx].append((text, float(conf), step))
+
+        return history
+
+    def update_history_explicit(
+        self,
+        history: List[List[Tuple[str, float, int]]],
+        texts: List[str],
+        confidences: Union[List[float], torch.Tensor],
+        step: int,
+        active_mask: Optional[Union[List[bool], torch.Tensor]] = None,
+    ) -> List[List[Tuple[str, float, int]]]:
+        """Update history with explicit values.
+
+        Args:
+            history: Current history list.
+            texts: Decoded text for each batch element.
+            confidences: Confidence/score for each batch element.
+            step: Current step number.
+            active_mask: Optional mask indicating which samples are still active.
+
+        Returns:
+            Updated history.
+        """
+        if not self.return_history:
+            return history
+
+        # Convert tensors to lists if needed
+        if hasattr(confidences, "tolist"):
+            confidences = confidences.tolist()
+
+        if active_mask is None:
+            active_mask = [True] * len(texts)
+        elif hasattr(active_mask, "tolist"):
+            active_mask = active_mask.tolist()
+
+        for batch_idx, (text, conf, active) in enumerate(
+            zip(texts, confidences, active_mask)
+        ):
+            if active:
+                history[batch_idx].append((text, float(conf), step))
+
+        return history
+
+    def format_history_for_output(
+        self,
+        history: List[List[Tuple[str, float, int]]],
+        round_precision: int = 4,
+    ) -> List[List[List[Any]]]:
+        """Format history for output in to_dict methods.
+
+        Args:
+            history: Raw history list.
+            round_precision: Number of decimal places to round confidence values.
+
+        Returns:
+            Formatted history with rounded confidence values.
+        """
+        return [
+            [
+                [text, round(conf, round_precision), step]
+                for text, conf, step in seq_history
+            ]
+            for seq_history in history
+        ]
 
 
 class CustomModuleDict(torch.nn.ModuleDict):
@@ -244,6 +440,7 @@ class Harness(L.LightningModule):
         self.setup_dataloader_names()
         self.setup_metrics(cfg)
         self.setup_generative_perplexity(cfg)
+        self.setup_post_hoc_evaluator(cfg)
         self.predictions_dir = Path(cfg.paths.run_dir) / "predictions"
         # validate and save config at the end
         self.validate_config(self.config)
@@ -376,6 +573,25 @@ class Harness(L.LightningModule):
                     f"Instantiated generative perplexity evaluator: {evaluator_name}"
                 )
 
+    def setup_post_hoc_evaluator(self, cfg: DictConfig):
+        """Setup post-hoc evaluator. Can be use for tasks like molecule generation.
+
+        The post-hoc evaluator computes metrics on logged predictions at epoch end,
+        enabling global metric computation (e.g., diversity on full generated set).
+
+        Args:
+            cfg: Configuration dictionary
+        """
+        self.post_hoc_evaluator: Optional[Any] = None
+
+        if cfg.get("post_hoc_evaluator", None) is not None:
+            self.post_hoc_evaluator = hydra.utils.instantiate(
+                cfg.post_hoc_evaluator
+            )
+            logger.info(
+                f"Instantiated post-hoc evaluator: {type(self.post_hoc_evaluator).__name__}"
+            )
+
     def validate_config(self, cfg: DictConfig):
         return
 
@@ -461,7 +677,11 @@ class Harness(L.LightningModule):
         logger.info(f"num_warmup_steps: {num_warmup_steps}")
 
         lr_scheduler = get_scheduler(
-            name, optimizer, num_warmup_steps, num_training_steps, **kwargs
+            name,
+            optimizer,
+            num_warmup_steps,
+            num_training_steps,
+            scheduler_specific_kwargs=(kwargs or None),
         )
         return LRSchedulerWithConfig(
             scheduler=lr_scheduler,
@@ -564,9 +784,24 @@ class Harness(L.LightningModule):
         if loss_dict.get("loss", False):
             if bool(loss_dict["loss"].isnan()):
                 global_step = self.trainer.global_step
-                raise RuntimeError(
-                    f"NaN loss encountered in training step {global_step} in epoch {self.trainer.current_epoch}"
+                logger.error(
+                    f"NaN loss encountered in training step {global_step} in epoch {self.trainer.current_epoch}. Following is the loss dictionary:\n\n {loss_dict}"
                 )
+                for k, v in loss_dict.items():
+                    if isinstance(v, torch.Tensor) and bool(v.isnan().any()):
+                        location = v.isnan().nonzero()
+                        logger.error(
+                            f"Tensor {k} has nan values at location {location}"
+                        )
+                    if isinstance(v, torch.Tensor) and bool(v.isinf().any()):
+                        location = v.isinf().nonzero()
+                        logger.error(
+                            f"Tensor {k} has inf values at location {location}"
+                        )
+                if not self.trainer._detect_anomaly:
+                    raise RuntimeError(
+                        f"NaN loss encountered in training step {global_step} in epoch {self.trainer.current_epoch}"
+                    )
             if bool(loss_dict["loss"].isinf()):
                 global_step = self.trainer.global_step
                 raise RuntimeError(
@@ -593,6 +828,16 @@ class Harness(L.LightningModule):
             ),
         ):
             metric.update(batch, loss_dict, self.tokenizer)
+            # add computed value to loss_dict if per sample value is available
+            if getattr(metric, "_computed_value", None) is not None:
+                if isinstance(metric._computed_value, torch.Tensor):
+                    loss_dict[f"metric_{metric.name}"] = (
+                        metric._computed_value.detach().tolist()
+                    )
+                    metric._computed_value = None
+                elif isinstance(metric._computed_value, list):
+                    loss_dict[f"metric_{metric.name}"] = metric._computed_value
+                    metric._computed_value = None
             metric.log(self, batch, loss_dict)
 
         for key in self.key_to_remove_after_logging:
@@ -605,12 +850,6 @@ class Harness(L.LightningModule):
         batch_idx: int,
         dataloader_idx: Optional[int] = None,
     ) -> Dict[str, Any]:
-        # TEMP PATCH. remove this.
-        n = self.trainer.global_step % 10000
-        if n == 0 or n == 1:
-            print(f"Skipping global step {self.trainer.global_step}")
-            return None
-        # may not get a dl_idx in training
         return self._step(batch, batch_idx, dataloader_idx or 0, "train")
 
     @torch._dynamo.disable()
@@ -1093,6 +1332,77 @@ class Harness(L.LightningModule):
             )
         return aggregated_data
 
+    def compute_post_hoc_metrics(
+        self,
+        split: Literal["train", "val", "test", "predict"],
+        dataloader_name: str,
+        epoch: int,
+        step: int,
+        update_logged_predictions: bool = True,
+    ) -> Optional[Dict[str, Any]]:
+        """Compute post-hoc metrics on logged predictions.
+
+        Similar to compute_generative_perplexity, but for arbitrary post-hoc metrics.
+        Loads predictions from jsonl, computes per-sample and global metrics,
+        and logs aggregated results.
+
+        Args:
+            split: train/val/test/predict
+            dataloader_name: Name of the dataloader
+            epoch: Current epoch
+            step: Current step
+            update_logged_predictions: If True, update predictions jsonl with per-sample metrics
+
+        Returns:
+            Dictionary of aggregated metrics, or None if no evaluator
+        """
+        if self.post_hoc_evaluator is None:
+            return None
+
+        # 1. Read predictions from jsonl
+        predictions: List[Dict[str, Any]] = self.log_predictions.read(
+            step, epoch, split, dataloader_name, self
+        )
+
+        if not predictions:
+            logger.warning(
+                f"No predictions found for {split} {dataloader_name} {epoch} {step}"
+            )
+            return None
+
+        # 2. Compute metrics using evaluator
+        predictions, aggregated_metrics = self.post_hoc_evaluator.eval(
+            predictions, tokenizer=self.tokenizer
+        )
+        # Add aggregated metrics to all predictions because we don't have access to the logged predictions directory.
+        for prediction in predictions:
+            prediction.update(**aggregated_metrics)
+
+        # 3. Log aggregated metrics
+        for metric_name, metric_value in aggregated_metrics.items():
+            self.log(
+                f"{split}/{metric_name}",
+                metric_value,
+                prog_bar=False,
+                sync_dist=False,
+                rank_zero_only=True,
+                logger=True,
+                add_dataloader_idx=False,
+            )
+
+        # 4. Update predictions jsonl with per-sample metrics
+        if update_logged_predictions:
+            self.log_predictions.update_predictions(
+                predictions,
+                step,
+                epoch,
+                split,
+                dataloader_name,
+                self,
+            )
+
+        return aggregated_metrics
+
     # endregion: Task-specific methods
     ############################################################
 
@@ -1225,16 +1535,45 @@ class Harness(L.LightningModule):
                         self.trainer.global_step,
                         update_logged_predictions=True,
                     )
+                    self.compute_post_hoc_metrics(
+                        "val",
+                        dataloader_name,
+                        self.trainer.current_epoch,
+                        self.trainer.global_step,
+                        update_logged_predictions=True,
+                    )
 
     def on_test_epoch_start(self) -> None:
         self.model.eval()
 
     def on_test_epoch_end(self) -> None:
-        # reset test metrics if not passing metric objects to the log()
-        pass
+        if self.trainer.is_global_zero:
+            for dataloader_name in self.dataloader_names["test"].values():
+                if "prediction" in dataloader_name:
+                    self.compute_generative_perplexity(
+                        "test",
+                        dataloader_name,
+                        self.trainer.current_epoch,
+                        self.trainer.global_step,
+                        update_logged_predictions=True,
+                    )
+                    self.compute_post_hoc_metrics(
+                        "test",
+                        dataloader_name,
+                        self.trainer.current_epoch,
+                        self.trainer.global_step,
+                        update_logged_predictions=True,
+                    )
 
     def on_predict_end(self) -> None:
         self.compute_generative_perplexity(
+            "predict",
+            "unconditional_prediction",
+            self.trainer.current_epoch,
+            self.trainer.global_step,
+            update_logged_predictions=True,
+        )
+        self.compute_post_hoc_metrics(
             "predict",
             "unconditional_prediction",
             self.trainer.current_epoch,

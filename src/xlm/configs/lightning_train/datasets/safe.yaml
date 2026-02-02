@@ -1,0 +1,30 @@
+defaults:
+  - default_text
+
+_target_: xlm.datamodule.DatasetManager
+collator: ??? # model specific collator
+full_name: datamol-io/safe-gpt/train # <repo>/<ds_name>/<split_to_download> . 
+full_name_debug: datamol-io/safe-gpt/train
+preprocess_function: null #xlm.tasks.molgen.safe_bracket_preprocess_fn
+on_the_fly_processor: xlm.tasks.molgen.safe_bracket_on_the_fly_processor_combined #xlm.datamodule.token_ids_to_input_ids
+on_the_fly_processor_kwargs:
+    block_size: ${block_size}
+on_the_fly_group_processor: null
+columns_to_remove: 
+    - text
+stages:
+    - fit
+iterable_dataset_shards: 120
+shuffle_buffer_size: 10000
+shuffle_seed: 42
+split_by_node: true
+dataloader_kwargs:
+    batch_size: ${per_device_batch_size} # per device, depends on the device type
+    num_workers: ${num_dataloader_workers} 
+    shuffle: null # can't specify shuffle for IterableDataset
+    pin_memory: True
+    persistent_workers: False # INFO: see: https://github.com/huggingface/datasets/issues/7447
+    prefetch_factor: ${dataloader_prefetch_factor}
+    drop_last: True
+model_name: null
+use_manual_cache: ${oc.select:use_manual_cache,false}

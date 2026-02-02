@@ -1,3 +1,4 @@
+from copy import deepcopy
 import json
 from pathlib import Path
 from typing import (
@@ -13,10 +14,18 @@ import hydra
 import lightning as L
 from lightning.pytorch.loggers import Logger
 from omegaconf import ListConfig
+from torch import Tensor
 
-from xlm.utils.rank_zero import rank_zero_only, RankedLogger
+from xlm.utils.rank_zero import rank_zero_only, RankedLogger, warn_once
 
 logger = RankedLogger(__name__, rank_zero_only=True)
+
+
+class TokensHook:
+    def __call__(
+        self, metadata: Dict[str, Any], x_inp: Tensor, x_out: Tensor
+    ) -> Tensor:
+        pass
 
 
 class _PredictionWriter:
@@ -113,7 +122,8 @@ class FilePredictionWriter(_PredictionWriter):
                 if "from_pl_module", query the pl_module for the predictions_file for the step and epoch
                 set to "none" to disable file writing
         """
-        super().__init__(fields_to_keep_in_output)
+        super().__init__(deepcopy(fields_to_keep_in_output))
+
         self.file_path_ = file_path_
         self.supports_reading = True
 
@@ -218,7 +228,12 @@ class LoggerPredictionWriter(_PredictionWriter):
             logger_: List of loggers to use. If None, uses pl_module.trainer.loggers.
             fields_to_keep_in_output: List of fields to keep in the output. If None, all fields are kept.
         """
-        super().__init__(fields_to_keep_in_output)
+        super().__init__(deepcopy(fields_to_keep_in_output))
+        if "history" in self.fields_to_keep_in_output:
+            self.fields_to_keep_in_output.remove("history")
+            logger.warning(
+                "history is not supported by LoggerPredictionWriter, removing from fields_to_keep_in_output"
+            )
         self.n_rows = n_rows
         self.logger_ = logger_
         self.supports_reading = False
@@ -469,6 +484,9 @@ class LogPredictions:
             List of ground truth text strings.
         """
         if self.inject_target is not None:
+            if self.inject_target not in batch:
+                warn_once(f"inject_target {self.inject_target} not in batch")
+                return [""] * batch["input_ids"].shape[0]
             ground_truth_text = pl_module.tokenizer.batch_decode(
                 batch[self.inject_target], skip_special_tokens=True
             )

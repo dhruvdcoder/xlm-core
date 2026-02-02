@@ -71,7 +71,7 @@ def masked_sum(
     vector : `torch.Tensor`
         The vector to calculate sum.
     mask : `torch.BoolTensor`
-        The mask of the vector. It must be broadcastable with vector.
+        The mask of the vector. It must be broadcastable with vector. It must be 1 for non-masked values and 0 for masked out values.
     dim : `int`
         The dimension to calculate sum
     keepdim : `bool`

@@ -8,4 +8,4 @@ dataloader_kwargs:
     persistent_workers: False # INFO: see: https://github.com/huggingface/datasets/issues/7447
     prefetch_factor: null
     drop_last: True
-num_examples: ${per_device_batch_size}
+num_examples: ${oc.select:num_unconditional_prediction_examples,${per_device_batch_size}}

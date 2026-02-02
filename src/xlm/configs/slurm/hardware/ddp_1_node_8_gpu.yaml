@@ -2,9 +2,10 @@
 # four nodes, one gpu per node
 
 slurm:
-  nodes: 2
-  gres: gpu:1
-  ntasks_per_node: 1
+  nodes: 1
+  gres: gpu:8
+  ntasks_per_node: 8
   constrain: "vram80,bf16,ib"  # ib for infiniband
   partition: gpu,gpu-preempt,superpod-a100
-  time: 04:00:00
+  time: 8-00:00:00
+  qos: long

@@ -1,0 +1,3 @@
+_target_: xlm.tasks.molgen.get_safe_tokenizer
+#_target_: xlm.datamodule.SAFETokenizer.from_pretrained
+pretrained_model_name_or_path: datamol-io/safe-gpt

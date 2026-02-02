@@ -32,7 +32,7 @@ from pathlib import Path
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from xlm.utils import omegaconf_resolvers
-from xlm.external_models import setup_external_models
+from xlm.external_models import setup_external_models, get_external_commands
 
 # endregion
 
@@ -67,23 +67,15 @@ OmegaConf.register_new_resolver(
 
 # Setup external models before Hydra initialization
 # This adds external model directories to sys.path for imports
-
-from hydra.core.plugins import Plugins
-from hydra.plugins.search_path_plugin import SearchPathPlugin
-from hydra.core.config_search_path import ConfigSearchPath
-
-hydra_plugins = Plugins.instance()
-class HydraSearchPathPlugin(SearchPathPlugin):
-        def manipulate_search_path(
-            self, search_path: ConfigSearchPath
-        ) -> None:
-            search_path.append("file", str(Path(__file__).parent.parent / "configs/common"))
-
-hydra_plugins.register(HydraSearchPathPlugin)
-
 external_model_dirs = setup_external_models()
+external_commands = {}
+
 # Register our SearchPathPlugin manually with Hydra
 if external_model_dirs:
+    from hydra.core.plugins import Plugins
+    from hydra.plugins.search_path_plugin import SearchPathPlugin
+    from hydra.core.config_search_path import ConfigSearchPath
+
     class ExternalModelsSearchPathPlugin(SearchPathPlugin):
         def manipulate_search_path(
             self, search_path: ConfigSearchPath
@@ -94,7 +86,10 @@ if external_model_dirs:
                     search_path.append("file", str(config_dir))
 
     # Register the plugin
-    hydra_plugins.register(ExternalModelsSearchPathPlugin)
+    Plugins.instance().register(ExternalModelsSearchPathPlugin)
+
+    # locate external commands
+    external_commands = get_external_commands(external_model_dirs)
 
 
 @hydra.main(**_HYDRA_PARAMS)
@@ -148,6 +143,12 @@ def main(cfg: DictConfig) -> None:
     elif cfg.job_type == "prepare_data":
         print_config_tree(cfg, resolve=True)
         prepare_data(cfg)
+    elif cfg.job_type in external_commands:
+        print_config_tree(cfg, resolve=True, save_to_file=cfg.paths.run_dir)
+        external_command = external_commands[cfg.job_type]
+        external_command(cfg)
+    else:
+        raise ValueError(f"Invalid job type: {cfg.job_type}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,13 @@
+_target_: xlm.metrics.MetricWrapper
+name: molgen
+metric: 
+  _target_: xlm.tasks.molgen.MolGenMetric
+  use_bracket_safe: ${use_bracket_safe} # Set to True if using bracket SAFE notation
+prefix: ??? # eg: val/molgen/, test/molgen/, etc.
+update_fn: xlm.tasks.molgen.molgen_update_fn
+pass_to_update_fn:
+  use_bracket_safe: ${use_bracket_safe} # Must match the metric's use_bracket_safe setting
+on_step: False
+on_epoch: True
+prog_bar: False
+add_dataloader_idx: False

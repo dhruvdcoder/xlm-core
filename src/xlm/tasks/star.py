@@ -1,3 +1,4 @@
+from collections import Counter
 from itertools import chain
 import os
 import random
@@ -267,6 +268,22 @@ def plot_graph(edge_list, path=None, source=None, goal=None):
 
     plt.axis("off")  # Turn off the axis
     plt.show()
+
+
+def identify_junction_node(edge_list: List[Tuple[int, int]]) -> int:
+    node_counts = Counter(chain(*edge_list))
+    junction = None
+    for node, count in node_counts.items():
+        if count > 2:
+            if junction is None:
+                junction = node
+            elif junction is not None:
+                raise ValueError(
+                    f"Multiple junction nodes found: {junction} and {node}\n node_counts: {node_counts}"
+                )
+    if junction is None:
+        raise ValueError("No junction node found")
+    return junction  # type: ignore
 
 
 class StarGraphGenerator:
