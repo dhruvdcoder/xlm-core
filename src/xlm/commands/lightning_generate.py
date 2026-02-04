@@ -1,6 +1,3 @@
-# %%
-# change dir to the root of the project
-# create the notebook inside the commands directory
 import json
 import os
 from pathlib import Path
@@ -104,11 +101,11 @@ def instantiate_model(
                 "We will use generation.ckpt_path for the model weights as well."
             )
         else:
-            if not os.path.isfile(cfg.model_only_checkpoint_path):
+            if not os.path.isfile(cfg.generation.model_only_checkpoint_path):
                 raise ValueError(
-                    f"The model only checkpoint path {cfg.model_only_checkpoint_path} does not exist."
+                    f"The model only checkpoint path {cfg.generation.model_only_checkpoint_path} does not exist."
                 )
-            model_only_ckpt_path = cfg.model_only_checkpoint_path
+            model_only_ckpt_path = cfg.generation.model_only_checkpoint_path
 
     if model_only_ckpt_path is not None:
         message = lightning_module.model.load_state_dict(
