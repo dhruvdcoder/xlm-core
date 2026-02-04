@@ -18,15 +18,24 @@ from torch_ema import ExponentialMovingAverage
 
 
 class EMACallback(Callback):
-    def __init__(self, decay: float, use_num_updates: bool = True):
+    def __init__(
+        self,
+        decay: float,
+        use_num_updates: bool = True,
+        apply_ema_at_train_end: bool = True,
+    ):
         """
         decay: The exponential decay.
         use_num_updates: Whether to use number of updates when computing
             averages.
+        apply_ema_at_train_end: If True, applies EMA weights to the model
+            at the end of training, so the final checkpoint contains
+            EMA-averaged weights in the model parameters.
         """
         super().__init__()
         self.decay = decay
         self.use_num_updates = use_num_updates
+        self.apply_ema_at_train_end = apply_ema_at_train_end
         self.ema = None
 
     def on_train_start(self, trainer: Trainer, pl_module: LightningModule):
@@ -94,6 +103,32 @@ class EMACallback(Callback):
     ) -> None:
         if self.ema is not None:
             self.ema.restore()
+
+    def on_train_end(
+        self, trainer: Trainer, pl_module: LightningModule
+    ) -> None:
+        """
+        Apply EMA weights to the model at the end of training.
+
+        This makes the final checkpoint contain EMA-averaged weights directly
+        in the model parameters, eliminating the need for manual EMA application
+        during checkpoint extraction or inference.
+
+        Note: After this is called, the model's parameters will contain EMA-averaged
+        weights, and the original training weights will be lost (though they're
+        still stored in collected_params if store() was called).
+        """
+        if self.ema is not None and self.apply_ema_at_train_end:
+            # We don't need to store() first because training is done
+            # Just copy the EMA weights to the model
+            self.ema.copy_to()
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.info(
+                "Applied EMA weights to model at end of training. "
+                "Final checkpoint will contain EMA-averaged weights."
+            )
 
     def on_save_checkpoint(
         self,
