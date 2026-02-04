@@ -131,9 +131,8 @@ def discover_external_models() -> Tuple[Dict[str, Path], Dict[str, Path]]:
 
     for search_dir in search_dirs:
         model_dirs = process_search_dir(search_dir)
-
-    check_conflict(model_dirs)
-    final_model_dirs.update(model_dirs)
+        check_conflict(model_dirs)
+        final_model_dirs.update(model_dirs)
 
     # process python packages
     package_names = os.environ.get(ENV_XLM_MODELS_PACKAGES, "").split(":")
