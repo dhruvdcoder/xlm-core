@@ -1,17 +1,6 @@
 # External Language Models for XLM
 
-XLM supports external language models that can be developed and maintained separately from the core framework. This allows researchers to:
-
-- Keep their model code clean and self-contained
-- Share models without including the entire XLM codebase
-
-## Overview
-
-External models work through a plugin system that:
-1. **Discovers models** declared in a `.xlm_models` file
-2. **Validates** model structure and dependencies (whether all required files are present)
-3. **Registers** Python packages that should be imported for the model to work
-4. **Extends** Hydra config search paths to include the model's config files
+XLM supports external language models that can be developed and maintained separately from the core framework. This allows researchers to keep their model code clean and self-contained, and share models without including the entire XLM codebase.
 
 ## Quick Start
 
@@ -23,16 +12,16 @@ Use the scaffolding script to create a complete model structure:
 xlm-scaffold my_awesome_model
 ```
 
-This creates scaffolding for the model which includes:
-- A complete Python package with skeleton implementation for `model_<model_name>.py`, `loss_<model_name>.py`, `predictor_<model_name>.py`, `datamodule_<model_name>.py`, `metrics_<model_name>.py` and `types_<model_name>.py`
-- All necessary Hydra configuration files for the model
-- Adds model to `.xlm_models` file (this is a simple text file that lists the models to load)
+This creates:
+- A complete Python package with skeleton implementations
+- All necessary Hydra configuration files
+- Registers the model in `xlm_models.json`
 
 ### 2. Implement Your Model
 
 The scaffolded files contain detailed TODOs and docstrings. Key files to implement:
 
-- `my_awesome_model/types_my_awesome_model.py` - Type definitions that used across all the other files
+- `my_awesome_model/types_my_awesome_model.py` - Type definitions
 - `my_awesome_model/model_my_awesome_model.py` - Neural network architecture
 - `my_awesome_model/loss_my_awesome_model.py` - Loss computation
 - `my_awesome_model/predictor_my_awesome_model.py` - Inference/generation logic
@@ -42,374 +31,244 @@ The scaffolded files contain detailed TODOs and docstrings. Key files to impleme
 ### 3. Test Your Model
 
 ```bash
-cd my_awesome_model
 xlm job_type=train \
   job_name=my_model_test \
-  experiment=my_awesome_model_debug \
+  experiment=star_easy_my_awesome_model \
   debug=overfit
 ```
 
-## External Model Structure
+## Model Structure
 
 Each external model follows this structure:
 
 ```
-my_awesome_model/                    # External model directory
+my_awesome_model/                    # Model root directory
 ├── my_awesome_model/                # Python package
-│   ├── __init__.py                                 # Package exports
-│   ├── types_my_awesome_model.py                   # Type definitions
-│   ├── model_my_awesome_model.py                   # Neural network
-│   ├── loss_my_awesome_model.py                    # Loss function
-│   ├── predictor_my_awesome_model.py               # Inference logic
-│   ├── datamodule_my_awesome_model.py              # Data preprocessing
-│   └── metrics_my_awesome_model.py                 # Metrics computation
-├── configs/                        # Hydra configurations
+│   ├── __init__.py
+│   ├── types_my_awesome_model.py
+│   ├── model_my_awesome_model.py
+│   ├── loss_my_awesome_model.py
+│   ├── predictor_my_awesome_model.py
+│   ├── datamodule_my_awesome_model.py
+│   └── metrics_my_awesome_model.py
+├── configs/                         # Hydra configurations
 │   ├── model/
-│   │   └── my_awesome_model.yaml  # Model config
 │   ├── model_type/
-│   │   └── my_awesome_model.yaml  # Model type config
 │   ├── collator/
-│   │   ├── default_my_awesome_model.yaml
-│   │   └── seq2seq_my_awesome_model.yaml
-│   └── experiment/
-│       └── my_awesome_model_debug.yaml
-├── setup.py                       # Package installation
-└── README.md                      # Documentation
+│   ├── datamodule/
+│   ├── experiment/
+│   └── commands.yaml                # Optional: custom commands
+├── setup.py                         # Package installation (optional)
+└── README.md                        # Documentation
 ```
 
-## Required Components
+## Discovery Methods
 
-### 1. Python Package Components
+XLM discovers external models through two approaches:
 
-#### **Types** (`types_<model_name>.py`)
-Define data structures using `TypedDict`:
+### 1. Directory-Based Discovery
+
+Place your model directory in one of these locations:
+- Current directory (`.`)
+- `xlm-models/` directory
+- Directory specified by `XLM_MODELS_PATH` environment variable
+
+Create a `xlm_models.json` file in the search directory:
+
+```json
+{
+  "my_awesome_model": "my_awesome_model",
+  "another_model": "path/to/another_model"
+}
+```
+
+The paths are relative to the directory containing `xlm_models.json`.
+
+**Example:**
+```bash
+# Project structure
+.
+├── xlm_models.json          # {"my_model": "my_model"}
+├── my_model/
+│   ├── my_model/            # Python package
+│   └── configs/
+└── ...
+```
+
+### 2. Package-Based Discovery
+
+Install your model as a Python package and register it via the `XLM_MODELS_PACKAGES` environment variable.
+
+**Package structure requirements:**
+
+Each model needs its own `setup.py` that packages the configs:
 
 ```python
-class MyModelBatch(TypedDict):
-    input_ids: Integer[TT, " batch seq_len"]
-    attention_mask: Integer[TT, " batch seq_len"]
-
-class MyModelLossDict(TypedDict):
-    loss: Float[TT, ""]
-    batch_loss: Float[TT, " batch"]
-
-class MyModelPredictionDict(TypedDict):
-    text: List[str]
-    ids: Integer[TT, " batch seq_len"]
+# setup.py
+setup(
+    name="my_awesome_model",
+    packages=["my_awesome_model"],
+    package_data={
+        "my_awesome_model": ["configs/**/*.yaml", "configs/**/*.yml"],
+    },
+    include_package_data=True,
+)
 ```
 
-#### **Model** (`model_<model_name>.py`)
-Neural network implementation:
+**Installation and registration:**
 
-```python
-class MyAwesomeModel(nn.Module):
-    def forward(self, input_ids, attention_mask=None, **kwargs):
-        # Implement your architecture
-        return logits
+Each model must be installed independently:
+
+```bash
+# Install first model
+pip install -e ./my_awesome_model
+
+# Install second model (separate setup.py)
+pip install -e ./another_model
+
+# Register both installed packages
+export XLM_MODELS_PACKAGES="my_awesome_model:another_model"
 ```
 
-#### **Loss Function** (`loss_<model_name>.py`)
-Training loss computation:
+**Core models** (`arlm`, `mlm`, `ilm`, `mdlm`) are automatically discovered and don't need to be added to `XLM_MODELS_PACKAGES`.
 
-```python
-class MyAwesomeLoss(LossFunction[MyModelBatch, MyModelLossDict]):
-    def loss_fn(self, batch, **kwargs):
-        # Compute loss from model outputs
-        return {"loss": loss, "batch_loss": batch_loss}
-```
+## Custom Commands
 
-#### **Predictor** (`predictor_<model_name>.py`)
-Inference and generation:
+Models can define custom commands that extend XLM's CLI by creating `configs/commands.yaml`:
 
-```python
-class MyAwesomePredictor(Predictor[MyModelBatch, MyModelPredictionDict]):
-    def predict(self, batch, **kwargs):
-        # Generate predictions
-        return {"text": generated_text, "ids": generated_ids}
-```
-
-#### **Data Module** (`datamodule_<model_name>.py`)
-Data preprocessing and batching:
-
-```python
-class DefaultMyAwesomeCollator(Collator):
-    def __call__(self, examples):
-        # Process and batch data
-        return batched_data
-```
-
-### 2. Configuration Files
-
-#### **Model Config** (`configs/model/my_awesome_model.yaml`)
 ```yaml
-# @package _global_
-model:
-  _target_: my_awesome_model.model.MyAwesomeModel
-  num_embeddings: ${tokenizer:full_vocab_size}
-  d_model: 768
-  # ... other model parameters
-
-tags:
-  model: my_awesome_model
+# configs/commands.yaml
+my_custom_command: "my_awesome_model.commands.my_function"
+preprocess_data: "my_awesome_model.commands.preprocess"
 ```
 
-#### **Model Type Config** (`configs/model_type/my_awesome_model.yaml`)
+Usage:
+```bash
+xlm command=my_custom_command arg1=value1 arg2=value2
+```
+
+The command functions should accept an `omegaconf.DictConfig` parameter containing the Hydra configuration.
+
+## Environment Variables
+
+- **`XLM_MODELS_PATH`**: Additional directory to search for `xlm_models.json` files
+  ```bash
+  export XLM_MODELS_PATH="/path/to/external/models"
+  ```
+
+- **`XLM_MODELS_PACKAGES`**: Colon-separated list of installed Python packages to discover
+  ```bash
+  export XLM_MODELS_PACKAGES="my_model1:my_model2"
+  ```
+
+## Configuration
+
+External models integrate with Hydra's configuration system. Use them in your experiments:
+
 ```yaml
-# @package _global_
-lightning_module:
-  _target_: xlm.harness.Harness
-
-loss:
-  _target_: my_awesome_model.loss.MyAwesomeLoss
-
-predictor:
-  _target_: my_awesome_model.predictor.MyAwesomePredictor
-  # ... predictor parameters
-
-reported_metrics:
-  train:
-    lm:
-      accumulated_loss:
-        update_fn: my_awesome_model.metrics.mean_metric_update_fn
-  # ... other metrics
-
-tags:
-  model_type: my_awesome_model
+# configs/experiment/my_experiment.yaml
+defaults:
+  - override /model: my_awesome_model
+  - override /model_type: my_awesome_model
+  - override /datamodule: star_easy_my_awesome_model
 ```
 
-## The `.xlm_models` File
-
-The `.xlm_models` file declares which external models to load:
-
+Or via command line:
+```bash
+xlm job_type=train model=my_awesome_model model_type=my_awesome_model
 ```
-# External models for this project
-my_awesome_model
-another_model
-
-# Comments are supported
-# model_under_development  # Commented out models are ignored
-```
-
-**Rules:**
-- One model name per line
-- Comments start with `#`
-- Empty lines are ignored
-- Model names must match directory names
 
 ## Development Workflow
 
-### 1. **Scaffolding**
+### Local Development
 ```bash
-# Create model structure
+# 1. Scaffold the model
 xlm-scaffold my_model
 
-# Check generated files
+# 2. Implement the components
 cd my_model
-ls -la
+# Edit my_model/*.py files
+# Edit my_model/configs/*.yaml files
+
+# 3. Test locally
+cd .. # back to root that contains xlm_models.json
+xlm job_type=train experiment=star_easy_my_model debug=overfit
 ```
 
-### 2. **Implement**
-
-1. 
+### Package Distribution
 ```bash
-# Edit core components
-my_model/types_my_model.py       # Define types
-my_model/model_my_model.py       # Implement architecture
-my_model/loss_my_model.py        # Implement loss
-my_model/predictor_my_model.py   # Implement generation
-my_model/datamodule_my_model.py  # Implement data processing
-```
-
-2. Edit the config files
-
-### 3. **Test**
-Quickly test your model on the synthetic dataset `star_easy` dataset.
-```bash
-# Quick overfit test
-xlm job_type=train \
-  job_name=star_easy_my_model \
-  experiment=star_easy_my_model \
-  debug=overfit
-```
-
-
-
-## Validation and Conflict Resolution
-
-The system automatically validates external models and detects conflicts:
-
-### **Model Name Conflicts**
-```
-Error: Duplicate model names found in .xlm_models: ['my_model']
-```
-**Solution:** Use unique names for each model
-
-### **Python Package Conflicts**
-```
-Error: Python package conflict: Both 'model_a' and 'model_b' define package 'model'
-```
-**Solution:** Use model-specific package names
-
-### **Missing Required Configs**
-```
-Error: External model 'my_model' missing required config groups: ['model_type']
-```
-**Solution:** Create all required configuration files
-
-### **Config Validation**
-Enable strict validation:
-```python
-from xlm.external_models import setup_external_models
-setup_external_models(strict_validation=True)
-```
-
-## Best Practices
-
-### **Naming Conventions**
-- Use lowercase with underscores: `my_awesome_model`
-- Avoid conflicts with core models: `arlm`, `ilm`, `mlm`
-
-### **Code Organization**
-- Keep implementations focused and minimal
-- Use type hints and docstrings extensively
-- Follow XLM patterns from existing models
-- Add TODO comments for incomplete sections
-
-### **Configuration**
-- Start with debug configs for fast iteration
-- Use reasonable default parameters
-- Document all configuration options
-- Test with different datasets
-
-### **Testing Strategy**
-1. **Unit testing**: Test individual components
-2. **Overfit testing**: Verify model can memorize small data
-3. **Small data**: Test on reduced datasets
-4. **Integration**: Full training pipeline
-5. **Evaluation**: Model performance metrics
-
-## Advanced Features
-
-### **Multiple Models Support**
-```
-# .xlm_models
-transformer_variant_b
-custom_architecture
-```
-
-### **Environment Variables**
-```bash
-# Search additional directories
-export XLM_MODELS_PATH="/path/to/external/models"
-
-# Use different models file
-xlm-scaffold my_model --xlm-models-file custom_models.txt
-```
-
-### **Package Installation**
-```bash
-# Install external model as Python package
-cd my_awesome_model
-pip install -e .
-
-# Now importable from anywhere
-python -c "from my_awesome_model import MyAwesomeModel"
-```
-
-### **Sharing Models**
-```bash
-# Create distributable package
-cd my_awesome_model
+# 1. Create distributable package
+cd my_model
 python setup.py sdist bdist_wheel
 
-# Share via PyPI, GitHub, etc.
-pip install my-awesome-model
+# 2. Install from package (can also install using -e or from pypi)
+pip install dist/my_model-0.1.0.tar.gz
+
+# 3. Register as installed package
+export XLM_MODELS_PACKAGES="my_model"
 ```
-
-## Integration with Core XLM
-
-External models integrate seamlessly with XLM's training infrastructure:
-
-- **Lightning Integration**: Automatic integration with PyTorch Lightning
-- **Hydra Configuration**: Full Hydra config composition support  
-- **Metrics**: Integration with XLM's metrics framework
-- **Logging**: Automatic logging to wandb, tensorboard
-- **Checkpointing**: Standard checkpoint saving/loading
-- **Multi-GPU**: Automatic DDP/FSDP support
 
 ## Troubleshooting
 
-### **Import Errors**
+### Model Not Found
 ```
-ModuleNotFoundError: No module named 'my_model'
+Error: No module named 'my_model'
 ```
 **Check:**
-- Model listed in `.xlm_models`
-- Directory exists and has correct structure
-- Python package has `__init__.py`
+- Model is listed in `xlm_models.json` (directory-based)
+- Model is installed and listed in `XLM_MODELS_PACKAGES` (package-based)
+- Directory structure is correct
+- `__init__.py` exists in the Python package
 
-### **Config Errors**
+### Duplicate Model Names
 ```
-hydra.errors.ConfigCompositionException: Missing config group 'model_type'
+ExternalModelConflictError: Duplicate model name: my_model
 ```
-**Check:**
-- All required config files exist
-- Config files have correct YAML syntax
-- Target paths point to correct classes
+**Solution:** Each model must have a unique name. Check:
+- No duplicate entries in `xlm_models.json` files across search directories
+- No conflicts between directory-based and package-based models
+- No conflicts with core XLM models (`arlm`, `mlm`, `ilm`, `mdlm`)
 
-### **Validation Errors**
+### Config Not Found
 ```
-ExternalModelConflictError: Duplicate model names found
+hydra.errors.ConfigCompositionException: Could not find 'model/my_model'
 ```
 **Check:**
-- No duplicate names in `.xlm_models`
-- No conflicts with core XLM models
-- Unique package names
+- `configs/model/my_model.yaml` exists
+- `configs/model_type/my_model.yaml` exists
+- Config files have valid YAML syntax
+- `_target_` paths point to correct classes
 
-### **Runtime Errors**
-```
-NotImplementedError: Forward pass not implemented yet
-```
+### Import Errors in Model Code
 **Check:**
-- All TODO sections are implemented
-- Required methods have actual implementations
-- Type signatures match expected interfaces
+- All required dependencies are installed
+- Import paths are correct (use absolute imports)
+- The model package is properly structured with `__init__.py`
+
+## Integration with XLM
+
+External models integrate seamlessly with:
+- **PyTorch Lightning**: Automatic multi-GPU support (DDP/FSDP)
+- **Hydra Configuration**: Full config composition
+- **Metrics Framework**: Custom metrics with automatic logging
+- **Checkpointing**: Standard checkpoint saving/loading
+- **Logging**: wandb, tensorboard, file logging
+
+## Best Practices
+
+- **Naming**: Use lowercase with underscores (e.g., `my_transformer_model`)
+- **Documentation**: Include comprehensive docstrings and README
+- **Testing**: Start with small datasets and overfit tests
+- **Type Hints**: Use jaxtyping for tensor shapes
+- **Configuration**: Provide sensible defaults in config files
+- **Dependencies**: Minimize external dependencies when possible
 
 ## Examples
 
-See the `zlm` model in this repository for a complete example of:
-- External model structure
-- Configuration setup
-- Integration with XLM training
-- Testing and validation
+See the core models in the `xlm-models` package for complete examples:
+- `arlm` - Auto-regressive language model
+- `mlm` - Masked language model
+- `ilm` - Infilling language model
+- `mdlm` - Masked diffusion language model
 
-## Migration from Core Models
-
-To convert a core XLM model to external:
-
-1. **Copy model code** to external directory
-2. **Update imports** to be self-contained
-3. **Create configs** following external model patterns
-4. **Update targets** to point to external classes
-5. **Add to `.xlm_models`** file
-6. **Test integration** with debug configs
-
-## Contributing
-
-When contributing external models:
-
-1. **Follow naming conventions** and best practices
-2. **Include comprehensive tests** and documentation
-3. **Validate** with the external model system
-4. **Provide examples** and usage instructions
-5. **Share configuration** for reproducibility
-
-## Support
-
-For questions about external models:
-- Check existing models for examples
-- Review error messages and validation output
-- Use debug configs for troubleshooting
-- Reach out on Slack for guidance
-
-The external model system is designed to be flexible and extensible. Happy modeling! 🚀 
+Each demonstrates best practices for model implementation, configuration, and testing.

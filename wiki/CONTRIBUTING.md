@@ -714,3 +714,8 @@ TODO
 2. **Unable to determine how to implement a component of a new lm**:
   - Check existing lms for reference
   - Reach out on slack.
+
+
+# Adding a new entrypoint script to the cli
+
+TODO

@@ -11,7 +11,8 @@
 import dotenv
 # read env variables before anything else is imported
 dotenv.load_dotenv(
-    override=True
+    dotenv_path=".env", # we need to point to .env in current dir when xlm console script is run
+    override=True, verbose=True
 )  # set env variables from .env file, override=True is important
 found_secretes = dotenv.load_dotenv(".secrets.env", override=True)
 if not found_secretes:
@@ -33,6 +34,9 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 from xlm.utils import omegaconf_resolvers
 from xlm.external_models import setup_external_models, get_external_commands
+from hydra.core.plugins import Plugins
+from hydra.plugins.search_path_plugin import SearchPathPlugin
+from hydra.core.config_search_path import ConfigSearchPath
 
 # endregion
 
@@ -69,6 +73,18 @@ OmegaConf.register_new_resolver(
 # This adds external model directories to sys.path for imports
 external_model_dirs = setup_external_models()
 external_commands = {}
+
+hydra_plugins = Plugins.instance()
+
+
+class HydraCommonSearchPathPlugin(SearchPathPlugin):
+    def manipulate_search_path(self, search_path: ConfigSearchPath) -> None:
+        search_path.append(
+            "file", str(Path(__file__).parent.parent / "configs/common")
+        )
+
+
+hydra_plugins.register(HydraCommonSearchPathPlugin)
 
 # Register our SearchPathPlugin manually with Hydra
 if external_model_dirs:
@@ -144,7 +160,7 @@ def main(cfg: DictConfig) -> None:
         print_config_tree(cfg, resolve=True)
         prepare_data(cfg)
     elif cfg.job_type in external_commands:
-        print_config_tree(cfg, resolve=True, save_to_file=cfg.paths.run_dir)
+        # print_config_tree(cfg, resolve=True, save_to_file=cfg.paths.run_dir)
         external_command = external_commands[cfg.job_type]
         external_command(cfg)
     else:

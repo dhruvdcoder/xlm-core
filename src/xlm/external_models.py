@@ -1,4 +1,5 @@
 import importlib
+import json
 import os
 import sys
 from pathlib import Path
@@ -10,6 +11,24 @@ import omegaconf
 import yaml
 
 logger = logging.getLogger(__name__)
+# Set to INFO level explicitly since this module runs before Hydra configures logging
+logger.setLevel(logging.INFO)
+# Ensure there's a handler to output messages (will be reconfigured by Hydra later)
+if not logger.handlers and not logging.getLogger().handlers:
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.INFO)
+    formatter = logging.Formatter("[%(levelname)s] - %(message)s")
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+XLM_MODEL_NAMES_FILE = ".xlm_models"
+STANDARD_XLM_MODELS_DIRS = ["xlm-models"]
+# locations for external models
+ENV_XLM_MODELS_PATH = "XLM_MODELS_PATH"  # dir containing external models
+ENV_XLM_MODELS_PACKAGES = "XLM_MODELS_PACKAGES"  # installed python packages containing external models, comma separated list of package names
+CORE_XLM_MODELS = (
+    "arlm:mlm:ilm:mdlm"  # core models available in xlm-models package
+)
 
 
 class ExternalModelConflictError(Exception):
@@ -18,267 +37,160 @@ class ExternalModelConflictError(Exception):
     pass
 
 
-def validate_model_names(model_names: List[str]) -> None:
-    """Validate that model names don't conflict with each other or core XLM.
+def discover_external_models() -> Tuple[Dict[str, Path], Dict[str, Path]]:
+    """Discover external model directories.
+
+    Each model must be packaged with its configs in the following structure:
+    <model_root_dir>
+       |-- <model_name> # python files
+       |   |-- model.py
+       |   |-- loss.py
+       |   |-- predictor.py
+       |   |-- datamodule.py
+       |   |-- metrics.py
+       |   |-- ..
+       |-- configs/
+       |   |-- datamodule/
+       |   |-- experiment/
+       |   |-- ..
+       |   |-- ..
+       |-- setup.py (optional)
+       |-- README.md (optional)
+
+
+    The model can be installed as a python package (recommended for sharing) or simply kept as a directory (during development).
+    When installed as a python package, make sure to package the configs as well like so in the setup.py:
+    package_dir={
+        "<model_name>": "<model_root_dir>",
+    },
+    package_data={
+        "<model_name>": ["configs/**/*.yaml", "configs/**/*.yml"],
+    }
+
+    Discovery:
+
+      1. **search_dirs**: We look for directories that may contain <model_root_dir>.
+        By default these are the "." (current directory), "xlm-models" (standard xlm-models directory), and the directory specified in the XLM_MODELS_PATH environment variable.
+      2. Each search_dir may contain multiple <model_root_dir> directories, hence multiple models. Therefore, we look for a xlm_models.json file in each search_dir that
+        has the following structure:
+        ```json
+        {
+            "<model_name_1>": "<model_root_dir_1>",
+            "<model_name_2>": "<model_root_dir_2>",
+            ...
+        }
+        ```
+        The model root dir path is relative to the search_dir.
+       3. **installed python packages**: We also allow discovering models from installed python packages. The package names must be specified in the XLM_MODELS_PACKAGES environment variable as a colon-separated list (e.g., arlm:mlm:ilm:mdlm). The installed package much follow the same structure as the <model_root_dir> and package the configs as shown above. For the case of python packages, we expect only one model per package.
 
     Args:
-        model_names: List of model names from .xlm_models file
-
-    Raises:
-        ExternalModelConflictError: If conflicts are detected
-    """
-    # Check for duplicates
-    seen_names = set()
-    duplicates = set()
-    for name in model_names:
-        if name in seen_names:
-            duplicates.add(name)
-        seen_names.add(name)
-
-    if duplicates:
-        raise ExternalModelConflictError(
-            f"Duplicate model names found in .xlm_models: {sorted(duplicates)}"
-        )
-
-    # Check for conflicts with core XLM model names
-    # NOTE: All models have been migrated to external, so no core conflicts expected
-    core_xlm_models = set()  # All models are now external
-    conflicts = seen_names.intersection(core_xlm_models)
-    if conflicts:
-        logger.warning(
-            f"External model names conflict with core XLM models: {sorted(conflicts)}. "
-            "External models will override core configs."
-        )
-
-
-def validate_python_packages(model_dirs: List[Path]) -> None:
-    """Validate that external model Python packages don't conflict.
-
-    Args:
-        model_dirs: List of external model directory paths
-
-    Raises:
-        ExternalModelConflictError: If conflicts are detected
-    """
-    package_to_model = {}
-
-    for model_dir in model_dirs:
-        model_name = model_dir.name
-
-        # Check if this model's package name conflicts with existing packages
-        possible_packages = [model_name, "model", "my_model"]
-        for pkg_name in possible_packages:
-            pkg_path = model_dir / pkg_name
-            if pkg_path.exists() and pkg_path.is_dir():
-                if pkg_name in package_to_model:
-                    raise ExternalModelConflictError(
-                        f"Python package conflict: Both '{package_to_model[pkg_name]}' and "
-                        f"'{model_name}' define package '{pkg_name}'"
-                    )
-                package_to_model[pkg_name] = model_name
-
-                # Check if package name conflicts with standard library or common packages
-                common_packages = {
-                    "os",
-                    "sys",
-                    "torch",
-                    "numpy",
-                    "model",
-                    "models",
-                }
-                if pkg_name in common_packages:
-                    logger.warning(
-                        f"External model '{model_name}' uses package name '{pkg_name}' "
-                        f"which might conflict with common packages"
-                    )
-
-
-def validate_config_structure(model_dirs: List[Path]) -> None:
-    """Validate that external model config structures are valid.
-
-    Args:
-        model_dirs: List of external model directory paths
-
-    Raises:
-        ExternalModelConflictError: If validation fails
-    """
-    required_configs = ["model", "model_type"]
-    optional_configs = ["collator", "experiment", "datamodule"]
-
-    for model_dir in model_dirs:
-        model_name = model_dir.name
-        config_dir = model_dir / "configs"
-
-        # Check required config groups exist
-        missing_required = []
-        for config_group in required_configs:
-            group_dir = config_dir / config_group
-            if not group_dir.exists():
-                missing_required.append(config_group)
-
-        if missing_required:
-            raise ExternalModelConflictError(
-                f"External model '{model_name}' missing required config groups: {missing_required}"
-            )
-
-        # Check that required configs have at least one config file
-        for config_group in required_configs:
-            group_dir = config_dir / config_group
-            config_files = list(group_dir.glob("*.yaml"))
-            if not config_files:
-                raise ExternalModelConflictError(
-                    f"External model '{model_name}' has empty required config group: {config_group}"
-                )
-
-
-def validate_external_models(
-    model_names: List[str], model_dirs: List[Path], strict: bool = True
-) -> None:
-    """Comprehensive validation of external models.
-
-    Args:
-        model_names: List of model names from .xlm_models file
-        model_dirs: List of discovered external model directories
-        strict: If True, raise errors for conflicts. If False, just warn.
-
-    Raises:
-        ExternalModelConflictError: If validation fails and strict=True
-    """
-    try:
-        validate_model_names(model_names)
-        validate_python_packages(model_dirs)
-        validate_config_structure(model_dirs)
-
-        logger.debug(
-            f"External model validation passed for {len(model_dirs)} models"
-        )
-
-    except ExternalModelConflictError as e:
-        if strict:
-            raise
-        else:
-            logger.warning(f"External model validation warning: {e}")
-
-
-def discover_external_models(
-    xlm_models_file: Optional[str] = None,
-    search_dirs: Optional[List[str]] = None,
-    validate: bool = True,
-    strict_validation: bool = True,
-) -> List[Path]:
-    """Discover external model directories by reading .xlm_models file.
-
-    Args:
-        xlm_models_file: Path to .xlm_models file. If None, looks for .xlm_models in current directory.
-        search_dirs: List of directories to search for model directories. If None, uses current directory.
         validate: Whether to run validation on discovered models.
         strict_validation: If True, raise errors for validation failures. If False, just warn.
 
     Returns:
-        List of paths to external model directories.
+        dict of model_name -> model_root_dir
 
     Raises:
         ExternalModelConflictError: If validation fails and strict_validation=True
     """
-    if xlm_models_file is None:
-        xlm_models_file = ".xlm_models"
-
-    if search_dirs is None:
-        search_dirs = [
-            ".",  # Current directory
-            "xlm-models",  # Standard xlm-models directory
-            os.environ.get("XLM_MODELS_PATH", ""),  # Environment variable
-        ]
-
-    model_dirs = []
-
-    # Check if .xlm_models file exists - try multiple locations
-    xlm_models_path = None
-    possible_locations = [
-        Path(xlm_models_file),  # Current directory
-        Path("xlm-models") / xlm_models_file,  # In xlm-models directory
+    final_model_dirs = {}
+    model_package_dirs = {}
+    search_dirs = [
+        ".",  # Current directory
+        *STANDARD_XLM_MODELS_DIRS,  # Standard xlm-models directory
+        *[
+            p for p in os.environ.get(ENV_XLM_MODELS_PATH, "").split(":") if p
+        ],  # Environment variable
     ]
 
-    for location in possible_locations:
-        if location.exists():
-            xlm_models_path = location
-            break
-
-    if xlm_models_path is None:
-        logger.info(
-            f"No {xlm_models_file} file found in any location, no external models to load"
-        )
-        return model_dirs
-
-    # Read model names from .xlm_models file
-    try:
-        with open(xlm_models_path, "r") as f:
-            model_names = [
-                line.strip()
-                for line in f
-                if line.strip() and not line.startswith("#")
-            ]
-    except Exception as e:
-        logger.warning(f"Failed to read {xlm_models_file}: {e}")
-        return model_dirs
-
-    if not model_names:
-        logger.info(f"No model names found in {xlm_models_file}")
-        return model_dirs
-
-    # Search for each declared model in the search directories
-    for model_name in model_names:
-        found = False
-        for search_dir in search_dirs:
-            if not search_dir:
-                continue
-            search_path = Path(search_dir)
-            if not search_path.exists():
-                continue
-
-            model_dir = search_path / model_name
-            if not model_dir.exists() or not model_dir.is_dir():
-                continue
-
-            # Validate that this looks like an external model directory
-            has_configs = (model_dir / "configs").exists()
-            has_python_package = any(
-                (model_dir / pkg_name).exists()
-                and (model_dir / pkg_name).is_dir()
-                for pkg_name in [model_name, "model", "my_model"]
-            )
-
-            if has_configs and has_python_package:
-                model_dirs.append(model_dir)
-                logger.info(
-                    f"Found external model '{model_name}' at: {model_dir}"
+    def check_conflict(model_dirs: Dict[str, Path]) -> None:
+        for model_name, model_root_dir in model_dirs.items():
+            if model_name in final_model_dirs:
+                raise ExternalModelConflictError(
+                    f"Duplicate model name: {model_name} with root dir {model_root_dir} and {final_model_dirs[model_name]}"
                 )
-                found = True
-                break
+            if model_name in model_package_dirs:
+                raise ExternalModelConflictError(
+                    f"Duplicate model name: {model_name} with root dir {model_root_dir} and {model_package_dirs[model_name]}"
+                )
+            final_model_dirs[model_name] = model_root_dir
 
-        if not found:
-            logger.warning(
-                f"External model '{model_name}' declared in {xlm_models_file} but not found in search paths"
-            )
+    def process_search_dir(search_dir: str) -> Dict[str, Path]:
+        model_dirs = {}
+        xlm_models_file = Path(search_dir) / "xlm_models.json"
+        if xlm_models_file.exists():
+            try:
+                with open(xlm_models_file, "r") as f:
+                    xlm_models = json.load(f)
+                    for model_name, rel_model_root_dir in xlm_models.items():
+                        model_root_dir = Path(search_dir) / rel_model_root_dir
+                        model_dirs[model_name] = model_root_dir
+            except Exception as e:
+                logger.warning(f"Failed to read {xlm_models_file}: {e}")
+        return model_dirs
 
-    # Run validation if requested
-    if validate and model_dirs:
-        validate_external_models(model_names, model_dirs, strict_validation)
+    for search_dir in search_dirs:
+        model_dirs = process_search_dir(search_dir)
 
-    return model_dirs
+    check_conflict(model_dirs)
+    final_model_dirs.update(model_dirs)
+
+    # process python packages
+    package_names = os.environ.get(ENV_XLM_MODELS_PACKAGES, "").split(":")
+    package_names = CORE_XLM_MODELS.split(":") + package_names
+    if package_names:
+        for package_name in package_names:
+            try:
+                package_spec = importlib.util.find_spec(package_name)
+                if package_spec:
+                    package_dir = package_spec.submodule_search_locations
+                    if package_dir:
+                        package_dir = package_dir[0]
+                    check_conflict({package_name: Path(package_dir)})
+                    model_package_dirs[package_name] = Path(package_dir)
+            except Exception as e:
+                logger.warning(f"Failed to import {package_name}: {e}")
+                continue
+
+    return final_model_dirs, model_package_dirs
 
 
-def register_external_models(model_dirs: List[Path]) -> None:
-    """Register external models for import and config discovery.
+def setup_external_models() -> List[Path]:
+    """Auto-discover and register external models.
 
     Args:
-        model_dirs: List of external model directory paths.
+        validate: Whether to run validation on discovered models.
+        strict_validation: If True, raise errors for validation failures. If False, just warn.
+
+    Returns:
+        List of discovered external model directories.
+
+    Raises:
+        ExternalModelConflictError: If validation fails and strict_validation=True
     """
+    model_dirs, package_dirs = discover_external_models()
+    # only model dirs are placed in sys.path for imports, installed packages are imporable anyway
     for model_dir in model_dirs:
         # Add to Python path for imports
         if str(model_dir) not in sys.path:
             sys.path.insert(0, str(model_dir))
             logger.info(f"Added to sys.path: {model_dir}")
+
+    # Log discovered models
+    logger.info(
+        f"Discovered {len(model_dirs)} external models as directories."
+    )
+    for model_dir, p in model_dirs.items():
+        logger.info(f"Model: {model_dir} at {p}")
+    logger.info(
+        f"Discovered {len(package_dirs)} external models as installed packages."
+    )
+    for package_dir, p in package_dirs.items():
+        logger.info(f"Package: {package_dir}")
+    dirs = [p for p in model_dirs.values()] + [
+        p for p in package_dirs.values()
+    ]
+    return dirs
 
 
 def get_external_commands(
@@ -301,33 +213,3 @@ def get_external_commands(
                     f"Located external command: {name} at {function_name}"
                 )
     return commands_
-
-
-def setup_external_models(
-    validate: bool = True,
-    strict_validation: bool = False,  # Default to warnings only
-) -> List[Path]:
-    """Auto-discover and register external models.
-
-    Args:
-        validate: Whether to run validation on discovered models.
-        strict_validation: If True, raise errors for validation failures. If False, just warn.
-
-    Returns:
-        List of discovered external model directories.
-
-    Raises:
-        ExternalModelConflictError: If validation fails and strict_validation=True
-    """
-    model_dirs = discover_external_models(
-        validate=validate, strict_validation=strict_validation
-    )
-    register_external_models(model_dirs)
-
-    # Log discovered models
-    if model_dirs:
-        logger.info(
-            f"Successfully registered {len(model_dirs)} external models for import"
-        )
-
-    return model_dirs
