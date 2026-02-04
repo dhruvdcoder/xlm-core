@@ -1,5 +1,6 @@
 from collections.abc import Generator
 from itertools import chain
+import json
 from pathlib import Path
 import re
 from typing import (
@@ -33,6 +34,7 @@ from xlm.datamodule import BaseDataModule, Tokenizer
 from xlm.noise import NoiseSchedule
 from xlm.utils.rank_zero import RankedLogger
 import lightning as L
+from huggingface_hub import PyTorchModelHubMixin
 
 # Import LogPredictions classes from the new module
 from xlm.log_predictions import (
@@ -364,7 +366,7 @@ def to_nested_module_dict(
     )
 
 
-class Harness(L.LightningModule):
+class Harness(L.LightningModule, PyTorchModelHubMixin):
     """Main module that provides the scaffolding for the codebase."""
 
     model: nn.Module
@@ -1642,4 +1644,410 @@ class Harness(L.LightningModule):
         )
 
     # endregion: other utilities
+    ############################################################
+
+    ############################################################
+    # region:  checkpoint management
+    """Checkpoint and model weight management methods.
+
+    This section provides methods for extracting, saving, loading, and managing
+    model weights with proper EMA (Exponential Moving Average) handling.
+
+    Key Constraints:
+        - EMA state is managed by EMACallback during training
+        - Harness cannot access EMA state from existing instance
+        - EMA can ONLY be applied when loading from checkpoint file
+
+    Method Categories:
+
+    1. Helper Methods (Internal):
+        - _extract_model_state_dict_from_lightning_state_dict()
+        - _apply_ema_weights()
+
+    2. Instance Methods (Current Model State):
+        - extract_model_weights(): Get current model state dict
+        - save_model_weights(path): Save to local file
+        - load_model_weights(path): Load from local file
+        - load_model_from_hub(repo_id): Load from HuggingFace Hub
+
+    3. Class Methods (Create New Instance):
+        - from_checkpoint(path, apply_ema=False): Load with optional EMA
+
+    4. Hub Integration:
+        - _save_pretrained(): Save to hub (via parent's push_to_hub())
+        - _from_pretrained(): Not supported (raises NotImplementedError)
+
+    Usage Examples:
+
+        # Example 1: Extract model weights with EMA from existing training checkpoint and save them to a local file
+        harness = Harness.from_checkpoint( # harness.model will have EMA weights
+            "checkpoint.ckpt", # path to existing checkpoint
+            apply_ema=True,
+            cfg=cfg, # training config
+            tokenizer=tokenizer,
+            datamodule=datamodule
+        )
+        harness.save_model_weights("model_ema.pth")
+
+        # Example 2: Push model weights with EMA to HuggingFace Hub
+        harness = Harness.from_checkpoint(
+            "checkpoint.ckpt",
+            apply_ema=True,
+            cfg=cfg,
+            tokenizer=tokenizer,
+            datamodule=datamodule
+        )
+        harness.push_to_hub(
+            repo_id="username/my-model",
+            commit_message="Upload model with EMA weights"
+        )
+
+        # Example 3: Load weights from hub into existing Harness
+        harness = Harness(cfg, tokenizer=tokenizer, datamodule=datamodule)
+        harness.load_model_from_hub("username/my-model")
+
+        # Example 4: Load checkpoint without applying EMA (used for continued training from a checkpoint)
+        harness = Harness.from_checkpoint(
+            "checkpoint.ckpt",
+            apply_ema=False,  # Use training weights, not EMA
+            cfg=cfg,
+            tokenizer=tokenizer,
+            datamodule=datamodule
+        )
+
+        # Example 5: Extract and save without EMA (from in-memory model)
+        harness = Harness(cfg, tokenizer=tokenizer, datamodule=datamodule)
+        # ... train or modify model ...
+        harness.save_model_weights("model.pth")
+
+    Limitations:
+
+        1. EMA Application:
+           - Cannot apply EMA from existing Harness instance because we need to access EMA weights which are available on EMA callback object or checkpoint["ema"]. 
+            - Cannot access self.trainer.callbacks reliably
+            - Must use from_checkpoint(apply_ema=True) to get EMA weights
+
+        2. HuggingFace Hub:
+           - from_pretrained() not supported (NotImplementedError)
+           - Cannot reconstruct Harness from hub config alone
+           - Requires full Lightning setup (Hydra config, datamodule, tokenizer)
+           - Use load_model_from_hub() to load weights into existing instance
+
+        3. Instance Methods:
+           - save_model_weights(), load_model_weights(), load_model_from_hub()
+             work on current model state only
+           - No EMA access from these methods
+
+        4. Workflow for EMA:
+           - Step 1: Load from checkpoint with apply_ema=True
+           - Step 2: Save/push using instance methods
+           - Cannot skip step 1 if EMA weights are needed
+
+    File Formats:
+        - Local files: PyTorch .pth format
+        - HuggingFace Hub: SafeTensors format + config files
+    """
+
+    @staticmethod
+    def _extract_model_state_dict_from_lightning_state_dict(
+        state_dict: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Extract model weights from full Lightning state dict.
+
+        Args:
+            state_dict: Full Lightning module state dict
+
+        Returns:
+            Model state dict with "model." prefix removed
+        """
+        model_state_dict = {}
+        for key, value in state_dict.items():
+            if key.startswith("model."):
+                # Remove "model." prefix
+                model_state_dict[key[6:]] = value
+        return model_state_dict
+
+    def _apply_ema_weights(self, ema_state_dict: Dict[str, Any]) -> None:
+        """Apply EMA weights to the model from an EMA state dict.
+
+        Args:
+            ema_state_dict: EMA state dict from checkpoint["ema"]
+        """
+        from torch_ema import ExponentialMovingAverage
+
+        decay = ema_state_dict.get("decay", 0.9999)
+        num_updates = ema_state_dict.get("num_updates", None)
+        use_num_updates = num_updates is not None
+
+        logger.info(
+            f"Applying EMA weights: decay={decay}, use_num_updates={use_num_updates}"
+        )
+
+        # Create EMA object with model's trainable parameters
+        ema = ExponentialMovingAverage(
+            [p for p in self.parameters() if p.requires_grad],
+            decay=decay,
+            use_num_updates=use_num_updates,
+        )
+
+        # Load the saved EMA state
+        ema.load_state_dict(ema_state_dict)
+        ema.to(self.device)
+
+        # Apply EMA weights to the model (overwrites current weights)
+        ema.copy_to()
+        logger.info("EMA weights applied successfully")
+        del ema
+
+    def extract_model_weights(self) -> Dict[str, Any]:
+        """Extract current model state dict.
+
+        Returns:
+            Model state dict (self.model.state_dict())
+        """
+        return self.model.state_dict()
+
+    def save_model_weights(
+        self, path: Union[str, Path], overwrite: bool = False
+    ) -> None:
+        """Save current model weights to local file.
+
+        Args:
+            path: Path to save the model weights
+            overwrite: Whether to overwrite existing file
+
+        Raises:
+            ValueError: If file exists and overwrite is False
+        """
+        path = Path(path)
+        if path.exists() and not overwrite:
+            raise ValueError(
+                f"Model weights file already exists at {path}. Use overwrite=True to overwrite."
+            )
+
+        path.parent.mkdir(parents=True, exist_ok=True)
+        model_state_dict = self.extract_model_weights()
+        torch.save(model_state_dict, path)
+        logger.info(f"Model weights saved to {path}")
+
+    def load_model_weights(
+        self, path: Union[str, Path], strict: bool = True
+    ) -> None:
+        """Load model weights from local file into self.model.
+
+        Args:
+            path: Path to the model weights file
+            strict: Whether to strictly enforce that the keys match
+        """
+        path = Path(path)
+        if not path.exists():
+            raise ValueError(f"Model weights file not found at {path}")
+
+        logger.info(f"Loading model weights from {path}")
+        state_dict = torch.load(path, map_location=self.device)
+        self.model.load_state_dict(state_dict, strict=strict)
+        logger.info("Model weights loaded successfully")
+
+    def load_model_from_hub(
+        self,
+        repo_id: str,
+        revision: Optional[str] = None,
+        cache_dir: Optional[Union[str, Path]] = None,
+        force_download: bool = False,
+        token: Optional[Union[str, bool]] = None,
+        strict: bool = True,
+        **kwargs,
+    ) -> None:
+        """Download and load model weights from HuggingFace Hub into self.model.
+
+        This method downloads the model weights from the hub and loads them into
+        the existing model. It does NOT reconstruct a new Harness instance.
+
+        Args:
+            repo_id: HuggingFace Hub repository ID (e.g., "username/model")
+            revision: Git revision (branch, tag, or commit)
+            cache_dir: Directory to cache downloaded files
+            force_download: Force re-download even if cached
+            token: HuggingFace Hub token for private repos
+            strict: Whether to strictly enforce that the keys match
+            **kwargs: Additional arguments for hf_hub_download
+        """
+        from huggingface_hub import hf_hub_download, constants
+        import os
+
+        logger.info(f"Downloading model weights from hub: {repo_id}")
+
+        # Get token from environment if not provided
+        if token is None:
+            token = os.getenv("HF_HUB_KEY")
+
+        # Download the model weights file
+        weights_path = hf_hub_download(
+            repo_id=repo_id,
+            filename=constants.SAFETENSORS_SINGLE_FILE,
+            revision=revision,
+            cache_dir=cache_dir,
+            force_download=force_download,
+            token=token,
+            **kwargs,
+        )
+
+        logger.info(f"Loading model weights from {weights_path}")
+
+        # Load weights using safetensors
+        from safetensors.torch import load_model as load_model_as_safetensor
+
+        load_model_as_safetensor(self.model, weights_path, strict=strict)
+        logger.info("Model weights loaded successfully from hub")
+
+    @classmethod
+    def from_checkpoint(
+        cls,
+        checkpoint_path: Union[str, Path],
+        cfg: Optional[DictConfig] = None,
+        tokenizer: Optional[Tokenizer] = None,
+        datamodule: Optional[BaseDataModule] = None,
+        apply_ema: bool = False,
+        map_location: str = "cpu",
+        **kwargs,
+    ) -> "Harness":
+        """Load Harness from Lightning checkpoint with optional EMA application.
+
+        This is the ONLY method that can apply EMA weights, as it has direct access
+        to the checkpoint file containing the EMA state.
+
+        Args:
+            checkpoint_path: Path to the Lightning checkpoint file
+            cfg: Optional config to override checkpoint config
+            tokenizer: Optional tokenizer instance
+            datamodule: Optional datamodule instance
+            apply_ema: Whether to apply EMA weights from checkpoint
+            map_location: Device to load checkpoint to
+            **kwargs: Additional arguments for load_from_checkpoint
+
+        Returns:
+            Harness instance with loaded weights (and EMA applied if requested)
+
+        Example:
+            # Load with EMA weights applied
+            harness = Harness.from_checkpoint(
+                "checkpoint.ckpt",
+                apply_ema=True,
+                cfg=cfg,
+                tokenizer=tokenizer,
+                datamodule=datamodule
+            )
+        """
+        checkpoint_path = Path(checkpoint_path)
+        if not checkpoint_path.exists():
+            raise ValueError(f"Checkpoint not found at {checkpoint_path}")
+
+        logger.info(f"Loading Harness from checkpoint: {checkpoint_path}")
+
+        # Prepare kwargs for load_from_checkpoint
+        load_kwargs = {
+            "checkpoint_path": checkpoint_path,
+            "map_location": map_location,
+        }
+        if cfg is not None:
+            load_kwargs["cfg"] = cfg
+        if tokenizer is not None:
+            load_kwargs["tokenizer"] = tokenizer
+        if datamodule is not None:
+            load_kwargs["datamodule"] = datamodule
+        load_kwargs.update(kwargs)
+
+        # Load the Lightning module
+        harness = cls.load_from_checkpoint(**load_kwargs)
+
+        # Apply EMA if requested
+        if apply_ema:
+            logger.info("Loading EMA state from checkpoint")
+            checkpoint = torch.load(
+                checkpoint_path, map_location=map_location, weights_only=False
+            )
+
+            if "ema" not in checkpoint:
+                raise ValueError(
+                    f"EMA state not found in checkpoint at {checkpoint_path}. "
+                    "Cannot apply EMA weights."
+                )
+
+            ema_state_dict = checkpoint["ema"]
+            harness._apply_ema_weights(ema_state_dict)
+            logger.info("EMA weights applied to model")
+
+        return harness
+
+    # endregion:  checkpoint management
+    ############################################################
+
+    ############################################################
+    # region: Hugging Face Hub methods
+
+    def _save_pretrained(self, save_directory: str, **kwargs):
+        """Save model weights and config to directory for HuggingFace Hub.
+
+        This saves the current model state. If you need EMA weights, load from
+        checkpoint first: Harness.from_checkpoint(path, apply_ema=True).
+
+        Args:
+            save_directory: Directory to save model and configs
+            **kwargs: Additional arguments (unused)
+        """
+        from huggingface_hub import constants
+        from safetensors.torch import save_model as save_model_as_safetensor
+
+        logger.info(
+            f"Saving model to {Path(save_directory) / constants.SAFETENSORS_SINGLE_FILE}"
+        )
+
+        # Save model weights using SafeTensors
+        save_model_as_safetensor(
+            self.model,
+            str(Path(save_directory) / constants.SAFETENSORS_SINGLE_FILE),
+        )  # type: ignore [arg-type]
+
+        # Extract and save configs
+        cfg = self.config
+
+        # Save full config as YAML
+        full_config = OmegaConf.to_yaml(cfg, resolve=False)
+        config_path = Path(save_directory) / "full_config.yaml"
+        with open(config_path, "w") as f:
+            f.write(full_config)
+        logger.info(f"Saved full config to {config_path}")
+
+        # Save model config as JSON
+        model_config = OmegaConf.to_container(cfg.model, resolve=True)
+        model_config_path = Path(save_directory) / "config.json"
+        with open(model_config_path, "w") as f:
+            json.dump(model_config, f, indent=2)
+        logger.info(f"Saved model config to {model_config_path}")
+
+    @classmethod
+    def _from_pretrained(
+        cls,
+        *,
+        model_id: str,
+        revision: Optional[str],
+        cache_dir: Optional[Union[str, Path]],
+        force_download: bool,
+        local_files_only: bool,
+        token: Union[str, bool, None],
+        map_location: str = "cpu",
+        strict: bool = False,
+        **model_kwargs,
+    ):
+        raise NotImplementedError(
+            "Loading Harness via from_pretrained() is not supported. "
+            "Harness requires complex Lightning setup (Hydra config, datamodule, tokenizer) "
+            "that cannot be reconstructed from HF Hub config alone.\n\n"
+            "Instead, use one of these workflows:\n"
+            "1. Create Harness from checkpoint: harness = Harness.from_checkpoint(path, cfg=cfg, tokenizer=tokenizer, datamodule=datamodule)\n"
+            "2. Load weights into existing Harness: harness.load_model_from_hub(repo_id)\n"
+            "3. Instantiate normally then load: harness = Harness(cfg, ...); harness.load_model_from_hub(repo_id)"
+        )
+
+    # endregion: Hugging Face Hub methods
     ############################################################
