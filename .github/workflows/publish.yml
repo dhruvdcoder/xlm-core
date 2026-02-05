@@ -20,16 +20,16 @@ jobs:
     - name: Extract version from tag
       id: get_version
       run: |
-        # Get the tag name (e.g., v1.2.3 or 1.2.3)
+        # Get the tag name (e.g., v1.2.3 or 1.2.3-alpha)
         TAG_NAME="${{ github.event.release.tag_name }}"
         # Remove 'v' prefix if present
         VERSION=${TAG_NAME#v}
         # Split version into components
         IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-        # Handle case where PATCH might have suffix (e.g., 1.2.3-beta)
+        # Handle case where PATCH might have suffix (e.g., 3-alpha)
         if [[ $PATCH == *"-"* ]]; then
           PATCH_NUM=$(echo $PATCH | cut -d'-' -f1)
-          SUFFIX=".$(echo $PATCH | cut -d'-' -f2-)"
+          SUFFIX="-$(echo $PATCH | cut -d'-' -f2-)"
         else
           PATCH_NUM=$PATCH
           SUFFIX=""
