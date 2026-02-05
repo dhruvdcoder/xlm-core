@@ -11,6 +11,7 @@ This script creates a complete external model structure with:
 """
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
@@ -1356,7 +1357,7 @@ This package implements the {context['model_class_name']} model with all necessa
 - Type definitions (types_{context['model_name']}.py)
 
 To use this model:
-1. Add '{context['model_name']}' to your .xlm_models file
+1. Add '{context['model_name']}' to your xlm_models.json file
 2. Use model_type={context['model_name']} and model={context['model_name']} in your config
 """
 
@@ -1643,7 +1644,7 @@ predictor:
     ).write_text(experiment_config)
 
 
-def generate_setup_file(model_dir: Path,context: Dict[str, Any]) -> None:
+def generate_setup_file(model_dir: Path, context: Dict[str, Any]) -> None:
     """Generate setup.py for the external model."""
     content = f"""from setuptools import setup, find_packages
 
@@ -1722,8 +1723,11 @@ This is a scaffolded implementation. You need to complete the following:
 ## Usage
 
 1. **Add to XLM models list**:
-   ```bash
-   echo "{context['model_name']}" >> .xlm_models
+   Add to `xlm_models.json`:
+   ```json
+   {{
+     "{context['model_name']}": "{context['model_name']}"
+   }}
    ```
 
 2. **Install in development mode**:
@@ -1790,25 +1794,26 @@ Good luck with your model development!
 
 
 def update_xlm_models_file(
-    model_name: str, xlm_models_path: Path = Path(".xlm_models")
+    model_name: str, xlm_models_path: Path = Path("xlm_models.json")
 ) -> None:
-    """Add the new model to the .xlm_models file."""
+    """Add the new model to the xlm_models.json file."""
     # Read existing models
-    existing_models = []
+    existing_models = {}
     if xlm_models_path.exists():
         with open(xlm_models_path, "r") as f:
-            existing_models = [
-                line.strip()
-                for line in f
-                if line.strip() and not line.startswith("#")
-            ]
+            try:
+                existing_models = json.load(f)
+            except json.JSONDecodeError:
+                print(
+                    f"Warning: {xlm_models_path} is not valid JSON, creating new file"
+                )
+                existing_models = {}
 
     # Add new model if not already present
     if model_name not in existing_models:
-        with open(xlm_models_path, "a") as f:
-            if existing_models:  # Add newline if file is not empty
-                f.write("\n")
-            f.write(f"{model_name}\n")
+        existing_models[model_name] = model_name
+        with open(xlm_models_path, "w") as f:
+            json.dump(existing_models, f, indent=2)
         print(f"Added '{model_name}' to {xlm_models_path}")
     else:
         print(f"Model '{model_name}' already exists in {xlm_models_path}")
@@ -1840,7 +1845,7 @@ def main():
     parser.add_argument(
         "--no-xlm-models",
         action="store_true",
-        help="Don't update .xlm_models file (for external models only)",
+        help="Don't update xlm_models.json file (for external models only)",
     )
 
     args = parser.parse_args()
@@ -2107,10 +2112,10 @@ def main():
 
         # Generate package files
         print("Generating package files...")
-        generate_setup_file(model_dir,context)
+        generate_setup_file(model_dir, context)
         generate_documentation(model_dir, context)
 
-        # Update .xlm_models file
+        # Update xlm_models.json file
         if not args.no_xlm_models:
             update_xlm_models_file(model_name)
 

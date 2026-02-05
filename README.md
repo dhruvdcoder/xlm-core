@@ -20,24 +20,24 @@ XLM is a **modular, research-friendly framework** for developing and comparing n
 
 ## ✨ Key Features
 
-| Feature | Description |
-|---------|-------------|
-| 🧩 **Modular Design** | Plug-and-play components—swap models, losses, predictors, and collators independently |
-| ⚡ **Lightning-Powered** | Distributed training, mixed precision, and logging out of the box |
-| 🎛️ **Hydra Configs** | Hierarchical configuration with runtime overrides—no code changes needed |
-| 📦 **Multiple Architectures** | 7 NAR model families ready to use |
-| 🔬 **Research-First** | Type-safe with `jaxtyping`, debug modes, and flexible metric injection |
-| 🤗 **Hub Integration** | Push trained models directly to Hugging Face Hub |
+| Feature                       | Description                                                                           |
+|-------------------------------|---------------------------------------------------------------------------------------|
+| 🧩 **Modular Design**         | Plug-and-play components—swap models, losses, predictors, and collators independently |
+| ⚡ **Lightning-Powered**       | Distributed training, mixed precision, and logging out of the box                     |
+| 🎛️ **Hydra Configs**          | Hierarchical configuration with runtime overrides—no code changes needed              |
+| 📦 **Multiple Architectures** | 7 NAR model families ready to use                                                     |
+| 🔬 **Research-First**         | Type-safe with `jaxtyping`, debug modes, and flexible metric injection                |
+| 🤗 **Hub Integration**        | Push trained models directly to Hugging Face Hub                                      |
 
 ## 🏗️ Available Models
 
-| Model | Full Name | Description |
-|-------|-----------|-------------|
-| `mlm` | Masked Language Model | Classic BERT-style masked prediction |
-| `ilm` | Insertion Language Model | Iterative insertion-based generation |
-| `arlm` | Autoregressive LM | Standard left-to-right baseline |
-| `mdlm` | Masked Diffusion LM | Discrete diffusion with masking |
-| `idlm` | Diffusion Insertion LM | Multi-token insertion diffusion |
+| Model  | Full Name                | Description                          |
+|--------|--------------------------|--------------------------------------|
+| `mlm`  | Masked Language Model    | Classic BERT-style masked prediction |
+| `ilm`  | Insertion Language Model | Iterative insertion-based generation |
+| `arlm` | Autoregressive LM        | Standard left-to-right baseline      |
+| `mdlm` | Masked Diffusion LM      | Discrete diffusion with masking      |
+| `idlm` | Diffusion Insertion LM   | Multi-token insertion diffusion      |
 
 ## 🚀 Installation
 
@@ -59,11 +59,11 @@ XLM uses a simple CLI with three main arguments:
 xlm job_type=<JOB> job_name=<NAME> experiment=<CONFIG>
 ```
 
-| Argument | Description |
-|----------|-------------|
-| `job_type` | One of `prepare_data`, `train`, `eval`, or `generate` |
-| `job_name` | A descriptive name for your run |
-| `experiment` | Path to your Hydra experiment config |
+| Argument     | Description                                           |
+|--------------|-------------------------------------------------------|
+| `job_type`   | One of `prepare_data`, `train`, `eval`, or `generate` |
+| `job_name`   | A descriptive name for your run                       |
+| `experiment` | Path to your Hydra experiment config                  |
 
 ## 🎯 Example: ILM on LM1B
 
@@ -136,12 +136,15 @@ xlm-core/
 
 Adding a new model requires implementing four components:
 
-| Component | Responsibility |
-|-----------|----------------|
-| **Model** | Neural network architecture |
-| **Loss** | Training objective |
-| **Predictor** | Inference/generation logic |
-| **Collator** | Batch preparation |
+| Component     | Responsibility              |
+|---------------|-----------------------------|
+| **Model**     | Neural network architecture |
+| **Loss**      | Training objective          |
+| **Predictor** | Inference/generation logic  |
+| **Collator**  | Batch preparation           |
+
+
+You can also add new entrypoint scripts to the cli.
 
 See the [Contributing Guide](./wiki/CONTRIBUTING.md) for a complete walkthrough.
 

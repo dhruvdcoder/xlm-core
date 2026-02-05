@@ -1,0 +1,28 @@
+# @package _global_
+defaults:
+  - default
+  - /datasets@datamodule.dataset_managers.train.lm: safe_train
+  #- /datasets@datamodule.dataset_managers.val.lm: safe_val # The validation dataset is too large
+  #- /datasets@datamodule.dataset_managers.test.lm: safe_test
+  - /datasets@datamodule.dataset_managers.val.unconditional_prediction: text_uncoditional_prediction
+  - /datasets@datamodule.dataset_managers.predict.unconditional_prediction: text_uncoditional_prediction
+  - /datasets@datamodule.dataset_managers.test.unconditional_prediction: text_uncoditional_prediction
+  - /tokenizer@global_components.tokenizer: safe
+
+per_device_batch_size: 32
+global_batch_size: 512
+block_size: 256
+
+
+datamodule:
+  print_batch_fn: ???
+  dataset_managers:
+    val:
+      unconditional_prediction:
+        dataset_constructor_str: ???
+    predict:
+      unconditional_prediction:
+        dataset_constructor_str: ???
+
+tags:
+  dataset: safe

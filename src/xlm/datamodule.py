@@ -59,6 +59,17 @@ from transformers import (
 logger = RankedLogger(__name__, rank_zero_only=True)
 ranked_logger = RankedLogger(__name__, rank_zero_only=False)
 
+safe_imported = False
+try:
+    import safe as sf
+    from safe.tokenizer import SAFETokenizer as _SAFETokenizer
+
+    safe_imported = True
+except ImportError:
+    safe_imported = False
+    _SAFETokenizer = _BertTokenizer
+
+
 ################################################################################
 # region: Types
 
@@ -269,6 +280,31 @@ class GPT2TokenizerFast(TokenizerMixin, _GPT2TokenizerFast):  # type: ignore
         return tokenizer
 
 
+class SAFETokenizer(TokenizerMixin, _SAFETokenizer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _tok = self.get_pretrained()
+        _tok.add_tokens(["<", ">"])  # for bracket_safe
+
+    @classmethod
+    def from_pretrained(
+        cls, pretrained_model_name_or_path: str, *args, **kwargs
+    ):
+        tokenizer = super().from_pretrained(
+            pretrained_model_name_or_path, *args, **kwargs
+        )
+        tokenizer.mask_token = tokenizer.tokenizer.mask_token
+        tokenizer.pad_token = tokenizer.tokenizer.pad_token
+        tokenizer.cls_token = tokenizer.tokenizer.cls_token
+        tokenizer.eos_token = tokenizer.tokenizer.eos_token
+        tokenizer.bos_token = tokenizer.tokenizer.bos_token
+        tokenizer.sep_token = tokenizer.tokenizer.sep_token
+        tokenizer.unk_token = tokenizer.tokenizer.unk_token
+        tokenizer.post_creation()
+
+        return tokenizer
+
+
 class SimpleSpaceTokenizer(PreTrainedTokenizer):
     """Splits on spaces"""
 
@@ -419,7 +455,11 @@ class DatasetManager:
         # split_to_download: str,  # e.g. "train", "val", "test", "predict"
         dataloader_kwargs: DataLoaderKwargs,  # e.g. {"batch_size": 1, "num_workers": 1, "shuffle": True, "pin_memory": True}
         preprocess_function: Optional[str] = None,  # e.g. "preprocess_fn"
+        preprocess_function_kwargs: Optional[Dict[str, Any]] = None,
         on_the_fly_processor: Optional[str] = None,  # e.g. "ids_to_example_fn"
+        on_the_fly_processor_kwargs: Optional[
+            Dict[str, Any]
+        ] = None,  # e.g. {"block_size": 128}
         on_the_fly_group_processor: Optional[
             str
         ] = None,  # e.g. "group_texts_ilm"
@@ -436,6 +476,7 @@ class DatasetManager:
         split_by_node: bool = True,  # e.g. True
         dataset: Optional[datasets.Dataset] = None,  # only set later
         rewrite_manual_cache: bool = False,
+        use_manual_cache: bool = True,
     ):
         self.collator = collator
         self._full_name = full_name
@@ -450,7 +491,9 @@ class DatasetManager:
         # self.split_to_download = split_to_download
         self.dataloader_kwargs = dataloader_kwargs
         self.preprocess_function = preprocess_function
+        self.preprocess_function_kwargs = preprocess_function_kwargs or {}
         self.on_the_fly_processor = on_the_fly_processor
+        self.on_the_fly_processor_kwargs = on_the_fly_processor_kwargs or {}
         self.on_the_fly_group_processor = on_the_fly_group_processor
         self.model_name = model_name
         self.columns_to_remove = columns_to_remove
@@ -463,6 +506,7 @@ class DatasetManager:
         self.dataset = None
         self.is_iterable_dataset = iterable_dataset_shards is not None
         self.rewrite_manual_cache = rewrite_manual_cache
+        self.use_manual_cache = use_manual_cache
 
     def __repr__(self) -> str:
         return f"DatasetManager(full_name={self.full_name})"
@@ -510,14 +554,18 @@ class DatasetManager:
         num_proc: Optional[int] = None,
     ) -> datasets.Dataset:
         if self.preprocess_function is not None:
-            preprocess_fn: Callable[[Any, Tokenizer], Any] = get_function(
+            preprocess_fn: Callable[..., Any] = get_function(
                 self.preprocess_function
             )
+            fn_kwargs = {
+                "tokenizer": tokenizer,
+                **self.preprocess_function_kwargs,
+            }
             ds = ds.map(
                 preprocess_fn,
                 batched=False,
                 num_proc=num_proc,
-                fn_kwargs={"tokenizer": tokenizer},
+                fn_kwargs=fn_kwargs,
                 remove_columns=self.columns_to_remove,
             )
         return ds
@@ -553,9 +601,11 @@ class DatasetManager:
     ):
         if self.on_the_fly_processor is not None:
             processor: Callable = get_function(self.on_the_fly_processor)
-            dataset = dataset.map(
-                processor, batched=False, fn_kwargs={"tokenizer": tokenizer}
-            )
+            kwargs = {
+                "tokenizer": tokenizer,
+                **self.on_the_fly_processor_kwargs,
+            }
+            dataset = dataset.map(processor, batched=False, fn_kwargs=kwargs)
             return dataset
         return dataset
 
@@ -593,30 +643,43 @@ class DatasetManager:
         manual_cache_dir: str,
         tokenizer: Tokenizer,
         num_proc: Optional[int] = None,
-    ) -> None:
+        load: bool = False,
+    ) -> Optional[datasets.Dataset]:
         # check cache, download, preprocess, cache if not already cached.
-        if not self._check_cache(manual_cache_dir):
-            logger.info(
-                f"No manual cache for {self.full_name} found at {manual_cache_dir}"
-            )
-            ds = self._download(num_proc=num_proc)
-            ds = self._preprocess(ds, tokenizer, num_proc=num_proc)
-            self._manually_cache(ds, manual_cache_dir)
-        elif self.rewrite_manual_cache:
-            logger.info(
-                f"Rewriting manual cache for {self.full_name} at {manual_cache_dir}"
-            )
-            ds = self._download(num_proc=num_proc)
-            logger.info(
-                f"Cleaned {ds.cleanup_cache_files()} automatic cached files"
-            )
-            self._clean_manual_cache(manual_cache_dir)
-            ds = self._preprocess(ds, tokenizer, num_proc=num_proc)
-            self._manually_cache(ds, manual_cache_dir)
+        if self.use_manual_cache:
+            if not self._check_cache(manual_cache_dir):
+                logger.info(
+                    f"No manual cache for {self.full_name} found at {manual_cache_dir}"
+                )
+                ds = self._download(num_proc=num_proc)
+                ds = self._preprocess(ds, tokenizer, num_proc=num_proc)
+                self._manually_cache(ds, manual_cache_dir)
+            elif self.rewrite_manual_cache:
+                logger.info(
+                    f"Rewriting manual cache for {self.full_name} at {manual_cache_dir}"
+                )
+                ds = self._download(num_proc=num_proc)
+                logger.info(
+                    f"Cleaned {ds.cleanup_cache_files()} automatic cached files"
+                )
+                self._clean_manual_cache(manual_cache_dir)
+                ds = self._preprocess(ds, tokenizer, num_proc=num_proc)
+                self._manually_cache(ds, manual_cache_dir)
+            else:
+                logger.info(
+                    f"Found manual cache for {self.full_name} at {self._get_cache_dir(manual_cache_dir)}"
+                )
+                if load:
+                    ds = self._load_from_cache(manual_cache_dir)
+                else:
+                    ds = None
         else:
             logger.info(
-                f"Found manual cache for {self.full_name} at {self._get_cache_dir(manual_cache_dir)}"
+                f"Downloading {self.full_name} without using manual cache"
             )
+            ds = self._download(num_proc=num_proc)
+            ds = self._preprocess(ds, tokenizer, num_proc=num_proc)
+        return ds
 
     def setup(
         self,
@@ -627,9 +690,18 @@ class DatasetManager:
         is_ddp: bool,
         rank: int,
         world_size: int,
+        num_dataset_workers: Optional[int] = None,
     ) -> None:
         if stage in self.stages and self.dataset is None:
-            dataset = self._load_from_cache(manual_cache_dir)
+            if self.use_manual_cache:
+                dataset = self._load_from_cache(manual_cache_dir)
+            else:
+                dataset = self.prepare_data(
+                    manual_cache_dir,
+                    tokenizer,
+                    num_proc=num_dataset_workers,
+                    load=True,
+                )
             if self.is_iterable_dataset:
                 dataset = dataset.to_iterable_dataset(
                     num_shards=self.iterable_dataset_shards
@@ -781,15 +853,26 @@ class LocalDatasetManager(DatasetManager):
 
     def _download(self, num_proc: Optional[int] = None) -> datasets.Dataset:
         if self.ds_type == "csv":
-            file_name = f"{self._split_to_download}.csv"
-            _path = Path(self.full_name).parent
-            data_files = str(_path / file_name)
-            ds = datasets.load_dataset(
-                "csv",
-                data_files=data_files,
-                **self.load_kwargs,
-                num_proc=num_proc,
-            )["train"]
+            # If data_files is specified in load_kwargs, use it; otherwise construct from path
+            load_kwargs_copy = self.load_kwargs.copy()
+            if "data_files" in load_kwargs_copy:
+                data_files = load_kwargs_copy.pop("data_files")
+                ds = datasets.load_dataset(
+                    "csv",
+                    data_files=data_files,
+                    **load_kwargs_copy,
+                    num_proc=num_proc,
+                )["train"]
+            else:
+                file_name = f"{self._split_to_download}.csv"
+                _path = Path(self.full_name).parent
+                data_files = str(_path / file_name)
+                ds = datasets.load_dataset(
+                    "csv",
+                    data_files=data_files,
+                    **self.load_kwargs,
+                    num_proc=num_proc,
+                )["train"]
             return ds
         else:
             raise ValueError(f"Unsupported dataset type: {self.ds_type}")
@@ -833,7 +916,7 @@ class UnconditionalGenerationDatasetManager:
         manual_cache_dir: str,
         tokenizer: Tokenizer,
         num_proc: Optional[int] = None,
-    ) -> None:
+    ) -> datasets.Dataset:
         return
 
     def setup(
@@ -845,6 +928,7 @@ class UnconditionalGenerationDatasetManager:
         is_ddp: bool,
         rank: int,
         world_size: int,
+        num_dataset_workers: Optional[int] = None,
     ) -> None:
         # if is_ddp and world_size > 1 and self.split_by_node:
         #    examples_per_node = self.num_examples // world_size
@@ -1086,6 +1170,7 @@ class TextDataModule(BaseDataModule):
                     is_ddp=self._is_ddp(),
                     rank=self.rank,
                     world_size=self.world_size,
+                    num_dataset_workers=self.num_dataset_workers,
                 )
 
     def _get_dataloaders(

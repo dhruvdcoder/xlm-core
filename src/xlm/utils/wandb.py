@@ -71,10 +71,10 @@ class MyWandbLogger(WandbLogger):
     @rank_zero_only
     def log_hyperparams(self, params) -> None:
         super().log_hyperparams(params)
-        if self.hydra_cfg is not None:
-            hydra_cfg = omegaconf.OmegaConf.to_container(
-                self.hydra_cfg, resolve=True
-            )
-            self.experiment.config.update(
-                {"cfg": hydra_cfg}, allow_val_change=True
-            )
+        # if self.hydra_cfg is not None:
+        #    hydra_cfg = omegaconf.OmegaConf.to_container(
+        #        self.hydra_cfg, resolve=True
+        #    )
+        #    self.experiment.config.update(
+        #        {"cfg": hydra_cfg}, allow_val_change=True
+        #    )

@@ -1,7 +1,7 @@
 defaults:
   - _self_
   - paths: default
-  - hardware: null
+  - hardware: 1_node_1_gpu
 
 # Keep common utils
 hydra:
@@ -25,7 +25,7 @@ slurm:
   job_name: ${job_name}
   nodes: 1
   mem: 20GB
-  time: "20:00:00"
+  time: "2-00:00:00"
   partition: gpu
   constraint: vram40,bf16
   ntasks_per_node: 1 
@@ -49,19 +49,20 @@ env:
   TORCH_LOGS: recompiles
   TQDM_MINITERS: 1000
 
-# Training configuration
-train:
+# Evaluation configuration
+eval:
   experiment: ???
+  generative_perplexity: ???
   debug: null
-  batch_size: 64 # per device batch size, global is set by the main config
+  batch_size: 64 # both global and per device batch size, assuming single device
   compile: false
-  precision: bf16-mixed
-  job_type: train
-  num_nodes: ${slurm.nodes}
-  devices: ${parse_gpu_count:${slurm.gres}}
-  hooks: false
-  trainer_strategy: ${determine_trainer_strategy:${slurm.ntasks_per_node},${slurm.nodes},${.hooks}}
+  precision: 32-true # sample in 32-bit precision
+  job_type: eval
+  eval_type: nll
+  checkpoint_path: ???
+  num_examples: 1000
+  split: test
 
 do: print # submit
 job_name: ???
-use_job_name_as_id: true
+use_job_name_as_id: false # no resume support

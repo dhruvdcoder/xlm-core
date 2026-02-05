@@ -2,3 +2,4 @@ ema:
   _target_: xlm.utils.ema.EMACallback
   decay: 0.9999
   use_num_updates: true
+  apply_ema_at_train_end: true  # Apply EMA weights to model at end of training

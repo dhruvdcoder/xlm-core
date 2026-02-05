@@ -13,6 +13,7 @@ defaults:
   - experiment: null # inject arbitrary overrides
   - debug: null
 
+
 ################################################################################
 # region: main global config that controls the components
 seed: 1
@@ -24,6 +25,7 @@ resume_from_checkpoint: true
 resume_checkpoint_path: null
 compile: false
 per_device_batch_size: 64
+per_device_val_batch_size: ${per_device_batch_size}
 global_batch_size: 512
 block_size: 128
 #input_block_size: null # only needed for seq2seq and is set in experiment config should not be set here
