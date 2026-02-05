@@ -1,13 +1,13 @@
 import os
 
-_MAJOR = "0"
-_MINOR = "0"
+_MAJOR = os.environ.get("XLM_CORE_VERSION_MAJOR", "0")
+_MINOR = os.environ.get("XLM_CORE_VERSION_MINOR", "0")
 # On main and in a nightly release the patch should be one ahead of the last
 # released build.
-_PATCH = "0"
+_PATCH = os.environ.get("XLM_CORE_VERSION_PATCH", "0")
 # This is mainly for nightly builds (if the project has it) which have the suffix ".dev$DATE". See
 # https://semver.org/#is-v123-a-semantic-version for the semantics.
-_SUFFIX = os.environ.get("PCDD_VERSION_SUFFIX", "")
+_SUFFIX = os.environ.get("XLM_CORE_VERSION_SUFFIX", "")
 
 VERSION_SHORT = "{0}.{1}".format(_MAJOR, _MINOR)
 VERSION = "{0}.{1}.{2}{3}".format(_MAJOR, _MINOR, _PATCH, _SUFFIX)

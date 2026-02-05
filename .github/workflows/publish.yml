@@ -17,10 +17,36 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install setuptools wheel twine
+    - name: Extract version from tag
+      id: get_version
+      run: |
+        # Get the tag name (e.g., v1.2.3 or 1.2.3)
+        TAG_NAME="${{ github.event.release.tag_name }}"
+        # Remove 'v' prefix if present
+        VERSION=${TAG_NAME#v}
+        # Split version into components
+        IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+        # Handle case where PATCH might have suffix (e.g., 1.2.3-beta)
+        if [[ $PATCH == *"-"* ]]; then
+          PATCH_NUM=$(echo $PATCH | cut -d'-' -f1)
+          SUFFIX=".$(echo $PATCH | cut -d'-' -f2-)"
+        else
+          PATCH_NUM=$PATCH
+          SUFFIX=""
+        fi
+        echo "major=$MAJOR" >> $GITHUB_OUTPUT
+        echo "minor=$MINOR" >> $GITHUB_OUTPUT
+        echo "patch=$PATCH_NUM" >> $GITHUB_OUTPUT
+        echo "suffix=$SUFFIX" >> $GITHUB_OUTPUT
+        echo "Version extracted: $MAJOR.$MINOR.$PATCH_NUM$SUFFIX"
     - name: Build and publish
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        XLM_CORE_VERSION_MAJOR: ${{ steps.get_version.outputs.major }}
+        XLM_CORE_VERSION_MINOR: ${{ steps.get_version.outputs.minor }}
+        XLM_CORE_VERSION_PATCH: ${{ steps.get_version.outputs.patch }}
+        XLM_CORE_VERSION_SUFFIX: ${{ steps.get_version.outputs.suffix }}
       run: |
         python setup.py sdist bdist_wheel
         twine upload dist/*
