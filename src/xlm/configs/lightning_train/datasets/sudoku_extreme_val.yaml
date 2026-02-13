@@ -1,0 +1,9 @@
+defaults:
+    - sudoku_extreme_train
+    - _self_
+
+full_name: brozonoyer/sapientinc-sudoku-extreme-timvink-sudoku-solver/test
+full_name_debug: brozonoyer/sapientinc-sudoku-extreme-timvink-sudoku-solver/train
+stages:
+    - fit
+    - validate
