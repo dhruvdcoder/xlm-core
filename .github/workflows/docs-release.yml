@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
   group: "pages"
-  fail-fast: false
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -31,7 +31,10 @@ jobs:
           pip install -e .
           pip install -e xlm-models/
           pip install -e xlm-models/idlm/
-          pip install mkdocs mkdocs-material "mkdocstrings[python]" mike
+          pip install -r requirements/docs_requirements.txt
+
+      - name: Build docs (verify)
+        run: mkdocs build
 
       - name: Extract version from tag
         id: get_version
