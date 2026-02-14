@@ -56,6 +56,35 @@ from transformers import (
     AddedToken,
 )
 
+__all__ = [
+    # Protocols and types
+    "Tokenizer",
+    "BaseBatch",
+    "DataLoaderKwargs",
+    "Collator",
+    # Tokenizers
+    "BertTokenizer",
+    "BertTokenizerFast",
+    "GPT2Tokenizer",
+    "GPT2TokenizerFast",
+    "SAFETokenizer",
+    "SimpleSpaceTokenizer",
+    # Dataset managers
+    "DatasetManager",
+    "LocalDatasetManager",
+    "UnconditionalGenerationDatasetManager",
+    # Data modules
+    "BaseDataModule",
+    "TextDataModule",
+    # Collator types and implementations
+    "BaseCollatorInput",
+    "Seq2SeqCollatorInput",
+    "InfillingCollatorInput",
+    "DefaultCollator",
+    "DefaultCollatorWithPadding",
+    "DefaultCollatorWithDynamicPadding",
+]
+
 logger = RankedLogger(__name__, rank_zero_only=True)
 ranked_logger = RankedLogger(__name__, rank_zero_only=False)
 
@@ -446,38 +475,61 @@ def tokenizing_preprocess_fn(
 
 
 class DatasetManager:
+    """Manages a single dataset through its lifecycle: download, preprocess, cache, setup, and dataloader creation.
+
+    Used per split (train/val/test/predict) by :class:`TextDataModule`, which orchestrates
+    multiple DatasetManager instances.
+    """
+
     def __init__(
         self,
-        collator: Collator,  # can depend on the model
-        # full_name: str,  # e.g. "repo/ds_name/<split>/<type>", eg. `/lm1b/train/lm`
-        full_name: str,  # e.g. "repo/ds_name/split", eg. `one-billion-word-benchmark/lm1b/train`
-        full_name_debug: str,  # Used with DEBUG_OVERFIT is set to True. So if this manager is for val or test split, replace the split with train here..
-        # split_to_download: str,  # e.g. "train", "val", "test", "predict"
-        dataloader_kwargs: DataLoaderKwargs,  # e.g. {"batch_size": 1, "num_workers": 1, "shuffle": True, "pin_memory": True}
-        preprocess_function: Optional[str] = None,  # e.g. "preprocess_fn"
+        collator: Collator,
+        full_name: str,
+        full_name_debug: str,
+        dataloader_kwargs: DataLoaderKwargs,
+        preprocess_function: Optional[str] = None,
         preprocess_function_kwargs: Optional[Dict[str, Any]] = None,
-        on_the_fly_processor: Optional[str] = None,  # e.g. "ids_to_example_fn"
-        on_the_fly_processor_kwargs: Optional[
-            Dict[str, Any]
-        ] = None,  # e.g. {"block_size": 128}
-        on_the_fly_group_processor: Optional[
-            str
-        ] = None,  # e.g. "group_texts_ilm"
-        model_name: Optional[
-            str
-        ] = None,  # used to create model specific cache dir if supplied
-        columns_to_remove: Optional[List[str]] = None,  # e.g. ["text"]
-        stages: List[
-            Literal["fit", "validate", "test", "predict"]
-        ] = None,  # e.g. ["fit", "validate"]
-        iterable_dataset_shards: Optional[int] = None,  # e.g. 1000
-        shuffle_buffer_size: Optional[int] = None,  # e.g. 10000
-        shuffle_seed: Optional[int] = 42,  # e.g. 42
-        split_by_node: bool = True,  # e.g. True
-        dataset: Optional[datasets.Dataset] = None,  # only set later
+        on_the_fly_processor: Optional[str] = None,
+        on_the_fly_processor_kwargs: Optional[Dict[str, Any]] = None,
+        on_the_fly_group_processor: Optional[str] = None,
+        model_name: Optional[str] = None,
+        columns_to_remove: Optional[List[str]] = None,
+        stages: Optional[
+            List[Literal["fit", "validate", "test", "predict"]]
+        ] = None,
+        iterable_dataset_shards: Optional[int] = None,
+        shuffle_buffer_size: Optional[int] = None,
+        shuffle_seed: Optional[int] = 42,
+        split_by_node: bool = True,
         rewrite_manual_cache: bool = False,
         use_manual_cache: bool = True,
     ):
+        """Initialize the dataset manager.
+
+        Args:
+            collator: Collates examples into batches; model-specific.
+            full_name: Full dataset path (e.g., "repo/ds_name/split").
+            full_name_debug: Used when DEBUG_OVERFIT is True; typically the train
+                split path so val/test managers overfit on train data.
+            dataloader_kwargs: batch_size, num_workers, shuffle, pin_memory.
+            preprocess_function: Dotted path to preprocessing function (e.g., tokenization).
+            preprocess_function_kwargs: Kwargs passed to the preprocess function.
+            on_the_fly_processor: Dotted path to per-example processor
+                (e.g., ids_to_example_fn). For iterable (streaming) datasets, this is applied to each example on the fly, and before the group processor.
+            on_the_fly_processor_kwargs: Kwargs for the on-the-fly processor.
+            on_the_fly_group_processor: Dotted path to the group processor function,
+                which receives large batches of examples, and applies on-the-fly processors
+                that require a big chunk of data, for example, packing sequences without padding.
+            model_name: Used for model-specific cache subdirectories.
+            columns_to_remove: Columns to drop during preprocessing (e.g., ["text"]).
+            stages: Lightning stages this manager participates in.
+            iterable_dataset_shards: If set, dataset is converted to IterableDataset with this many shards.
+            shuffle_buffer_size: Buffer size for dataset.shuffle() (IterableDataset).
+            shuffle_seed: Seed for shuffle.
+            split_by_node: Whether to split IterableDataset by rank in DDP.
+            rewrite_manual_cache: If True, re-download and overwrite cached data.
+            use_manual_cache: If True, use manual cache dir created using save_to_disk(), else let HF Datasets do automatic caching.
+        """
         self.collator = collator
         self._full_name = full_name
         self._full_name_debug = full_name_debug
@@ -502,8 +554,7 @@ class DatasetManager:
         self.shuffle_buffer_size = shuffle_buffer_size
         self.shuffle_seed = shuffle_seed
         self.split_by_node = split_by_node
-        self.dataset = dataset
-        self.dataset = None
+        self.dataset = None  # set in setup()
         self.is_iterable_dataset = iterable_dataset_shards is not None
         self.rewrite_manual_cache = rewrite_manual_cache
         self.use_manual_cache = use_manual_cache
@@ -511,28 +562,22 @@ class DatasetManager:
     def __repr__(self) -> str:
         return f"DatasetManager(full_name={self.full_name})"
 
+    ##################################################
+    # region: Properties
+
     @property
     def _split_to_download(self) -> str:
         return self.full_name.split("/")[-1]
-
-    # @property
-    # def type(self) -> str:
-    #    return self.full_name.split("/")[-1]
-
-    # @property
-    # def split(self) -> Literal["train", "val", "test", "predict"]:
-    #    return self.full_name.split("/")[-2]
 
     @property
     def name(self) -> str:
         return "/".join(self.full_name.split("/")[:2])
 
-    def set_epoch(self, epoch: int) -> None:
-        # only datasets.IterableDataset has set_epoch to shuffle the buffer
-        # TODO (fabric): For map-style datasets that use DistributedSampler, one needs to
-        # call set_epoch on the DistributedSampler of the dataloader.
-        if hasattr(self.dataset, "set_epoch") and not flags.DEBUG_OVERFIT:
-            self.dataset.set_epoch(epoch)  # type: ignore
+    # endregion: Properties
+    ##################################################
+
+    ##################################################
+    # region: Private methods
 
     def _download(self, num_proc: Optional[int] = None) -> datasets.Dataset:
         name = self.name
@@ -628,7 +673,6 @@ class DatasetManager:
                 batched=True,
                 fn_kwargs={
                     "tokenizer": tokenizer,
-                    "block_size": self.block_size,
                     "block_size": block_size,
                     "pad_id": pad_id,
                     "type_id_extension": type_id_extension,
@@ -638,6 +682,27 @@ class DatasetManager:
             return dataset
         return dataset
 
+    # endregion: Private methods
+    ##################################################
+
+    ##################################################
+    # region: Public methods
+
+    def set_epoch(self, epoch: int) -> None:
+        """Set epoch for IterableDataset shuffle buffer reproducibility.
+
+        For IterableDataset, calls dataset.set_epoch(epoch). For map-style datasets
+        with DistributedSampler, set_epoch must be called on the sampler separately.
+
+        Args:
+            epoch: Current training epoch.
+
+        Warning:
+          Note for future extensions. For map-style datasets with DistributedSampler, set_epoch must be called on the sampler separately.
+        """
+        if hasattr(self.dataset, "set_epoch") and not flags.DEBUG_OVERFIT:
+            self.dataset.set_epoch(epoch)  # type: ignore
+
     def prepare_data(
         self,
         manual_cache_dir: str,
@@ -645,7 +710,25 @@ class DatasetManager:
         num_proc: Optional[int] = None,
         load: bool = False,
     ) -> Optional[datasets.Dataset]:
-        # check cache, download, preprocess, cache if not already cached.
+        """Download, preprocess, and cache the dataset.
+
+        If use_manual_cache: checks cache first; downloads and caches (using save_to_disk()) if missing. Note this different from HF datasets' automatic caching.
+        If rewrite_manual_cache: re-downloads and overwrites cache.
+        Called before setup() by TextDataModule.prepare_data().
+
+
+        Args:
+            manual_cache_dir: Base directory for manual cache.
+            tokenizer: Tokenizer for preprocessing.
+            num_proc: Number of processes for parallel map operations.
+            load: If True and cache exists, load and return the dataset; else return None.
+
+        Returns:
+            The dataset if load=True and cache was found/created; None otherwise.
+
+        Note:
+            This method is only called on rank 0 and therefore does not set an state on the instance. setup() is called on all ranks.
+        """
         if self.use_manual_cache:
             if not self._check_cache(manual_cache_dir):
                 logger.info(
@@ -692,6 +775,21 @@ class DatasetManager:
         world_size: int,
         num_dataset_workers: Optional[int] = None,
     ) -> None:
+        """Load dataset (should have already been downloaded and preprocessed by prepare_data()), optionally convert to IterableDataset, apply on-the-fly and group processors, and split by node if DDP.
+
+        calledBy:
+            TextDataModule.setup().
+
+        Args:
+            stage: Lightning stage (fit, validate, test, predict).
+            manual_cache_dir: Base directory for manual cache.
+            tokenizer: Tokenizer for processors.
+            block_size: Max sequence length for group processors.
+            is_ddp: Whether distributed training is used.
+            rank: Global rank of this process.
+            world_size: Total number of processes.
+            num_dataset_workers: Number of workers for prepare_data if cache not used.
+        """
         if stage in self.stages and self.dataset is None:
             if self.use_manual_cache:
                 dataset = self._load_from_cache(manual_cache_dir)
@@ -745,10 +843,20 @@ class DatasetManager:
         rank: int,
         world_size: int,
     ) -> Union[DataLoader, StatefulDataLoader]:
-        # case 1: DDP and IterDataset=> Dataset is stateful, handles shuffling and already split_by_node. No sampler needed.
-        # case 2: DDP and MapDataset=> Need StatefulDistributedSampler with deterministic seed.
-        # case 3: Single GPU and MapDataset=> Use StatefulRandomSampler with deterministic seed. Simply setting shuffle=True on StatefulDataloader is equivalent.
-        # case 4: Single GPU and IterDataset=> Dataset is stateful and handles shuffling. Does not need splitting.
+        """Return a DataLoader or StatefulDataLoader for the given split.
+
+        Chooses loader and sampler based on: DDP vs single-GPU, IterableDataset vs map-style.
+        Train: StatefulDataLoader with appropriate sampler. Val/test/predict: standard DataLoader.
+
+        Args:
+            type: Dataloader type (train, val, test, predict).
+            is_ddp: Whether distributed training is used.
+            rank: Global rank of this process.
+            world_size: Total number of processes.
+
+        Returns:
+            Configured DataLoader or StatefulDataLoader.
+        """
         if (
             type == "train"
             and is_ddp
@@ -835,6 +943,9 @@ class DatasetManager:
             **self.dataloader_kwargs,
         )
         return dataloader
+
+    # endregion: Public methods
+    ##################################################
 
 
 class LocalDatasetManager(DatasetManager):

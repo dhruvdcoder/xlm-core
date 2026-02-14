@@ -13,9 +13,14 @@ extra:
 theme:
   name: material
   features:
-    - navigation.tabs
+    - navigation.tabs # top level navigation tabs
     - navigation.sections
+    - navigation.top # adds a back-to-top button to the top of the page
     - toc.integrate
+    #- navigation.indexes
+  icon:
+    admonition:
+      calledBy: material/transit-connection-variant
 
 plugins:
   - search
@@ -26,22 +31,43 @@ plugins:
         python:
           paths: [src, xlm-models]
           options:
+            show_root_heading: true
             show_source: false
             docstring_style: google
-            members_order: alphabetical
+            members_order: source
+  - api-autonav:
+      modules: [src/xlm, xlm-models/arlm, xlm-models/mlm, xlm-models/ilm, xlm-models/mdlm]
+      nav_section_title: Reference
+      api_root_uri: reference
+      module_options:
+        ".*":
+          heading_level: 1
+          show_root_heading: true
+          show_symbol_type_heading: true
+          show_symbol_type_toc: true
+          # Respect __all__ in source files; omit objects not in __all__
+          filters: "public"
+
+markdown_extensions:
+  - toc:
+      toc_depth: 4
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
 
 nav:
   - Home: index.md
   - Guide:
       - Quick Start: guide/quickstart.md
-      - Training: guide/training.md
-      - Generation: guide/generation.md
+      - Conceptual Overview:
+        - Data Pipeline: guide/data-pipeline.md
+        - Metrics: guide/metrics.md
       - External Models: guide/external-models.md
-      - Contributing: guide/contributing.md
+      - Custom Commands: guide/custom-commands.md
       - FAQ: guide/faq.md
   - Developers:
       - Building Docs: guide/building-docs.md
       - Releasing to PyPI: guide/releasing.md
-  - Reference:
-      - API (xlm-core): reference/api.md
-      - API (xlm-models): reference/api-models.md
+  - Reference: reference/

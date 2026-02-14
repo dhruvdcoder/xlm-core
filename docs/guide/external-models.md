@@ -1,6 +1,6 @@
 # External Language Models for XLM
 
-XLM supports external language models that can be developed and maintained separately from the core framework. This allows researchers to keep their model code clean and self-contained, and share models without including the entire XLM codebase.
+XLM supports external language models that can be developed and maintained separately from the core framework. This allows researchers to keep their model code clean and self-contained, and share models without including the entire XLM codebase. The code follows a modular design with four main components that work together to provide a complete language modeling solution. You need to implement all of them in order to add a new working model.
 
 ## Quick Start
 
@@ -38,6 +38,90 @@ xlm job_type=train \
   debug=overfit
 ```
 
+## Main Components
+
+### 1. **LossFunction**
+The `LossFunction` is responsible for computing the training loss during model training, validation and optionally test time.
+
+**Key Responsibilities:**
+- Compute loss between model predictions and ground truth targets
+- Return a dictionary with "loss" key and any other additional values that you want to track.
+
+**Interface:**
+```python
+class LossFunction(Generic[T_in, T_out], Protocol):
+    model: Any
+    tokenizer: Tokenizer
+
+    def loss_fn(self, batch: T_in, ...) -> T_out: ...
+    def configure(self, pl_module: "Harness"): ...
+        """Converts scalar to tensor such that loss_fn becomes compile friendly. If you don't want to compile you don't need to implement this.
+        """
+```
+
+Examples: `xlm-models/arlm/loss_arlm.py`
+
+### 2. **Predictor**
+The `Predictor` handles generating output sequences from the model.
+
+**Key Responsibilities:**
+- Run the model (typically in a loop) to produce a sequence of tokens.
+- Convert generated token_ids to text.
+
+**Interface:**
+```python
+class Predictor(Generic[T_in, T_out_pred], Protocol):
+    tokenizer: Tokenizer
+    noise_schedule: NoiseSchedule
+    model: Any
+
+    def predict(self, batch: T_in, ...) -> T_out_pred: ...
+    def to_dict(self, batch: T_in, preds: T_out_pred, ...) -> List[Dict[str, Any]]: ...
+```
+
+Examples: `xlm-models/arlm/predictor_arlm.py`
+
+### 3. **Collator**
+The `Collator` prepares batches of data for training and inference. It handles data preprocessing, padding, and batching.
+
+**Key Responsibilities:**
+- It receives raw token_ids and converts them to a dict which is passed in as a batch to the model.
+- Handle padding and truncation.
+
+**Interface:**
+```python
+class Collator(Protocol):
+    """For pre-training the model on language modeling."""
+    def __call__(self, examples: List[Dict[str, Any]]) -> Dict[str, Any]: ...
+
+class Seq2SeqCollator(Collator):
+    """For training the model on seq2seq tasks."""
+    def __call__(self, examples: List[Dict[str, Any]]) -> Dict[str, Any]: ...
+
+class Seq2SeqCollatorPrediction(Collator):
+    """For generating predictions for seq2seq tasks."""
+    def __call__(self, examples: List[Dict[str, Any]]) -> Dict[str, Any]: ...
+```
+
+Examples: `xlm-models/arlm/datamodule_arlm.py`
+
+### 4. **Model**
+The `Model` is the bare neural network architecture for your LM. It defines the forward pass and model parameters.
+
+**Key Responsibilities:**
+- Define the neural network architecture.
+- Implement the forward pass.
+
+**Interface:**
+```python
+class Model:
+    def forward(self, input_ids: Tensor, attention_mask: Optional[Tensor] = None, ...) -> Tensor: ...
+```
+
+Examples: `xlm-models/arlm/model_arlm.py`
+
+All these four components are designed to be aware of each other, and are only expected to run with each other for the same LM and not with any other LM. This is a key design choice that allows one to implement really esoteric models without worrying about how to abstract them such that their dataflow becomes compatible with other LMs.
+
 ## Model Structure
 
 Each external model follows this structure:
@@ -58,10 +142,36 @@ my_awesome_model/                    # Model root directory
 │   ├── collator/
 │   ├── datamodule/
 │   ├── experiment/
-│   └── commands.yaml                # Optional: custom commands
+│   └── commands.yaml                # Optional: see [Custom Commands](custom-commands.md)
 ├── setup.py                         # Package installation (optional)
 └── README.md                        # Documentation
 ```
+
+## Configuration
+
+External models integrate with Hydra's configuration system. Use them in your experiments:
+
+```yaml
+# configs/experiment/my_experiment.yaml
+defaults:
+  - override /model: my_awesome_model
+  - override /model_type: my_awesome_model
+  - override /datamodule: star_easy_my_awesome_model
+```
+
+Or via command line:
+
+```bash
+xlm job_type=train model=my_awesome_model model_type=my_awesome_model
+```
+
+Key config locations (paths may vary for external models in `xlm-models/`):
+
+- `configs/lightning_train/collator/` – Collator configs
+- `configs/lightning_train/datamodule/` – Datamodule configs
+- `configs/lightning_train/model/` – Model (neural network) configs
+- `configs/lightning_train/model_type/` – Loss, predictor, metrics
+- `configs/lightning_train/experiment/` – Experiment configs
 
 ## Discovery Methods
 
@@ -73,7 +183,7 @@ Place your model directory in one of these locations:
 
 - Current directory (`.`)
 - `xlm-models/` directory
-- Directory specified by `XLM_MODELS_PATH` environment variable
+- Directory specified by the `XLM_MODELS_PATH` environment variable
 
 Create a `xlm_models.json` file in the search directory:
 
@@ -100,7 +210,7 @@ The paths are relative to the directory containing `xlm_models.json`.
 
 ### 2. Package-Based Discovery
 
-Install your model as a Python package and register it via the `XLM_MODELS_PACKAGES` environment variable.
+Install your model as a Python package and register it via the `XLM_MODELS_PACKAGES` environment variable (colon-separated list of installed package names).
 
 **Package structure requirements:**
 
@@ -134,56 +244,6 @@ export XLM_MODELS_PACKAGES="my_awesome_model:another_model"
 ```
 
 **Core models** (`arlm`, `mlm`, `ilm`, `mdlm`) are automatically discovered and don't need to be added to `XLM_MODELS_PACKAGES`.
-
-## Custom Commands
-
-Models can define custom commands that extend XLM's CLI by creating `configs/commands.yaml`:
-
-```yaml
-# configs/commands.yaml
-my_custom_command: "my_awesome_model.commands.my_function"
-preprocess_data: "my_awesome_model.commands.preprocess"
-```
-
-Usage:
-
-```bash
-xlm command=my_custom_command arg1=value1 arg2=value2
-```
-
-The command functions should accept an `omegaconf.DictConfig` parameter containing the Hydra configuration.
-
-## Environment Variables
-
-- **`XLM_MODELS_PATH`**: Additional directory to search for `xlm_models.json` files
-
-  ```bash
-  export XLM_MODELS_PATH="/path/to/external/models"
-  ```
-
-- **`XLM_MODELS_PACKAGES`**: Colon-separated list of installed Python packages to discover
-
-  ```bash
-  export XLM_MODELS_PACKAGES="my_model1:my_model2"
-  ```
-
-## Configuration
-
-External models integrate with Hydra's configuration system. Use them in your experiments:
-
-```yaml
-# configs/experiment/my_experiment.yaml
-defaults:
-  - override /model: my_awesome_model
-  - override /model_type: my_awesome_model
-  - override /datamodule: star_easy_my_awesome_model
-```
-
-Or via command line:
-
-```bash
-xlm job_type=train model=my_awesome_model model_type=my_awesome_model
-```
 
 ## Troubleshooting
 
@@ -220,6 +280,14 @@ hydra.errors.ConfigCompositionException: Could not find 'model/my_model'
 - `configs/model_type/my_model.yaml` exists
 - Config files have valid YAML syntax
 - `_target_` paths point to correct classes
+
+### Hydra Errors
+
+If you see `Unable to find or instantiate abc.xyz.MyClass`, try importing manually: `python -c "from abc.xyz import MyClass"`.
+
+### Unable to implement a component
+
+Check existing models in `xlm-models/` (arlm, mlm, ilm, mdlm) for reference.
 
 ## Examples
 
