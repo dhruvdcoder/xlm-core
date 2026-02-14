@@ -1,19 +1,23 @@
-<img src="xLM_bold.png" width="600" alt="XLM Logo" align="center" />
+<p align="center">
+  <img src="xLM_bold.png" width="600" alt="XLM Logo" />
+</p>
 
-# A Unified Framework for Non-Autoregressive Language Models
+<h1 align="center">A Unified Framework for Non-Autoregressive Language Models</h1>
+
 
 XLM is a modular, research-friendly framework for developing and comparing non-autoregressive language models. Built on PyTorch and PyTorch Lightning, with Hydra for configuration management, XLM makes it effortless to experiment with cutting-edge NAR architectures.
 
 ## Key Features
 
-| Feature                    | Description                                                                                                                                                  |
-|----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Modular Design**         | Plug-and-play components—swap models, losses, predictors, and collators independently                                                                        |
-| **Lightning-Powered**      | Distributed training, mixed precision, and logging out of the box                                                                                            |
-| **Hydra Configs**          | Hierarchical configuration with runtime overrides—no code changes needed                                                                                     |
-| **Multiple Architectures** | Multiple model families ready to use as baselines                                                                                                            |
-| **Research-First**         | Lightweight, and type annotated with `jaxtyping`, several debug for quick testing, and flexible code injection points for practially limitless customization |
-| **Hub Integration**        | Push trained models directly to Hugging Face Hub                                                                                                             |
+
+| Feature                                                                    | Description                                                                                                                                                  |
+|----------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Modular Design**                                                         | Plug-and-play components—swap models, losses, predictors, and collators independently                                                                        |
+| **[Lightning-Powered](https://github.com/Lightning-AI/pytorch-lightning)** | Uses PyTorch Lightning for distributed training, mixed precision, and logging out of the box                                                                 |
+| **[Hydra Configs](https://hydra.cc/)**                                     | Hierarchical configuration with runtime overrides—no code changes needed                                                                                     |
+| **Multiple Architectures**                                                 | Multiple model families ready to use as baselines                                                                                                            |
+| **Research-First**                                                         | Lightweight, and type annotated with `jaxtyping`, several debug for quick testing, and flexible code injection points for practially limitless customization |
+| **Hub Integration**                                                        | Push trained models directly to Hugging Face Hub                                                                                                             |
 
 ## Available Models
 

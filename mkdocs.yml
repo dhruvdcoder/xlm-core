@@ -34,7 +34,6 @@ nav:
   - Home: index.md
   - Guide:
       - Quick Start: guide/quickstart.md
-      - Design: guide/design.md
       - Training: guide/training.md
       - Generation: guide/generation.md
       - External Models: guide/external-models.md
