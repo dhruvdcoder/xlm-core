@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="./assets/xlm.gif" width="180" alt="XLM Logo"/>
+  <img src="./docs/xLM_bold.png" width="180" alt="XLM Logo"/>
 </p>
 
-<h1 align="center">XLM</h1>
+<!-- <h1 align="center">XLM</h1> -->
 
 <p align="center">
   <strong>A Unified Framework for Non-Autoregressive Language Models</strong>

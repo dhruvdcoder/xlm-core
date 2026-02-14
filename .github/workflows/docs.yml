@@ -1,0 +1,60 @@
+name: Deploy Docs to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch or ref to build and deploy"
+        required: false
+        default: "main"
+        type: string
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -e .
+          pip install -e xlm-models/
+          pip install -r requirements/docs_requirements.txt
+
+      - name: Build docs (verify)
+        run: mkdocs build
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch gh-pages
+        run: git fetch origin gh-pages --depth=1 || true
+
+      - name: Deploy docs to gh-pages
+        run: mike deploy dev --push
+
+      - name: Set default version (when no releases exist)
+        run: |
+          if ! mike list latest 2>/dev/null; then
+            mike set-default dev --push
+          fi
