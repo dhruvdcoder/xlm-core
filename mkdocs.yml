@@ -1,0 +1,48 @@
+site_name: "XLM"
+site_description: "A Unified Framework for Non-Autoregressive Language Models"
+site_url: "https://dhruvdcoder.github.io/xlm-core/"
+repo_url: "https://github.com/dhruvdcoder/xlm-core"
+repo_name: "dhruvdcoder/xlm-core"
+edit_uri: "edit/main/docs/"
+
+extra:
+  version:
+    provider: mike
+    default: latest
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+
+plugins:
+  - search
+  - mike:
+      alias_type: redirect
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src, xlm-models]
+          options:
+            show_source: false
+            docstring_style: google
+            members_order: alphabetical
+
+nav:
+  - Home: index.md
+  - Guide:
+      - Quick Start: guide/quickstart.md
+      - Design: guide/design.md
+      - Training: guide/training.md
+      - Generation: guide/generation.md
+      - External Models: guide/external-models.md
+      - Contributing: guide/contributing.md
+      - FAQ: guide/faq.md
+  - Developers:
+      - Building Docs: guide/building-docs.md
+      - Releasing to PyPI: guide/releasing.md
+  - Reference:
+      - API (xlm-core): reference/api.md
+      - API (xlm-models): reference/api-models.md
