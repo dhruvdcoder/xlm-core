@@ -1,0 +1,50 @@
+# @package _global_
+#
+# Minimal debug config for CI smoke tests.
+# Runs 5 training steps with validation at step 3.
+# Used by tests/cli/test_smoke.py via --config-dir.
+
+defaults:
+  - override /callbacks: debug_v2
+  - override /loggers: debug
+
+global_flags:
+  DEBUG: true
+  DEBUG_OVERFIT: true
+
+paths:
+  log_dir: ${paths.root_dir}/debug_logs/
+
+global_batch_size: 1
+per_device_batch_size: 1
+num_dataloader_workers: 0
+num_dataset_workers: 1
+dataloader_prefetch_factor: null
+dataloader_persistent_workers: false
+
+trainer:
+  max_epochs: null
+  max_steps: 5
+  overfit_batches: 1
+  val_check_interval: 3
+  check_val_every_n_epoch: null
+  limit_val_batches: 2
+  log_every_n_steps: 1
+  gradient_clip_val: 1.0
+  num_sanity_val_steps: 0
+  enable_checkpointing: false
+
+optimizer:
+  lr: 0.0001
+
+lr_scheduler:
+  num_warmup_steps: 2
+  num_training_steps: ${trainer.max_steps}
+  fraction_warmup_steps: null
+
+generative_perplexity:
+  evaluators: null
+  num_samples: 1
+
+tags:
+  debug: smoke
