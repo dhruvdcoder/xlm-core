@@ -8,7 +8,6 @@ from xlm.datamodule import (
 from jaxtyping import Float, Integer
 from torch.utils.data import IterableDataset
 from torch import Tensor as TT
-from xlm.lm.mdlm.types_mdlm import MDLMBatch
 from xlm.noise import NoiseSchedule
 from typing import Callable, Dict, List, Literal, Optional, Any
 from .types_mdlm import MDLMBatch
