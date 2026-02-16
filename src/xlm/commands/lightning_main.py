@@ -14,8 +14,8 @@ dotenv.load_dotenv(
     dotenv_path=".env", # we need to point to .env in current dir when xlm console script is run
     override=True, verbose=True
 )  # set env variables from .env file, override=True is important
-found_secretes = dotenv.load_dotenv(".secrets.env", override=True)
-if not found_secretes:
+found_secrets = dotenv.load_dotenv(".secrets.env", override=True)
+if not found_secrets:
     print("Warning: .secrets.env not found")
 # fmt: on
 
