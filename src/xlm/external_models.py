@@ -172,7 +172,7 @@ def setup_external_models() -> List[Path]:
     for model_dir in model_dirs:
         # Add to Python path for imports
         if str(model_dir) not in sys.path:
-            sys.path.insert(0, str(model_dir))
+            sys.path.insert(0, str(Path(model_dir).parent.resolve()))
             logger.info(f"Added to sys.path: {model_dir}")
 
     # Log discovered models

@@ -7,6 +7,7 @@ hydra-colorlog
 hydra-joblib-launcher
 hydra-submitit-launcher
 datasets >= 3.3.2, < 4.0.0
+wandb
 transformers
 more-itertools
 torchdata>=0.9.0
