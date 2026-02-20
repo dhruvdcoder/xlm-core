@@ -1,5 +1,5 @@
 """
-ILM - Infilling Language Model for XLM Framework
+ILM - Infilling Language Model for xLM Framework
 
 This package implements the ILM model with all necessary components:
 - Model architecture (model_ilm.py)

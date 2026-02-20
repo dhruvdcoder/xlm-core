@@ -1,6 +1,6 @@
-# External Language Models for XLM
+# External Language Models for xLM
 
-XLM supports external language models that can be developed and maintained separately from the core framework. This allows researchers to keep their model code clean and self-contained, and share models without including the entire XLM codebase. The code follows a modular design with four main components that work together to provide a complete language modeling solution. You need to implement all of them in order to add a new working model.
+xLM supports external language models that can be developed and maintained separately from the core framework. This allows researchers to keep their model code clean and self-contained, and share models without including the entire xLM codebase. The code follows a modular design with four main components that work together to provide a complete language modeling solution. You need to implement all of them in order to add a new working model.
 
 ## Quick Start
 
@@ -175,7 +175,7 @@ Key config locations (paths may vary for external models in `xlm-models/`):
 
 ## Discovery Methods
 
-XLM discovers external models through two approaches:
+xLM discovers external models through two approaches:
 
 ### 1. Directory-Based Discovery
 
@@ -266,7 +266,7 @@ Error: No module named 'my_model'
 ExternalModelConflictError: Duplicate model name: my_model
 ```
 
-**Solution:** Each model must have a unique name. Check for duplicate entries in `xlm_models.json` files or conflicts with core XLM models.
+**Solution:** Each model must have a unique name. Check for duplicate entries in `xlm_models.json` files or conflicts with core xLM models.
 
 ### Config Not Found
 

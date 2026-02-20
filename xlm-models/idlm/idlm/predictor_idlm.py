@@ -1,7 +1,7 @@
 """Predictor for IDLM model.
 
 This file implements the prediction logic for IDLM (Inserting Diffusion Language Model).
-Simplified from PCDD implementation and adapted for XLM framework with token dropping.
+Simplified from PCDD implementation and adapted for xLM framework with token dropping.
 """
 
 from typing import Any, Dict, List, Optional, Tuple, cast, Literal

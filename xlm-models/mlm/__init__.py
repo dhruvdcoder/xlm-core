@@ -1,5 +1,5 @@
 """
-MLM - Masked Language Model for XLM Framework
+MLM - Masked Language Model for xLM Framework
 
 This package implements the MLM model with all necessary components:
 - Model architecture (model_mlm.py)

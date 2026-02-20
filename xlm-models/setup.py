@@ -3,9 +3,9 @@ from setuptools import setup, find_packages
 setup(
     name="xlm-models",
     version="0.1.0",
-    description="Collection of Language Models for XLM Framework",
+    description="Collection of Language Models for xLM Framework",
     long_description="""
-    Collection of language models for the XLM framework.
+    Collection of language models for the xLM framework.
     
     Available models:
     - arlm: Auto-Regressive Language Model
@@ -33,7 +33,7 @@ setup(
         "mdlm": ["configs/**/*.yaml", "configs/**/*.yml"],
     },
     install_requires=[
-        "xlm-core",  # Core XLM framework dependency
+        "xlm-core",  # Core xLM framework dependency
     ],
     project_urls={
         "Source Code": "https://github.com/dhruvdcoder/xlm-core/tree/main/xlm-models"

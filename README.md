@@ -10,13 +10,14 @@
 
 <p align="center">
   <a href="https://pypi.org/project/xlm-core/"><img src="https://img.shields.io/pypi/v/xlm-core?color=blue&label=PyPI" alt="PyPI version"></a>
+  <a href="https://dhruveshp.com/xlm-core/latest/"><img src="https://img.shields.io/badge/Docs-Read%20Online-orange.svg" alt="Documentation"></a>
   <a href="https://github.com/dhruvdcoder/xlm-core"><img src="https://img.shields.io/badge/Python-3.11+-green.svg" alt="Python 3.11+"></a>
   <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License"></a>
 </p>
 
 ---
 
-XLM is a **modular, research-friendly framework** for developing and comparing non-autoregressive language models. Built on PyTorch and PyTorch Lightning, with Hydra for configuration management, XLM makes it effortless to experiment with cutting-edge NAR architectures.
+xLM is a **modular, research-friendly framework** for developing and comparing non-autoregressive language models. Built on PyTorch and PyTorch Lightning, with Hydra for configuration management, xLM makes it effortless to experiment with cutting-edge NAR architectures.
 
 ## ✨ Key Features
 
@@ -53,7 +54,7 @@ pip install xlm-models
 
 ## 📖 Quick Start
 
-XLM uses a simple CLI with three main arguments:
+xLM uses a simple CLI with three main arguments:
 
 ```bash
 xlm job_type=<JOB> job_name=<NAME> experiment=<CONFIG>
@@ -132,7 +133,7 @@ xlm-core/
     └── ...            # Other architectures
 ```
 
-## 🔧 Extending XLM
+## 🔧 Extending xLM
 
 Adding a new model requires implementing four components:
 
@@ -150,7 +151,7 @@ See the [Contributing Guide](./wiki/CONTRIBUTING.md) for a complete walkthrough.
 
 ## 📚 Documentation
 
-- [Data Pipeline](./wiki/datapipeline.md) – How data flows through XLM
+- [Data Pipeline](./wiki/datapipeline.md) – How data flows through xLM
 - [Training Scripts](./wiki/scripts/training.md) – Advanced training options
 - [Generation](./wiki/scripts/generation.md) – Decoding strategies and parameters
 - [External Models](./wiki/EXTERNAL_MODELS.md) – Using pretrained weights
@@ -165,7 +166,7 @@ This project is licensed under the MIT License.
 
 ## 🙏 Acknowledgements
 
-XLM is developed and maintained by [IESL](https://iesl.cs.umass.edu/) students at UMass Amherst.
+xLM is developed and maintained by [IESL](https://iesl.cs.umass.edu/) students at UMass Amherst.
 
 **Primary Developers:**
 
@@ -177,6 +178,24 @@ XLM is developed and maintained by [IESL](https://iesl.cs.umass.edu/) students a
 **Model Contributors:**
 1. Soumitra Das (EditFlow)
 2. Eric Chen (EditFlow)
+
+## 📜 Citation
+
+If you use xLM in your research, please cite:
+
+```bibtex
+@misc{patel2025xlmpythonpackagenonautoregressive,
+      title={xLM: A Python package for non-autoregressive language models}, 
+      author={Dhruvesh Patel and Durga Prasad Maram and Sai Sreenivas Chintha and Benjamin Rozonoyer and Andrew McCallum},
+      year={2025},
+      eprint={2512.17065},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2512.17065}, 
+}
+```
+
+For individual models, cite the original publications provided in the respective model directories.
 
 ---
 

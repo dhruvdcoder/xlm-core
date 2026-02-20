@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="xLM_bold.png" width="600" alt="XLM Logo" />
+  <img src="xLM_bold.png" width="600" alt="xLM Logo" />
 </p>
 
 <h1 align="center">A Unified Framework for Non-Autoregressive Language Models</h1>
 
 
-XLM is a modular, research-friendly framework for developing and comparing non-autoregressive language models. Built on PyTorch and PyTorch Lightning, with Hydra for configuration management, XLM makes it effortless to experiment with cutting-edge NAR architectures.
+xLM is a modular, research-friendly framework for developing and comparing non-autoregressive language models. Built on PyTorch and PyTorch Lightning, with Hydra for configuration management, xLM makes it effortless to experiment with cutting-edge NAR architectures.
 
 ## Key Features
 
@@ -42,7 +42,7 @@ pip install xlm-models
 
 ## Quick Start
 
-XLM uses a simple CLI with three main arguments:
+xLM uses a simple CLI with three main arguments:
 
 ```bash
 xlm job_type=<JOB> job_name=<NAME> experiment=<CONFIG>

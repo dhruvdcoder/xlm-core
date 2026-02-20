@@ -1,7 +1,7 @@
 """Type definitions for Idlm model.
 
 This file defines the data structures used throughout the Idlm implementation.
-Based on IDLM v2 types - modified for XLM framework.
+Based on IDLM v2 types - modified for xLM framework.
 """
 
 from typing import Optional, Protocol, List, TypedDict, Tuple

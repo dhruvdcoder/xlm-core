@@ -1,7 +1,7 @@
 """Loss function implementation for Idlm model.
 
 This file implements the IDLM training loss computation.
-Based on IDLM v2 implementation but adapted for XLM framework.
+Based on IDLM v2 implementation but adapted for xLM framework.
 """
 
 from typing import Optional, List, Callable, Literal, cast

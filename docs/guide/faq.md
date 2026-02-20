@@ -2,8 +2,8 @@
 
 ## General
 
-**What is XLM?**  
-XLM is a unified framework for developing and comparing non-autoregressive language models. It provides modular components for models, losses, predictors, and data collation.
+**What is xLM?**  
+xLM is a unified framework for developing and comparing non-autoregressive language models. It provides modular components for models, losses, predictors, and data collation.
 
 **Which models are available?**  
 The framework includes MLM, ILM, ARLM, MDLM, and IDLM. See the [Quick Start](quickstart.md) for the full list.

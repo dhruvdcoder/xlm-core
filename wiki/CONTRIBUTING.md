@@ -1,6 +1,6 @@
-# Adding a new language model architecture to XLM
+# Adding a new language model architecture to xLM
 
-This document outlines the process for adding a new language model architecture to the XLM codebase. 
+This document outlines the process for adding a new language model architecture to the xLM codebase. 
 The code follows a modular design with four main components that work together to provide a complete language modeling solution. You need to implement all of them in order to add a new working model.
 
 ## Overview of Main Components

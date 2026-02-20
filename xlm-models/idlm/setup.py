@@ -3,9 +3,9 @@ from setuptools import setup, find_packages
 setup(
     name="idlm",
     version="0.1.0",
-    description="IDLM - Iterative Diffusion Language Model for XLM framework",
+    description="IDLM - Iterative Diffusion Language Model for xLM framework",
     long_description="""
-    Iterative Diffusion Language Model (IDLM) implementation for the XLM framework.
+    Iterative Diffusion Language Model (IDLM) implementation for the xLM framework.
     
     This package provides:
     - DDITIDLMModel: Diffusion Transformer model with iterative refinement
@@ -19,7 +19,7 @@ setup(
     """,
     packages=find_packages(),
     install_requires=[
-        "xlm",  # Core XLM framework dependency
+        "xlm",  # Core xLM framework dependency
         "torch",
         "jaxtyping",
     ],
@@ -28,7 +28,7 @@ setup(
     },
     include_package_data=True,
     python_requires=">=3.11",
-    author="XLM Team",
+    author="xLM Team",
     author_email="xlm-team@example.com",
     classifiers=[
         "Development Status :: 3 - Alpha",

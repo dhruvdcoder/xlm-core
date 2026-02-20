@@ -1,5 +1,5 @@
 """
-MDLM - Masked Diffusion Language Model for XLM Framework
+MDLM - Masked Diffusion Language Model for xLM Framework
 
 This package implements the MDLM model with all necessary components:
 - Model architecture (model_mdlm.py)

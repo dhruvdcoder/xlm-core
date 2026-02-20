@@ -1,5 +1,5 @@
 """
-ARLM - Auto-Regressive Language Model for XLM Framework
+ARLM - Auto-Regressive Language Model for xLM Framework
 
 This package implements the ARLM model with all necessary components:
 - Model architecture (model_arlm.py)

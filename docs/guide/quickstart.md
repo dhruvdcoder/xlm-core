@@ -14,7 +14,7 @@ pip install xlm-models
 
 ## CLI Usage
 
-XLM uses a simple CLI with three main arguments:
+xLM uses a simple CLI with three main arguments:
 
 ```bash
 xlm job_type=<JOB> job_name=<NAME> experiment=<CONFIG>

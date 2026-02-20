@@ -1,5 +1,5 @@
 """
-IDLM - Iterative Diffusion Language Model for XLM Framework
+IDLM - Iterative Diffusion Language Model for xLM Framework
 
 This package implements the IDLM model with all necessary components:
 - Model architecture (model_idlm.py)

@@ -1,6 +1,6 @@
 # ARLM - Auto-Regressive Language Model
 
-ARLM (Auto-Regressive Language Model) is a transformer-based language model implementation for the XLM framework.
+ARLM (Auto-Regressive Language Model) is a transformer-based language model implementation for the xLM framework.
 
 ## Overview
 
@@ -109,7 +109,7 @@ This package was migrated from `xlm.lm.arlm` to be an independent external model
 2. **Config targets**: Updated to point to the new package structure
 3. **Package structure**: Now installable as a separate package
 
-All functionality remains the same, but the model is now completely independent from the core XLM framework.
+All functionality remains the same, but the model is now completely independent from the core xLM framework.
 
 ## Development
 

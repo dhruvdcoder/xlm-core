@@ -1,6 +1,6 @@
-# XLM Models
+# xLM Models
 
-This directory contains all language models for the XLM framework. All models are bundled together in a single `xlm-models` package.
+This directory contains all language models for the xLM framework. All models are bundled together in a single `xlm-models` package.
 
 ## Available Models
 
@@ -138,4 +138,4 @@ This approach allows you to develop and release your model independently without
 
 ## Migration Status
 
-This directory represents the migration of models from `src/xlm/lm/` to independent packages. All models that were previously part of the core XLM package are being moved here to create a cleaner separation between the framework and model implementations.
+This directory represents the migration of models from `src/xlm/lm/` to independent packages. All models that were previously part of the core xLM package are being moved here to create a cleaner separation between the framework and model implementations.

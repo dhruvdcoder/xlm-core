@@ -1,6 +1,6 @@
 # Building Docs
 
-This page describes how the XLM documentation is built and deployed.
+This page describes how the xLM documentation is built and deployed.
 
 ## Local Build
 

@@ -1,6 +1,6 @@
 # Custom Commands
 
-Models can define custom commands that extend XLM's CLI by creating `configs/commands.yaml`:
+Models can define custom commands that extend xLM's CLI by creating `configs/commands.yaml`:
 
 ```yaml
 # configs/commands.yaml

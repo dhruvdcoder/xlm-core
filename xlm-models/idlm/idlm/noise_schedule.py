@@ -1,7 +1,7 @@
 """Noise schedules for IDLM model.
 
 This file implements different noise schedules used in IDLM diffusion training.
-Copied from pcdd implementation and adapted for XLM framework.
+Copied from pcdd implementation and adapted for xLM framework.
 """
 
 import torch
