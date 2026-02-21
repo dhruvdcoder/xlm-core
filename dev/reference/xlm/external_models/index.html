@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
     
     
       
@@ -4193,20 +4193,19 @@
         <p>Discover external model directories.</p>
 <p>Each model must be packaged with its configs in the following structure:
 <model_root_dir>
-   |-- <model_name> # python files
-   |   |-- model.py
-   |   |-- loss.py
-   |   |-- predictor.py
-   |   |-- datamodule.py
-   |   |-- metrics.py
-   |   |-- ..
+   |-- model.py
+   |-- loss.py
+   |-- predictor.py
+   |-- datamodule.py
+   |-- metrics.py
+   |-- ..
+   |-- setup.py (optional)
+   |-- README.md (optional)
    |-- configs/
    |   |-- datamodule/
    |   |-- experiment/
    |   |-- ..
-   |   |-- ..
-   |-- setup.py (optional)
-   |-- README.md (optional)</p>
+   |   |-- ..</p>
 <p>The model can be installed as a python package (recommended for sharing) or simply kept as a directory (during development).
 When installed as a python package, make sure to package the configs as well like so in the setup.py:
 package_dir={
