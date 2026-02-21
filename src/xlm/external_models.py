@@ -42,20 +42,20 @@ def discover_external_models() -> Tuple[Dict[str, Path], Dict[str, Path]]:
 
     Each model must be packaged with its configs in the following structure:
     <model_root_dir>
-       |-- <model_name> # python files
-       |   |-- model.py
-       |   |-- loss.py
-       |   |-- predictor.py
-       |   |-- datamodule.py
-       |   |-- metrics.py
-       |   |-- ..
+       |-- model.py
+       |-- loss.py
+       |-- predictor.py
+       |-- datamodule.py
+       |-- metrics.py
+       |-- ..
+       |-- setup.py (optional)
+       |-- README.md (optional)
        |-- configs/
        |   |-- datamodule/
        |   |-- experiment/
        |   |-- ..
        |   |-- ..
-       |-- setup.py (optional)
-       |-- README.md (optional)
+       
 
 
     The model can be installed as a python package (recommended for sharing) or simply kept as a directory (during development).
@@ -172,7 +172,7 @@ def setup_external_models() -> List[Path]:
     for model_dir in model_dirs:
         # Add to Python path for imports
         if str(model_dir) not in sys.path:
-            sys.path.insert(0, str(model_dir))
+            sys.path.insert(0, str(Path(model_dir).parent.resolve()))
             logger.info(f"Added to sys.path: {model_dir}")
 
     # Log discovered models
