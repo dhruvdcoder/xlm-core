@@ -128,14 +128,13 @@ Each external model follows this structure:
 
 ```
 my_awesome_model/                    # Model root directory
-├── my_awesome_model/                # Python package
-│   ├── __init__.py
-│   ├── types_my_awesome_model.py
-│   ├── model_my_awesome_model.py
-│   ├── loss_my_awesome_model.py
-│   ├── predictor_my_awesome_model.py
-│   ├── datamodule_my_awesome_model.py
-│   └── metrics_my_awesome_model.py
+├── __init__.py
+├── types_my_awesome_model.py
+├── model_my_awesome_model.py
+├── loss_my_awesome_model.py
+├── predictor_my_awesome_model.py
+├── datamodule_my_awesome_model.py
+└── metrics_my_awesome_model.py
 ├── configs/                         # Hydra configurations
 │   ├── model/
 │   ├── model_type/

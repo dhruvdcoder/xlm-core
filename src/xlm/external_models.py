@@ -42,20 +42,20 @@ def discover_external_models() -> Tuple[Dict[str, Path], Dict[str, Path]]:
 
     Each model must be packaged with its configs in the following structure:
     <model_root_dir>
-       |-- <model_name> # python files
-       |   |-- model.py
-       |   |-- loss.py
-       |   |-- predictor.py
-       |   |-- datamodule.py
-       |   |-- metrics.py
-       |   |-- ..
+       |-- model.py
+       |-- loss.py
+       |-- predictor.py
+       |-- datamodule.py
+       |-- metrics.py
+       |-- ..
+       |-- setup.py (optional)
+       |-- README.md (optional)
        |-- configs/
        |   |-- datamodule/
        |   |-- experiment/
        |   |-- ..
        |   |-- ..
-       |-- setup.py (optional)
-       |-- README.md (optional)
+       
 
 
     The model can be installed as a python package (recommended for sharing) or simply kept as a directory (during development).
