@@ -30,7 +30,6 @@ jobs:
         run: |
           pip install -e .
           pip install -e xlm-models/
-          pip install -e xlm-models/idlm/
           pip install -r requirements/docs_requirements.txt
 
       - name: Build docs (verify)
