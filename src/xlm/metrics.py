@@ -199,6 +199,12 @@ def seq2seq_token_accuracy_update_fn(
         "pred_mask": pred_mask,
     }
 
+def steps_taken_update_fn(
+    batch: Dict[str, Any], loss_dict: Dict[str, Any], tokenizer: Any = None
+) -> Dict[str, Any]:
+    return {
+        "value": loss_dict["steps_taken"],
+    }
 
 ################################################################################
 # region: metrics
@@ -248,7 +254,6 @@ class TokenAccuracy(MeanMetric):
         total = pred_mask.sum(dim=-1).to(torch.float32)  # shape (*batch)
         acc = correct / total  # shape (*batch)
         super().update(acc)
-
 
 # endregion: metrics
 ################################################################################
