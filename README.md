@@ -10,6 +10,7 @@
 
 <p align="center">
   <a href="https://pypi.org/project/xlm-core/"><img src="https://img.shields.io/pypi/v/xlm-core?color=blue&label=PyPI" alt="PyPI version"></a>
+  <a href="https://dhruveshp.com/xlm-core/latest/guide/external-models/"><img src="https://img.shields.io/badge/Documentation-blue.svg" alt="Documentation"></a>
   <a href="https://github.com/dhruvdcoder/xlm-core"><img src="https://img.shields.io/badge/Python-3.11+-green.svg" alt="Python 3.11+"></a>
   <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License"></a>
 </p>
