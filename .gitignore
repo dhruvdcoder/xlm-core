@@ -44,3 +44,4 @@ temp_*.pdf
 
 # docs
 site
+.pytest_cache/
