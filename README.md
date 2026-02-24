@@ -177,6 +177,17 @@ XLM is developed and maintained by [IESL](https://iesl.cs.umass.edu/) students a
 1. Soumitra Das (EditFlow)
 2. Eric Chen (EditFlow)
 
+**Cite**
+
+If you found this repository useful, please consider citing:
+```
+@article{patel2025xlm,
+  title={XLM: A Python package for non-autoregressive language models},
+  author={Patel, Dhruvesh and Maram, Durga Prasad and Chintha, Sai Sreenivas and Rozonoyer, Benjamin and McCallum, Andrew},
+  journal={arXiv preprint arXiv:2512.17065},
+  year={2025}
+}
+```
 ---
 
 <p align="center">
