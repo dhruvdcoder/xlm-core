@@ -25,6 +25,16 @@ show_missing = true
 fail_under = 90
 
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "gpu: marks tests requiring a GPU",
+    "cli: marks CLI / subprocess integration tests",
+]
+addopts = "-v --tb=short"
+
+
 [tool.mypy]
 allow_redefinition = true
 disable_error_code = ["override"]

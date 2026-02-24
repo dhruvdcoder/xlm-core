@@ -13,12 +13,12 @@ This package implements the MDLM model with all necessary components:
 This model was migrated from xlm.lm.mdlm to be an external model.
 """
 
-from .model_mdlm import RotaryTransformerMDLMModel
+from .model_mdlm import MDLMModel
 from .loss_mdlm import MDLMLoss
 from .predictor_mdlm import MDLMPredictor
 from .datamodule_mdlm import (
     DefaultMDLMCollator,
-    MDLMSeq2SeqCollator,
+    MDLMSeq2SeqTrainCollator,
     MDLMSeq2SeqPredCollator,
 )
 from .types_mdlm import (
@@ -31,11 +31,11 @@ from .types_mdlm import (
 )
 
 __all__ = [
-    "RotaryTransformerMDLMModel",
+    "MDLMModel",
     "MDLMLoss",
     "MDLMPredictor",
     "DefaultMDLMCollator",
-    "MDLMSeq2SeqCollator",
+    "MDLMSeq2SeqTrainCollator",
     "MDLMSeq2SeqPredCollator",
     "MDLMBatch",
     "MDLMSeq2SeqPredictionBatch",
