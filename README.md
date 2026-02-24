@@ -177,7 +177,7 @@ XLM is developed and maintained by [IESL](https://iesl.cs.umass.edu/) students a
 1. Soumitra Das (EditFlow)
 2. Eric Chen (EditFlow)
 
-**Cite**
+## 📚 Cite
 
 If you found this repository useful, please consider citing:
 ```
