@@ -67,7 +67,8 @@ nav:
       - External Models: guide/external-models.md
       - Custom Commands: guide/custom-commands.md
       - FAQ: guide/faq.md
+
   - Developers:
-      - Building Docs: guide/building-docs.md
-      - Releasing to PyPI: guide/releasing.md
-  - Reference: reference/
+      - CONTRIBUTING: guide/CONTRIBUTING.md
+
+  - API Reference: reference/
