@@ -3,6 +3,12 @@ name: Deploy Release Docs to GitHub Pages
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Release tag to deploy (e.g. v0.1.5-alpha)"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -19,7 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.event.inputs.tag_name || github.event.release.tag_name }}
           fetch-depth: 0
 
       - uses: actions/setup-python@v5
@@ -38,7 +44,7 @@ jobs:
       - name: Extract version from tag
         id: get_version
         run: |
-          TAG_NAME="${{ github.event.release.tag_name }}"
+          TAG_NAME="${{ github.event.inputs.tag_name || github.event.release.tag_name }}"
           VERSION=${TAG_NAME#v}
           IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
           if [[ $PATCH == *"-"* ]]; then
@@ -58,7 +64,7 @@ jobs:
         run: git fetch origin gh-pages --depth=1 || true
 
       - name: Deploy release docs to gh-pages
-        run: mike deploy ${{ steps.get_version.outputs.version }} --update-aliases latest --push
+        run: mike deploy ${{ steps.get_version.outputs.version }} latest --update-aliases --push
 
       - name: Set default version
         run: mike set-default latest --push

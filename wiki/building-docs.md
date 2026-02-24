@@ -116,7 +116,7 @@ The [.github/workflows/docs-release.yml](https://github.com/dhruvdcoder/xlm-core
 1. Triggers when a GitHub release is published
 2. Checks out the release tag
 3. Extracts the version (e.g., `v1.4.0` → `1.4`)
-4. Runs `mike deploy 1.4 --update-aliases latest --push`
+4. Runs `mike deploy 1.4 latest --update-aliases --push`
 5. Runs `mike set-default latest --push` so the site root redirects to the latest release
 
 **Prerequisite**: Enable GitHub Pages in repo Settings → Pages → Source: "Deploy from a branch" → Branch: `gh-pages` / `/(root)`.
