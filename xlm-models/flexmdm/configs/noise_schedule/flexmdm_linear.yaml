@@ -1,0 +1,13 @@
+# @package _global_
+
+global_components:
+  noise_schedule:
+    _target_: flexmdm.noise_flexmdm.FlexMDMNoiseSchedule
+    insertion_noise_schedule:
+      _target_: flexmdm.noise_flexmdm.LinearSchedule
+    unmasking_noise_schedule:
+      _target_: flexmdm.noise_flexmdm.LinearSchedule
+  
+
+tags:
+  noise_schedule: linear
