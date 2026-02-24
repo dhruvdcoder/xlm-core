@@ -1,0 +1,3 @@
+_target_: flexmdm.datamodule_flexmdm.FlexMDMPredCollator
+tokenizer: ${global_components:tokenizer}
+block_size: ${block_size}

@@ -12,25 +12,28 @@ setup(
     - mlm : Masked Language Model
     - ilm : Infilling Language Model
     - mdlm: Masked Diffusion Language Model
+    - flexmdm: Flexible Masked Diffusion Language Model
     
     Usage:
         pip install xlm-models
 
         Model package names must be specified in the XLM_MODEL_PACKAGES environment variable as a colon-separated list (e.g., arlm:mlm:ilm:mdlm)
     """,
-    packages=["arlm","mlm","ilm","mdlm"],
+    packages=["arlm","mlm","ilm","mdlm","flexmdm"],
     author="Dhruvesh Patel, Benjamin Rozonoyer, Sai Sreenivas Chintha, Durga Prasad Maram",
     package_dir={
         "arlm": "arlm",
         "mlm": "mlm",
         "ilm": "ilm",
         "mdlm": "mdlm",
+        "flexmdm": "flexmdm",
     },
     package_data={
         "arlm": ["configs/**/*.yaml", "configs/**/*.yml"],
         "mlm": ["configs/**/*.yaml", "configs/**/*.yml"],
         "ilm": ["configs/**/*.yaml", "configs/**/*.yml"],
         "mdlm": ["configs/**/*.yaml", "configs/**/*.yml"],
+        "flexmdm": ["configs/**/*.yaml", "configs/**/*.yml"],
     },
     install_requires=[
         "xlm-core",  # Core XLM framework dependency
