@@ -83,6 +83,7 @@ __all__ = [
     "DefaultCollator",
     "DefaultCollatorWithPadding",
     "DefaultCollatorWithDynamicPadding",
+    "pack_sequences",
 ]
 
 logger = RankedLogger(__name__, rank_zero_only=True)
@@ -492,6 +493,7 @@ class DatasetManager:
         on_the_fly_processor: Optional[str] = None,
         on_the_fly_processor_kwargs: Optional[Dict[str, Any]] = None,
         on_the_fly_group_processor: Optional[str] = None,
+        on_the_fly_group_processor_kwargs: Optional[Dict[str, Any]] = None,
         model_name: Optional[str] = None,
         columns_to_remove: Optional[List[str]] = None,
         stages: Optional[
@@ -520,6 +522,7 @@ class DatasetManager:
             on_the_fly_group_processor: Dotted path to the group processor function,
                 which receives large batches of examples, and applies on-the-fly processors
                 that require a big chunk of data, for example, packing sequences without padding.
+            on_the_fly_group_processor_kwargs: Kwargs for the group processor.
             model_name: Used for model-specific cache subdirectories.
             columns_to_remove: Columns to drop during preprocessing (e.g., ["text"]).
             stages: Lightning stages this manager participates in.
@@ -547,6 +550,18 @@ class DatasetManager:
         self.on_the_fly_processor = on_the_fly_processor
         self.on_the_fly_processor_kwargs = on_the_fly_processor_kwargs or {}
         self.on_the_fly_group_processor = on_the_fly_group_processor
+        self.on_the_fly_group_processor_kwargs = on_the_fly_group_processor_kwargs or {}
+        if self.on_the_fly_group_processor is not None:
+            if iterable_dataset_shards is None:
+                raise ValueError(
+                    "on_the_fly_group_processor requires iterable_dataset_shards to be set "
+                    "(the group processor changes the number of examples, which only works with IterableDataset)"
+                )
+            if self.on_the_fly_processor is not None:
+                raise ValueError(
+                    "on_the_fly_processor and on_the_fly_group_processor cannot both be set; "
+                    "the group processor subsumes per-example processing"
+                )
         self.model_name = model_name
         self.columns_to_remove = columns_to_remove
         self.stages = stages if stages is not None else ["fit", "validate"]
@@ -658,11 +673,7 @@ class DatasetManager:
         self,
         dataset: datasets.Dataset,
         tokenizer: Tokenizer,
-        stage: Literal["fit", "validate", "test", "predict"],
         block_size: int,
-        pad_id: int,
-        type_id_extension: int = 2,
-        attn_extension: int = 0,
     ):
         if self.on_the_fly_group_processor is not None:
             group_processor: Callable = get_function(
@@ -674,9 +685,7 @@ class DatasetManager:
                 fn_kwargs={
                     "tokenizer": tokenizer,
                     "block_size": block_size,
-                    "pad_id": pad_id,
-                    "type_id_extension": type_id_extension,
-                    "attn_extension": attn_extension,
+                    **self.on_the_fly_group_processor_kwargs,
                 },
             )
             return dataset
@@ -816,11 +825,7 @@ class DatasetManager:
             dataset = self._apply_on_the_fly_group_processors(
                 dataset,
                 tokenizer,
-                stage,
                 block_size=block_size,
-                pad_id=tokenizer.pad_token_id,
-                type_id_extension=2,
-                attn_extension=0,
             )
             self.dataset = dataset
             if (
@@ -1386,6 +1391,73 @@ def ids_to_example_fn(
     token_type_ids = tokenizer.create_token_type_ids_from_sequences(
         example["token_ids"]
     )
+    return {
+        "input_ids": input_ids,
+        "attention_mask": attention_mask,
+        "token_type_ids": token_type_ids,
+    }
+
+
+def pack_sequences(
+    examples: Dict[str, List[List[int]]],
+    tokenizer: PreTrainedTokenizerBase,
+    block_size: int,
+    drop_last: bool = True,
+    use_bos: bool = True,
+    **kwargs: Any,
+) -> Dict[str, List[List[int]]]:
+    """Pack sequences without padding using EOS as separator and optional BOS.
+
+    Concatenates sequences with [BOS] seq [EOS] (or seq [EOS] if use_bos=False),
+    then chunks into blocks of exactly block_size. For the last incomplete block:
+    drop or pad according to drop_last.
+
+    Args:
+        examples: Batched dict with "token_ids" key (list of token id lists).
+        tokenizer: Tokenizer for BOS, EOS, PAD ids.
+        block_size: Target block length.
+        drop_last: If True, drop incomplete last block; else pad with pad_token_id.
+        use_bos: If True, prepend BOS before each sequence.
+        **kwargs: Absorbed for interface compatibility.
+
+    Returns:
+        Dict with "input_ids", "attention_mask", "token_type_ids" (zeros).
+    """
+    eos = tokenizer.eos_token_id
+    bos = tokenizer.bos_token_id if use_bos else None
+    if eos is None:
+        raise ValueError("Tokenizer must have eos_token_id for sequence packing")
+    if use_bos and bos is None:
+        bos = eos
+
+    sequences = examples["token_ids"]
+    stream = []
+    for seq in sequences:
+        if use_bos:
+            stream.extend([bos] + seq + [eos])
+        else:
+            stream.extend(seq + [eos])
+
+    input_ids = []
+    attention_mask = []
+    token_type_ids = []
+    pad_id = tokenizer.pad_token_id
+
+    for i in range(0, len(stream), block_size):
+        block = stream[i : i + block_size]
+        if len(block) < block_size:
+            if drop_last:
+                break
+            n_pad = block_size - len(block)
+            block = block + [pad_id] * n_pad
+            attn = [1] * (block_size - n_pad) + [0] * n_pad
+        else:
+            attn = [1] * block_size
+
+        input_ids.append(block)
+        attention_mask.append(attn)
+        token_type_ids.append([0] * block_size)
+
     return {
         "input_ids": input_ids,
         "attention_mask": attention_mask,

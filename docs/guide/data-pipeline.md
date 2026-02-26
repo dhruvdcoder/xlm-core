@@ -116,6 +116,17 @@ datamodule:
         # ...
 ```
 
+**Alternative: sequence packing** (no padding, IterableDataset only):
+
+```yaml
+on_the_fly_processor: null
+on_the_fly_group_processor: xlm.datamodule.pack_sequences
+on_the_fly_group_processor_kwargs:
+  drop_last: true
+  use_bos: true
+iterable_dataset_shards: 120  # required when using group processor
+```
+
 **Metrics config** (`model_type/mdlm.yaml`, simplified):
 
 ```yaml
@@ -164,9 +175,15 @@ flowchart LR
 | **Preprocess**            | `prepare_data()` (rank 0)  | A configurable function (dotted-path string, e.g. a tokenization function) is applied via `dataset.map()`. Unwanted columns are dropped.                                 |
 | **Cache**                 | `prepare_data()` (rank 0)  | The preprocessed dataset is saved to disk (`manual_cache_dir / full_name`) with `save_to_disk()`. Subsequent runs skip download + preprocess.                            |
 | **Setup**                 | `setup(stage)` (all ranks) | Loads from cache. Optionally converts to `IterableDataset` (sharded). Applies on-the-fly and group processors. Splits by node in DDP.                                    |
-| **On-the-fly Processors** | Lazy, per-example          | Per-example transforms set via `dataset.set_transform()`. Example: `token_ids_to_input_ids` converts raw token IDs into `input_ids`, `attention_mask`, `token_type_ids`. |
-| **Group Processors**      | Lazy, batched              | Operates on large chunks of examples, e.g. sequence packing to `block_size` without padding.                                                                             |
+| **On-the-fly Processors** | Lazy, per-example          | Per-example transforms applied via `dataset.map(batched=False)`. Example: `token_ids_to_input_ids` converts raw token IDs into `input_ids`, `attention_mask`, `token_type_ids`. |
+| **Group Processors**      | Lazy, batched              | Operates on large chunks of examples, e.g. sequence packing to `block_size` without padding. Requires `iterable_dataset_shards` (IterableDataset only; changes number of examples). Mutually exclusive with `on_the_fly_processor`. Use `pack_sequences` with `on_the_fly_group_processor_kwargs` for `drop_last` / `use_bos`. |
 | **Collation**             | DataLoader                 | A `Collator` converts a list of examples into a `BaseBatch` tensor dict (`input_ids`, `attention_mask`, `token_type_ids`).                                               |
+
+### On-the-fly vs Group Processors
+
+**Per-example** (`on_the_fly_processor`): One example in, one out. Examples: `ids_to_example_fn`, `token_ids_to_input_ids`. Applied via `dataset.map(batched=False)`.
+
+**Group** (`on_the_fly_group_processor`): Batch in, packed blocks out. Example: `pack_sequences` concatenates sequences with BOS/EOS and chunks into fixed-size blocks. Requires `iterable_dataset_shards` (IterableDataset); cannot be combined with `on_the_fly_processor`.
 
 ### Dataloader and Sampler Selection
 
