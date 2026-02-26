@@ -12,11 +12,36 @@ from typing import Callable, Dict, List, Literal, Optional, Any
 from .types_mlm import MLMBatch
 from xlm.utils.nn import pad_truncate_list
 from xlm.utils.rank_zero import RankedLogger
+from torch.utils.data import IterableDataset
 
 logger = RankedLogger(__name__, rank_zero_only=True)
 
 ################################################################################
 # region: Collators
+
+class MLMEmptyDataset(IterableDataset):
+    def __init__(
+        self,
+        tokenizer: Tokenizer,
+        num_examples: int,
+        max_length: int,
+    ):
+        """
+        Args:
+            tokenizer_kwargs: Keyword arguments for the tokenizer.
+            TODO: Might want the option to add BOS.
+
+        """
+        self.tokenizer = tokenizer
+        self.num_examples = num_examples
+        self.max_length = max_length
+
+    def __iter__(self):
+        for _ in range(self.num_examples):
+            ex = {
+                "input_ids": [self.tokenizer.mask_token_id] * self.max_length
+            }
+            yield ex
 
 
 def mlm_single_segment_collate_fn(

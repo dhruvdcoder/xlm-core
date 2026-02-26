@@ -4,6 +4,7 @@ import torch
 from .types_mlm import MLMBatch, MLMLossDict, MLMModel
 from xlm.harness import LossFunction, Harness
 from xlm.datamodule import Tokenizer
+from xlm.utils.nn import masked_mean
 
 
 class MLMLoss(LossFunction[MLMBatch, MLMLossDict]):
@@ -13,12 +14,14 @@ class MLMLoss(LossFunction[MLMBatch, MLMLossDict]):
         loss_on_visible_tokens: bool = False,
         model: Optional[MLMModel] = None,
         tokenizer: Optional[Tokenizer] = None,
+        use_num_masked_factor: bool = False,
     ):
         self.loss_on_padding = loss_on_padding
         self.loss_on_visible_tokens = loss_on_visible_tokens
         self.model = model
         self.tokenizer = tokenizer
         self.mask_token_id_tensor = None
+        self.use_num_masked_factor = use_num_masked_factor
 
     def configure(self, pl_module: Harness):
         self.mask_token_id_tensor = torch.tensor(  # type: ignore
@@ -75,7 +78,12 @@ class MLMLoss(LossFunction[MLMBatch, MLMLossDict]):
         logits_T = logits.transpose(1, 2)
 
         ce = torch.nn.functional.cross_entropy(
-            logits_T, targets, reduction="mean", ignore_index=-100
-        )
+            logits_T, targets, reduction="none", ignore_index=-100
+        ) # shape (batch, seq_len)
+        if self.use_num_masked_factor:
+            num_masked = (input_ids == self.mask).sum(dim=-1)
+            factor = 1 / (num_masked + 1)
+            ce = ce * factor
+        ce = masked_mean(ce.flatten(), ~ignore.flatten(), dim=-1)
         # we can compute nlls by indexing using non-ignored tokens, but right now we will just use reduction=mean
         return {"loss": ce}

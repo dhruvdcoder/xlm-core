@@ -4,16 +4,13 @@ This directory contains all language models for the XLM framework. All models ar
 
 ## Available Models
 
-| Model    | Description                        | Status         |
-|----------|------------------------------------|----------------|
-| `arlm`   | Auto-Regressive Language Model     | ✅ Migrated     |
-| `idlm`   | Iterative Diffusion Language Model | ✅ Migrated     |
-| `ilm`    | Infilling Language Model           | ✅ Migrated     |
-| `mlm`    | Masked Language Model              | ✅ Migrated     |
-| `mdlm`   | Masked Diffusion Language Model    | ✅ Migrated     |
-| `elm`    | Edit Language Model                | ✅ Migrated     |
-| `indigo` | Indigo Model                       | ✅ Migrated     |
-| `zlm`    | Zero Language Model                | 📁 Placeholder |
+| Model  | Description                     | Status     |
+|--------|---------------------------------|------------|
+| `arlm` | Auto-Regressive Language Model  | ✅ Migrated |
+| `ilm`  | Infilling Language Model        | ✅ Migrated |
+| `mlm`  | Masked Language Model           | ✅ Migrated |
+| `mdlm` | Masked Diffusion Language Model | ✅ Migrated |
+
 
 ## Installation
 
@@ -95,12 +92,9 @@ Example for adding a model called `newmodel`:
 packages=["arlm", "idlm", "ilm", "mlm", "mdlm", "elm", "indigo", "newmodel"],
 package_dir={
     "arlm": "arlm/arlm",
-    "idlm": "idlm/idlm",
     "ilm": "ilm/ilm",
     "mlm": "mlm/mlm",
     "mdlm": "mdlm/mdlm",
-    "elm": "elm/elm",
-    "indigo": "indigo/indigo",
     "newmodel": "newmodel/newmodel",
 }
 ```
