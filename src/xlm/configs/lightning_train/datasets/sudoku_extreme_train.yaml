@@ -12,7 +12,7 @@ columns_to_remove:
     - rating
 stages:
     - fit
-iterable_dataset_shards: null
+iterable_dataset_shards: 32
 shuffle_buffer_size: null
 shuffle_seed: 42
 split_by_node: true

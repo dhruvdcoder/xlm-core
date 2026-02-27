@@ -1,0 +1,6 @@
+_target_: xlm.metrics.MetricWrapper
+name: steps_taken
+metric: 
+  _target_: torchmetrics.MeanMetric
+prefix: ??? # eg: train/lm/, val/lm/, test/lm/, etc.
+update_fn: xlm.metrics.steps_taken_update_fn
