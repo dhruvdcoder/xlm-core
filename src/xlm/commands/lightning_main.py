@@ -9,6 +9,7 @@
 
 # fmt: off
 import dotenv
+from xlm.commands.extract_checkpoint import extract_checkpoint
 # read env variables before anything else is imported
 dotenv.load_dotenv(
     dotenv_path=".env", # we need to point to .env in current dir when xlm console script is run
@@ -159,6 +160,8 @@ def main(cfg: DictConfig) -> None:
     elif cfg.job_type == "prepare_data":
         print_config_tree(cfg, resolve=True)
         prepare_data(cfg)
+    elif cfg.job_type == "extract_checkpoint":
+        extract_checkpoint(cfg)
     elif cfg.job_type in external_commands:
         # print_config_tree(cfg, resolve=True, save_to_file=cfg.paths.run_dir)
         external_command = external_commands[cfg.job_type]
