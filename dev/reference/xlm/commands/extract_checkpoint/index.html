@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/utils/omegaconf_resolvers/">
+        <link rel="canonical" href="https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/commands/extract_checkpoint/">
       
       
-        <link rel="prev" href="../nn/">
+        <link rel="prev" href="../cli_demo/">
       
       
-        <link rel="next" href="../on_exception_checkpoint/">
+        <link rel="next" href="../extract_model_state_dict/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>omegaconf_resolvers - XLM</title>
+        <title>extract_checkpoint - XLM</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#xlm.utils.omegaconf_resolvers" class="md-skip">
+        <a href="#xlm.commands.extract_checkpoint" class="md-skip">
           Skip to content
         </a>
       
@@ -118,7 +118,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              omegaconf_resolvers
+              extract_checkpoint
             
           </span>
         </div>
@@ -930,8 +930,10 @@
                 
   
   
+    
   
   
+  
     
     
     
@@ -942,11 +944,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_2" checked>
         
           
           <label class="md-nav__link" for="__nav_5_1_2" id="__nav_5_1_2_label" tabindex="0">
@@ -967,7 +969,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5_1_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -985,7 +987,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         
   
   
@@ -1013,7 +1015,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/cli_demo/" class="md-nav__link">
+      <a href="../cli_demo/" class="md-nav__link">
         
   
   
@@ -1038,10 +1040,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../commands/extract_checkpoint/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>extract_checkpoint
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1057,6 +1086,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#xlm.commands.extract_checkpoint.extract_checkpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;extract_checkpoint
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1069,7 +1129,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/extract_model_state_dict/" class="md-nav__link">
+      <a href="../extract_model_state_dict/" class="md-nav__link">
         
   
   
@@ -1097,7 +1157,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/generate_star_graphs/" class="md-nav__link">
+      <a href="../generate_star_graphs/" class="md-nav__link">
         
   
   
@@ -1125,7 +1185,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/hydra_callbacks/" class="md-nav__link">
+      <a href="../hydra_callbacks/" class="md-nav__link">
         
   
   
@@ -1153,7 +1213,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/lightning_eval/" class="md-nav__link">
+      <a href="../lightning_eval/" class="md-nav__link">
         
   
   
@@ -1181,7 +1241,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/lightning_generate/" class="md-nav__link">
+      <a href="../lightning_generate/" class="md-nav__link">
         
   
   
@@ -1209,7 +1269,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/lightning_main/" class="md-nav__link">
+      <a href="../lightning_main/" class="md-nav__link">
         
   
   
@@ -1237,7 +1297,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/lightning_prepare_data/" class="md-nav__link">
+      <a href="../lightning_prepare_data/" class="md-nav__link">
         
   
   
@@ -1265,7 +1325,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/lightning_train/" class="md-nav__link">
+      <a href="../lightning_train/" class="md-nav__link">
         
   
   
@@ -1293,7 +1353,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/push_to_hub/" class="md-nav__link">
+      <a href="../push_to_hub/" class="md-nav__link">
         
   
   
@@ -1321,7 +1381,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/scaffold_model/" class="md-nav__link">
+      <a href="../scaffold_model/" class="md-nav__link">
         
   
   
@@ -1349,7 +1409,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/split_owt/" class="md-nav__link">
+      <a href="../split_owt/" class="md-nav__link">
         
   
   
@@ -1377,7 +1437,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/train_tokenizer/" class="md-nav__link">
+      <a href="../train_tokenizer/" class="md-nav__link">
         
   
   
@@ -2174,8 +2234,6 @@
                 
   
   
-    
-  
   
   
     
@@ -2188,11 +2246,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_14" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_14" >
         
           
           <label class="md-nav__link" for="__nav_5_1_14" id="__nav_5_1_14_label" tabindex="0">
@@ -2213,7 +2271,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_14_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_14_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5_1_14">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2231,7 +2289,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../" class="md-nav__link">
+      <a href="../../utils/" class="md-nav__link">
         
   
   
@@ -2259,7 +2317,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../batch_size/" class="md-nav__link">
+      <a href="../../utils/batch_size/" class="md-nav__link">
         
   
   
@@ -2287,7 +2345,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../checkpoint_with_thinning/" class="md-nav__link">
+      <a href="../../utils/checkpoint_with_thinning/" class="md-nav__link">
         
   
   
@@ -2315,7 +2373,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../data/" class="md-nav__link">
+      <a href="../../utils/data/" class="md-nav__link">
         
   
   
@@ -2343,7 +2401,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ddp/" class="md-nav__link">
+      <a href="../../utils/ddp/" class="md-nav__link">
         
   
   
@@ -2371,7 +2429,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../debug/" class="md-nav__link">
+      <a href="../../utils/debug/" class="md-nav__link">
         
   
   
@@ -2399,7 +2457,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ema/" class="md-nav__link">
+      <a href="../../utils/ema/" class="md-nav__link">
         
   
   
@@ -2427,7 +2485,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../file_friendly_progress_callback/" class="md-nav__link">
+      <a href="../../utils/file_friendly_progress_callback/" class="md-nav__link">
         
   
   
@@ -2455,7 +2513,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../imports/" class="md-nav__link">
+      <a href="../../utils/imports/" class="md-nav__link">
         
   
   
@@ -2483,7 +2541,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../nn/" class="md-nav__link">
+      <a href="../../utils/nn/" class="md-nav__link">
         
   
   
@@ -2508,37 +2566,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>omegaconf_resolvers
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../utils/omegaconf_resolvers/" class="md-nav__link">
         
   
   
@@ -2554,48 +2585,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#xlm.utils.omegaconf_resolvers.dictconfig_filter_key" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;dictconfig_filter_key
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xlm.utils.omegaconf_resolvers.remove_keys_with_double_underscores" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;remove_keys_with_double_underscores
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2608,7 +2597,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../on_exception_checkpoint/" class="md-nav__link">
+      <a href="../../utils/on_exception_checkpoint/" class="md-nav__link">
         
   
   
@@ -2636,7 +2625,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../os/" class="md-nav__link">
+      <a href="../../utils/os/" class="md-nav__link">
         
   
   
@@ -2664,7 +2653,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rank_zero/" class="md-nav__link">
+      <a href="../../utils/rank_zero/" class="md-nav__link">
         
   
   
@@ -2692,7 +2681,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rich_utils/" class="md-nav__link">
+      <a href="../../utils/rich_utils/" class="md-nav__link">
         
   
   
@@ -2720,7 +2709,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../saving_utils/" class="md-nav__link">
+      <a href="../../utils/saving_utils/" class="md-nav__link">
         
   
   
@@ -2748,7 +2737,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../seed/" class="md-nav__link">
+      <a href="../../utils/seed/" class="md-nav__link">
         
   
   
@@ -2776,7 +2765,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../signal/" class="md-nav__link">
+      <a href="../../utils/signal/" class="md-nav__link">
         
   
   
@@ -2804,7 +2793,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../slurm/" class="md-nav__link">
+      <a href="../../utils/slurm/" class="md-nav__link">
         
   
   
@@ -2832,7 +2821,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../speed_monitor_callback/" class="md-nav__link">
+      <a href="../../utils/speed_monitor_callback/" class="md-nav__link">
         
   
   
@@ -2860,7 +2849,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tensorboard_logging/" class="md-nav__link">
+      <a href="../../utils/tensorboard_logging/" class="md-nav__link">
         
   
   
@@ -2888,7 +2877,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tqdm/" class="md-nav__link">
+      <a href="../../utils/tqdm/" class="md-nav__link">
         
   
   
@@ -2916,7 +2905,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wandb/" class="md-nav__link">
+      <a href="../../utils/wandb/" class="md-nav__link">
         
   
   
@@ -4129,8 +4118,8 @@
 
 
 
-<h1 id="xlm.utils.omegaconf_resolvers" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>xlm.utils.omegaconf_resolvers</code>
+<h1 id="xlm.commands.extract_checkpoint" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>xlm.commands.extract_checkpoint</code>
 
 
 </h1>
@@ -4160,34 +4149,73 @@
 <div class="doc doc-object doc-function">
 
 
-<h2 id="xlm.utils.omegaconf_resolvers.dictconfig_filter_key" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">dictconfig_filter_key</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span></code>
+<h2 id="xlm.commands.extract_checkpoint.extract_checkpoint" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">extract_checkpoint</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span></code>
 
 </h2>
 
 
     <div class="doc doc-contents ">
 
-        <p>Only keep keys where fn(key) is True. Support nested DictConfig.</p>
 
 
-    </div>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>cfg</code>
+            </td>
+            <td>
+                  <code><span title="omegaconf.DictConfig">DictConfig</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Hydra config
+cfg.post_training.checkpoint_path: path to existing checkpoint
+cfg.post_training.apply_ema: whether to apply EMA weights to the model weights when loading from checkpoint.
+cfg.post_training.model_state_dict_path (optional): path to save model weights. If provided, the model weights will be saved to the local file system.
+cfg.post_training.repo_id (optional): HuggingFace Hub repository ID. If provided, the model weights will be pushed to the hub.
+cfg.post_training.commit_message: commit message for HuggingFace Hub</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-</div>
 
-<div class="doc doc-object doc-function">
-
-
-<h2 id="xlm.utils.omegaconf_resolvers.remove_keys_with_double_underscores" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">remove_keys_with_double_underscores</span><span class="p">(</span><span class="n">d</span><span class="p">)</span></code>
-
-</h2>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Remove keys with double underscores.
-This can be used to remove keys that are only present for computational purposes and are not part of the final config.</p>
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>None</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>
