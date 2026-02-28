@@ -70,6 +70,7 @@ class MLMPredictionDict(TypedDict):
         ids (Integer[TT, " batch seq_len"]): The batch of generated token_ids.
         time_taken (List[float]): Time taken for each prediction.
         output_start_idx (Integer[TT, " batch"]): The index of the first token in the output.
+        steps_taken (List[int]): Number of steps taken per sample.
     """
 
     loss: Optional[Float[TT, ""]]
@@ -77,3 +78,4 @@ class MLMPredictionDict(TypedDict):
     ids: Integer[TT, " batch seq_len"]
     time_taken: List[float]
     output_start_idx: int
+    steps_taken: List[int]

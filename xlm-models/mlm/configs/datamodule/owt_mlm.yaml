@@ -3,9 +3,22 @@ defaults:
   - owt
   - /collator@datamodule.dataset_managers.train.lm.collator: default_mlm
   - /collator@datamodule.dataset_managers.val.lm.collator: default_mlm
+  - /collator@datamodule.dataset_managers.val.unconditional_prediction.collator: unconditional_pred_mlm
+  - /collator@datamodule.dataset_managers.predict.unconditional_prediction.collator: unconditional_pred_mlm
 
 datamodule:
   print_batch_fn: mlm.datamodule_mlm.print_batch_mlm
+  dataset_managers:
+    val:
+      unconditional_prediction:
+        dataset_constructor_str: mlm.datamodule_mlm.MLMEmptyDataset
+        dataset_kwargs:
+          max_length: ${datamodule.block_size}
+    predict:
+      unconditional_prediction:
+        dataset_constructor_str: mlm.datamodule_mlm.MLMEmptyDataset
+        dataset_kwargs:
+          max_length: ${datamodule.block_size}
 
 tags:
   dataset: owt 
