@@ -30,6 +30,7 @@ def mlm_single_segment_collate_fn(
     loss_on_padding: bool = True,
     mask_all: bool = False,
     mask_none: bool = False,
+    mask_positions: Optional[List[List[bool]]] = None,
 ) -> MLMBatch:
     # determine max_seq_len
     add_bos = int(bos_token_id is not None)
@@ -48,6 +49,8 @@ def mlm_single_segment_collate_fn(
     input_ids = []
     target_ids = []
     attention_mask = []
+    positions_to_mask = []
+    fixed_positions_mask = []
     for i, example in enumerate(examples):
         temp = [bos_token_id] * add_bos + example + [eos_token_id] * add_eos
         _ids = torch.tensor(
@@ -66,6 +69,10 @@ def mlm_single_segment_collate_fn(
         input_ids.append(_ids)
         attention_mask.append(_attention_mask)
         _target_ids = _ids.clone()
+        if mask_positions is not None:
+            positions_to_mask.append(torch.tensor([True]*add_bos + mask_positions[i] + [True]*add_eos + [True]*(len(_ids) - len(temp))))
+            assert len(_ids) == len(positions_to_mask[i])
+            fixed_positions_mask.append(torch.tensor([False]*add_bos + [not _ for _ in mask_positions[i]] + [False]*add_eos + [False]*(len(_ids) - len(temp))))
         if not loss_on_padding:
             _target_ids[~_attention_mask] = -100
 
@@ -78,6 +85,8 @@ def mlm_single_segment_collate_fn(
         mask = input_ids == mask_token_id
     else:
         mask = torch.rand_like(input_ids, dtype=t.dtype) < t[:, None]
+        if mask_positions is not None:
+            mask[~torch.stack(positions_to_mask, dim=0)] = False
     if not loss_on_padding:
         mask = mask.logical_and(attention_mask)
     input_ids[mask] = mask_token_id
@@ -85,6 +94,7 @@ def mlm_single_segment_collate_fn(
         "input_ids": input_ids,
         "attention_mask": attention_mask,
         "target_ids": torch.stack(target_ids, dim=0),
+        "fixed_positions_mask": torch.stack(fixed_positions_mask, dim=0) if mask_positions is not None else None
     }
 
 
@@ -577,3 +587,42 @@ def print_batch_mlm(
     print("target tokens:")
     _target_ids = _replace_100_with_pad(batch["target_ids"][0], tokenizer)
     print(tokenizer.decode(_target_ids))
+
+
+class DefaultInfillMLMCollator(Collator):
+    def __init__(
+        self,
+        tokenizer: Tokenizer,
+        block_size: int,
+        noise_schedule: NoiseSchedule,
+        loss_on_padding: bool = True,
+        truncate: Literal[
+            "max", "block", None
+        ] = "block",  # None is max in seq without a limit. max is max in seq upto block_size
+        add_bos: bool = True,
+        add_eos: bool = True,
+    ):
+        self.block_size = block_size
+        self.noise_schedule = noise_schedule
+        self.tokenizer = tokenizer
+        self._vocab_size = len(self.tokenizer)
+        self.truncate = truncate
+        self.loss_on_padding = loss_on_padding
+        self.add_bos = add_bos
+        self.add_eos = add_eos
+
+    def __call__(
+        self,
+        examples: List[BaseCollatorInput],
+    ) -> MLMBatch:
+        return mlm_single_segment_collate_fn(
+            [e["input_ids"] for e in examples],
+            self.tokenizer.pad_token_id,
+            self.tokenizer.mask_token_id,
+            bos_token_id=self.tokenizer.bos_token_id if self.add_bos else None,
+            eos_token_id=self.tokenizer.eos_token_id if self.add_eos else None,
+            max_seq_len=self.block_size,
+            truncate=self.truncate,
+            loss_on_padding=self.loss_on_padding,
+            mask_positions=[[token == self.tokenizer.mask_token_id for token in e["prompt_ids"]] for e in examples]
+        )
