@@ -105,6 +105,7 @@ class RotaryTransformerLayer(nn.Module):
         )
         self.dropout2 = nn.Dropout(dropout)
         self.dropout = dropout
+        self.force_flash_attn = force_flash_attn
         if force_flash_attn:
             self.attn_backend = [SDPBackend.FLASH_ATTENTION]
         else:
@@ -186,6 +187,7 @@ class RotaryTransformerLayer(nn.Module):
         # Perform scaled dot-product attention
         # Make the attention mask broadcastable to (bsz, query_seq_len(1), key_seq_len(seq_len))
         # Note we want to broadcast (copy) along the query_seq_len dimension
+        attn_mask = None
         if attention_mask is not None:
             if attention_mask.ndim == 2:  # (bsz, seq_len)
                 attn_mask = attention_mask.unsqueeze(1).unsqueeze(
@@ -207,22 +209,22 @@ class RotaryTransformerLayer(nn.Module):
         # due to the new default of `torch.load(weights_only=True)`,
         # torch 2.6.0 will not work with lightning 2.3, 2.4 or 2.5.
         # So untill lightning supports torch 2.6, we cannot use this context manager.
-        # with torch.nn.attention.sdpa_kernel(self.attn_backend):
-        #    attn_output = F.scaled_dot_product_attention(
-        #        q_rotary,
-        #        k_rotary,
-        #        v,
-        #        attn_mask=attn_mask,
-        #        dropout_p=self.dropout if self.training else 0.0,
-        #    )  # shape (bsz, n_heads, seq_len, head_dim)
+        with torch.nn.attention.sdpa_kernel(self.attn_backend):
+           attn_output = F.scaled_dot_product_attention(
+               q_rotary,
+               k_rotary,
+               v,
+               attn_mask=attn_mask,
+               dropout_p=self.dropout if self.training else 0.0,
+           )  # shape (bsz, n_heads, seq_len, head_dim)
 
-        attn_output = F.scaled_dot_product_attention(
-            q_rotary,
-            k_rotary,
-            v,
-            attn_mask=attn_mask,
-            dropout_p=self.dropout if self.training else 0.0,
-        )  # shape (bsz, n_heads, seq_len, head_dim)
+        #attn_output = F.scaled_dot_product_attention(
+        #    q_rotary,
+        #    k_rotary,
+        #    v,
+        #    attn_mask=attn_mask,
+        #    dropout_p=self.dropout if self.training else 0.0,
+        #)  # shape (bsz, n_heads, seq_len, head_dim)
 
         # Reshape and project output
         attn_output = (

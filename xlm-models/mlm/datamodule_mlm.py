@@ -1,4 +1,5 @@
 import torch
+from torch.utils.data import IterableDataset
 from xlm.datamodule import (
     Collator,
     BaseCollatorInput,
@@ -17,6 +18,25 @@ logger = RankedLogger(__name__, rank_zero_only=True)
 
 ################################################################################
 # region: Collators
+
+
+class MLMEmptyDataset(IterableDataset):
+    """Empty dataset for unconditional MLM generation. Yields all-mask sequences."""
+
+    def __init__(
+        self,
+        tokenizer: Tokenizer,
+        num_examples: int,
+        max_length: int,
+    ):
+        self.tokenizer = tokenizer
+        self.num_examples = num_examples
+        self.max_length = max_length
+
+    def __iter__(self):
+        for _ in range(self.num_examples):
+            ex = {"input_ids": [self.tokenizer.mask_token_id] * self.max_length}
+            yield ex
 
 
 def mlm_single_segment_collate_fn(

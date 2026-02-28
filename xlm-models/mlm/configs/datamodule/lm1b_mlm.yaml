@@ -1,13 +1,24 @@
 # @package _global_
 defaults:
-  - default
-  - /datasets@datamodule.dataset_managers.train.lm: lm1b_train
-  - /datasets@datamodule.dataset_managers.val.lm: lm1b_test
+  - lm1b
   - /collator@datamodule.dataset_managers.train.lm.collator: default_mlm
   - /collator@datamodule.dataset_managers.val.lm.collator: default_mlm
+  - /collator@datamodule.dataset_managers.val.unconditional_prediction.collator: unconditional_pred_mlm
+  - /collator@datamodule.dataset_managers.predict.unconditional_prediction.collator: unconditional_pred_mlm
 
 datamodule:
   print_batch_fn: mlm.datamodule_mlm.print_batch_mlm
+  dataset_managers:
+    val:
+      unconditional_prediction:
+        dataset_constructor_str: mlm.datamodule_mlm.MLMEmptyDataset
+        dataset_kwargs:
+          max_length: ${datamodule.block_size}
+    predict:
+      unconditional_prediction:
+        dataset_constructor_str: mlm.datamodule_mlm.MLMEmptyDataset
+        dataset_kwargs:
+          max_length: ${datamodule.block_size}
 
 tags:
   dataset: lm1b 

@@ -105,6 +105,7 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
         self.skip_special_tokens = skip_special_tokens
         self.confidence = confidence
         self.threshold = threshold
+        self.flash_attn = None
         if confidence is not None and threshold is None:
             raise ValueError("Threshold is required when confidence is provided")
 
@@ -152,7 +153,7 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
         # fmt: on
         # TODO (efficiency): Logits can be cached if nothing in the input changes
         assert self.model is not None, "Model is not initialized"
-        logits = self.model(x, attention_mask, positions)
+        logits = self.model(x, attention_mask if not self.flash_attn else None, positions)
         masked = x == self.tokenizer.mask_token_id
         steps_left = self.max_steps - step_results["steps_taken"]
         if not final_step:
@@ -272,6 +273,13 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
             ),
             "done": torch.zeros(x.shape[0], dtype=torch.bool, device=x.device),
         }
+        if self.flash_attn is None:
+            self.flash_attn = getattr(self.model, "force_flash_attn", False)
+        # check if there are any False in the attention mask
+        if attention_mask is not None:
+            if ~attention_mask.any() and self.flash_attn:
+                raise ValueError("Attention mask is not all True and flash attention is enabled")
+
         while not self.stop(step_results):
             has_masked = (step_results["x"] == self.tokenizer.mask_token_id).any(dim=-1)
             steps_taken[has_masked] += 1
