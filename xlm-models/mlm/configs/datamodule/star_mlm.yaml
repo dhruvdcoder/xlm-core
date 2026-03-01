@@ -14,25 +14,25 @@ datamodule:
     train:
       lm:
         collator:
-          add_bos: true
+          add_bos: ${oc.select:add_bos,true}
     val:
       lm:
         collator:
-          add_bos: true
+          add_bos: ${oc.select:add_bos,true}
       prediction:
         collator:
-          add_bos: true
+          add_bos: ${oc.select:add_bos,true}
     test:
       lm:
         collator:
-          add_bos: true
+          add_bos: ${oc.select:add_bos,true}
       prediction:
         collator:
-          add_bos: true
+          add_bos: ${oc.select:add_bos,true}
     predict:
       prediction:
         collator:
-          add_bos: true
+          add_bos: ${oc.select:add_bos,true}
 
 
 tags:

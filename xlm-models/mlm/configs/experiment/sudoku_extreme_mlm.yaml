@@ -18,7 +18,7 @@ block_size: 81
 monitored_metric: val/lm/accumulated_loss
 add_bos: false
 add_eos: false
-loss_on_padding: false
+loss_on_padding: true
 
 datamodule:
   print_batch_fn: mlm.datamodule_mlm.print_batch_mlm
@@ -90,4 +90,4 @@ reported_metrics:
 callbacks:
   checkpoint_every_n_steps:
     every_n_train_steps: 10000 # save temp checkpoint every 10k steps incase of failure
-    keep_multiple: 40 # (40 * 10000 = 400000: permanently saved checkpoints at every 400k steps)
+    keep_multiple: 4 # (4 * 10000 = 40000: permanently saved checkpoints at every 40k steps)
