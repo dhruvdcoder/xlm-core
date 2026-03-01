@@ -4,6 +4,7 @@ defaults:
   - /datasets@datamodule.dataset_managers.train.lm: lm1b_train
   - /datasets@datamodule.dataset_managers.val.lm: lm1b_test
   - /datasets@datamodule.dataset_managers.val.unconditional_prediction: text_uncoditional_prediction
+  - /datasets@datamodule.dataset_managers.test.unconditional_prediction: text_uncoditional_prediction
   - /datasets@datamodule.dataset_managers.predict.unconditional_prediction: text_uncoditional_prediction
 
 
@@ -17,6 +18,9 @@ datamodule:
   print_batch_fn: ???
   dataset_managers:
     val:
+      unconditional_prediction:
+        dataset_constructor_str: ???
+    test:
       unconditional_prediction:
         dataset_constructor_str: ???
     predict:

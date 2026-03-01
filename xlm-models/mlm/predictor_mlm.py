@@ -2,6 +2,7 @@ from typing import (
     Any,
     Dict,
     List,
+    Literal,
     Optional,
     Tuple,
     TypedDict,
@@ -28,6 +29,7 @@ from xlm.utils.nn import (
     select_random_indices,
 )
 import time
+from .unbatch import unbatch
 
 MLMStepResults = Dict[str, Any]
 # class MLMStepResults(TypedDict):
@@ -66,6 +68,8 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
         noise_schedule: Optional[NoiseSchedule] = None,
         top_k: Optional[int] = None,
         top_p: Optional[float] = None,
+        confidence: Optional[Literal["prob_diff", "entropy", "top_prob"]] = None,
+        threshold: Optional[float] = None,
         skip_special_tokens: bool = True,
     ):
         """Initialize MLM Predictor.
@@ -76,6 +80,8 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
             noise_schedule: Noise schedule for the diffusion process.
             top_k: Top-k sampling parameter.
             top_p: Top-p sampling parameter.
+            confidence: Confidence-based position sampling parameter.
+            threshold: Threshold for confidence-based position sampling.
             model: The MLM model to use for predictions.
         """
         if tokenizer is None:
@@ -97,6 +103,11 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
 
         self.noise_schedule = noise_schedule
         self.skip_special_tokens = skip_special_tokens
+        self.confidence = confidence
+        self.threshold = threshold
+        self.flash_attn = None
+        if confidence is not None and threshold is None:
+            raise ValueError("Threshold is required when confidence is provided")
 
     def reset(self):
         # simple predictor has no state
@@ -142,22 +153,53 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
         # fmt: on
         # TODO (efficiency): Logits can be cached if nothing in the input changes
         assert self.model is not None, "Model is not initialized"
-        logits = self.model(x, attention_mask, positions)
+        logits = self.model(x, attention_mask if not self.flash_attn else None, positions)
         masked = x == self.tokenizer.mask_token_id
         steps_left = self.max_steps - step_results["steps_taken"]
         if not final_step:
-            num_unmask = (
-                masked.sum(dim=-1) / (steps_left).clamp(min=1)
-            ).long()
-            unmask = select_random_indices(
-                inp_shape=x.shape,
-                num_unmask=num_unmask,
-                select_from_mask=masked,
-                selection_score=None,  # uniform
-                selection_mode="sample",
-            )
+            if not self.confidence:
+                num_unmask = (
+                    masked.sum(dim=-1) / (steps_left).clamp(min=1)
+                ).long()
+                unmask = select_random_indices(
+                    inp_shape=x.shape,
+                    num_unmask=num_unmask,
+                    select_from_mask=masked,
+                    selection_score=None,  # uniform
+                    selection_mode="sample",
+                )
+            else:
+                # confidence-based sampling
+                if self.confidence == "prob_diff":
+                    temp = logits.softmax(dim=-1)  # (B, L, V)
+                    top2_probs, _ = torch.topk(temp, k=2, dim=-1)  # (B, L, 2)
+                    confidence = (
+                        top2_probs[:, :, 0] - top2_probs[:, :, 1]
+                    )  # (B, L)
+                    confidence = 1 - confidence  # prepare to sort in ascending order
+                    confidence[~masked] = 1  # ignore non-masked positions
+                    sorted_values, sorted_indices = torch.sort(confidence)
+                    unmask = torch.cumsum(sorted_values, dim=-1) - torch.cummax(sorted_indices, dim=-1).values < self.threshold
+                    unmask = unmask.scatter(-1, sorted_indices, unmask)
+                elif self.confidence == "entropy":
+                    temp = logits.softmax(dim=-1)  # (B, L, V)
+                    confidence = torch.sum(
+                        temp * torch.log(temp + 1e-10), dim=-1
+                    )  # (B, L)
+                    raise NotImplementedError("Entropy-based sampling is not implemented")
+                elif self.confidence == "top_prob":
+                    confidence = logits.softmax(dim=-1).max(dim=-1)[0]  # (B, L)
+                    confidence = 1 - confidence  # prepare to sort in ascending order
+                    confidence[~masked] = 1  # ignore non-masked positions
+                    sorted_values, sorted_indices = torch.sort(confidence, dim=-1, descending=False)
+                    unmask = torch.cumsum(sorted_values, dim=-1) - torch.cummax(sorted_values, dim=-1).values < self.threshold
+                    unmask = unmask.scatter(-1, sorted_indices, unmask)
+                else:
+                    raise ValueError(f"Unknown confidence: {self.confidence}")
         else:
             unmask = masked
+        # can unmask only masked positions
+        unmask = masked.logical_and(unmask)
         x[unmask] = self.sampling_function(logits[unmask])
         # compute stopping condition
         step_results["steps_taken"] += 1
@@ -179,17 +221,7 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
         dataloader_idx: Optional[int] = None,
         dataloader_name: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        dicts: List[Dict[str, Any]] = []
-        for text, ids in zip(
-            preds["text"],
-            preds["ids"].tolist(),
-        ):
-            dicts.append(
-                {
-                    "text": text,
-                    "ids": ids,
-                }
-            )
+        dicts: List[Dict[str, Any]] = unbatch(preds, length=len(preds["text"]))
         return dicts
 
     @torch._dynamo.disable()
@@ -229,6 +261,7 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
                 dim=-1,
             )
         positions = (attention_mask.cumsum(dim=-1) - 1).clamp(min=0).long()
+        steps_taken = torch.zeros(x.shape[0], dtype=torch.int, device=x.device)
 
         step_results: MLMStepResults = {
             "x": x,
@@ -240,7 +273,16 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
             ),
             "done": torch.zeros(x.shape[0], dtype=torch.bool, device=x.device),
         }
+        if self.flash_attn is None:
+            self.flash_attn = getattr(self.model, "force_flash_attn", False)
+        # check if there are any False in the attention mask
+        if attention_mask is not None:
+            if ~attention_mask.any() and self.flash_attn:
+                raise ValueError("Attention mask is not all True and flash attention is enabled")
+
         while not self.stop(step_results):
+            has_masked = (step_results["x"] == self.tokenizer.mask_token_id).any(dim=-1)
+            steps_taken[has_masked] += 1
             step_results = self.predict_single_step(
                 step_results,
             )
@@ -264,4 +306,5 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
             "time_taken": [_time_taken]
             * len(out),  # cannot separate time for each sample
             "output_start_idx": output_start_idx,
+            "steps_taken": steps_taken.tolist(),
         }
