@@ -1,6 +1,6 @@
 # @package _global_
 defaults:
-  - override /datamodule: owt_mlm
+  - override /datamodule: owt_packed_mlm
   - override /noise_schedule: dummy
   - override /model_type: mlm
   - override /model: rotary_transformer_mlm

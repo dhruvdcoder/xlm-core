@@ -44,3 +44,6 @@ temp_*.pdf
 
 # docs
 site
+
+# editor files
+.cursorindexingignore

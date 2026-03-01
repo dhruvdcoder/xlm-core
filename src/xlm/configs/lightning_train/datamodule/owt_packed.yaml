@@ -1,0 +1,33 @@
+# @package _global_
+defaults:
+  - default
+  - /datasets@datamodule.dataset_managers.train.lm: owt_packed_train
+  - /datasets@datamodule.dataset_managers.val.lm: owt_packed_val
+  - /datasets@datamodule.dataset_managers.val.unconditional_prediction: text_uncoditional_prediction
+  - /datasets@datamodule.dataset_managers.test.unconditional_prediction: text_uncoditional_prediction
+  - /datasets@datamodule.dataset_managers.predict.unconditional_prediction: text_uncoditional_prediction
+
+per_device_batch_size: 32
+global_batch_size: 512
+block_size: 1024
+
+global_components:
+  tokenizer:
+    _target_: xlm.datamodule.GPT2TokenizerFast.from_pretrained
+    pretrained_model_name_or_path: gpt2
+
+datamodule:
+  print_batch_fn: ???
+  dataset_managers:
+    val:
+      unconditional_prediction:
+        dataset_constructor_str: ???
+    test:
+      unconditional_prediction:
+        dataset_constructor_str: ???
+    predict:
+      unconditional_prediction:
+        dataset_constructor_str: ???
+
+tags:
+  dataset: owt_packed
