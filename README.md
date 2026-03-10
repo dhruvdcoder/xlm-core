@@ -32,12 +32,13 @@ XLM is a **modular, research-friendly framework** for developing and comparing n
 
 ## 🏗️ Available Models
 
-| Model  | Full Name                | Description                          | Reference |
-|--------|--------------------------|--------------------------------------|-----------|
-| `mlm`  | Masked Language Model    | Classic BERT-style masked prediction | —         |
-| `ilm`  | Insertion Language Model | Iterative insertion-based generation | [arXiv:2505.05755](https://arxiv.org/pdf/2505.05755) |
-| `arlm` | Autoregressive LM        | Standard left-to-right baseline      | —         |
-| `mdlm` | Masked Diffusion LM      | Discrete diffusion with masking      | [arXiv:2406.07524](https://arxiv.org/pdf/2406.07524) |
+| Model      | Full Name                       | Description                              | Reference |
+|------------|---------------------------------|------------------------------------------|-----------|
+| `mlm`      | Masked Language Model           | Classic BERT-style masked prediction     | —         |
+| `ilm`      | Insertion Language Model         | Iterative insertion-based generation     | [arXiv:2505.05755](https://arxiv.org/pdf/2505.05755) |
+| `arlm`     | Autoregressive LM                | Standard left-to-right baseline          | —         |
+| `mdlm`     | Masked Diffusion LM              | Discrete diffusion with masking          | [arXiv:2406.07524](https://arxiv.org/pdf/2406.07524) |
+| `flexmdm`  | Flexible Masked Diffusion Model | Variable-length masked diffusion | [arXiv:2509.01025](https://arxiv.org/abs/2509.01025) |
 
 ## 🚀 Installation
 
