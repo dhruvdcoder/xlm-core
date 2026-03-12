@@ -70,3 +70,7 @@ def sudoku_extreme_preprocess_fn(
         example["trajectory_token_ids"] = trajectory_token_ids
     
     return example
+
+
+def sudoku_extreme_kaggle_filter_fn(example: Dict[str, Any]) -> bool:
+    return example["source"] == "puzzles0_kaggle"

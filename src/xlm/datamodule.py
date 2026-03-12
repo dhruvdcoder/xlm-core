@@ -65,10 +65,17 @@ __all__ = [
     # Tokenizers
     "BertTokenizer",
     "BertTokenizerFast",
+    "BertTokenizerWithCyclicPads",
+    "BertTokenizerFastWithCyclicPads",
     "GPT2Tokenizer",
     "GPT2TokenizerFast",
+    "GPT2TokenizerWithCyclicPads",
+    "GPT2TokenizerFastWithCyclicPads",
     "SAFETokenizer",
     "SimpleSpaceTokenizer",
+    "SimpleSpaceTokenizerWithCyclicPads",
+    "add_cyclic_pad_tokens",
+    "get_cyclic_pad_token_ids",
     # Dataset managers
     "DatasetManager",
     "LocalDatasetManager",
@@ -309,6 +316,106 @@ class GPT2TokenizerFast(TokenizerMixin, _GPT2TokenizerFast):  # type: ignore
         return tokenizer
 
 
+def add_cyclic_pad_tokens(
+    tokenizer: PreTrainedTokenizerBase,
+    n: int,
+    token_template: Optional[str] = None,
+) -> None:
+    """
+    Add n cyclic pad tokens and set pad_i_token, pad_i_token_id for i in range(n).
+    Modifies tokenizer in-place.
+
+    Args:
+        tokenizer: The tokenizer to modify (BertTokenizer, GPT2Tokenizer, etc.).
+        n: Number of cyclic pad tokens.
+        token_template: Format string for token names. If None, infers from pad_token:
+            GPT2-style (pad_token like "<|pad|>"): "<|pad_{}|>"
+            Bert-style (pad_token like "[PAD]"): "[PAD_{}]"
+    """
+    if token_template is None:
+        pad = getattr(tokenizer, "pad_token", None) or ""
+        if "<|" in str(pad):
+            token_template = "<|pad_{}|>"
+        else:
+            token_template = "[PAD_{}]"
+    new_tokens = [token_template.format(i) for i in range(n)]
+    tokenizer.add_tokens(new_tokens, special_tokens=True)
+    for i in range(n):
+        token_str = token_template.format(i)
+        setattr(tokenizer, f"pad_{i}_token", token_str)
+        setattr(
+            tokenizer,
+            f"pad_{i}_token_id",
+            tokenizer.convert_tokens_to_ids(token_str),
+        )
+
+
+def get_cyclic_pad_token_ids(
+    tokenizer: Any, n: int
+) -> List[int]:
+    """
+    Return [pad_0_token_id, ..., pad_{n-1}_token_id].
+    Raises AttributeError if any pad_i_token_id is missing.
+    """
+    return [getattr(tokenizer, f"pad_{i}_token_id") for i in range(n)]
+
+
+class GPT2TokenizerWithCyclicPads(GPT2Tokenizer):
+    """GPT2Tokenizer with cyclic pad tokens (pad_0..pad_{n-1})."""
+
+    @classmethod
+    def from_pretrained(cls, pretrained_model_name_or_path: str, *args, **kwargs):
+        num_cyclic_pad_tokens = kwargs.pop("num_cyclic_pad_tokens")
+        tokenizer = super(GPT2Tokenizer, cls).from_pretrained(
+            pretrained_model_name_or_path, *args, **kwargs
+        )
+        add_cyclic_pad_tokens(tokenizer, num_cyclic_pad_tokens)
+        tokenizer.post_creation()
+        return tokenizer
+
+
+class GPT2TokenizerFastWithCyclicPads(GPT2TokenizerFast):
+    """GPT2TokenizerFast with cyclic pad tokens (pad_0..pad_{n-1})."""
+
+    @classmethod
+    def from_pretrained(cls, pretrained_model_name_or_path: str, *args, **kwargs):
+        num_cyclic_pad_tokens = kwargs.pop("num_cyclic_pad_tokens")
+        tokenizer = super(GPT2TokenizerFast, cls).from_pretrained(
+            pretrained_model_name_or_path, *args, **kwargs
+        )
+        add_cyclic_pad_tokens(tokenizer, num_cyclic_pad_tokens)
+        tokenizer.post_creation()
+        return tokenizer
+
+
+class BertTokenizerWithCyclicPads(BertTokenizer):
+    """BertTokenizer with cyclic pad tokens (pad_0..pad_{n-1})."""
+
+    @classmethod
+    def from_pretrained(cls, pretrained_model_name_or_path: str, *args, **kwargs):
+        num_cyclic_pad_tokens = kwargs.pop("num_cyclic_pad_tokens")
+        tokenizer = super(BertTokenizer, cls).from_pretrained(
+            pretrained_model_name_or_path, *args, **kwargs
+        )
+        add_cyclic_pad_tokens(tokenizer, num_cyclic_pad_tokens)
+        tokenizer.post_creation()
+        return tokenizer
+
+
+class BertTokenizerFastWithCyclicPads(BertTokenizerFast):
+    """BertTokenizerFast with cyclic pad tokens (pad_0..pad_{n-1})."""
+
+    @classmethod
+    def from_pretrained(cls, pretrained_model_name_or_path: str, *args, **kwargs):
+        num_cyclic_pad_tokens = kwargs.pop("num_cyclic_pad_tokens")
+        tokenizer = super(BertTokenizerFast, cls).from_pretrained(
+            pretrained_model_name_or_path, *args, **kwargs
+        )
+        add_cyclic_pad_tokens(tokenizer, num_cyclic_pad_tokens)
+        tokenizer.post_creation()
+        return tokenizer
+
+
 class SAFETokenizer(TokenizerMixin, _SAFETokenizer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -450,6 +557,41 @@ class SimpleSpaceTokenizer(PreTrainedTokenizer):
         return cls(vocab=vocab, **kwargs)
 
 
+class SimpleSpaceTokenizerWithCyclicPads(SimpleSpaceTokenizer):
+    """SimpleSpaceTokenizer with cyclic pad tokens (pad_0..pad_{n-1})."""
+
+    def __init__(
+        self,
+        vocab: Sequence[str],
+        num_cyclic_pad_tokens: int,
+        **kwargs,
+    ):
+        super().__init__(vocab=vocab, **kwargs)
+        # Add [PAD_0], [PAD_1], ..., [PAD_{n-1}] at end of vocab
+        next_id = len(self._vocab_str_to_int)
+        token_template = "[PAD_{}]"
+        for i in range(num_cyclic_pad_tokens):
+            token_str = token_template.format(i)
+            self._vocab_str_to_int[token_str] = next_id
+            self._vocab_int_to_str[next_id] = token_str
+            setattr(self, f"pad_{i}_token", token_str)
+            setattr(self, f"pad_{i}_token_id", next_id)
+            next_id += 1
+
+    @classmethod
+    def for_numbers(
+        cls,
+        vocab_size: int,
+        num_cyclic_pad_tokens: int,
+        **kwargs,
+    ) -> "SimpleSpaceTokenizerWithCyclicPads":
+        return cls(
+            vocab=list(map(str, range(vocab_size))),
+            num_cyclic_pad_tokens=num_cyclic_pad_tokens,
+            **kwargs,
+        )
+
+
 # endregion: Tokenizers
 ################################################################################
 
@@ -487,8 +629,11 @@ class DatasetManager:
         full_name: str,
         full_name_debug: str,
         dataloader_kwargs: DataLoaderKwargs,
+        filter_fn: Optional[Callable[[Any], bool]] = None,
+        filter_suffix: Optional[str] = None,
         preprocess_function: Optional[str] = None,
         preprocess_function_kwargs: Optional[Dict[str, Any]] = None,
+        on_the_fly_filter_fn: Optional[str] = None,
         on_the_fly_processor: Optional[str] = None,
         on_the_fly_processor_kwargs: Optional[Dict[str, Any]] = None,
         on_the_fly_group_processor: Optional[str] = None,
@@ -542,8 +687,16 @@ class DatasetManager:
             self.full_name = full_name
         # self.split_to_download = split_to_download
         self.dataloader_kwargs = dataloader_kwargs
+        self.filter_fn = filter_fn
+        if filter_fn is not None:
+            if filter_suffix is None:
+                raise ValueError("filter_suffix is required when filter_fn is provided")
+            self.filter_suffix = filter_suffix
+        else:
+            self.filter_suffix = None
         self.preprocess_function = preprocess_function
         self.preprocess_function_kwargs = preprocess_function_kwargs or {}
+        self.on_the_fly_filter_fn = on_the_fly_filter_fn
         self.on_the_fly_processor = on_the_fly_processor
         self.on_the_fly_processor_kwargs = on_the_fly_processor_kwargs or {}
         self.on_the_fly_group_processor = on_the_fly_group_processor
@@ -598,6 +751,9 @@ class DatasetManager:
         tokenizer: Tokenizer,
         num_proc: Optional[int] = None,
     ) -> datasets.Dataset:
+        if self.filter_fn is not None:
+            filter_fn: Callable = get_function(self.filter_fn)
+            ds = ds.filter(filter_fn)
         if self.preprocess_function is not None:
             preprocess_fn: Callable[..., Any] = get_function(
                 self.preprocess_function
@@ -616,7 +772,12 @@ class DatasetManager:
         return ds
 
     def _get_cache_dir(self, manual_cache_dir: str) -> Path:
-        return Path(manual_cache_dir) / self.full_name
+        if self.filter_suffix is None:
+            return Path(manual_cache_dir) / self.full_name
+        else:
+            repo, ds_name, split = self.full_name.split("/")
+            full_name_with_filter = f"{repo}/{ds_name}_{self.filter_suffix}/{split}"
+            return Path(manual_cache_dir) / full_name_with_filter
 
     def _clean_manual_cache(self, manual_cache_dir: str) -> None:
         cache_dir = self._get_cache_dir(manual_cache_dir)
@@ -644,6 +805,9 @@ class DatasetManager:
     def _apply_on_the_fly_processors(
         self, dataset: datasets.Dataset, tokenizer: Tokenizer
     ):
+        if self.on_the_fly_filter_fn is not None:
+            filter_fn: Callable = get_function(self.on_the_fly_filter_fn)
+            dataset = dataset.filter(filter_fn)
         if self.on_the_fly_processor is not None:
             processor: Callable = get_function(self.on_the_fly_processor)
             kwargs = {

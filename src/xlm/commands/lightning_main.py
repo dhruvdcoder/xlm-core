@@ -157,6 +157,7 @@ def main(cfg: DictConfig) -> None:
         set_flags(cfg)
         evaluate(cfg)
     elif cfg.job_type == "generate":
+        set_flags(cfg)
         generate(cfg)
     elif cfg.job_type == "prepare_data":
         print_config_tree(cfg, resolve=True)
@@ -167,6 +168,7 @@ def main(cfg: DictConfig) -> None:
         push_to_hub(cfg)
     elif cfg.job_type in external_commands:
         # print_config_tree(cfg, resolve=True, save_to_file=cfg.paths.run_dir)
+        set_flags(cfg)
         external_command = external_commands[cfg.job_type]
         external_command(cfg)
     else:
