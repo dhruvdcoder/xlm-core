@@ -209,6 +209,11 @@ def steps_taken_update_fn(
 ################################################################################
 # region: metrics
 
+class MeanMetricWithComputedValue(MeanMetric):
+    def update(self, value: torch.Tensor):
+        super().update(value)
+        self._computed_value = value
+
 
 class ExactMatch(MeanMetric):
     def update(
