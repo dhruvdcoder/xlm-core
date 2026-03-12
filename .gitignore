@@ -23,8 +23,6 @@ lib
 .cursorignore
 .specstory
 before_dep.txt
-varlen_samples_debug/unconditional_samples copy.json
-varlen_samples_debug/unconditional_samples.json
 *.arrow
 torch_compile_debug
 .secrets.env
