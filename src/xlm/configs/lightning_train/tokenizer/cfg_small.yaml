@@ -1,0 +1,1 @@
+_target_: xlm.tasks.cfg.create_tokenizer_cfg_small

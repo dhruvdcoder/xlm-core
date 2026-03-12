@@ -1,0 +1,8 @@
+_target_: xlm.metrics.MetricWrapper
+name: parsability
+metric:
+  _target_: torchmetrics.MeanMetric
+prefix: ???
+update_fn: xlm.tasks.cfg.parsable
+# extra arguments to pass to update_fn
+parser: ${global_components:parser}

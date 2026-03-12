@@ -487,8 +487,11 @@ class DatasetManager:
         full_name: str,
         full_name_debug: str,
         dataloader_kwargs: DataLoaderKwargs,
+        filter_fn: Optional[Callable[[Any], bool]] = None,
+        filter_suffix: Optional[str] = None,
         preprocess_function: Optional[str] = None,
         preprocess_function_kwargs: Optional[Dict[str, Any]] = None,
+        on_the_fly_filter_fn: Optional[str] = None,
         on_the_fly_processor: Optional[str] = None,
         on_the_fly_processor_kwargs: Optional[Dict[str, Any]] = None,
         on_the_fly_group_processor: Optional[str] = None,
@@ -542,8 +545,16 @@ class DatasetManager:
             self.full_name = full_name
         # self.split_to_download = split_to_download
         self.dataloader_kwargs = dataloader_kwargs
+        self.filter_fn = filter_fn
+        if filter_fn is not None:
+            if filter_suffix is None:
+                raise ValueError("filter_suffix is required when filter_fn is provided")
+            self.filter_suffix = filter_suffix
+        else:
+            self.filter_suffix = None
         self.preprocess_function = preprocess_function
         self.preprocess_function_kwargs = preprocess_function_kwargs or {}
+        self.on_the_fly_filter_fn = on_the_fly_filter_fn
         self.on_the_fly_processor = on_the_fly_processor
         self.on_the_fly_processor_kwargs = on_the_fly_processor_kwargs or {}
         self.on_the_fly_group_processor = on_the_fly_group_processor
@@ -598,6 +609,9 @@ class DatasetManager:
         tokenizer: Tokenizer,
         num_proc: Optional[int] = None,
     ) -> datasets.Dataset:
+        if self.filter_fn is not None:
+            filter_fn: Callable = get_function(self.filter_fn)
+            ds = ds.filter(filter_fn)
         if self.preprocess_function is not None:
             preprocess_fn: Callable[..., Any] = get_function(
                 self.preprocess_function
@@ -616,7 +630,12 @@ class DatasetManager:
         return ds
 
     def _get_cache_dir(self, manual_cache_dir: str) -> Path:
-        return Path(manual_cache_dir) / self.full_name
+        if self.filter_suffix is None:
+            return Path(manual_cache_dir) / self.full_name
+        else:
+            repo, ds_name, split = self.full_name.split("/")
+            full_name_with_filter = f"{repo}/{ds_name}_{self.filter_suffix}/{split}"
+            return Path(manual_cache_dir) / full_name_with_filter
 
     def _clean_manual_cache(self, manual_cache_dir: str) -> None:
         cache_dir = self._get_cache_dir(manual_cache_dir)
@@ -644,6 +663,9 @@ class DatasetManager:
     def _apply_on_the_fly_processors(
         self, dataset: datasets.Dataset, tokenizer: Tokenizer
     ):
+        if self.on_the_fly_filter_fn is not None:
+            filter_fn: Callable = get_function(self.on_the_fly_filter_fn)
+            dataset = dataset.filter(filter_fn)
         if self.on_the_fly_processor is not None:
             processor: Callable = get_function(self.on_the_fly_processor)
             kwargs = {
