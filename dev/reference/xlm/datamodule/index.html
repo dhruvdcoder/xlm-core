@@ -1568,6 +1568,50 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#xlm.datamodule.GPT2TokenizerWithCyclicPads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;GPT2TokenizerWithCyclicPads
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xlm.datamodule.GPT2TokenizerFastWithCyclicPads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;GPT2TokenizerFastWithCyclicPads
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xlm.datamodule.BertTokenizerWithCyclicPads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;BertTokenizerWithCyclicPads
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xlm.datamodule.BertTokenizerFastWithCyclicPads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;BertTokenizerFastWithCyclicPads
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#xlm.datamodule.SimpleSpaceTokenizer" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1592,6 +1636,17 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xlm.datamodule.SimpleSpaceTokenizerWithCyclicPads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SimpleSpaceTokenizerWithCyclicPads
+      
+    </span>
+  </a>
   
 </li>
       
@@ -1766,6 +1821,28 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;DefaultCollatorWithDynamicPadding
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xlm.datamodule.add_cyclic_pad_tokens" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;add_cyclic_pad_tokens
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xlm.datamodule.get_cyclic_pad_token_ids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_cyclic_pad_token_ids
       
     </span>
   </a>
@@ -2328,6 +2405,34 @@
     
   
     tasks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tasks/cfg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>cfg
   
 
     
@@ -4616,6 +4721,198 @@ For ILM  : 0 for CLS, 1 for BOS and prefix, 2 for other tokens.</p>
 
 
 
+<h2 id="xlm.datamodule.GPT2TokenizerWithCyclicPads" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>GPT2TokenizerWithCyclicPads</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="xlm.datamodule.GPT2Tokenizer">GPT2Tokenizer</span></code></p>
+
+
+
+        <p>GPT2Tokenizer with cyclic pad tokens (pad_0..pad_{n-1}).</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="xlm.datamodule.GPT2TokenizerFastWithCyclicPads" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>GPT2TokenizerFastWithCyclicPads</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="xlm.datamodule.GPT2TokenizerFast">GPT2TokenizerFast</span></code></p>
+
+
+
+        <p>GPT2TokenizerFast with cyclic pad tokens (pad_0..pad_{n-1}).</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="xlm.datamodule.BertTokenizerWithCyclicPads" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>BertTokenizerWithCyclicPads</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="xlm.datamodule.BertTokenizer">BertTokenizer</span></code></p>
+
+
+
+        <p>BertTokenizer with cyclic pad tokens (pad_0..pad_{n-1}).</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="xlm.datamodule.BertTokenizerFastWithCyclicPads" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>BertTokenizerFastWithCyclicPads</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="xlm.datamodule.BertTokenizerFast">BertTokenizerFast</span></code></p>
+
+
+
+        <p>BertTokenizerFast with cyclic pad tokens (pad_0..pad_{n-1}).</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
 <h2 id="xlm.datamodule.SimpleSpaceTokenizer" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>SimpleSpaceTokenizer</code>
 
@@ -4735,6 +5032,54 @@ an id (starting at 5) will be assigned to each character.</p>
 
 
 
+<h2 id="xlm.datamodule.SimpleSpaceTokenizerWithCyclicPads" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>SimpleSpaceTokenizerWithCyclicPads</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="            SimpleSpaceTokenizer (xlm.datamodule.SimpleSpaceTokenizer)" href="#xlm.datamodule.SimpleSpaceTokenizer">SimpleSpaceTokenizer</a></code></p>
+
+
+
+        <p>SimpleSpaceTokenizer with cyclic pad tokens (pad_0..pad_{n-1}).</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
 <h2 id="xlm.datamodule.DatasetManager" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>DatasetManager</code>
 
@@ -4775,7 +5120,7 @@ multiple DatasetManager instances.</p>
 
 
 <h3 id="xlm.datamodule.DatasetManager.__init__" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">collator</span><span class="p">,</span> <span class="n">full_name</span><span class="p">,</span> <span class="n">full_name_debug</span><span class="p">,</span> <span class="n">dataloader_kwargs</span><span class="p">,</span> <span class="n">preprocess_function</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preprocess_function_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_processor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_processor_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_group_processor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">columns_to_remove</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stages</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">iterable_dataset_shards</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shuffle_buffer_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shuffle_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">split_by_node</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rewrite_manual_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_manual_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">collator</span><span class="p">,</span> <span class="n">full_name</span><span class="p">,</span> <span class="n">full_name_debug</span><span class="p">,</span> <span class="n">dataloader_kwargs</span><span class="p">,</span> <span class="n">filter_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filter_suffix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preprocess_function</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preprocess_function_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_filter_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_processor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_processor_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_group_processor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">columns_to_remove</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stages</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">iterable_dataset_shards</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shuffle_buffer_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shuffle_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">split_by_node</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rewrite_manual_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_manual_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
 
 </h3>
 
@@ -6015,6 +6360,109 @@ Train: StatefulDataLoader with appropriate sampler. Val/test/predict: standard D
 
 </div>
 
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="xlm.datamodule.add_cyclic_pad_tokens" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">add_cyclic_pad_tokens</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">token_template</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Add n cyclic pad tokens and set pad_i_token, pad_i_token_id for i in range(n).
+Modifies tokenizer in-place.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>tokenizer</code>
+            </td>
+            <td>
+                  <code><span title="transformers.PreTrainedTokenizerBase">PreTrainedTokenizerBase</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The tokenizer to modify (BertTokenizer, GPT2Tokenizer, etc.).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>n</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of cyclic pad tokens.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>token_template</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Format string for token names. If None, infers from pad_token:
+GPT2-style (pad_token like "&lt;|pad|&gt;"): "&lt;|pad_{}|&gt;"
+Bert-style (pad_token like "[PAD]"): "[PAD_{}]"</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="xlm.datamodule.get_cyclic_pad_token_ids" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">get_cyclic_pad_token_ids</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return [pad_0_token_id, ..., pad_{n-1}_token_id].
+Raises AttributeError if any pad_i_token_id is missing.</p>
+
+
+    </div>
+
+</div>
 
 
 
