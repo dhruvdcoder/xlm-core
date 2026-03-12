@@ -1,56 +1,34 @@
-# ILM - Infilling Language Model
+# Insertion Language Model
 
-> **Migration Note**: This model has been migrated from `xlm.lm.ilm` to be an independent external package. 
-> All import paths have been updated from `xlm.lm.ilm.*` → `ilm.*` and config targets updated accordingly.
-> The functionality remains exactly the same.
+## Training
 
-## Installation
-
+To train the model on OpenWebText-1024 split, you can use the following command:
 ```bash
-# Install from xlm-models
-pip install xlm-models[ilm]
-
-# Or install directly
-pip install ./ilm
-
-# Development installation
-pip install -e ./ilm
+xlm job_type=train job_name=owt_ilm experiment=owt_ilm \
+per_device_batch_size=32 \
+trainer_strategy=ddp \
+trainer.devices=8 \
+trainer.num_nodes=1 \
+++trainer.precision=bf16-mixed \
+compile=true
 ```
 
-## Usage with New Import Paths
+## Download a checkpoint
 
-```yaml
-# Model configuration (updated target path)
-model:
-  _target_: ilm.model_ilm.RotaryTransformerILMModel
 
-# Loss configuration (updated target path)  
-loss:
-  _target_: ilm.loss_ilm.ILMLossWithMaskedCE
 
-# Predictor configuration (updated target path)
-predictor:
-  _target_: ilm.predictor_ilm.ILMPredictor
+## Cite
+If you use this model in your research, please cite the original paper along with xLM.
+
+```
+@misc{patel2025insertionlanguagemodelssequence,
+      title={Insertion Language Models: Sequence Generation with Arbitrary-Position Insertions}, 
+      author={Dhruvesh Patel and Aishwarya Sahoo and Avinash Amballa and Tahira Naseem and Tim G. J. Rudner and Andrew McCallum},
+      year={2025},
+      eprint={2505.05755},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2505.05755}, 
+}
 ```
 
----
-
-# Original ILM Documentation
-
-# Conditional Generation
-
-```bash
-python src/xlm/commands/cli_demo.py "job_type=demo" "job_name=owt_ilm_demo" "experiment=owt_ilm" predictor.stopping_threshold=0.9 +hub/checkpoint=ilm_owt
-```
-
-# Unconditional Generation
-```bash
-python src/xlm/commands/lightning_main.py "job_type=generate" "job_name=owt_ilm" "experiment=owt_ilm" "debug=[overfit,print_predictions]" "+generation.ckpt_path=logs/owt_ilm5/checkpoints/57-600000.ckpt" datamodule.dataset_managers.predict.unconditional_prediction.num_examples=5
-```
-
-
-# Evaluate
-
-```bash
-xlm "job_type=eval" "job_name=owt_ilm_eval" "experiment=[owt_ilm,gpt2_generative_perplexity]" "++eval.checkpoint_path=logs/owt_ilm5/checkpoints/75-800000.ckpt" "debug=eval_unconditional_preds" +predictor.use_high_precision=true predictor.p=0.9 trainer.limit_val_batches=20 ~datamodule.dataset_managers.val.lm datamodule.dataset_managers.val.unconditional_prediction.num_examples=100
-```

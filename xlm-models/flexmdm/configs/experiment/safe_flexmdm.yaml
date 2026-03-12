@@ -1,0 +1,72 @@
+# @package _global_
+# Vanilla FlexMDM experiment for SAFE dataset
+
+defaults:
+  - override /datamodule: safe_flexmdm
+  - override /noise_schedule: flexmdm_linear
+  - override /model_type: flexmdm
+  - override /model: ddit_flexmdm
+
+per_device_batch_size: 128
+global_batch_size: 2048
+block_size: 256
+monitored_metric: val/validity
+num_dataloader_workers: 4
+use_bracket_safe: true
+num_unconditional_prediction_examples: 1000
+len_predict_type: expectation
+
+# post-hoc evaluation
+post_hoc_evaluator:
+  _target_: xlm.tasks.molgen.DeNovoEval
+  use_bracket_safe: ${oc.select:use_bracket_safe,true}
+
+datamodule:
+  print_batch_fn: flexmdm.datamodule_flexmdm.print_batch_flexmdm
+
+model:
+  force_flash_attn: false
+  len_head_type: mlp
+  inner_autocast: true
+  compile: true
+  len_predict_type: expectation
+
+trainer:
+  max_steps: 1000_000
+  val_check_interval: 50000
+  num_sanity_val_steps: 3
+  check_val_every_n_epoch: null
+
+log_predictions:
+  _target_: xlm.log_predictions.LogPredictions
+  fields_to_keep_in_output:
+    - text
+    - smiles
+    - diversity
+    - validity
+    - uniqueness
+    - qed
+    - sa
+    - quality
+  inject_target: null
+  writers:
+    - file
+    - logger
+
+callbacks:
+  checkpoint_monitor:
+    monitor: val/lm/accumulated_loss
+  checkpoint_every_n_steps:
+    every_n_train_steps: 2500
+    keep_multiple: 40 # Keep every (keep_multiple * every_n_train_steps) permanently = 2500 * 40 = 100_000
+
+optimizer:
+  lr: 0.0001
+
+lr_scheduler:
+  name: "cosine_with_min_lr"
+  min_lr: 1e-6
+  num_warmup_steps: 2000
+  num_cycles: 3.0
+  num_training_steps: ${trainer.max_steps}
+  monitor: "train/loss"

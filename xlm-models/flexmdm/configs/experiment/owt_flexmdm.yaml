@@ -1,0 +1,40 @@
+# @package _global_
+defaults:
+  - text_flexmdm
+  - override /datamodule: owt_flexmdm
+
+
+per_device_batch_size: 32
+global_batch_size: 512
+#input_block_size: null
+block_size: 1024
+num_dataloader_workers: 5
+
+model:
+  force_flash_attn: false # flash_attn won't work with attention mask (padded sequences)
+  len_head_type: mlp
+
+datamodule:
+  print_batch_fn: flexmdm.datamodule_flexmdm.print_batch_flexmdm
+
+trainer:
+  max_steps: 1000_000
+  val_check_interval: 50000
+  check_val_every_n_epoch: null
+  num_sanity_val_steps: 3
+
+optimizer:
+  lr: 0.0001
+
+lr_scheduler:
+  name: "constant_with_warmup"
+  num_warmup_steps: 2000
+  num_training_steps: ${trainer.max_steps}
+  monitor: "train/loss"
+
+
+
+callbacks:
+  checkpoint_every_n_steps:
+    every_n_train_steps: 2500
+    keep_multiple: 40 # Keep every (keep_multiple * every_n_train_steps) permanently = 2500 * 40 = 100_000 
