@@ -11,6 +11,7 @@ from jaxtyping import Bool, Float, Integer
 from torch import Tensor as TT
 from torch.nn.attention import SDPBackend
 from xlm.modules.position import RotaryEmbedding
+from xlm.model import Model
 
 logger = logging.getLogger(__name__)
 
@@ -645,31 +646,7 @@ class ScalarLengthHead(nn.Module):
         return out.to(x.dtype)
 
 
-class Model(torch.nn.Module):
-
-    def forward(
-        self,
-        x_t: Integer[TT, " *batch seq_len"],
-        t: Integer[TT, " *batch"],
-        attention_mask: Optional[Bool[TT, " *batch seq_len"]] = None,
-    ) -> Float[TT, " *batch seq_len vocab_size"]:
-        raise NotImplementedError
-
-    def get_named_params_for_weight_decay(self):
-        # all parameters except biases and layer-norm parameters
-        for name, param in self.named_parameters():
-            if "bias" in name or "norm" in name:
-                continue
-            yield (name, param)
-
-    def get_named_params_for_no_weight_decay(self):
-        # biases and layer-norm parameters
-        for name, param in self.named_parameters():
-            if "bias" in name or "norm" in name:
-                yield (name, param)
-
-
-class FlexMDMModel(Model):
+class FlexMDMModel(torch.nn.Module, Model):
     """DDiT based transformer that represents time/noise using AdaLN and uses rotary positional embeddings."""
 
     def __init__(

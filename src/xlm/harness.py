@@ -1603,12 +1603,13 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
             # same code as in EMACallback.on_train_start
             ema = ExponentialMovingAverage(
                 [p for p in self.parameters() if p.requires_grad],
-                decay=self.decay,
-                use_num_updates=self.use_num_updates,
+                decay=checkpoint["ema"]["decay"],
+                use_num_updates=checkpoint["ema"]["num_updates"],
             )
             ema.load_state_dict(checkpoint["ema"])
             ema.to(self.device)
             ema.copy_to()  # copy ema weights to model
+            logger.info("EMA weights applied to model")
             del ema
 
     # endregion: Lightning Hooks
@@ -1617,7 +1618,7 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
     ############################################################
     # region: other utilities
 
-    def on_load_checkpoint(self, checkpoint: dict) -> None:
+    def _on_load_checkpoint_to_remove(self, checkpoint: dict) -> None:
         # CLEANUP: This method is to load old models that serialize rotary embedding buffers
         # Get the state_dict from the checkpoint (the key might be "state_dict")
         state_dict = checkpoint.get(
