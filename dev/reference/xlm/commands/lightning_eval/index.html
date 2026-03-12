@@ -469,6 +469,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../../../guide/push-to-hub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Push to Hub
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
     
@@ -483,10 +511,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
         
           
-          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
             
   
   
@@ -504,8 +532,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -622,6 +650,62 @@
     
   
     Custom Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../guide/extract-checkpoint/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Extract Checkpoint
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../guide/eval/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evaluate
   
 
     
@@ -2513,6 +2597,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../utils/hf_hub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>hf_hub
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../utils/imports/" class="md-nav__link">
         
   
@@ -2521,6 +2633,34 @@
     
   
     <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>imports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../utils/model_loading/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>model_loading
   
 
     
@@ -4186,15 +4326,9 @@
     <div class="doc doc-contents ">
 
         <p>Instantiate and load a model for evaluation.</p>
+<p>Supports loading from full checkpoints, model-only checkpoints, or HF Hub.
+Returns the checkpoint path for the trainer to use.</p>
 
-
-<details class="supports-two-modes" open>
-  <summary>Supports two modes</summary>
-  <ol>
-<li>Load a model from full training checkpoint using <code>lightning_module.load_from_checkpoint(cfg.eval.checkpoint_path)</code></li>
-<li>Load a model from model only checkpoint using <code>lightning_module.model.load_state_dict(torch.load(cfg.eval.model_only_checkpoint_path))</code></li>
-</ol>
-</details>
 
 <p><span class="doc-section-title">Parameters:</span></p>
     <table>
@@ -4270,21 +4404,11 @@
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-internal" title="            Harness (xlm.harness.Harness)" href="../../harness/#xlm.harness.Harness">Harness</a></code>
+                  <code><span title="tuple">tuple</span>[<a class="autorefs autorefs-internal" title="            Harness (xlm.harness.Harness)" href="../../harness/#xlm.harness.Harness">Harness</a>, <span title="typing.Optional">Optional</span>[<span title="str">str</span>]]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Tuple of (lightning_module, ckpt_path) where ckpt_path is the full checkpoint path</p>
-              </div>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>(or None if using model-only checkpoint)</p>
+                <p>Tuple of (lightning_module, ckpt_path) where ckpt_path is passed to trainer</p>
               </div>
             </td>
           </tr>
