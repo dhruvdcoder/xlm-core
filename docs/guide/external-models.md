@@ -297,4 +297,6 @@ See the core models in the `xlm-models` package for complete examples:
 - `ilm` - Infilling language model
 - `mdlm` - Masked diffusion language model
 
-We maintain a list of external models in the [external-model-list](../external-model-list.md).
+## Other Models
+
+We maintain a list of external projects that use xLM in the [external-model-list](../external-model-list.md).

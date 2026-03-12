@@ -61,11 +61,14 @@ nav:
   - Home: index.md
   - Guide:
       - Quick Start: guide/quickstart.md
+      - Push to Hub: guide/push-to-hub.md
       - Conceptual Overview:
         - Data Pipeline: guide/data-pipeline.md
         - Metrics: guide/metrics.md
       - External Models: guide/external-models.md
       - Custom Commands: guide/custom-commands.md
+      - Extract Checkpoint: guide/extract-checkpoint.md
+      - Evaluate: guide/eval.md
       - FAQ: guide/faq.md
 
   - Developers:

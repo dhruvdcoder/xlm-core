@@ -31,8 +31,11 @@ if not found_secrets:
 from typing import Any, Dict, cast
 
 import torch
+from huggingface_hub import HfApi
+from huggingface_hub.errors import RevisionNotFoundError
 
 from xlm.harness import Harness
+from xlm.utils.model_loading import load_model_for_inference
 from xlm.utils.rich_utils import print_config_tree
 from lightning import seed_everything
 from xlm.utils.rank_zero import RankedLogger
@@ -46,6 +49,8 @@ class PushToHubConfig:
 
     repo_id: str
     commit_message: str = "Programmatic push to hub"
+    branch: str | None = None  # If set, push to this branch (created if missing)
+    revision: str | None = None  # Hub revision (e.g. for generate when loading from hub)
 
 
 # Register the config schema
@@ -58,7 +63,7 @@ def instantiate_model(
     datamodule: Any,
     tokenizer: Any,
 ) -> Harness:
-    """Instantiate a model from checkpoint or config.
+    """Instantiate a model from checkpoint for pushing to Hub.
 
     Args:
         cfg: Hydra config
@@ -66,74 +71,20 @@ def instantiate_model(
         tokenizer: Tokenizer instance
 
     Returns:
-        Harness: The instantiated model
+        Harness: The instantiated model ready to push to Hub
     """
-    torch.set_float32_matmul_precision("medium")
-
-    # Check for hub checkpoint path
-    hub_ckpt_path = None
-    if cfg.get("hub_checkpoint_path", None) is not None:
-        if not os.path.isfile(cfg.hub_checkpoint_path):
-            raise ValueError(
-                f"The hub checkpoint path {cfg.hub_checkpoint_path} does not exist."
-            )
-        hub_ckpt_path = cfg.hub_checkpoint_path
-
-    # Check for model only checkpoint path
-    model_only_ckpt_path = None
-    if cfg.get("model_only_checkpoint_path", None) is not None:
-        if hub_ckpt_path is not None:
-            logger.error(
-                "hub_checkpoint_path and model_only_checkpoint_path cannot both be provided. "
-                "We will use hub_checkpoint_path for the model weights as well."
-            )
-        else:
-            if not os.path.isfile(cfg.model_only_checkpoint_path):
-                raise ValueError(
-                    f"The model only checkpoint path {cfg.model_only_checkpoint_path} does not exist."
-                )
-            model_only_ckpt_path = cfg.model_only_checkpoint_path
-
-    # Validate that at least one checkpoint path is provided
-    if hub_ckpt_path is None and model_only_ckpt_path is None:
-        raise ValueError(
-            "At least one checkpoint path must be provided for push_to_hub. "
-            "Please provide either `hub_checkpoint_path` or `model_only_checkpoint_path`."
-        )
-
-    # Load from hub checkpoint if provided
-    if hub_ckpt_path is not None:
-        module_cls = hydra.utils.get_class(cfg.lightning_module._target_)
-        lightning_module = module_cls.load_from_checkpoint(
-            checkpoint_path=hub_ckpt_path,
-            tokenizer=tokenizer,
-            datamodule=datamodule,
-            cfg=cfg,  # chance to override the config of the checkpoint
-        )
-    else:
-        lightning_module = hydra.utils.instantiate(
-            cfg.lightning_module,
-            tokenizer=tokenizer,
-            datamodule=datamodule,
-            cfg=cfg,
-            _recursive_=False,
-        )
-
-    lightning_module = cast(Harness, lightning_module)
-    lightning_module = lightning_module.to("cuda")
-    lightning_module.eval()
-
-    # Load model only checkpoint if provided
-    if model_only_ckpt_path is not None:
-        message = lightning_module.model.load_state_dict(
-            torch.load(model_only_ckpt_path, map_location="cpu")
-        )
-        logger.warning(
-            f"Loading weights for `model` from a pretrained model at {model_only_ckpt_path} before pushing to hub"
-        )
-        logger.warning(message)
-
-    return lightning_module
+    module, _ = load_model_for_inference(
+        cfg,
+        datamodule,
+        tokenizer,
+        config_prefix="",
+        manual_ema_restore=True,
+        move_to_device="cuda",
+        set_eval_mode=True,
+        enable_hub_support=False,
+        allow_random_init=False,
+    )
+    return module
 
 
 def push_to_hub(cfg: DictConfig):
@@ -179,6 +130,22 @@ def push_to_hub(cfg: DictConfig):
         commit_message += f"\n- model_only_checkpoint_path: {cfg.get('model_only_checkpoint_path', None)}"
         hub_config["commit_message"] = commit_message
 
+    # Create branch if it doesn't exist (upload_folder requires it)
+    branch = hub_config.get("branch")
+    if branch is not None and branch != "main":
+        api = HfApi(token=os.getenv("HF_HUB_KEY"))
+        repo_id = hub_config["repo_id"]
+        try:
+            api.repo_info(repo_id=repo_id, repo_type="model", revision=branch)
+        except RevisionNotFoundError:
+            logger.info(f"Branch '{branch}' not found. Creating it...")
+            api.create_branch(
+                repo_id=repo_id,
+                repo_type="model",
+                branch=branch,
+                exist_ok=True,
+            )
+
     model.push_to_hub(**hub_config, token=os.getenv("HF_HUB_KEY"))
 
 
@@ -208,17 +175,21 @@ from hydra.plugins.search_path_plugin import SearchPathPlugin
 from hydra.core.config_search_path import ConfigSearchPath
 
 hydra_plugins = Plugins.instance()
+
+
 class HydraSearchPathPlugin(SearchPathPlugin):
-        def manipulate_search_path(
-            self, search_path: ConfigSearchPath
-        ) -> None:
-            search_path.append("file", str(Path(__file__).parent.parent / "configs/common"))
+    def manipulate_search_path(self, search_path: ConfigSearchPath) -> None:
+        search_path.append(
+            "file", str(Path(__file__).parent.parent / "configs/common")
+        )
+
 
 hydra_plugins.register(HydraSearchPathPlugin)
 
 external_model_dirs = setup_external_models()
 # Register our SearchPathPlugin manually with Hydra
 if external_model_dirs:
+
     class ExternalModelsSearchPathPlugin(SearchPathPlugin):
         def manipulate_search_path(
             self, search_path: ConfigSearchPath

@@ -140,6 +140,7 @@ def main(cfg: DictConfig) -> None:
     from xlm.commands.lightning_eval import evaluate
     from xlm.commands.lightning_generate import generate
     from xlm.commands.lightning_prepare_data import prepare_data
+    from xlm.commands.push_to_hub import push_to_hub
 
     if cfg.job_type == "train":
         import multiprocessing as mp
@@ -162,6 +163,8 @@ def main(cfg: DictConfig) -> None:
         prepare_data(cfg)
     elif cfg.job_type == "extract_checkpoint":
         extract_checkpoint(cfg)
+    elif cfg.job_type == "push_to_hub":
+        push_to_hub(cfg)
     elif cfg.job_type in external_commands:
         # print_config_tree(cfg, resolve=True, save_to_file=cfg.paths.run_dir)
         external_command = external_commands[cfg.job_type]

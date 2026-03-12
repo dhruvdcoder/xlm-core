@@ -33,6 +33,7 @@ from typing import Any, Dict, cast
 import torch
 
 from xlm.harness import Harness
+from xlm.utils.model_loading import load_model_for_inference
 from xlm.utils.rich_utils import print_config_tree
 from lightning import seed_everything
 from xlm.utils.rank_zero import RankedLogger
@@ -46,11 +47,7 @@ def instantiate_model(
     datamodule: Any,
     tokenizer: Any,
 ) -> Harness:
-    """Instantiate a model from checkpoint or config.
-
-    Supports two modes:
-        1. Load a model from full training checkpoint using `lightning_module.load_from_checkpoint(cfg.generation.ckpt_path)`
-        2. Load a model from model only checkpoint using `lightning_module.model.load_state_dict(torch.load(cfg.generation.model_only_checkpoint_path))`
+    """Instantiate a model from checkpoint for interactive CLI demo.
 
     Args:
         cfg: Hydra config
@@ -58,59 +55,20 @@ def instantiate_model(
         tokenizer: Tokenizer instance
 
     Returns:
-        Harness: The instantiated model
+        Harness: The instantiated model ready for demo
     """
-    generation_ckpt_path = None
-    if "generation" in cfg:
-        generation_ckpt_path = cfg.generation.ckpt_path
-    torch.set_float32_matmul_precision("medium")
-    if generation_ckpt_path is not None:
-        module_cls = hydra.utils.get_class(cfg.lightning_module._target_)
-        lightning_module = module_cls.load_from_checkpoint(
-            checkpoint_path=generation_ckpt_path,
-            tokenizer=tokenizer,
-            datamodule=datamodule,
-            cfg=cfg,  # chance to override the config of the checkpoint
-        )
-    else:
-        lightning_module = hydra.utils.instantiate(
-            cfg.lightning_module,
-            tokenizer=tokenizer,
-            datamodule=datamodule,
-            cfg=cfg,
-            _recursive_=False,
-        )
-    lightning_module = cast(Harness, lightning_module)
-    lightning_module = lightning_module.to("cuda")
-    lightning_module.eval()
-
-    # check if we have model only checkpoint (replicating train functionality)
-    model_only_ckpt_path = None
-    if (
-        "generation" in cfg
-        and cfg.generation.get("model_only_checkpoint_path", None) is not None
-    ):
-        if generation_ckpt_path is not None:
-            logger.error(
-                "generation.model_only_checkpoint_path and generation.ckpt_path cannot both be provided. "
-                "We will use generation.ckpt_path for the model weights as well."
-            )
-        else:
-            if not os.path.isfile(cfg.model_only_checkpoint_path):
-                raise ValueError(
-                    f"The model only checkpoint path {cfg.model_only_checkpoint_path} does not exist."
-                )
-            model_only_ckpt_path = cfg.model_only_checkpoint_path
-
-    if model_only_ckpt_path is not None:
-        message = lightning_module.model.load_state_dict(
-            torch.load(model_only_ckpt_path)
-        )
-        logger.warning(
-            f"Loading weights for `model` from a pretrained model at {model_only_ckpt_path} before generation"
-        )
-        logger.warning(message)
-    return lightning_module
+    module, _ = load_model_for_inference(
+        cfg,
+        datamodule,
+        tokenizer,
+        config_prefix="generation",
+        manual_ema_restore=False,
+        move_to_device="cuda",
+        set_eval_mode=True,
+        enable_hub_support=False,
+        allow_random_init=False,
+    )
+    return module
 
 
 def generate(cfg: DictConfig):

@@ -158,7 +158,7 @@ class BaseBatch(TypedDict):
         input_ids (Integer[TT, " batch seq_len"]): The input ids to the model.
         attention_mask (Integer[TT, " batch seq_len"]): 1 for tokens that are not padding.
         token_type_ids (Integer[TT, " batch seq_len"]): Can depend on the model type.
-            For ILM and IDLM: 0 for CLS, 1 for BOS and prefix, 2 for other tokens.
+            For ILM  : 0 for CLS, 1 for BOS and prefix, 2 for other tokens.
     """
 
     input_ids: Integer[TT, " batch seq_len"]

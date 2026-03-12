@@ -262,6 +262,11 @@ class LoggerPredictionWriter(_PredictionWriter):
             pl_module: The Lightning module.
             trainer: The Lightning trainer.
         """
+        try:
+            trainer = pl_module.trainer
+        except RuntimeError:
+            # no trainer, so no loggers
+            return
         if self.logger_ is None:
             logger_ = [
                 l_
