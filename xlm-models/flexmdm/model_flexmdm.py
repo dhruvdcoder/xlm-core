@@ -801,3 +801,16 @@ class FlexMDMModel(torch.nn.Module, Model):
         # x = self.output_layer(x[:, :-1], c)   # (B, L, V)
         x = self.output_layer(x, c)  # (B, L, V)
         return x, length_posterior  # (B, L, V), (B, L)
+    
+    def get_named_params_for_weight_decay(self):
+        # all parameters except biases and layer-norm parameters
+        for name, param in self.named_parameters():
+            if "bias" in name or "norm" in name:
+                continue
+            yield (name, param)
+
+    def get_named_params_for_no_weight_decay(self):
+        # biases and layer-norm parameters
+        for name, param in self.named_parameters():
+            if "bias" in name or "norm" in name:
+                yield (name, param)
