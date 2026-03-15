@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/commands/lightning_eval/">
+        <link rel="canonical" href="https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/modules/regression/">
       
       
-        <link rel="prev" href="../hydra_callbacks/">
+        <link rel="prev" href="../position/">
       
       
-        <link rel="next" href="../lightning_generate/">
+        <link rel="next" href="../rotary_transformer/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>lightning_eval - XLM</title>
+        <title>regression - XLM</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#xlm.commands.lightning_eval" class="md-skip">
+        <a href="#xlm.modules.regression" class="md-skip">
           Skip to content
         </a>
       
@@ -118,7 +118,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              lightning_eval
+              regression
             
           </span>
         </div>
@@ -1014,8 +1014,6 @@
                 
   
   
-    
-  
   
   
     
@@ -1028,11 +1026,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_2" >
         
           
           <label class="md-nav__link" for="__nav_5_1_2" id="__nav_5_1_2_label" tabindex="0">
@@ -1053,7 +1051,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5_1_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1071,7 +1069,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../" class="md-nav__link">
+      <a href="../../commands/" class="md-nav__link">
         
   
   
@@ -1099,7 +1097,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cli_demo/" class="md-nav__link">
+      <a href="../../commands/cli_demo/" class="md-nav__link">
         
   
   
@@ -1127,7 +1125,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../extract_checkpoint/" class="md-nav__link">
+      <a href="../../commands/extract_checkpoint/" class="md-nav__link">
         
   
   
@@ -1155,7 +1153,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../extract_model_state_dict/" class="md-nav__link">
+      <a href="../../commands/extract_model_state_dict/" class="md-nav__link">
         
   
   
@@ -1183,7 +1181,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../generate_star_graphs/" class="md-nav__link">
+      <a href="../../commands/generate_star_graphs/" class="md-nav__link">
         
   
   
@@ -1211,7 +1209,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../hydra_callbacks/" class="md-nav__link">
+      <a href="../../commands/hydra_callbacks/" class="md-nav__link">
         
   
   
@@ -1236,37 +1234,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>lightning_eval
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../commands/lightning_eval/" class="md-nav__link">
         
   
   
@@ -1282,37 +1253,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#xlm.commands.lightning_eval.instantiate_model" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;instantiate_model
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1325,7 +1265,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../lightning_generate/" class="md-nav__link">
+      <a href="../../commands/lightning_generate/" class="md-nav__link">
         
   
   
@@ -1353,7 +1293,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../lightning_main/" class="md-nav__link">
+      <a href="../../commands/lightning_main/" class="md-nav__link">
         
   
   
@@ -1381,7 +1321,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../lightning_prepare_data/" class="md-nav__link">
+      <a href="../../commands/lightning_prepare_data/" class="md-nav__link">
         
   
   
@@ -1409,7 +1349,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../lightning_train/" class="md-nav__link">
+      <a href="../../commands/lightning_train/" class="md-nav__link">
         
   
   
@@ -1437,7 +1377,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../push_to_hub/" class="md-nav__link">
+      <a href="../../commands/push_to_hub/" class="md-nav__link">
         
   
   
@@ -1465,7 +1405,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../scaffold_model/" class="md-nav__link">
+      <a href="../../commands/scaffold_model/" class="md-nav__link">
         
   
   
@@ -1493,7 +1433,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../split_owt/" class="md-nav__link">
+      <a href="../../commands/split_owt/" class="md-nav__link">
         
   
   
@@ -1521,7 +1461,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../train_tokenizer/" class="md-nav__link">
+      <a href="../../commands/train_tokenizer/" class="md-nav__link">
         
   
   
@@ -1778,8 +1718,10 @@
                 
   
   
+    
   
   
+  
     
     
     
@@ -1790,11 +1732,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_11" checked>
         
           
           <label class="md-nav__link" for="__nav_5_1_11" id="__nav_5_1_11_label" tabindex="0">
@@ -1815,7 +1757,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_11_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_11_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5_1_11">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1833,7 +1775,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../modules/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         
   
   
@@ -1861,7 +1803,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../modules/ddit_simple/" class="md-nav__link">
+      <a href="../ddit_simple/" class="md-nav__link">
         
   
   
@@ -1889,7 +1831,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../modules/ddit_simple_v2/" class="md-nav__link">
+      <a href="../ddit_simple_v2/" class="md-nav__link">
         
   
   
@@ -1917,7 +1859,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../modules/encoder/" class="md-nav__link">
+      <a href="../encoder/" class="md-nav__link">
         
   
   
@@ -1945,7 +1887,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../modules/gpt2_transformer/" class="md-nav__link">
+      <a href="../gpt2_transformer/" class="md-nav__link">
         
   
   
@@ -1973,7 +1915,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../modules/position/" class="md-nav__link">
+      <a href="../position/" class="md-nav__link">
         
   
   
@@ -1998,10 +1940,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../modules/regression/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>regression
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -2017,6 +1986,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#xlm.modules.regression.RateHead" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;RateHead
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2029,7 +2029,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../modules/rotary_transformer/" class="md-nav__link">
+      <a href="../rotary_transformer/" class="md-nav__link">
         
   
   
@@ -4342,8 +4342,8 @@
 
 
 
-<h1 id="xlm.commands.lightning_eval" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>xlm.commands.lightning_eval</code>
+<h1 id="xlm.modules.regression" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>xlm.modules.regression</code>
 
 
 </h1>
@@ -4369,112 +4369,63 @@
 
 
 
+<div class="doc doc-object doc-class">
 
-<div class="doc doc-object doc-function">
 
 
-<h2 id="xlm.commands.lightning_eval.instantiate_model" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">instantiate_model</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">datamodule</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">)</span></code>
+<h2 id="xlm.modules.regression.RateHead" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>RateHead</code>
+
 
 </h2>
 
 
     <div class="doc doc-contents ">
-
-        <p>Instantiate and load a model for evaluation.</p>
-<p>Supports loading from full checkpoints, model-only checkpoints, or HF Hub.
-Returns the checkpoint path for the trainer to use.</p>
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="torch.nn.Module">Module</span></code></p>
 
 
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>cfg</code>
-            </td>
-            <td>
-                  <code><span title="omegaconf.DictConfig">DictConfig</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Hydra config</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>datamodule</code>
-            </td>
-            <td>
-                  <code><span title="typing.Any">Any</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Datamodule</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>tokenizer</code>
-            </td>
-            <td>
-                  <code><span title="typing.Any">Any</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Tokenizer</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
+
+        <p>Unified regression head for predicting positive scalars (rates, lengths, etc.).</p>
 
 
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="tuple">tuple</span>[<a class="autorefs autorefs-internal" title="            Harness (xlm.harness.Harness)" href="../../harness/#xlm.harness.Harness">Harness</a>, <span title="typing.Optional">Optional</span>[<span title="str">str</span>]]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Tuple of (lightning_module, ckpt_path) where ckpt_path is passed to trainer</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
+<details class="supports-two-output-modes" open>
+  <summary>Supports two output modes</summary>
+  <ul>
+<li>"continuous": activation function + affine scaling  -&gt;  scalar per token</li>
+<li>"discretized": softmax over bins  -&gt;  expected-value scalar per token</li>
+</ul>
+</details>        <p>Optional AdaLN conditioning and MLP vs single-linear architecture.</p>
 
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
 
     </div>
 
 </div>
+
 
 
 
