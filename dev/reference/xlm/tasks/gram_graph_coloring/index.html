@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/utils/tensorboard_logging/">
+        <link rel="canonical" href="https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/tasks/gram_graph_coloring/">
       
       
-        <link rel="prev" href="../speed_monitor_callback/">
+        <link rel="prev" href="../cfg/">
       
       
-        <link rel="next" href="../tqdm/">
+        <link rel="next" href="../lm1b/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>tensorboard_logging - XLM</title>
+        <title>gram_graph_coloring - XLM</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#xlm.utils.tensorboard_logging" class="md-skip">
+        <a href="#xlm.tasks.gram_graph_coloring" class="md-skip">
           Skip to content
         </a>
       
@@ -118,7 +118,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              tensorboard_logging
+              gram_graph_coloring
             
           </span>
         </div>
@@ -2030,8 +2030,10 @@
                 
   
   
+    
   
   
+  
     
     
     
@@ -2042,11 +2044,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_13" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_13" checked>
         
           
           <label class="md-nav__link" for="__nav_5_1_13" id="__nav_5_1_13_label" tabindex="0">
@@ -2067,7 +2069,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_13_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_13_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5_1_13">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2085,7 +2087,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tasks/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         
   
   
@@ -2113,7 +2115,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tasks/cfg/" class="md-nav__link">
+      <a href="../cfg/" class="md-nav__link">
         
   
   
@@ -2138,10 +2140,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../tasks/gram_graph_coloring/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>gram_graph_coloring
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -2157,6 +2186,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#xlm.tasks.gram_graph_coloring.gram_graph_coloring_preprocess_fn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;gram_graph_coloring_preprocess_fn
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2169,7 +2229,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tasks/lm1b/" class="md-nav__link">
+      <a href="../lm1b/" class="md-nav__link">
         
   
   
@@ -2197,7 +2257,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tasks/molgen/" class="md-nav__link">
+      <a href="../molgen/" class="md-nav__link">
         
   
   
@@ -2225,7 +2285,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tasks/owt/" class="md-nav__link">
+      <a href="../owt/" class="md-nav__link">
         
   
   
@@ -2253,7 +2313,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tasks/star/" class="md-nav__link">
+      <a href="../star/" class="md-nav__link">
         
   
   
@@ -2281,7 +2341,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tasks/sudoku/" class="md-nav__link">
+      <a href="../sudoku/" class="md-nav__link">
         
   
   
@@ -2309,7 +2369,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tasks/sudoku_extreme/" class="md-nav__link">
+      <a href="../sudoku_extreme/" class="md-nav__link">
         
   
   
@@ -2342,8 +2402,6 @@
                 
   
   
-    
-  
   
   
     
@@ -2356,11 +2414,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_14" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_14" >
         
           
           <label class="md-nav__link" for="__nav_5_1_14" id="__nav_5_1_14_label" tabindex="0">
@@ -2381,7 +2439,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_14_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_14_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5_1_14">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2399,7 +2457,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../" class="md-nav__link">
+      <a href="../../utils/" class="md-nav__link">
         
   
   
@@ -2427,7 +2485,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../batch_size/" class="md-nav__link">
+      <a href="../../utils/batch_size/" class="md-nav__link">
         
   
   
@@ -2455,7 +2513,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../checkpoint_with_thinning/" class="md-nav__link">
+      <a href="../../utils/checkpoint_with_thinning/" class="md-nav__link">
         
   
   
@@ -2483,7 +2541,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../data/" class="md-nav__link">
+      <a href="../../utils/data/" class="md-nav__link">
         
   
   
@@ -2511,7 +2569,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ddp/" class="md-nav__link">
+      <a href="../../utils/ddp/" class="md-nav__link">
         
   
   
@@ -2539,7 +2597,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../debug/" class="md-nav__link">
+      <a href="../../utils/debug/" class="md-nav__link">
         
   
   
@@ -2567,7 +2625,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ema/" class="md-nav__link">
+      <a href="../../utils/ema/" class="md-nav__link">
         
   
   
@@ -2595,7 +2653,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../file_friendly_progress_callback/" class="md-nav__link">
+      <a href="../../utils/file_friendly_progress_callback/" class="md-nav__link">
         
   
   
@@ -2623,7 +2681,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../hf_hub/" class="md-nav__link">
+      <a href="../../utils/hf_hub/" class="md-nav__link">
         
   
   
@@ -2651,7 +2709,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../imports/" class="md-nav__link">
+      <a href="../../utils/imports/" class="md-nav__link">
         
   
   
@@ -2679,7 +2737,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../model_loading/" class="md-nav__link">
+      <a href="../../utils/model_loading/" class="md-nav__link">
         
   
   
@@ -2707,7 +2765,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../nn/" class="md-nav__link">
+      <a href="../../utils/nn/" class="md-nav__link">
         
   
   
@@ -2735,7 +2793,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../omegaconf_resolvers/" class="md-nav__link">
+      <a href="../../utils/omegaconf_resolvers/" class="md-nav__link">
         
   
   
@@ -2763,7 +2821,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../on_exception_checkpoint/" class="md-nav__link">
+      <a href="../../utils/on_exception_checkpoint/" class="md-nav__link">
         
   
   
@@ -2791,7 +2849,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../os/" class="md-nav__link">
+      <a href="../../utils/os/" class="md-nav__link">
         
   
   
@@ -2819,7 +2877,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rank_zero/" class="md-nav__link">
+      <a href="../../utils/rank_zero/" class="md-nav__link">
         
   
   
@@ -2847,7 +2905,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rich_utils/" class="md-nav__link">
+      <a href="../../utils/rich_utils/" class="md-nav__link">
         
   
   
@@ -2875,7 +2933,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../saving_utils/" class="md-nav__link">
+      <a href="../../utils/saving_utils/" class="md-nav__link">
         
   
   
@@ -2903,7 +2961,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../seed/" class="md-nav__link">
+      <a href="../../utils/seed/" class="md-nav__link">
         
   
   
@@ -2931,7 +2989,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../signal/" class="md-nav__link">
+      <a href="../../utils/signal/" class="md-nav__link">
         
   
   
@@ -2959,7 +3017,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../slurm/" class="md-nav__link">
+      <a href="../../utils/slurm/" class="md-nav__link">
         
   
   
@@ -2987,7 +3045,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../speed_monitor_callback/" class="md-nav__link">
+      <a href="../../utils/speed_monitor_callback/" class="md-nav__link">
         
   
   
@@ -3012,19 +3070,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../utils/tensorboard_logging/" class="md-nav__link">
         
   
   
@@ -3040,7 +3089,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -3053,7 +3101,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tqdm/" class="md-nav__link">
+      <a href="../../utils/tqdm/" class="md-nav__link">
         
   
   
@@ -3081,7 +3129,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wandb/" class="md-nav__link">
+      <a href="../../utils/wandb/" class="md-nav__link">
         
   
   
@@ -4322,13 +4370,19 @@
 
 
 
-<h1 id="xlm.utils.tensorboard_logging" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>xlm.utils.tensorboard_logging</code>
+<h1 id="xlm.tasks.gram_graph_coloring" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>xlm.tasks.gram_graph_coloring</code>
 
 
 </h1>
 
     <div class="doc doc-contents first">
+
+        <p>Preprocessing for brozonoyer/gram-graph-coloring.</p>
+<p>Dataset has "input" (flattened upper triangle of adjacency matrix) and "target"
+(valid 3-coloring per node).
+Vocabulary: 0=pad, 1=no edge, 2=edge; 3=red, 4=blue, 5=green.
+We produce input_token_ids = [input | target] and prompt_token_ids = [input | mask*len(target)].</p>
 
 
 
@@ -4349,6 +4403,26 @@
 
 
 
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="xlm.tasks.gram_graph_coloring.gram_graph_coloring_preprocess_fn" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">gram_graph_coloring_preprocess_fn</span><span class="p">(</span><span class="n">example</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Preprocess gram-graph-coloring examples.</p>
+<p>Uses "input" (graph structure, values 1/2) and "target" (coloring, values 3/4/5).
+Full sequence is [input | target]. The graph is given; node colors are to predict.</p>
+
+
+    </div>
+
+</div>
 
 
 
