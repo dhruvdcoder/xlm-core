@@ -3,9 +3,9 @@ defaults:
   - default
   - /datasets@datamodule.dataset_managers.train.lm: cfg_train
   - /datasets@datamodule.dataset_managers.val.lm: cfg_val
-  - /datasets@datamodule.dataset_managers.val.unconditional_prediction: text_uncoditional_prediction
-  - /datasets@datamodule.dataset_managers.test.unconditional_prediction: text_uncoditional_prediction
-  - /datasets@datamodule.dataset_managers.predict.unconditional_prediction: text_uncoditional_prediction
+  - /datasets@datamodule.dataset_managers.val.unconditional_prediction: text_unconditional_prediction
+  - /datasets@datamodule.dataset_managers.test.unconditional_prediction: text_unconditional_prediction
+  - /datasets@datamodule.dataset_managers.predict.unconditional_prediction: text_unconditional_prediction
   - /tokenizer@global_components.tokenizer: cfg_small
 
 

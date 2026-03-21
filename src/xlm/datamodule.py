@@ -35,6 +35,7 @@ from transformers import (
     GPT2TokenizerFast as _GPT2TokenizerFast,
     PreTrainedTokenizerBase,
 )
+from transformers.models.esm.tokenization_esm import EsmTokenizer as _EsmTokenizer
 from lightning.pytorch.strategies import DDPStrategy as LDDPStrategy
 from lightning.pytorch.strategies import (
     SingleDeviceStrategy as LSingleDeviceStrategy,
@@ -312,6 +313,31 @@ class GPT2TokenizerFast(TokenizerMixin, _GPT2TokenizerFast):  # type: ignore
         tokenizer = super().from_pretrained(
             pretrained_model_name_or_path, *args, **kwargs
         )
+        tokenizer.post_creation()
+        return tokenizer
+
+
+class EsmTokenizer(TokenizerMixin, _EsmTokenizer):  # type: ignore[misc]
+    """ESM amino-acid tokenizer with XLM-required special tokens.
+
+    Hugging Face :class:`~transformers.EsmTokenizer` omits ``bos_token`` and
+    ``sep_token``; :meth:`TokenizerMixin.post_creation` requires them, so we
+    alias ``bos`` to ``cls`` and ``sep`` to ``eos`` after loading.
+    """
+
+    @classmethod
+    def from_pretrained(
+        cls, pretrained_model_name_or_path: str, *args, **kwargs
+    ):
+        tokenizer = super().from_pretrained(
+            pretrained_model_name_or_path, *args, **kwargs
+        )
+        if tokenizer.bos_token is None:
+            tokenizer.bos_token = tokenizer.cls_token
+            tokenizer.bos_token_id = tokenizer.cls_token_id
+        if tokenizer.sep_token is None:
+            tokenizer.sep_token = tokenizer.eos_token
+            tokenizer.sep_token_id = tokenizer.eos_token_id
         tokenizer.post_creation()
         return tokenizer
 
