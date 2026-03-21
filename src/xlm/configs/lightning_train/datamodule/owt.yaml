@@ -4,6 +4,7 @@ defaults:
   - /datasets@datamodule.dataset_managers.train.lm: owt_train
   - /datasets@datamodule.dataset_managers.val.lm: owt_val
   - /datasets@datamodule.dataset_managers.val.unconditional_prediction: text_uncoditional_prediction
+  - /datasets@datamodule.dataset_managers.test.unconditional_prediction: text_uncoditional_prediction
   - /datasets@datamodule.dataset_managers.predict.unconditional_prediction: text_uncoditional_prediction
 
 per_device_batch_size: 32
@@ -22,6 +23,9 @@ datamodule:
       unconditional_prediction:
         dataset_constructor_str: ???
     predict:
+      unconditional_prediction:
+        dataset_constructor_str: ???
+    test:
       unconditional_prediction:
         dataset_constructor_str: ???
 
