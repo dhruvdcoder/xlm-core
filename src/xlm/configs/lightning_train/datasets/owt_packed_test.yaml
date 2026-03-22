@@ -1,0 +1,7 @@
+defaults:
+  - owt_packed_val
+
+collator: ??? # model specific collator
+stages:
+    - fit
+    - test
