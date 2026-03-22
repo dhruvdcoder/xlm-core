@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -639,6 +639,17 @@
   
     <nav class="md-nav" aria-label="DatasetManager Lifecycle">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#on-the-fly-vs-group-processors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        On-the-fly vs Group Processors
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#dataloader-and-sampler-selection" class="md-nav__link">
@@ -4508,6 +4519,14 @@ Real configs live under <code>configs/lightning_train/datamodule/</code> and
 <span class="w">        </span><span class="nt">_target_</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">xlm.datamodule.UnconditionalGenerationDatasetManager</span>
 <span class="w">        </span><span class="c1"># ...</span>
 </code></pre></div>
+<p><strong>Alternative: sequence packing</strong> (no padding, IterableDataset only):</p>
+<div class="highlight"><pre><span></span><code><span class="nt">on_the_fly_processor</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="nt">on_the_fly_group_processor</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">xlm.datamodule.pack_sequences</span>
+<span class="nt">on_the_fly_group_processor_kwargs</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">drop_last</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">use_bos</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="nt">iterable_dataset_shards</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">120</span><span class="w">  </span><span class="c1"># required when using group processor</span>
+</code></pre></div>
 <p><strong>Metrics config</strong> (<code>model_type/mdlm.yaml</code>, simplified):</p>
 <div class="highlight"><pre><span></span><code><span class="nt">reported_metrics</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">train</span><span class="p">:</span>
@@ -4573,12 +4592,12 @@ pipeline:</p>
 <tr>
 <td><strong>On-the-fly Processors</strong></td>
 <td>Lazy, per-example</td>
-<td>Per-example transforms set via <code>dataset.set_transform()</code>. Example: <code>token_ids_to_input_ids</code> converts raw token IDs into <code>input_ids</code>, <code>attention_mask</code>, <code>token_type_ids</code>.</td>
+<td>Per-example transforms applied via <code>dataset.map(batched=False)</code>. Example: <code>token_ids_to_input_ids</code> converts raw token IDs into <code>input_ids</code>, <code>attention_mask</code>, <code>token_type_ids</code>.</td>
 </tr>
 <tr>
 <td><strong>Group Processors</strong></td>
 <td>Lazy, batched</td>
-<td>Operates on large chunks of examples, e.g. sequence packing to <code>block_size</code> without padding.</td>
+<td>Operates on large chunks of examples, e.g. sequence packing to <code>block_size</code> without padding. Requires <code>iterable_dataset_shards</code> (IterableDataset only; changes number of examples). Mutually exclusive with <code>on_the_fly_processor</code>. Use <code>pack_sequences</code> with <code>on_the_fly_group_processor_kwargs</code> for <code>drop_last</code> / <code>use_bos</code>.</td>
 </tr>
 <tr>
 <td><strong>Collation</strong></td>
@@ -4587,6 +4606,9 @@ pipeline:</p>
 </tr>
 </tbody>
 </table>
+<h3 id="on-the-fly-vs-group-processors">On-the-fly vs Group Processors</h3>
+<p><strong>Per-example</strong> (<code>on_the_fly_processor</code>): One example in, one out. Examples: <code>ids_to_example_fn</code>, <code>token_ids_to_input_ids</code>. Applied via <code>dataset.map(batched=False)</code>.</p>
+<p><strong>Group</strong> (<code>on_the_fly_group_processor</code>): Batch in, packed blocks out. Example: <code>pack_sequences</code> concatenates sequences with BOS/EOS and chunks into fixed-size blocks. Requires <code>iterable_dataset_shards</code> (IterableDataset); cannot be combined with <code>on_the_fly_processor</code>.</p>
 <h3 id="dataloader-and-sampler-selection">Dataloader and Sampler Selection</h3>
 <p><code>get_dataloader()</code> picks the loader class and sampler based on three axes:
 split, DDP, and dataset type.</p>

@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -1843,6 +1843,17 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_cyclic_pad_token_ids
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xlm.datamodule.pack_sequences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;pack_sequences
       
     </span>
   </a>
@@ -5204,7 +5215,7 @@ multiple DatasetManager instances.</p>
 
 
 <h3 id="xlm.datamodule.DatasetManager.__init__" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">collator</span><span class="p">,</span> <span class="n">full_name</span><span class="p">,</span> <span class="n">full_name_debug</span><span class="p">,</span> <span class="n">dataloader_kwargs</span><span class="p">,</span> <span class="n">filter_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filter_suffix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preprocess_function</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preprocess_function_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_filter_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_processor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_processor_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_group_processor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">columns_to_remove</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stages</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">iterable_dataset_shards</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shuffle_buffer_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shuffle_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">split_by_node</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rewrite_manual_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_manual_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">collator</span><span class="p">,</span> <span class="n">full_name</span><span class="p">,</span> <span class="n">full_name_debug</span><span class="p">,</span> <span class="n">dataloader_kwargs</span><span class="p">,</span> <span class="n">filter_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filter_suffix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preprocess_function</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preprocess_function_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_filter_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_processor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_processor_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_group_processor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_group_processor_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">columns_to_remove</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stages</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">iterable_dataset_shards</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shuffle_buffer_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shuffle_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">split_by_node</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rewrite_manual_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_manual_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
 
 </h3>
 
@@ -5367,6 +5378,22 @@ split path so val/test managers overfit on train data.</p>
                 <p>Dotted path to the group processor function,
 which receives large batches of examples, and applies on-the-fly processors
 that require a big chunk of data, for example, packing sequences without padding.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>on_the_fly_group_processor_kwargs</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Kwargs for the group processor.</p>
               </div>
             </td>
             <td>
@@ -6542,6 +6569,161 @@ Bert-style (pad_token like "[PAD]"): "[PAD_{}]"</p>
 
         <p>Return [pad_0_token_id, ..., pad_{n-1}_token_id].
 Raises AttributeError if any pad_i_token_id is missing.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="xlm.datamodule.pack_sequences" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">pack_sequences</span><span class="p">(</span><span class="n">examples</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">,</span> <span class="n">block_size</span><span class="p">,</span> <span class="n">drop_last</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_bos</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Pack sequences without padding using EOS as separator and optional BOS.</p>
+<p>Concatenates sequences with [BOS] seq [EOS] (or seq [EOS] if use_bos=False),
+then chunks into blocks of exactly block_size. For the last incomplete block:
+drop or pad according to drop_last.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>examples</code>
+            </td>
+            <td>
+                  <code><span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.List">List</span>[<span title="typing.List">List</span>[<span title="int">int</span>]]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Batched dict with "token_ids" key (list of token id lists).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>tokenizer</code>
+            </td>
+            <td>
+                  <code><span title="transformers.PreTrainedTokenizerBase">PreTrainedTokenizerBase</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Tokenizer for BOS, EOS, PAD ids.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>block_size</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Target block length.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>drop_last</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True, drop incomplete last block; else pad with pad_token_id.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>use_bos</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True, prepend BOS before each sequence.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>**kwargs</code>
+            </td>
+            <td>
+                  <code><span title="typing.Any">Any</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Absorbed for interface compatibility.</p>
+              </div>
+            </td>
+            <td>
+                  <code>{}</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.List">List</span>[<span title="typing.List">List</span>[<span title="int">int</span>]]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dict with "input_ids", "attention_mask", "token_type_ids" (zeros).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>
