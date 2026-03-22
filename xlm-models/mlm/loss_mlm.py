@@ -22,6 +22,7 @@ class MLMLoss(LossFunction[MLMBatch, MLMLossDict]):
         self.tokenizer = tokenizer
         self.mask_token_id_tensor = None
         self.use_num_masked_factor = use_num_masked_factor
+        self.flash_attn = None
 
     def configure(self, pl_module: Harness):
         self.mask_token_id_tensor = torch.tensor(  # type: ignore
@@ -49,6 +50,8 @@ class MLMLoss(LossFunction[MLMBatch, MLMLossDict]):
         dataloader_idx: Optional[int] = None,
         dataloader_name: Optional[str] = None,
     ) -> MLMLossDict:
+        if self.flash_attn is None:
+            self.flash_attn = getattr(self.model, "force_flash_attn", False)
 
         input_ids = batch["input_ids"]
         attention_mask = batch["attention_mask"].to(dtype=torch.bool)
@@ -58,7 +61,7 @@ class MLMLoss(LossFunction[MLMBatch, MLMLossDict]):
         positions *= attention_mask  # technically not needed
 
         model = cast(MLMModel, self.model)
-        logits = model(input_ids, attention_mask, positions)
+        logits = model(input_ids, attention_mask if not self.flash_attn else None, positions)
 
         ignore = torch.zeros_like(input_ids, dtype=torch.bool)
         if not self.loss_on_visible_tokens:

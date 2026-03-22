@@ -58,7 +58,7 @@ class _PredictionWriter:
                 or "perplexity" in k
                 or "steps" in k
                 or "time" in k
-            ):
+            ) or k.startswith("metric_"):
                 return True
             for field in self.fields_to_keep_in_output:
                 if k.startswith(field) and k != "text_with_spl_tokens":
@@ -262,6 +262,11 @@ class LoggerPredictionWriter(_PredictionWriter):
             pl_module: The Lightning module.
             trainer: The Lightning trainer.
         """
+        try:
+            trainer = pl_module.trainer
+        except RuntimeError:
+            # no trainer, so no loggers
+            return
         if self.logger_ is None:
             logger_ = [
                 l_

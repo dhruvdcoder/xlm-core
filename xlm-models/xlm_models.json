@@ -1,7 +1,7 @@
 {
     "arlm": "arlm",
-    "idlm": "idlm",
     "ilm": "ilm",
     "mlm": "mlm",
-    "mdlm": "mdlm"
+    "mdlm": "mdlm",
+    "flexmdm": "flexmdm"
 }

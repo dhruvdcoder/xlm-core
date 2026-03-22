@@ -20,6 +20,9 @@ datamodule:
     val:
       unconditional_prediction:
         dataset_constructor_str: ???
+    test:
+      unconditional_prediction:
+        dataset_constructor_str: ???
     predict:
       unconditional_prediction:
         dataset_constructor_str: ???

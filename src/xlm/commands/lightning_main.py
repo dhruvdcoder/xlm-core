@@ -9,6 +9,7 @@
 
 # fmt: off
 import dotenv
+from xlm.commands.extract_checkpoint import extract_checkpoint
 # read env variables before anything else is imported
 dotenv.load_dotenv(
     dotenv_path=".env", # we need to point to .env in current dir when xlm console script is run
@@ -139,6 +140,7 @@ def main(cfg: DictConfig) -> None:
     from xlm.commands.lightning_eval import evaluate
     from xlm.commands.lightning_generate import generate
     from xlm.commands.lightning_prepare_data import prepare_data
+    from xlm.commands.push_to_hub import push_to_hub
 
     if cfg.job_type == "train":
         import multiprocessing as mp
@@ -155,12 +157,18 @@ def main(cfg: DictConfig) -> None:
         set_flags(cfg)
         evaluate(cfg)
     elif cfg.job_type == "generate":
+        set_flags(cfg)
         generate(cfg)
     elif cfg.job_type == "prepare_data":
         print_config_tree(cfg, resolve=True)
         prepare_data(cfg)
+    elif cfg.job_type == "extract_checkpoint":
+        extract_checkpoint(cfg)
+    elif cfg.job_type == "push_to_hub":
+        push_to_hub(cfg)
     elif cfg.job_type in external_commands:
         # print_config_tree(cfg, resolve=True, save_to_file=cfg.paths.run_dir)
+        set_flags(cfg)
         external_command = external_commands[cfg.job_type]
         external_command(cfg)
     else:

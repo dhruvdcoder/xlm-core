@@ -29,3 +29,4 @@ pydot # optional, for printing torch.compile graphs.
 tabulate # for printing tables.
 pandas
 simple_slurm # for submitting jobs to slurm using python.
+setuptools<82.0.0

@@ -1,0 +1,7 @@
+_target_: xlm.tasks.cfg.SyntacticMetricsEvaluator
+grammar_str: null  # uses G1_str default
+max_parses_per_sent: 50
+parse_mode: first
+include_lexical_rules: false
+strip_terminals_for_rules: true
+text_field: text

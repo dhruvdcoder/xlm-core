@@ -408,6 +408,7 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
         tokenizer: Optional[Tokenizer] = None,
         datamodule: Optional[BaseDataModule] = None,
         write_per_sample_metrics: bool = False,
+        log: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ):
         """Initialize the Harness module.
@@ -463,6 +464,13 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
         else:
             self.manual_ema_restore = False
         self.outer_autocast = False
+        if log is not None:
+            if "train/loss" not in log.keys():
+                log["train/loss"] = "loss"
+
+            self.log_strs = log
+        else:
+            self.log_strs = {"train/loss": "loss"}
 
     ############################################################
     # region: Setup methods
@@ -810,17 +818,18 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
                     f"Inf loss ({loss_dict['loss']}) encountered in training step {global_step} in epoch {self.trainer.current_epoch}"
                 )
         if stage == "train":
-            self.log(
-                "train/loss",
-                loss_dict["loss"].detach(),
-                on_step=True,
-                on_epoch=False,
-                prog_bar=True,
-                sync_dist=False,
-                rank_zero_only=True,
-                logger=True,
-                add_dataloader_idx=False,
-            )
+            for k, v in self.log_strs.items():
+                self.log(
+                    k,
+                    loss_dict[v].detach(),
+                    on_step=True,
+                    on_epoch=False,
+                    prog_bar=True,
+                    sync_dist=False,
+                    rank_zero_only=True,
+                    logger=True,
+                    add_dataloader_idx=False,
+                )
         for metric in chain(
             self.diagnostic_metrics.get(f"metrics_{stage}", {}).get(
                 dataloader_name, []
@@ -1594,12 +1603,13 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
             # same code as in EMACallback.on_train_start
             ema = ExponentialMovingAverage(
                 [p for p in self.parameters() if p.requires_grad],
-                decay=self.decay,
-                use_num_updates=self.use_num_updates,
+                decay=checkpoint["ema"]["decay"],
+                use_num_updates=checkpoint["ema"]["num_updates"],
             )
             ema.load_state_dict(checkpoint["ema"])
             ema.to(self.device)
             ema.copy_to()  # copy ema weights to model
+            logger.info("EMA weights applied to model")
             del ema
 
     # endregion: Lightning Hooks
@@ -1608,7 +1618,7 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
     ############################################################
     # region: other utilities
 
-    def on_load_checkpoint(self, checkpoint: dict) -> None:
+    def _on_load_checkpoint_to_remove(self, checkpoint: dict) -> None:
         # CLEANUP: This method is to load old models that serialize rotary embedding buffers
         # Get the state_dict from the checkpoint (the key might be "state_dict")
         state_dict = checkpoint.get(

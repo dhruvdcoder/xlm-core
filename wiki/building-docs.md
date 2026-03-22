@@ -105,7 +105,7 @@ The docs use:
 The [.github/workflows/docs.yml](https://github.com/dhruvdcoder/xlm-core/blob/main/.github/workflows/docs.yml) workflow:
 
 1. Triggers on push to `main` or manual `workflow_dispatch`
-2. Installs xlm-core, xlm-models, and idlm
+2. Installs xlm-core, xlm-models
 3. Installs MkDocs, Material, mkdocstrings, and mike
 4. Runs `mike deploy dev --push` to deploy to the `/dev/` path on the `gh-pages` branch
 

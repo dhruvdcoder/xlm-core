@@ -308,15 +308,19 @@ def pad_truncate_list(
 def pad_truncate_list(
     ids: List[Any],
     max_len: int,
-    pad_token: Any,
+    pad_token: Union[Any, List[Any]],
     pad_left: bool = False,
     return_num_padded: bool = False,
 ) -> Union[List[Any], Tuple[List[Any], int]]:
     num_padded = max_len - len(ids)
-    if not pad_left:
-        padded = ids[:max_len] + [pad_token] * num_padded
+    if isinstance(pad_token, list):
+        pad_values = [pad_token[i % len(pad_token)] for i in range(num_padded)]
     else:
-        padded = [pad_token] * num_padded + ids[
+        pad_values = [pad_token] * num_padded
+    if not pad_left:
+        padded = ids[:max_len] + pad_values
+    else:
+        padded = pad_values + ids[
             -max_len:
         ]  # when padding left, truncate left side
     if return_num_padded:
