@@ -2,8 +2,8 @@ defaults:
   - owt_packed_train
 
 collator: ??? # model specific collator
-full_name: dhruveshpatel/owt-gpt2-1024-split/validation # <repo>/<ds_name>/<split_to_download> . 
-full_name_debug: dhruveshpatel/owt-gpt2-1024-split/train
+full_name: Skylion007/openwebtext/train[-100000:] # <repo>/<ds_name>/<split_to_download> . 
+full_name_debug: Skylion007/openwebtext/train[:-100000]
 stages:
     - fit
     - validate

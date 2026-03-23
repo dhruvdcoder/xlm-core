@@ -3,8 +3,8 @@ defaults:
 
 _target_: xlm.datamodule.DatasetManager
 collator: ??? # model specific collator
-full_name: Skylion007/openwebtext/train # <repo>/<ds_name>/<split_to_download> . 
-full_name_debug: Skylion007/openwebtext/train
+full_name: Skylion007/openwebtext/train[:-100000] # <repo>/<ds_name>/<split_to_download> . 
+full_name_debug: Skylion007/openwebtext/train[:-100000]
 preprocess_function: xlm.tasks.owt.preprocess_fn
 on_the_fly_processor: null #only one of the two can be used
 on_the_fly_group_processor: xlm.datamodule.pack_sequences
