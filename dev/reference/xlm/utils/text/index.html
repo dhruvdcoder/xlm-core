@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/commands/train_tokenizer/">
+        <link rel="canonical" href="https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/utils/text/">
       
       
-        <link rel="prev" href="../split_owt/">
+        <link rel="prev" href="../tensorboard_logging/">
       
       
-        <link rel="next" href="../../datamodule/">
+        <link rel="next" href="../tqdm/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>train_tokenizer - XLM</title>
+        <title>text - XLM</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#xlm.commands.train_tokenizer" class="md-skip">
+        <a href="#xlm.utils.text" class="md-skip">
           Skip to content
         </a>
       
@@ -118,7 +118,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              train_tokenizer
+              text
             
           </span>
         </div>
@@ -1014,8 +1014,6 @@
                 
   
   
-    
-  
   
   
     
@@ -1028,11 +1026,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_2" >
         
           
           <label class="md-nav__link" for="__nav_5_1_2" id="__nav_5_1_2_label" tabindex="0">
@@ -1053,7 +1051,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5_1_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1071,7 +1069,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../" class="md-nav__link">
+      <a href="../../commands/" class="md-nav__link">
         
   
   
@@ -1099,7 +1097,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cli_demo/" class="md-nav__link">
+      <a href="../../commands/cli_demo/" class="md-nav__link">
         
   
   
@@ -1127,7 +1125,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../extract_checkpoint/" class="md-nav__link">
+      <a href="../../commands/extract_checkpoint/" class="md-nav__link">
         
   
   
@@ -1155,7 +1153,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../extract_model_state_dict/" class="md-nav__link">
+      <a href="../../commands/extract_model_state_dict/" class="md-nav__link">
         
   
   
@@ -1183,7 +1181,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../generate_star_graphs/" class="md-nav__link">
+      <a href="../../commands/generate_star_graphs/" class="md-nav__link">
         
   
   
@@ -1211,7 +1209,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../hydra_callbacks/" class="md-nav__link">
+      <a href="../../commands/hydra_callbacks/" class="md-nav__link">
         
   
   
@@ -1239,7 +1237,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../lightning_eval/" class="md-nav__link">
+      <a href="../../commands/lightning_eval/" class="md-nav__link">
         
   
   
@@ -1267,7 +1265,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../lightning_generate/" class="md-nav__link">
+      <a href="../../commands/lightning_generate/" class="md-nav__link">
         
   
   
@@ -1295,7 +1293,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../lightning_main/" class="md-nav__link">
+      <a href="../../commands/lightning_main/" class="md-nav__link">
         
   
   
@@ -1323,7 +1321,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../lightning_prepare_data/" class="md-nav__link">
+      <a href="../../commands/lightning_prepare_data/" class="md-nav__link">
         
   
   
@@ -1351,7 +1349,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../lightning_train/" class="md-nav__link">
+      <a href="../../commands/lightning_train/" class="md-nav__link">
         
   
   
@@ -1379,7 +1377,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../push_to_hub/" class="md-nav__link">
+      <a href="../../commands/push_to_hub/" class="md-nav__link">
         
   
   
@@ -1407,7 +1405,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../scaffold_model/" class="md-nav__link">
+      <a href="../../commands/scaffold_model/" class="md-nav__link">
         
   
   
@@ -1435,7 +1433,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../split_owt/" class="md-nav__link">
+      <a href="../../commands/split_owt/" class="md-nav__link">
         
   
   
@@ -1460,19 +1458,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../commands/train_tokenizer/" class="md-nav__link">
         
   
   
@@ -1488,7 +1477,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -2382,8 +2370,10 @@
                 
   
   
+    
   
   
+  
     
     
     
@@ -2394,11 +2384,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_14" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_14" checked>
         
           
           <label class="md-nav__link" for="__nav_5_1_14" id="__nav_5_1_14_label" tabindex="0">
@@ -2419,7 +2409,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_14_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_14_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5_1_14">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2437,7 +2427,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         
   
   
@@ -2465,7 +2455,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/batch_size/" class="md-nav__link">
+      <a href="../batch_size/" class="md-nav__link">
         
   
   
@@ -2493,7 +2483,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/checkpoint_with_thinning/" class="md-nav__link">
+      <a href="../checkpoint_with_thinning/" class="md-nav__link">
         
   
   
@@ -2521,7 +2511,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/data/" class="md-nav__link">
+      <a href="../data/" class="md-nav__link">
         
   
   
@@ -2549,7 +2539,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/ddp/" class="md-nav__link">
+      <a href="../ddp/" class="md-nav__link">
         
   
   
@@ -2577,7 +2567,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/debug/" class="md-nav__link">
+      <a href="../debug/" class="md-nav__link">
         
   
   
@@ -2605,7 +2595,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/ema/" class="md-nav__link">
+      <a href="../ema/" class="md-nav__link">
         
   
   
@@ -2633,7 +2623,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/file_friendly_progress_callback/" class="md-nav__link">
+      <a href="../file_friendly_progress_callback/" class="md-nav__link">
         
   
   
@@ -2661,7 +2651,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/hf_hub/" class="md-nav__link">
+      <a href="../hf_hub/" class="md-nav__link">
         
   
   
@@ -2689,7 +2679,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/imports/" class="md-nav__link">
+      <a href="../imports/" class="md-nav__link">
         
   
   
@@ -2717,7 +2707,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/model_loading/" class="md-nav__link">
+      <a href="../model_loading/" class="md-nav__link">
         
   
   
@@ -2745,7 +2735,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/nn/" class="md-nav__link">
+      <a href="../nn/" class="md-nav__link">
         
   
   
@@ -2773,7 +2763,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/omegaconf_resolvers/" class="md-nav__link">
+      <a href="../omegaconf_resolvers/" class="md-nav__link">
         
   
   
@@ -2801,7 +2791,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/on_exception_checkpoint/" class="md-nav__link">
+      <a href="../on_exception_checkpoint/" class="md-nav__link">
         
   
   
@@ -2829,7 +2819,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/os/" class="md-nav__link">
+      <a href="../os/" class="md-nav__link">
         
   
   
@@ -2857,7 +2847,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/rank_zero/" class="md-nav__link">
+      <a href="../rank_zero/" class="md-nav__link">
         
   
   
@@ -2885,7 +2875,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/rich_utils/" class="md-nav__link">
+      <a href="../rich_utils/" class="md-nav__link">
         
   
   
@@ -2913,7 +2903,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/saving_utils/" class="md-nav__link">
+      <a href="../saving_utils/" class="md-nav__link">
         
   
   
@@ -2941,7 +2931,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/seed/" class="md-nav__link">
+      <a href="../seed/" class="md-nav__link">
         
   
   
@@ -2969,7 +2959,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/signal/" class="md-nav__link">
+      <a href="../signal/" class="md-nav__link">
         
   
   
@@ -2997,7 +2987,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/slurm/" class="md-nav__link">
+      <a href="../slurm/" class="md-nav__link">
         
   
   
@@ -3025,7 +3015,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/speed_monitor_callback/" class="md-nav__link">
+      <a href="../speed_monitor_callback/" class="md-nav__link">
         
   
   
@@ -3053,7 +3043,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/tensorboard_logging/" class="md-nav__link">
+      <a href="../tensorboard_logging/" class="md-nav__link">
         
   
   
@@ -3078,10 +3068,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../utils/text/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>text
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -3097,6 +3114,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#xlm.utils.text.remove_trailing_pads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;remove_trailing_pads
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -3109,7 +3157,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/tqdm/" class="md-nav__link">
+      <a href="../tqdm/" class="md-nav__link">
         
   
   
@@ -3137,7 +3185,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/wandb/" class="md-nav__link">
+      <a href="../wandb/" class="md-nav__link">
         
   
   
@@ -4378,13 +4426,15 @@
 
 
 
-<h1 id="xlm.commands.train_tokenizer" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>xlm.commands.train_tokenizer</code>
+<h1 id="xlm.utils.text" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>xlm.utils.text</code>
 
 
 </h1>
 
     <div class="doc doc-contents first">
+
+        <p>Text utility functions for xlm.</p>
 
 
 
@@ -4405,6 +4455,94 @@
 
 
 
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="xlm.utils.text.remove_trailing_pads" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">remove_trailing_pads</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Remove trailing pad tokens from decoded text.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>text</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Decoded text string that may contain trailing pad tokens</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>tokenizer</code>
+            </td>
+            <td>
+                  <code><span title="xlm.datamodule.Tokenizer">Tokenizer</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Tokenizer instance containing pad_token</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Text with trailing pad tokens removed</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
 
 
 
