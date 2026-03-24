@@ -26,10 +26,6 @@ datamodule:
     predict:
       unconditional_prediction:
         dataset_constructor_str: ???
-    test:
-      unconditional_prediction:
-        dataset_constructor_str: ???
-
 
 
 tags:
