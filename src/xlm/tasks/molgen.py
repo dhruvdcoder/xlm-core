@@ -305,6 +305,9 @@ class SerializableSAFETokenizer:
     def len(self):
         return self._tokenizer.full_vocab_size
 
+    def __len__(self):
+        return self.len()
+
 
 def get_safe_tokenizer(
     pretrained_model_name_or_path: str = "datamol-io/safe-gpt",
