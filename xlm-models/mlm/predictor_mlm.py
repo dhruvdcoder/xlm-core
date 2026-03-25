@@ -92,7 +92,7 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
         self.tokenizer = tokenizer
         self.max_steps = max_steps
         self.max_new_tokens = max_new_tokens
-        if top_k is not None and top_p is not None:
+        if top_k is None and top_p is None:
             self.sampling_function = sample_from_logits
         elif top_k is not None and top_p is None:
             self.sampling_function = partial(sample_from_top_k, top_k)

@@ -1,24 +1,30 @@
 # @package _global_
 defaults:
-  - override /datamodule: owt_mlm
-  - override /noise_schedule: dummy
-  - override /model_type: mlm
-  - override /model: rotary_transformer_mlm
+  - text_flexmdm
+  - override /datamodule: lm1b_flexmdm
 
-per_device_batch_size: 32
+per_device_batch_size: 128
 global_batch_size: 512
-block_size: 1024
+block_size: 128
 num_dataloader_workers: 5
-monitored_metric: val/lm/accumulated_loss
+
+model:
+  force_flash_attn: false # flash_attn won't work with attention mask (padded sequences)
+  len_head_type: mlp
 
 datamodule:
-  print_batch_fn: mlm.datamodule_mlm.print_batch_mlm
+  print_batch_fn: flexmdm.datamodule_flexmdm.print_batch_flexmdm
+
+predictor:
+  confidence: null
+  top_k: null
+  top_p: 0.9
 
 trainer:
   max_steps: 1000_000
-  val_check_interval: 50000
-  check_val_every_n_epoch: null
+  val_check_interval: 25000 #
   num_sanity_val_steps: 3
+  check_val_every_n_epoch: null
 
 optimizer:
   lr: 0.0001
