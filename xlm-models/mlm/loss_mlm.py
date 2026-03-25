@@ -57,11 +57,20 @@ class MLMLoss(LossFunction[MLMBatch, MLMLossDict]):
         attention_mask = batch["attention_mask"].to(dtype=torch.bool)
         targets = batch["target_ids"]
         assert targets is not None
-        positions = (attention_mask.cumsum(dim=1) - 1).clamp(min=0)
-        positions *= attention_mask  # technically not needed
 
         model = cast(MLMModel, self.model)
-        logits = model(input_ids, attention_mask if not self.flash_attn else None, positions)
+
+        if attention_mask.ndim == 3:
+            # Packed sequences: collator already computed per-sequence positions
+            # and a block-diagonal 3D attention mask — use both directly.
+            positions = batch.get("positions")
+            logits = model(input_ids, attention_mask, positions)
+        else:
+            # Standard padded sequences: derive monotonic positions from the
+            # 1-D padding mask (cumulative count of non-padding tokens).
+            positions = (attention_mask.cumsum(dim=1) - 1).clamp(min=0)
+            positions *= attention_mask  # technically not needed
+            logits = model(input_ids, attention_mask if not self.flash_attn else None, positions)
 
         ignore = torch.zeros_like(input_ids, dtype=torch.bool)
         if not self.loss_on_visible_tokens:
