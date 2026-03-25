@@ -1,0 +1,65 @@
+# @package _global_
+defaults:
+  - override /datamodule: qm9_flexmdm
+  - override /noise_schedule: flexmdm_linear
+  - override /model_type: flexmdm
+  - override /model: ddit_flexmdm
+
+per_device_batch_size: 512
+global_batch_size: 512
+block_size: 32
+use_bracket_safe: true
+num_unconditional_prediction_examples: 1000
+len_predict_type: expectation  # choices: 'expectation', 'distribution'
+monitored_metric: val/validity
+
+post_hoc_evaluator:
+  _target_: xlm.tasks.molgen.DeNovoEval
+  use_bracket_safe: ${oc.select:use_bracket_safe,true}
+
+datamodule:
+  print_batch_fn: flexmdm.datamodule_flexmdm.print_batch_flexmdm
+
+predictor:
+  confidence: null
+  max_steps: 32
+  top_k: 1
+  top_p: null
+
+
+trainer:
+  max_steps: 80000
+  val_check_interval: 26500
+  num_sanity_val_steps: 3
+  check_val_every_n_epoch: null
+  limit_val_batches: 100
+
+log_predictions:
+  _target_: xlm.log_predictions.LogPredictions
+  fields_to_keep_in_output:
+    - text
+    - smiles
+    - diversity
+    - validity
+    - uniqueness
+    - qed
+    - sa
+    - quality
+  inject_target: null
+  writers:
+    - file
+    - logger
+
+callbacks:
+  checkpoint_monitor:
+    monitor: val/lm/accumulated_loss
+
+optimizer:
+  lr: 0.0001
+
+lr_scheduler:
+  name: "constant"
+  num_warmup_steps: 500
+  num_training_steps: ${trainer.max_steps}
+  monitor: "train/loss"
+

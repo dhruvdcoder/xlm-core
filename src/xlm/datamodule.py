@@ -54,6 +54,7 @@ from transformers import (
     PreTrainedTokenizer,
     PreTrainedTokenizerBase,
     AddedToken,
+    AutoTokenizer,  
 )
 
 __all__ = [
@@ -184,6 +185,11 @@ class DataLoaderKwargs(TypedDict):
     pin_memory: bool
 
 
+class TrainTestSplitConfig(TypedDict):
+    size: float
+    seed: int
+    split: Literal["train", "test"]
+
 class Collator(Protocol):
     tokenizer: Tokenizer
     block_size: int
@@ -227,7 +233,6 @@ class TokenizerMixin:
         ]:
             if (token := getattr(self, special_token)) is None:
                 raise ValueError(f"{special_token} is not set")
-
 
 class BertTokenizer(TokenizerMixin, _BertTokenizer):  # type: ignore
     def __init__(self, *args, **kwargs):  # type: ignore
@@ -290,7 +295,6 @@ class GPT2Tokenizer(TokenizerMixin, _GPT2Tokenizer):  # type: ignore
         tokenizer.post_creation()
         return tokenizer
 
-
 class GPT2TokenizerFast(TokenizerMixin, _GPT2TokenizerFast):  # type: ignore
     def __init__(self, *args, **kwargs):  # type: ignore
         super().__init__(*args, **kwargs)  # type: ignore
@@ -315,7 +319,6 @@ class GPT2TokenizerFast(TokenizerMixin, _GPT2TokenizerFast):  # type: ignore
         )
         tokenizer.post_creation()
         return tokenizer
-
 
 def add_cyclic_pad_tokens(
     tokenizer: PreTrainedTokenizerBase,
@@ -359,7 +362,6 @@ def get_cyclic_pad_token_ids(
     Raises AttributeError if any pad_i_token_id is missing.
     """
     return [getattr(tokenizer, f"pad_{i}_token_id") for i in range(n)]
-
 
 class GPT2TokenizerWithCyclicPads(GPT2Tokenizer):
     """GPT2Tokenizer with cyclic pad tokens (pad_0..pad_{n-1})."""
@@ -641,6 +643,7 @@ class DatasetManager:
         on_the_fly_group_processor_kwargs: Optional[Dict[str, Any]] = None,
         model_name: Optional[str] = None,
         columns_to_remove: Optional[List[str]] = None,
+        columns_to_keep: Optional[List[str]] = None,
         stages: Optional[
             List[Literal["fit", "validate", "test", "predict"]]
         ] = None,
@@ -650,6 +653,7 @@ class DatasetManager:
         split_by_node: bool = True,
         rewrite_manual_cache: bool = False,
         use_manual_cache: bool = True,
+        train_test_split: Optional[TrainTestSplitConfig] = None,
     ):
         """Initialize the dataset manager.
 
@@ -677,6 +681,9 @@ class DatasetManager:
             split_by_node: Whether to split IterableDataset by rank in DDP.
             rewrite_manual_cache: If True, re-download and overwrite cached data.
             use_manual_cache: If True, use manual cache dir created using save_to_disk(), else let HF Datasets do automatic caching.
+            train_test_split: If set, split the loaded split into train/test via
+                ``Dataset.train_test_split``. Keys: ``size`` (float, passed as
+                ``test_size``) and optional ``seed`` (int, default 42).
         """
         self.collator = collator
         self._full_name = full_name
@@ -717,6 +724,7 @@ class DatasetManager:
                 )
         self.model_name = model_name
         self.columns_to_remove = columns_to_remove
+        self.columns_to_keep = columns_to_keep
         self.stages = stages if stages is not None else ["fit", "validate"]
         self.iterable_dataset_shards = iterable_dataset_shards
         self.shuffle_buffer_size = shuffle_buffer_size
@@ -726,6 +734,7 @@ class DatasetManager:
         self.is_iterable_dataset = iterable_dataset_shards is not None
         self.rewrite_manual_cache = rewrite_manual_cache
         self.use_manual_cache = use_manual_cache
+        self.train_test_split = train_test_split
 
     def __repr__(self) -> str:
         return f"DatasetManager(full_name={self.full_name})"
@@ -752,12 +761,23 @@ class DatasetManager:
         if name[0] == "/":
             name = name[1:]
         logger.info(f"Downloading {self.full_name}")
+        split_to_download = self._split_to_download if not self.train_test_split else 'train'
         ds = datasets.load_dataset(
             name,
-            split=self._split_to_download,
+            split=split_to_download,
             num_proc=num_proc,
             token=os.environ.get("HF_HUB_KEY"),
         )
+        if self.train_test_split is not None:
+            ds = ds.train_test_split(
+                test_size=self.train_test_split["size"],
+                seed=self.train_test_split["seed"],
+            )
+            try:
+                ds = ds[self.train_test_split["split"]]
+            except KeyError:
+                raise ValueError(f"Invalid split to use: {self.train_test_split['split']}")
+
         return ds
 
     def _preprocess(
@@ -777,12 +797,16 @@ class DatasetManager:
                 "tokenizer": tokenizer,
                 **self.preprocess_function_kwargs,
             }
+            columns_to_remove = []
+            if self.columns_to_keep: 
+                columns_to_remove = [col for col in ds.column_names if col not in self.columns_to_keep]
+            if self.columns_to_remove: columns_to_remove.extend(self.columns_to_remove)
             ds = ds.map(
                 preprocess_fn,
                 batched=False,
                 num_proc=num_proc,
                 fn_kwargs=fn_kwargs,
-                remove_columns=self.columns_to_remove,
+                remove_columns=columns_to_remove,
             )
         return ds
 

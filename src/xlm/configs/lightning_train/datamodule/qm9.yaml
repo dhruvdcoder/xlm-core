@@ -1,0 +1,16 @@
+defaults:
+  - default
+  - /datasets@datamodule.dataset_managers.train.lm: qm9_train
+  - /datasets@datamodule.dataset_managers.val.lm: qm9_val
+  - /datasets@datamodule.dataset_managers.val.unconditional_prediction: text_uncoditional_prediction
+  - /datasets@datamodule.dataset_managers.test.unconditional_prediction: text_uncoditional_prediction
+  - /datasets@datamodule.dataset_managers.predict.unconditional_prediction: text_uncoditional_prediction
+
+
+global_components:
+  tokenizer:
+    _target_: xlm.tasks.qm9.get_tokenizer
+    pretrained_model_name_or_path: yairschiff/qm9-tokenizer
+
+tags:
+  dataset: qm9
