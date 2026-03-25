@@ -2632,6 +2632,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../tasks/qm9/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>qm9
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../tasks/star/" class="md-nav__link">
         
   
@@ -5243,7 +5271,7 @@ multiple DatasetManager instances.</p>
 
 
 <h3 id="xlm.datamodule.DatasetManager.__init__" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">collator</span><span class="p">,</span> <span class="n">full_name</span><span class="p">,</span> <span class="n">full_name_debug</span><span class="p">,</span> <span class="n">dataloader_kwargs</span><span class="p">,</span> <span class="n">filter_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filter_suffix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preprocess_function</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preprocess_function_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_filter_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_processor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_processor_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_group_processor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_group_processor_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">columns_to_remove</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stages</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">iterable_dataset_shards</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shuffle_buffer_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shuffle_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">split_by_node</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rewrite_manual_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_manual_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">collator</span><span class="p">,</span> <span class="n">full_name</span><span class="p">,</span> <span class="n">full_name_debug</span><span class="p">,</span> <span class="n">dataloader_kwargs</span><span class="p">,</span> <span class="n">filter_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filter_suffix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preprocess_function</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preprocess_function_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_filter_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_processor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_processor_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_group_processor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_group_processor_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">columns_to_remove</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">columns_to_keep</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stages</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">iterable_dataset_shards</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shuffle_buffer_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shuffle_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">split_by_node</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rewrite_manual_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_manual_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">train_test_split</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 </h3>
 
@@ -5570,6 +5598,24 @@ that require a big chunk of data, for example, packing sequences without padding
             </td>
             <td>
                   <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>train_test_split</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="xlm.datamodule.TrainTestSplitConfig">TrainTestSplitConfig</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If set, split the loaded split into train/test via
+<code>Dataset.train_test_split</code>. Keys: <code>size</code> (float, passed as
+<code>test_size</code>) and optional <code>seed</code> (int, default 42).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
             </td>
           </tr>
       </tbody>
