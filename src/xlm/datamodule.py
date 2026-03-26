@@ -654,6 +654,7 @@ class DatasetManager:
         rewrite_manual_cache: bool = False,
         use_manual_cache: bool = True,
         train_test_split: Optional[TrainTestSplitConfig] = None,
+        make_infinite: bool = False,
     ):
         """Initialize the dataset manager.
 
@@ -735,6 +736,11 @@ class DatasetManager:
         self.rewrite_manual_cache = rewrite_manual_cache
         self.use_manual_cache = use_manual_cache
         self.train_test_split = train_test_split
+        self.make_infinite = False
+        if make_infinite:
+            if not self.is_iterable_dataset:
+                raise ValueError("make_infinite is only supported for IterableDataset")
+            self.make_infinite = True
 
     def __repr__(self) -> str:
         return f"DatasetManager(full_name={self.full_name})"
@@ -1009,6 +1015,7 @@ class DatasetManager:
                     buffer_size=self.shuffle_buffer_size,
                     seed=self.shuffle_seed,
                 )
+            
             dataset = self._apply_on_the_fly_processors(dataset, tokenizer)
             dataset = self._apply_on_the_fly_group_processors(
                 dataset,
@@ -1028,6 +1035,8 @@ class DatasetManager:
                 self.dataset = split_dataset_by_node(
                     self.dataset, rank=rank, world_size=world_size
                 )
+                if self.make_infinite:
+                    dataset = dataset.repeat(None) # repeat indefinitely
 
     def get_dataloader(
         self,
