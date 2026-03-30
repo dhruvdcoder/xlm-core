@@ -25,6 +25,29 @@ from jaxtyping import Integer
 from torch import Tensor as TT
 from torch.utils.data import DataLoader, IterableDataset, SequentialSampler
 from datasets.distributed import split_dataset_by_node
+
+
+class _CycleDataset(IterableDataset):
+    """Thin PyTorch IterableDataset that cycles an HF IterableDataset forever.
+
+    Used instead of HF's dataset.repeat(None) because that method wraps the
+    underlying iterable in RepeatExamplesIterable, which does not implement
+    num_shards. Both split_dataset_by_node and IterableDataset.__init__ call
+    _prepare_ex_iterable_for_iteration → num_shards, so neither split-then-
+    repeat nor repeat-then-split works with this version of the datasets
+    library. This wrapper operates at the Python/PyTorch level and bypasses
+    HF internals entirely.
+    """
+
+    def __init__(self, ds):
+        super().__init__()
+        self._ds = ds
+
+    def __iter__(self):
+        while True:
+            yield from self._ds
+
+
 import torch
 from transformers import (
     BatchEncoding,
@@ -1036,7 +1059,7 @@ class DatasetManager:
                     self.dataset, rank=rank, world_size=world_size
                 )
                 if self.make_infinite:
-                    dataset = dataset.repeat(None) # repeat indefinitely
+                    self.dataset = _CycleDataset(self.dataset)
 
     def get_dataloader(
         self,
