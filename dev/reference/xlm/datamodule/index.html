@@ -5271,7 +5271,7 @@ multiple DatasetManager instances.</p>
 
 
 <h3 id="xlm.datamodule.DatasetManager.__init__" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">collator</span><span class="p">,</span> <span class="n">full_name</span><span class="p">,</span> <span class="n">full_name_debug</span><span class="p">,</span> <span class="n">dataloader_kwargs</span><span class="p">,</span> <span class="n">filter_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filter_suffix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preprocess_function</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preprocess_function_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_filter_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_processor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_processor_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_group_processor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_group_processor_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">columns_to_remove</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">columns_to_keep</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stages</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">iterable_dataset_shards</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shuffle_buffer_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shuffle_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">split_by_node</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rewrite_manual_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_manual_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">train_test_split</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">make_infinite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">collator</span><span class="p">,</span> <span class="n">full_name</span><span class="p">,</span> <span class="n">full_name_debug</span><span class="p">,</span> <span class="n">dataloader_kwargs</span><span class="p">,</span> <span class="n">filter_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filter_suffix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preprocess_function</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preprocess_function_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_filter_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_processor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_processor_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_group_processor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_group_processor_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_the_fly_group_processor_remove_columns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">columns_to_remove</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">columns_to_keep</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stages</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">iterable_dataset_shards</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shuffle_buffer_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shuffle_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">split_by_node</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rewrite_manual_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_manual_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">train_test_split</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">make_infinite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 </h3>
 
@@ -5450,6 +5450,27 @@ that require a big chunk of data, for example, packing sequences without padding
             <td>
               <div class="doc-md-description">
                 <p>Kwargs for the group processor.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>on_the_fly_group_processor_remove_columns</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="typing.List">List</span>[<span title="str">str</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Passed to <code>dataset.map(...,
+remove_columns=...)</code> after the group step. When the processor
+changes the number of examples per batch (e.g. :func:<code>pack_sequences</code>),
+input columns such as <code>token_ids</code> must be dropped or HF merges them
+with outputs and column lengths disagree (<code>IndexError</code> in
+<code>_batch_to_examples</code>). Omit or use <code>[]</code> for 1:1 batch transforms.</p>
               </div>
             </td>
             <td>
