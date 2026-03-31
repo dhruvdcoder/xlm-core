@@ -664,6 +664,7 @@ class DatasetManager:
         on_the_fly_processor_kwargs: Optional[Dict[str, Any]] = None,
         on_the_fly_group_processor: Optional[str] = None,
         on_the_fly_group_processor_kwargs: Optional[Dict[str, Any]] = None,
+        on_the_fly_group_processor_remove_columns: Optional[List[str]] = None,
         model_name: Optional[str] = None,
         columns_to_remove: Optional[List[str]] = None,
         columns_to_keep: Optional[List[str]] = None,
@@ -696,6 +697,12 @@ class DatasetManager:
                 which receives large batches of examples, and applies on-the-fly processors
                 that require a big chunk of data, for example, packing sequences without padding.
             on_the_fly_group_processor_kwargs: Kwargs for the group processor.
+            on_the_fly_group_processor_remove_columns: Passed to ``dataset.map(...,
+                remove_columns=...)`` after the group step. When the processor
+                changes the number of examples per batch (e.g. :func:`pack_sequences`),
+                input columns such as ``token_ids`` must be dropped or HF merges them
+                with outputs and column lengths disagree (``IndexError`` in
+                ``_batch_to_examples``). Omit or use ``[]`` for 1:1 batch transforms.
             model_name: Used for model-specific cache subdirectories.
             columns_to_remove: Columns to drop during preprocessing (e.g., ["text"]).
             stages: Lightning stages this manager participates in.
@@ -735,6 +742,9 @@ class DatasetManager:
         self.on_the_fly_processor_kwargs = on_the_fly_processor_kwargs or {}
         self.on_the_fly_group_processor = on_the_fly_group_processor
         self.on_the_fly_group_processor_kwargs = on_the_fly_group_processor_kwargs or {}
+        self.on_the_fly_group_processor_remove_columns = (
+            on_the_fly_group_processor_remove_columns
+        )
         if self.on_the_fly_group_processor is not None:
             if iterable_dataset_shards is None:
                 raise ValueError(
@@ -896,15 +906,21 @@ class DatasetManager:
             group_processor: Callable = get_function(
                 self.on_the_fly_group_processor
             )
-            dataset = dataset.map(
-                group_processor,
-                batched=True,
-                fn_kwargs={
+            # HF map merges input columns with the function output; if the processor
+            # changes batch size, remove_columns must drop inputs (see docstring).
+            map_kwargs: Dict[str, Any] = {
+                "batched": True,
+                "fn_kwargs": {
                     "tokenizer": tokenizer,
                     "block_size": block_size,
                     **self.on_the_fly_group_processor_kwargs,
                 },
-            )
+            }
+            if self.on_the_fly_group_processor_remove_columns is not None:
+                map_kwargs["remove_columns"] = (
+                    self.on_the_fly_group_processor_remove_columns
+                )
+            dataset = dataset.map(group_processor, **map_kwargs)
             return dataset
         return dataset
 
