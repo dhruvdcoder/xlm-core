@@ -25,6 +25,29 @@ from jaxtyping import Integer
 from torch import Tensor as TT
 from torch.utils.data import DataLoader, IterableDataset, SequentialSampler
 from datasets.distributed import split_dataset_by_node
+
+
+class _CycleDataset(IterableDataset):
+    """Thin PyTorch IterableDataset that cycles an HF IterableDataset forever.
+
+    Used instead of HF's dataset.repeat(None) because that method wraps the
+    underlying iterable in RepeatExamplesIterable, which does not implement
+    num_shards. Both split_dataset_by_node and IterableDataset.__init__ call
+    _prepare_ex_iterable_for_iteration → num_shards, so neither split-then-
+    repeat nor repeat-then-split works with this version of the datasets
+    library. This wrapper operates at the Python/PyTorch level and bypasses
+    HF internals entirely.
+    """
+
+    def __init__(self, ds):
+        super().__init__()
+        self._ds = ds
+
+    def __iter__(self):
+        while True:
+            yield from self._ds
+
+
 import torch
 from transformers import (
     BatchEncoding,
@@ -55,6 +78,7 @@ from transformers import (
     PreTrainedTokenizer,
     PreTrainedTokenizerBase,
     AddedToken,
+    AutoTokenizer,  
 )
 
 __all__ = [
@@ -185,6 +209,11 @@ class DataLoaderKwargs(TypedDict):
     pin_memory: bool
 
 
+class TrainTestSplitConfig(TypedDict):
+    size: float
+    seed: int
+    split: Literal["train", "test"]
+
 class Collator(Protocol):
     tokenizer: Tokenizer
     block_size: int
@@ -228,7 +257,6 @@ class TokenizerMixin:
         ]:
             if (token := getattr(self, special_token)) is None:
                 raise ValueError(f"{special_token} is not set")
-
 
 class BertTokenizer(TokenizerMixin, _BertTokenizer):  # type: ignore
     def __init__(self, *args, **kwargs):  # type: ignore
@@ -290,7 +318,6 @@ class GPT2Tokenizer(TokenizerMixin, _GPT2Tokenizer):  # type: ignore
         )
         tokenizer.post_creation()
         return tokenizer
-
 
 class GPT2TokenizerFast(TokenizerMixin, _GPT2TokenizerFast):  # type: ignore
     def __init__(self, *args, **kwargs):  # type: ignore
@@ -385,7 +412,6 @@ def get_cyclic_pad_token_ids(
     Raises AttributeError if any pad_i_token_id is missing.
     """
     return [getattr(tokenizer, f"pad_{i}_token_id") for i in range(n)]
-
 
 class GPT2TokenizerWithCyclicPads(GPT2Tokenizer):
     """GPT2Tokenizer with cyclic pad tokens (pad_0..pad_{n-1})."""
@@ -665,8 +691,10 @@ class DatasetManager:
         on_the_fly_processor_kwargs: Optional[Dict[str, Any]] = None,
         on_the_fly_group_processor: Optional[str] = None,
         on_the_fly_group_processor_kwargs: Optional[Dict[str, Any]] = None,
+        on_the_fly_group_processor_remove_columns: Optional[List[str]] = None,
         model_name: Optional[str] = None,
         columns_to_remove: Optional[List[str]] = None,
+        columns_to_keep: Optional[List[str]] = None,
         stages: Optional[
             List[Literal["fit", "validate", "test", "predict"]]
         ] = None,
@@ -676,6 +704,8 @@ class DatasetManager:
         split_by_node: bool = True,
         rewrite_manual_cache: bool = False,
         use_manual_cache: bool = True,
+        train_test_split: Optional[TrainTestSplitConfig] = None,
+        make_infinite: bool = False,
     ):
         """Initialize the dataset manager.
 
@@ -694,6 +724,12 @@ class DatasetManager:
                 which receives large batches of examples, and applies on-the-fly processors
                 that require a big chunk of data, for example, packing sequences without padding.
             on_the_fly_group_processor_kwargs: Kwargs for the group processor.
+            on_the_fly_group_processor_remove_columns: Passed to ``dataset.map(...,
+                remove_columns=...)`` after the group step. When the processor
+                changes the number of examples per batch (e.g. :func:`pack_sequences`),
+                input columns such as ``token_ids`` must be dropped or HF merges them
+                with outputs and column lengths disagree (``IndexError`` in
+                ``_batch_to_examples``). Omit or use ``[]`` for 1:1 batch transforms.
             model_name: Used for model-specific cache subdirectories.
             columns_to_remove: Columns to drop during preprocessing (e.g., ["text"]).
             stages: Lightning stages this manager participates in.
@@ -703,6 +739,9 @@ class DatasetManager:
             split_by_node: Whether to split IterableDataset by rank in DDP.
             rewrite_manual_cache: If True, re-download and overwrite cached data.
             use_manual_cache: If True, use manual cache dir created using save_to_disk(), else let HF Datasets do automatic caching.
+            train_test_split: If set, split the loaded split into train/test via
+                ``Dataset.train_test_split``. Keys: ``size`` (float, passed as
+                ``test_size``) and optional ``seed`` (int, default 42).
         """
         self.collator = collator
         self._full_name = full_name
@@ -730,6 +769,9 @@ class DatasetManager:
         self.on_the_fly_processor_kwargs = on_the_fly_processor_kwargs or {}
         self.on_the_fly_group_processor = on_the_fly_group_processor
         self.on_the_fly_group_processor_kwargs = on_the_fly_group_processor_kwargs or {}
+        self.on_the_fly_group_processor_remove_columns = (
+            on_the_fly_group_processor_remove_columns
+        )
         if self.on_the_fly_group_processor is not None:
             if iterable_dataset_shards is None:
                 raise ValueError(
@@ -743,6 +785,7 @@ class DatasetManager:
                 )
         self.model_name = model_name
         self.columns_to_remove = columns_to_remove
+        self.columns_to_keep = columns_to_keep
         self.stages = stages if stages is not None else ["fit", "validate"]
         self.iterable_dataset_shards = iterable_dataset_shards
         self.shuffle_buffer_size = shuffle_buffer_size
@@ -752,6 +795,12 @@ class DatasetManager:
         self.is_iterable_dataset = iterable_dataset_shards is not None
         self.rewrite_manual_cache = rewrite_manual_cache
         self.use_manual_cache = use_manual_cache
+        self.train_test_split = train_test_split
+        self.make_infinite = False
+        if make_infinite:
+            if not self.is_iterable_dataset:
+                raise ValueError("make_infinite is only supported for IterableDataset")
+            self.make_infinite = True
 
     def __repr__(self) -> str:
         return f"DatasetManager(full_name={self.full_name})"
@@ -778,12 +827,23 @@ class DatasetManager:
         if name[0] == "/":
             name = name[1:]
         logger.info(f"Downloading {self.full_name}")
+        split_to_download = self._split_to_download if not self.train_test_split else 'train'
         ds = datasets.load_dataset(
             name,
-            split=self._split_to_download,
+            split=split_to_download,
             num_proc=num_proc,
             token=os.environ.get("HF_HUB_KEY"),
         )
+        if self.train_test_split is not None:
+            ds = ds.train_test_split(
+                test_size=self.train_test_split["size"],
+                seed=self.train_test_split["seed"],
+            )
+            try:
+                ds = ds[self.train_test_split["split"]]
+            except KeyError:
+                raise ValueError(f"Invalid split to use: {self.train_test_split['split']}")
+
         return ds
 
     def _preprocess(
@@ -803,12 +863,16 @@ class DatasetManager:
                 "tokenizer": tokenizer,
                 **self.preprocess_function_kwargs,
             }
+            columns_to_remove = []
+            if self.columns_to_keep: 
+                columns_to_remove = [col for col in ds.column_names if col not in self.columns_to_keep]
+            if self.columns_to_remove: columns_to_remove.extend(self.columns_to_remove)
             ds = ds.map(
                 preprocess_fn,
                 batched=False,
                 num_proc=num_proc,
                 fn_kwargs=fn_kwargs,
-                remove_columns=self.columns_to_remove,
+                remove_columns=columns_to_remove,
             )
         return ds
 
@@ -869,15 +933,21 @@ class DatasetManager:
             group_processor: Callable = get_function(
                 self.on_the_fly_group_processor
             )
-            dataset = dataset.map(
-                group_processor,
-                batched=True,
-                fn_kwargs={
+            # HF map merges input columns with the function output; if the processor
+            # changes batch size, remove_columns must drop inputs (see docstring).
+            map_kwargs: Dict[str, Any] = {
+                "batched": True,
+                "fn_kwargs": {
                     "tokenizer": tokenizer,
                     "block_size": block_size,
                     **self.on_the_fly_group_processor_kwargs,
                 },
-            )
+            }
+            if self.on_the_fly_group_processor_remove_columns is not None:
+                map_kwargs["remove_columns"] = (
+                    self.on_the_fly_group_processor_remove_columns
+                )
+            dataset = dataset.map(group_processor, **map_kwargs)
             return dataset
         return dataset
 
@@ -1011,6 +1081,7 @@ class DatasetManager:
                     buffer_size=self.shuffle_buffer_size,
                     seed=self.shuffle_seed,
                 )
+            
             dataset = self._apply_on_the_fly_processors(dataset, tokenizer)
             dataset = self._apply_on_the_fly_group_processors(
                 dataset,
@@ -1030,6 +1101,8 @@ class DatasetManager:
                 self.dataset = split_dataset_by_node(
                     self.dataset, rank=rank, world_size=world_size
                 )
+                if self.make_infinite:
+                    self.dataset = _CycleDataset(self.dataset)
 
     def get_dataloader(
         self,

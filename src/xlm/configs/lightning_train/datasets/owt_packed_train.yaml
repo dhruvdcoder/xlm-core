@@ -11,6 +11,9 @@ on_the_fly_group_processor: xlm.datamodule.pack_sequences
 on_the_fly_group_processor_kwargs:
   drop_last: true
   use_bos: false
+# HF map merges inputs with outputs; pack_sequences changes batch length — drop token_ids.
+on_the_fly_group_processor_remove_columns:
+  - token_ids
 columns_to_remove: 
     - text
 stages:
