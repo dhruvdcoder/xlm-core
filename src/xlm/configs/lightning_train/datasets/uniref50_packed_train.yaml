@@ -13,6 +13,10 @@ on_the_fly_processor: null
 on_the_fly_group_processor: xlm.tasks.uniref50.pack_sequences_fn
 on_the_fly_group_processor_kwargs:
   drop_last: true
+# HF map merges inputs with outputs; pack_sequences changes batch length and
+# replaces token_ids with input_ids — drop token_ids so columns stay aligned.
+on_the_fly_group_processor_remove_columns:
+  - token_ids
 columns_to_remove:
   - seq
   - length

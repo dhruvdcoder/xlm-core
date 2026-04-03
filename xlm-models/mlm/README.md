@@ -51,7 +51,7 @@ Key differences from the standard variant:
 xlm job_type=train job_name=uniref50_packed_mlm_run experiment=uniref50_packed_mlm
 ```
 
-### Debug / inspect sequence packing (batch_size=2, 2 workers, 1 sanity step)
+### Debug / inspect sequence packing (`debug=overfit`, batch_size=2)
 
 Use `per_device_batch_size=2` to see two packed blocks side-by-side, making it easy to
 inspect that EOS separators land at the right places and that the block-diagonal mask
@@ -59,11 +59,10 @@ and reset positions are correct.
 
 ```bash
 xlm job_type=train job_name=uniref50_packed_mlm_debug experiment=uniref50_packed_mlm \
+    debug=overfit \
+    global_batch_size=2 \
     per_device_batch_size=2 \
     num_dataloader_workers=2 \
-    trainer.max_steps=5 \
-    trainer.val_check_interval=5 \
-    trainer.num_sanity_val_steps=1 \
     datamodule.dataset_managers.train.lm.dataloader_kwargs.drop_last=false
 ```
 
