@@ -1,0 +1,7 @@
+defaults:
+  - safe_fragment_test
+
+stages:
+    - validate
+    - predict
+

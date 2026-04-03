@@ -596,7 +596,7 @@ def flexmdm_train_collate_fn(
     prompt_ids: Optional[List[List[int]]],
     target_ids: List[List[int]],
     pad_token_id: int,
-    bos_token_id: int,
+    bos_token_id: Optional[int],
     eos_token_id: int,
     max_seq_len: Optional[int] = None,
 ) -> Dict[str, TT]:
@@ -613,15 +613,22 @@ def flexmdm_train_collate_fn(
         Input:
             - prompt_ids = [The quick brown fox]
             - target_ids = [jumped over the lazy dog]
-        Output:
+        Output (when bos_token_id is set):
             - ids   = [The quick brown fox] [bos] [jumped over the lazy dog] [eos] [pad pad pad]
             - fixed = [ 1    1     1    1     1      0     0    0    0   0     1     0   0   0 ]
+        When bos_token_id is None, no BOS token is inserted between prefix and target.
     """
 
     # start with prompt ids, if any, followed by bos
     if prompt_ids is not None:
-        ids = [_prompt_ids + [bos_token_id] for _prompt_ids in prompt_ids]
-        fixed = [[1] * (len(_prompt_ids) + 1) for _prompt_ids in prompt_ids]
+        ids = [
+            _prompt_ids + ([bos_token_id] if bos_token_id is not None else [])
+            for _prompt_ids in prompt_ids
+        ]
+        fixed = [
+            [1] * (len(_prompt_ids) + (1 if bos_token_id is not None else 0))
+            for _prompt_ids in prompt_ids
+        ]
     else:
         ids = [[] for _ in target_ids]
         fixed = [[] for _ in target_ids]
@@ -661,10 +668,12 @@ class FlexMDMTrainCollator(Collator):
         tokenizer: Tokenizer,
         block_size: int,
         input_block_size: Optional[int] = 0,
+        add_bos: bool = True,
     ):
         self.block_size = block_size
         self.input_block_size = input_block_size
         self.tokenizer = tokenizer
+        self.add_bos = add_bos
         try:
             self._vocab_size = len(self.tokenizer)
         except TypeError:
@@ -682,7 +691,7 @@ class FlexMDMTrainCollator(Collator):
             ),
             target_ids=[e["input_ids"] for e in examples],
             pad_token_id=self.tokenizer.pad_token_id,
-            bos_token_id=self.tokenizer.bos_token_id,
+            bos_token_id=self.tokenizer.bos_token_id if self.add_bos else None,
             eos_token_id=self.tokenizer.eos_token_id,
             max_seq_len=(self.input_block_size + self.block_size),
         )
@@ -693,15 +702,19 @@ def flexmdm_pred_collate_fn(
     prompt_ids: Optional[List[List[int]]],
     target_ids: List[List[int]],
     pad_token_id: int,
-    bos_token_id: int,
+    bos_token_id: Optional[int],
     eos_token_id: int,
     max_seq_len: Optional[int] = None,
 ) -> Dict[str, Optional[TT]]:
 
     if prompt_ids is not None:  # conditional case: start with [prefix] [bos]
-        ids = [_prompt_ids + [bos_token_id] for _prompt_ids in prompt_ids]
+        ids = [
+            _prompt_ids + ([bos_token_id] if bos_token_id is not None else [])
+            for _prompt_ids in prompt_ids
+        ]
         fixed_gaps = [
-            [1] * (len(_prompt_ids) + 1) for _prompt_ids in prompt_ids
+            [1] * (len(_prompt_ids) + (1 if bos_token_id is not None else 0))
+            for _prompt_ids in prompt_ids
         ]
     else:  # unconditional case: start with empty
         ids = [[] for _ in range(num_examples)]
@@ -755,9 +768,10 @@ class FlexMDMPredCollator(Collator):
     Conditional case:
         Input:
             - prompt_ids = [The quick brown fox]
-        Output:
+        Output (when add_bos is True):
             - ids          = [The quick brown fox] [bos] [eos] [pad pad pad]
             - fixed[_gaps] = [ 1    1     1    1     1     0     1   1   1 ]
+        When add_bos is False, no BOS is inserted after the prefix.
     """
 
     def __init__(
@@ -765,10 +779,12 @@ class FlexMDMPredCollator(Collator):
         tokenizer: Tokenizer,
         block_size: int,
         input_block_size: Optional[int] = 0,
+        add_bos: bool = True,
     ):
         self.block_size = block_size
         self.input_block_size = input_block_size
         self.tokenizer = tokenizer
+        self.add_bos = add_bos
         try:
             self._vocab_size = len(self.tokenizer)
         except TypeError:
@@ -786,7 +802,7 @@ class FlexMDMPredCollator(Collator):
             ),
             target_ids=[e["input_ids"] for e in examples],
             pad_token_id=self.tokenizer.pad_token_id,
-            bos_token_id=self.tokenizer.bos_token_id,
+            bos_token_id=self.tokenizer.bos_token_id if self.add_bos else None,
             eos_token_id=self.tokenizer.eos_token_id,
             max_seq_len=(
                 (self.input_block_size + self.block_size)

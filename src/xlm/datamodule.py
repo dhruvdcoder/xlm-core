@@ -1,4 +1,5 @@
 import os
+from copy import deepcopy
 from pathlib import Path
 from pprint import pformat
 from typing import (
@@ -1728,6 +1729,20 @@ class DefaultEmptyDataset(IterableDataset):
                 **self.tokenizer_kwargs,
             )
             yield ex
+
+
+def replicate_examples(
+    examples: Dict[str, List[List[int]]], tokenizer, num_samples: int
+):
+    """Repeat each example in the dictionary `num_samples` times such that the repeated examples are contiguous in the list."""
+    examples_replicated = {}
+    for key in examples:
+        replicated: List[List[int]] = []
+        for ex in examples[key]:
+            for _ in range(num_samples):
+                replicated.append(deepcopy(ex))
+        examples_replicated[key] = replicated
+    return examples_replicated
 
 
 # endregion: Processors

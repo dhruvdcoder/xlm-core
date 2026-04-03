@@ -1,0 +1,26 @@
+# @package _global_
+# Datamodule for fragment-constrained (infill) generation.
+# Uses GenMol fragments CSV for val/test/predict; train from safe_train.
+defaults:
+  - default
+  - /tokenizer@global_components.tokenizer: safe
+  - /datasets@datamodule.dataset_managers.train.lm: safe_train # we don't use it but the datamodule expects it
+  - /datasets@datamodule.dataset_managers.val.infill_prediction: safe_fragment_val
+  - /datasets@datamodule.dataset_managers.predict.infill_prediction: safe_fragment_val
+  - /datasets@datamodule.dataset_managers.test.infill_prediction: safe_fragment_test
+
+per_device_batch_size: 32
+global_batch_size: 512
+block_size: 256
+
+datamodule:
+  dataset_managers:
+    val:
+      infill_prediction: {}
+    predict:
+      infill_prediction: {}
+    test:
+      infill_prediction: {}
+
+tags:
+  dataset: safe_fragment

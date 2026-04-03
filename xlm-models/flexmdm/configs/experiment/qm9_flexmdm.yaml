@@ -14,7 +14,7 @@ len_predict_type: expectation  # choices: 'expectation', 'distribution'
 monitored_metric: val/validity
 
 post_hoc_evaluator:
-  _target_: xlm.tasks.molgen.DeNovoEval
+  _target_: xlm.tasks.safe_molgen.DeNovoEval
   use_bracket_safe: ${oc.select:use_bracket_safe,true}
 
 datamodule:
