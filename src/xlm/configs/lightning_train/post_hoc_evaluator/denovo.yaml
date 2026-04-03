@@ -5,3 +5,4 @@ compute_validity: True
 compute_uniqueness: True
 compute_qed: True
 compute_sa: True
+convert_to_smile: True
