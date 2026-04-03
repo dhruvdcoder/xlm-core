@@ -9,17 +9,27 @@ from xlm.utils.rank_zero import RankedLogger
 logger = RankedLogger(__name__, rank_zero_only=True)
 
 
-class MLMBatch(TypedDict):
+class MLMBatch(TypedDict, total=False):
     """Input to the MLM.
+
     Attributes:
-        input_ids (Integer[TT, " batch seq_len"]): The input ids to the model.
-        attention_mask (Integer[TT, " batch seq_len"]): 1 for tokens that are not padding.
-        target_ids (Optional[Integer[TT, " batch seq_len"]]): The target ids to the model.
+        input_ids: The (possibly masked) input token ids.
+        attention_mask: Boolean mask — shape ``(batch, seq_len)`` for standard
+            padded batches (True = valid token), or ``(batch, seq_len, seq_len)``
+            for packed sequences with per-protein block attention.
+        target_ids: Ground-truth token ids (masks replaced with original tokens).
+        positions: Optional per-token position indices.  When present (packed
+            sequences) they reset to 0 at the start of each protein; when absent
+            ``MLMLoss`` derives positions from the 1-D attention mask.
+        fixed_positions_mask: Optional boolean mask marking positions that should
+            not be masked (used by infilling collators).
     """
 
     input_ids: Integer[TT, " batch seq_len"]
-    attention_mask: Integer[TT, " batch seq_len"]
+    attention_mask: TT  # 2-D (batch, seq_len) or 3-D (batch, seq_len, seq_len)
     target_ids: Optional[Integer[TT, " batch seq_len"]]
+    positions: Optional[Integer[TT, " batch seq_len"]]
+    fixed_positions_mask: Optional[Bool[TT, " batch seq_len"]]
 
 
 class MLMSeq2SeqPredictionBatch(TypedDict):
