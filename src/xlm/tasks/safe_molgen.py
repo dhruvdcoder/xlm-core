@@ -21,6 +21,7 @@ This module provides:
 """
 
 import itertools
+from pathlib import Path
 import random
 import re
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -54,6 +55,9 @@ try:
 except ImportError:
     raise ImportError("Please install TDC: pip install pytdc")
 
+
+# use this file as a reference
+ZINC_LENGTH_REF_FILE = Path(__file__).parent / "zinc_len.pkl"
 
 ################################################################################
 # region: SAFE / Bracket SAFE conversion (from GenMol bracket_safe_converter.py)
@@ -557,6 +561,9 @@ class SerializableSAFETokenizer:
 
     def len(self):
         return self._tokenizer.full_vocab_size
+
+    def __len__(self):
+        return self.len()
 
 
 def get_safe_tokenizer(
