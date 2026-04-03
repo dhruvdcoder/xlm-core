@@ -1,8 +1,9 @@
 # @package _global_
-# Vanilla FlexMDM experiment for SAFE dataset
+# Experiment for fragment-constrained molecule generation (infilling partial sequences)
+# Adapted from safe_flexmdm for fragment-constrained generation
 
 defaults:
-  - override /datamodule: safe_flexmdm
+  - override /datamodule: safe_flexmdm_fragment
   - override /noise_schedule: flexmdm_linear
   - override /model_type: flexmdm
   - override /model: ddit_flexmdm
@@ -14,12 +15,30 @@ monitored_metric: val/validity
 num_dataloader_workers: 4
 use_bracket_safe: true
 num_unconditional_prediction_examples: 1000
+num_conditional_prediction_samples: 10
 len_predict_type: expectation
+molgen_task_name: motif_extension
 
 # post-hoc evaluation
 post_hoc_evaluator:
-  _target_: xlm.tasks.safe_molgen.DeNovoEval
+  _target_: xlm.tasks.safe_molgen.FragmentEval
+  task_name: ${molgen_task_name}
+  num_samples: ${num_conditional_prediction_samples}
   use_bracket_safe: ${oc.select:use_bracket_safe,true}
+  compute_distance: true
+
+predictor:
+  _target_: flexmdm.predictor_flexmdm.FlexMDMPredictor
+  max_steps: 1000
+  top_k: 1
+  top_p: null
+  len_predict_type: ${len_predict_type}
+
+loss:
+  _target_: flexmdm.loss_flexmdm.FlexMDMLoss
+  loss_on_padding: true
+  loss_on_visible_tokens: false
+  insert_loss_fn: ${len_predict_type}
 
 datamodule:
   print_batch_fn: flexmdm.datamodule_flexmdm.print_batch_flexmdm
@@ -32,7 +51,7 @@ model:
   len_predict_type: expectation
 
 trainer:
-  max_steps: 50_000
+  max_steps: 1000_000
   val_check_interval: 50000
   num_sanity_val_steps: 3
   check_val_every_n_epoch: null
@@ -41,6 +60,7 @@ log_predictions:
   _target_: xlm.log_predictions.LogPredictions
   additional_fields_from_batch:
     - fragment_smiles
+    - original_smiles
   fields_to_keep_in_output:
     - text
     - smiles
@@ -54,18 +74,16 @@ log_predictions:
     - quality
     - distance
     - fragment_smiles
-    - history
-  inject_target: null
+    - original_smiles
+  inject_target: target_ids  # Decode target_ids to get truth (full target molecule)
   writers:
     - file
     - logger
 
 callbacks:
-  checkpoint_monitor:
-    monitor: val/lm/accumulated_loss
   checkpoint_every_n_steps:
-    every_n_train_steps: 1000
-    keep_multiple: 25 # Keep every (keep_multiple * every_n_train_steps) permanently = 1000 * 25 = 25_000
+    every_n_train_steps: 2500
+    keep_multiple: 40
 
 optimizer:
   lr: 0.0001

@@ -2,8 +2,6 @@
 defaults:
   - safe
   - /collator@datamodule.dataset_managers.train.lm.collator: default_flexmdm
-  - /collator@datamodule.dataset_managers.val.lm.collator: default_flexmdm
-  - /collator@datamodule.dataset_managers.test.lm.collator: default_flexmdm
   - /collator@datamodule.dataset_managers.val.unconditional_prediction.collator: unconditional_pred_flexmdm
   - /collator@datamodule.dataset_managers.predict.unconditional_prediction.collator: unconditional_pred_flexmdm
   - /collator@datamodule.dataset_managers.test.unconditional_prediction.collator: unconditional_pred_flexmdm

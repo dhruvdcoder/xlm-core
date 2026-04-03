@@ -1,11 +1,11 @@
 # @package _global_
-# Vanilla FlexMDM experiment for SAFE dataset
+# MLM on SAFE dataset with length-ref unconditional generation (see datamodule safe_mlm).
 
 defaults:
-  - override /datamodule: safe_flexmdm
-  - override /noise_schedule: flexmdm_linear
-  - override /model_type: flexmdm
-  - override /model: ddit_flexmdm
+  - override /datamodule: safe_mlm
+  - override /noise_schedule: dummy
+  - override /model_type: mlm
+  - override /model: rotary_transformer_mlm
 
 per_device_batch_size: 128
 global_batch_size: 2048
@@ -14,22 +14,14 @@ monitored_metric: val/validity
 num_dataloader_workers: 4
 use_bracket_safe: true
 num_unconditional_prediction_examples: 1000
-len_predict_type: expectation
+length_ref_file: src/xlm/tasks/zinc_len.pkl
 
-# post-hoc evaluation
 post_hoc_evaluator:
   _target_: xlm.tasks.safe_molgen.DeNovoEval
   use_bracket_safe: ${oc.select:use_bracket_safe,true}
 
 datamodule:
-  print_batch_fn: flexmdm.datamodule_flexmdm.print_batch_flexmdm
-
-model:
-  force_flash_attn: false
-  len_head_type: mlp
-  inner_autocast: true
-  compile: true
-  len_predict_type: expectation
+  print_batch_fn: mlm.datamodule_mlm.print_batch_mlm
 
 trainer:
   max_steps: 50_000
