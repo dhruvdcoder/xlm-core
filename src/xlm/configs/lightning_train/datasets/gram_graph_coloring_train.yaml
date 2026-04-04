@@ -1,28 +1,3 @@
+# Back-compat: defaults to 8-vertex. Prefer gram_graph_coloring_train_8v or gram_graph_coloring_train_10v.
 defaults:
-  - default_text
-
-_target_: xlm.datamodule.DatasetManager
-collator: ???
-full_name: brozonoyer/gram-graph-coloring/train
-full_name_debug: brozonoyer/gram-graph-coloring/train
-preprocess_function: xlm.tasks.gram_graph_coloring.gram_graph_coloring_preprocess_fn
-on_the_fly_processor: xlm.datamodule.token_ids_to_input_ids_and_prompt_ids
-on_the_fly_group_processor: null
-columns_to_remove:
-  - input
-  - target
-stages:
-  - fit
-iterable_dataset_shards: 32
-shuffle_buffer_size: null
-shuffle_seed: 42
-split_by_node: true
-dataloader_kwargs:
-  batch_size: ${per_device_batch_size}
-  num_workers: ${num_dataloader_workers}
-  shuffle: null
-  pin_memory: True
-  persistent_workers: False
-  prefetch_factor: ${dataloader_prefetch_factor}
-  drop_last: True
-model_name: null
+  - gram_graph_coloring_train_8v

@@ -1,9 +1,3 @@
+# Back-compat: defaults to 8×8 val. Prefer gram_n_queens_val_8x8 or gram_n_queens_val_10x10.
 defaults:
-  - gram_n_queens_train
-  - _self_
-
-full_name: brozonoyer/gram-n-queens/test
-full_name_debug: brozonoyer/gram-n-queens/train
-stages:
-  - fit
-  - validate
+  - gram_n_queens_val_8x8

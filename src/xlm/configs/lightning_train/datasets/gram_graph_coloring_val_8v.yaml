@@ -1,0 +1,10 @@
+defaults:
+  - gram_graph_coloring_train_8v
+  - _self_
+
+_target_: xlm.datamodule.DatasetManager
+full_name: brozonoyer/gram-graph-coloring/test
+full_name_debug: brozonoyer/gram-graph-coloring/train
+stages:
+  - fit
+  - validate

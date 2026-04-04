@@ -1,5 +1,3 @@
+# Back-compat: defaults to 8-vertex. Prefer gram_graph_coloring_val_pred_8v or gram_graph_coloring_val_pred_10v.
 defaults:
-  - gram_graph_coloring_val
-  - _self_
-
-on_the_fly_processor: xlm.datamodule.token_ids_to_input_ids_and_prompt_ids
+  - gram_graph_coloring_val_pred_8v
