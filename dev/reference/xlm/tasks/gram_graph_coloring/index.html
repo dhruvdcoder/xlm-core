@@ -2213,6 +2213,28 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#xlm.tasks.gram_graph_coloring.gram_graph_coloring_filter_8_vertex" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;gram_graph_coloring_filter_8_vertex
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xlm.tasks.gram_graph_coloring.gram_graph_coloring_filter_10_vertex" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;gram_graph_coloring_filter_10_vertex
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -4467,6 +4489,7 @@
 (valid 3-coloring per node).
 Vocabulary: 0=pad, 1=no edge, 2=edge; 3=red, 4=blue, 5=green.
 We produce input_token_ids = [input | target] and prompt_token_ids = [input | mask*len(target)].</p>
+<p>Token ids use SimpleSpaceTokenizer.for_numbers like sudoku_extreme (via _convert_token_to_id(str(v))).</p>
 
 
 
@@ -4502,6 +4525,42 @@ We produce input_token_ids = [input | target] and prompt_token_ids = [input | ma
         <p>Preprocess gram-graph-coloring examples.</p>
 <p>Uses "input" (graph structure, values 1/2) and "target" (coloring, values 3/4/5).
 Full sequence is [input | target]. The graph is given; node colors are to predict.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="xlm.tasks.gram_graph_coloring.gram_graph_coloring_filter_8_vertex" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">gram_graph_coloring_filter_8_vertex</span><span class="p">(</span><span class="n">example</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Keep only 8-vertex instances (fixed sequence length for batching).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="xlm.tasks.gram_graph_coloring.gram_graph_coloring_filter_10_vertex" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">gram_graph_coloring_filter_10_vertex</span><span class="p">(</span><span class="n">example</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Keep only 10-vertex instances (fixed sequence length for batching).</p>
 
 
     </div>

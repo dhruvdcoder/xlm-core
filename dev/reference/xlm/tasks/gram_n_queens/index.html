@@ -2241,6 +2241,28 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#xlm.tasks.gram_n_queens.gram_n_queens_filter_8x8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;gram_n_queens_filter_8x8
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xlm.tasks.gram_n_queens.gram_n_queens_filter_10x10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;gram_n_queens_filter_10x10
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -4466,6 +4488,7 @@
 <p>Dataset has "input" (partial board) and "target" (complete solution).
 Vocabulary: 0=pad, 1=empty, 2=queen.
 We produce input_token_ids (target) and prompt_token_ids (input with empty→mask).</p>
+<p>Token ids use SimpleSpaceTokenizer.for_numbers like sudoku_extreme (via _convert_token_to_id(str(v))).</p>
 
 
 
@@ -4500,8 +4523,44 @@ We produce input_token_ids (target) and prompt_token_ids (input with empty→mas
 
         <p>Preprocess gram-n-queens examples.</p>
 <p>Uses "input" (partial board) and "target" (complete solution).
-Empty cells (1) in the prompt are replaced with mask_token_id so the model
+Empty cells (dataset 1) in the prompt are replaced with mask_token_id so the model
 knows which positions to predict.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="xlm.tasks.gram_n_queens.gram_n_queens_filter_8x8" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">gram_n_queens_filter_8x8</span><span class="p">(</span><span class="n">example</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Keep only 8×8 boards (fixed sequence length for batching).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="xlm.tasks.gram_n_queens.gram_n_queens_filter_10x10" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">gram_n_queens_filter_10x10</span><span class="p">(</span><span class="n">example</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Keep only 10×10 boards (fixed sequence length for batching).</p>
 
 
     </div>
