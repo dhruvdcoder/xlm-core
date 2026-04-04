@@ -8,3 +8,6 @@ full_name_debug: brozonoyer/gram-graph-coloring/train
 stages:
   - fit
   - validate
+dataloader_kwargs:
+  batch_size: ${per_device_val_batch_size}
+  drop_last: false
