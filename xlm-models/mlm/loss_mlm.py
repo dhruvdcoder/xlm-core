@@ -61,10 +61,13 @@ class MLMLoss(LossFunction[MLMBatch, MLMLossDict]):
         model = cast(MLMModel, self.model)
 
         if attention_mask.ndim == 3:
-            # Packed sequences: collator already computed per-sequence positions
-            # and a block-diagonal 3D attention mask — use both directly.
+            # Packed sequences: collator already computed per-sequence positions,
+            # a block-diagonal 3D attention mask, and per-token segment ids.
+            # When the model supports FlexAttention (use_flex_attn=True), it will
+            # build a BlockMask from segment_ids and ignore attention_mask.
             positions = batch.get("positions")
-            logits = model(input_ids, attention_mask, positions)
+            segment_ids = batch.get("segment_ids")
+            logits = model(input_ids, attention_mask, positions, segment_ids=segment_ids)
         else:
             # Standard padded sequences: derive monotonic positions from the
             # 1-D padding mask (cumulative count of non-padding tokens).

@@ -744,5 +744,6 @@ class PackedMLMCollator(Collator):
             "attention_mask": block_mask,
             "target_ids": target_ids,
             "positions": reset_positions,
+            "segment_ids": segment_ids,
             "fixed_positions_mask": None,
         }

@@ -39,11 +39,13 @@ class RotaryTransformerMLMModel(torch.nn.Module, Model):
         rotary_emb_dim: int = 64,
         max_length: int = 1024,
         force_flash_attn: bool = False,
+        use_flex_attn: bool = False,
         final_layer_without_normalization: bool = False,
     ):
         super().__init__()
         self.padding_idx = padding_idx
         self.mask_idx = mask_idx
+        self.use_flex_attn = use_flex_attn
         self.embed_tokens = nn.Embedding(
             num_embeddings, d_model, padding_idx=padding_idx
         )
@@ -79,20 +81,48 @@ class RotaryTransformerMLMModel(torch.nn.Module, Model):
         attention_mask: Optional[Bool[TT, " *batch seq_len"]] = None,
         positions: Optional[Integer[TT, " *batch seq_len"]] = None,
         token_type_ids: Optional[Integer[TT, " *batch seq_len"]] = None,
+        segment_ids: Optional[Integer[TT, " *batch seq_len"]] = None,
     ) -> Float[TT, " *batch seq_len vocab_size"]:
         """
         Args:
             x_t: The input tokens of shape (*batch, seq_len)
             attention_mask: The attention mask of shape (*batch, seq_len), which is True for non-padding tokens.
             positions: The positions of the tokens of shape (*batch, seq_len)
+            segment_ids: Optional integer tensor (*batch, seq_len) produced by
+                PackedMLMCollator.  When present and use_flex_attn=True, a
+                BlockMask is built from it (document masking) and used in place
+                of the full 3-D boolean attention_mask.  The BlockMask is
+                constructed once here and shared across all transformer layers to
+                amortise its cost.
         """
         if attention_mask is not None:
             attention_mask = attention_mask.to(torch.bool)
 
         x = self.embed_tokens(x_t)  # shape (batch_size, seq_len, d_model)
 
+        # Build a FlexAttention BlockMask once for all layers when segment_ids
+        # are available and the model is configured to use FlexAttention.
+        block_mask = None
+        if self.use_flex_attn and segment_ids is not None:
+            from torch.nn.attention.flex_attention import create_block_mask
+            bsz, seq_len = x_t.shape
+            seg = segment_ids.to(x.device)
+            def _doc_mask_mod(b, h, q_idx, kv_idx):
+                return seg[b, q_idx] == seg[b, kv_idx]
+            block_mask = create_block_mask(
+                _doc_mask_mod,
+                B=bsz,
+                H=None,
+                Q_LEN=seq_len,
+                KV_LEN=seq_len,
+                device=x.device,
+                _compile=True,
+            )
+            # BlockMask replaces the 3-D boolean mask in the packed path.
+            attention_mask = None
+
         for block in self.encoder:
-            x = block(x, attention_mask, positions=positions)
+            x = block(x, attention_mask, positions=positions, block_mask=block_mask)
 
         vocab_logits = self.output_layer(
             x,

@@ -21,6 +21,11 @@ class MLMBatch(TypedDict, total=False):
         positions: Optional per-token position indices.  When present (packed
             sequences) they reset to 0 at the start of each protein; when absent
             ``MLMLoss`` derives positions from the 1-D attention mask.
+        segment_ids: Optional integer tensor ``(batch, seq_len)`` where each
+            position holds the 0-based index of the protein it belongs to within
+            the packed block.  Produced by ``PackedMLMCollator`` and consumed by
+            ``RotaryTransformerMLMModel`` to build a ``BlockMask`` for
+            FlexAttention-based document masking.
         fixed_positions_mask: Optional boolean mask marking positions that should
             not be masked (used by infilling collators).
     """
@@ -29,6 +34,7 @@ class MLMBatch(TypedDict, total=False):
     attention_mask: TT  # 2-D (batch, seq_len) or 3-D (batch, seq_len, seq_len)
     target_ids: Optional[Integer[TT, " batch seq_len"]]
     positions: Optional[Integer[TT, " batch seq_len"]]
+    segment_ids: Optional[Integer[TT, " batch seq_len"]]
     fixed_positions_mask: Optional[Bool[TT, " batch seq_len"]]
 
 
