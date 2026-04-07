@@ -87,7 +87,7 @@ class AutoModelForCausalLMGenerativePerplexityEvaluator(
     supported_models = ["gpt2", "gpt2-medium", "gpt2-large", "gpt2-xl"]
 
     def __init__(
-        self, name: str, batch_size: int = 64, device: Optional[str] = None
+        self, name: str, batch_size: int = 64, device: Optional[str] = None, max_length: Optional[int] = None
     ):
         """
         Args:
@@ -107,6 +107,7 @@ class AutoModelForCausalLMGenerativePerplexityEvaluator(
         self.pretrained_model = None
         self.tokenizer = None
         self.device = device
+        self.max_length = max_length
 
     def __repr__(self) -> str:
         return f"AutoModelForCausalLMGenerativePerplexityEvaluator(name={self.name}, batch_size={self.batch_size})"
@@ -185,7 +186,8 @@ class AutoModelForCausalLMGenerativePerplexityEvaluator(
             samples,
             # padding="longest",
             padding=False,
-            truncation=False,
+            truncation=self.max_length is not None,
+            max_length=self.max_length,
             return_attention_mask=True,
             return_tensors="pt",
             add_special_tokens=False,
