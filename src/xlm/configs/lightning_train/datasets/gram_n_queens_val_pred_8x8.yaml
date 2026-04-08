@@ -1,0 +1,5 @@
+defaults:
+  - gram_n_queens_val_8x8
+  - _self_
+
+on_the_fly_processor: xlm.datamodule.token_ids_to_input_ids_and_prompt_ids
