@@ -18,7 +18,6 @@ from xlm.utils.hf_hub import (
     repo_id_from_hf_path,
 )
 from xlm.utils.rank_zero import RankedLogger
-from xlm.utils.transformers_pickle_shim import install as _install_transformers_pickle_shim
 
 logger = RankedLogger(__name__, rank_zero_only=True)
 
@@ -105,7 +104,6 @@ def load_model_for_inference(
         ...     enable_hub_support=False,
         ... )
     """
-    _install_transformers_pickle_shim()
     torch.set_float32_matmul_precision("medium")
 
     # Step 1: Determine full checkpoint path

@@ -45,3 +45,5 @@ site
 
 # editor files
 .cursorindexingignore
+oracle/fpscores.pkl
+.cursor/plans/dreamon_in_xlm-core_e37b5d3d.plan.md
