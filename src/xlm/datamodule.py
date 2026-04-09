@@ -47,6 +47,16 @@ class _CycleDataset(IterableDataset):
         while True:
             yield from self._ds
 
+    def state_dict(self) -> dict:
+        # Intentionally empty: this dataset is infinite and position restoration
+        # is unnecessary for a large corpus cycled many times over. Returning {}
+        # (not None) satisfies the torchdata Stateful protocol, which causes
+        # StatefulDataLoader to skip the naive fast-forward on resume entirely.
+        return {}
+
+    def load_state_dict(self, state_dict: dict) -> None:
+        pass  # resume from beginning of cycle; fine for an infinite dataset
+
 
 import torch
 from transformers import (
