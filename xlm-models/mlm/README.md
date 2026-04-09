@@ -25,7 +25,7 @@ Key differences from the standard variant:
 |---|---|---|
 | Packing | one protein per slot, padded | multiple proteins per block, no padding |
 | Cropping | first `block_size` tokens | random window of `block_size` (DPLM-style) |
-| Attention | full 2-D mask | **3-D block-diagonal mask** — each protein only attends to itself |
+| Attention | full 2-D mask | **block-diagonal** — each protein only attends to itself; 3-D boolean mask (default) or `BlockMask` via FlexAttention (`model.use_flex_attn=true`) |
 | Positions | monotonic 0…`block_size-1` | **reset to 0** at the start of each protein |
 | Collator | `DefaultMLMCollator` | `PackedMLMCollator` |
 
@@ -47,8 +47,15 @@ Key differences from the standard variant:
 
 ### Training
 
+Standard (3-D boolean mask, SDPA fallback):
 ```bash
 xlm job_type=train job_name=uniref50_packed_mlm_run experiment=uniref50_packed_mlm
+```
+
+With FlexAttention (recommended — fused Triton kernel, no O(seq²) mask materialisation):
+```bash
+xlm job_type=train job_name=uniref50_packed_mlm_run experiment=uniref50_packed_mlm \
+    model.use_flex_attn=true
 ```
 
 ### Debug / inspect sequence packing (`debug=overfit`, batch_size=2)

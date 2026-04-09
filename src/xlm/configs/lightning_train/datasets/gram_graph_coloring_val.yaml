@@ -1,9 +1,3 @@
+# Back-compat: defaults to 8-vertex val. Prefer gram_graph_coloring_val_8v or gram_graph_coloring_val_10v.
 defaults:
-  - gram_graph_coloring_train
-  - _self_
-
-full_name: brozonoyer/gram-graph-coloring/test
-full_name_debug: brozonoyer/gram-graph-coloring/train
-stages:
-  - fit
-  - validate
+  - gram_graph_coloring_val_8v

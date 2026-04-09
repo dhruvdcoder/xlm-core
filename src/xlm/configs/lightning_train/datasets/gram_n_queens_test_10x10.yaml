@@ -1,0 +1,9 @@
+defaults:
+  - gram_n_queens_train_10x10
+  - _self_
+
+_target_: xlm.datamodule.DatasetManager
+full_name: brozonoyer/gram-n-queens/test
+full_name_debug: brozonoyer/gram-n-queens/train
+stages:
+  - test
