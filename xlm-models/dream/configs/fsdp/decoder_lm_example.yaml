@@ -1,0 +1,13 @@
+# Example FSDP grouping for Dream-style decoder (embed + per-layer + lm_head).
+# Use with ``build_fsdp_grouping_plan_from_config`` and ``context: { model: ${model} }``.
+fsdp_grouping:
+  embed:
+    path: model.embed_tokens
+    wrap: false
+  layers:
+    path_template: "model.layers.{i}"
+    wrap: false
+    count: ${model.num_hidden_layers}
+  head:
+    path: lm_head
+    wrap: true
