@@ -66,6 +66,19 @@ xlm job_type=train job_name=uniref50_packed_mlm_debug experiment=uniref50_packed
     datamodule.dataset_managers.train.lm.dataloader_kwargs.drop_last=false
 ```
 
+### Inspecting packing with shuffled data (batch size 4)
+
+The overfit command above disables the dataset shuffle buffer and reads data in
+storage order, which is useful for breakpoints but not representative of training.
+To **evaluate sequence packing** with the shuffle buffer enabled and more packed
+blocks per step, omit `debug=overfit` and use batch size 4:
+
+```bash
+xlm job_type=train job_name=uniref50_packed_mlm_inspect experiment=uniref50_packed_mlm \
+    global_batch_size=4 \
+    per_device_batch_size=4
+```
+
 The `print_batch_fn` (`mlm.datamodule_mlm.print_batch_mlm`) will print the decoded
 tokens and mask for the first example in each batch so you can verify proteins are
 separated by `<eos>` and that each protein's residues appear as a contiguous block.
