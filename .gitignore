@@ -45,3 +45,4 @@ site
 
 # editor files
 .cursorindexingignore
+oracle/fpscores.pkl

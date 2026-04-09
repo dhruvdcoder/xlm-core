@@ -62,12 +62,14 @@ class FlexMDMPredictor(
         noise_schedule: Optional[NoiseSchedule] = None,
         top_k: Optional[int] = None,
         top_p: Optional[float] = None,
+        temperature: Optional[float] = None,
         suppress_pad_token: Optional[int] = None,
         len_predict_type: str = "distribution",
         confidence: Literal[
             "position", "top_prob", "prob_diff", "entropy", None
         ] = None,
         return_history: bool = False,
+        skip_special_tokens_in_history: bool = True,
     ):
         """Initialize FlexMDM Predictor.
 
@@ -79,10 +81,12 @@ class FlexMDMPredictor(
             noise_schedule: Noise schedule for the diffusion process.
             top_k: Top-k sampling parameter.
             top_p: Top-p sampling parameter.
+            temperature: Temperature for logits sampling when top_k and top_p are both None.
             suppress_pad_token: Number of steps for which to suppress the pad token.
             len_predict_type: Type of length prediction ("distribution" or "expectation").
             confidence: Confidence-based decoding method (None for tau-leaping).
             return_history: Whether to track and return generation history.
+            skip_special_tokens_in_history: Whether batch_decode for history skips special tokens.
         """
         if tokenizer is None:
             raise ValueError("tokenizer is required")
@@ -97,7 +101,12 @@ class FlexMDMPredictor(
         self.top_k = top_k
         self.top_p = top_p
         if top_k is None and top_p is None:
-            self.sampling_function = sample_from_logits
+            if temperature is None:
+                self.sampling_function = sample_from_logits
+            else:
+                self.sampling_function = partial(
+                    sample_from_logits, temperature=temperature
+                )
         elif top_k is not None and top_p is None:
             self.sampling_function = partial(sample_from_top_k, top_k)
         elif top_k is None and top_p is not None:
@@ -110,6 +119,7 @@ class FlexMDMPredictor(
         self.len_predict_type = len_predict_type
         self.confidence = confidence
         self.tokens_hook = None
+        self.skip_special_tokens_in_history = skip_special_tokens_in_history
 
     def reset(self):
         # simple predictor has no state
@@ -129,7 +139,7 @@ class FlexMDMPredictor(
         """
         x: Integer[TT, " batch seq_len"] = results["x_t"]
         out_with_spl_tokens: List[str] = self.tokenizer.batch_decode(
-            x, skip_special_tokens=True
+            x, skip_special_tokens=self.skip_special_tokens_in_history
         )
         return out_with_spl_tokens, x
 
@@ -224,7 +234,9 @@ class FlexMDMPredictor(
         # Record initial state (step 0)
         history = self.update_history_explicit(
             history,
-            self.tokenizer.batch_decode(xt, skip_special_tokens=True),
+            self.tokenizer.batch_decode(
+                xt, skip_special_tokens=self.skip_special_tokens_in_history
+            ),
             t.tolist(),
             0,
         )
@@ -474,7 +486,9 @@ class FlexMDMPredictor(
             # Update history after each step
             history = self.update_history_explicit(
                 history,
-                self.tokenizer.batch_decode(xt, skip_special_tokens=True),
+                self.tokenizer.batch_decode(
+                    xt, skip_special_tokens=self.skip_special_tokens_in_history
+                ),
                 t.tolist(),
                 i + 1,
             )
@@ -489,7 +503,9 @@ class FlexMDMPredictor(
                         f.write(f"x[{_seq_idx}]: {seq}\n\n")
                     f.write("\n")
 
-        out = self.tokenizer.batch_decode(xt, skip_special_tokens=True)
+        out = self.tokenizer.batch_decode(
+            xt, skip_special_tokens=self.skip_special_tokens_in_history
+        )
         # print("out")
         # print(out)
 
