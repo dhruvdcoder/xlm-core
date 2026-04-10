@@ -1,0 +1,17 @@
+# Dependencies for the ESMFold evaluation venv.
+#
+# This file covers everything beyond torch and fair-esm (which are installed
+# explicitly with version pins in setup_eval_venv.sh because the exact torch
+# version must match the CUDA toolkit used to build the OpenFold kernel).
+#
+# fair-esm's ESMFold imports openfold (vendored in dplm/vendor/openfold) and
+# expects these packages to be present.
+
+numpy
+omegaconf
+ml-collections
+einops
+dm-tree
+biopython
+modelcif
+scipy
