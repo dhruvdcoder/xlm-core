@@ -671,3 +671,79 @@ class DefaultInfillMLMCollator(Collator):
             loss_on_padding=self.loss_on_padding,
             mask_positions=[[token == self.tokenizer.mask_token_id for token in e["prompt_ids"]] for e in examples]
         )
+
+
+class PackedMLMCollator(Collator):
+    """MLM collator for packed protein sequences (e.g. UniRef50).
+
+    Expects pre-packed ``input_ids`` produced by ``pack_sequences`` / ``pack_sequences_fn``:
+    each example is a block of exactly ``block_size`` tokens where individual
+    sequences are separated by EOS tokens.
+
+    Produces three extras compared to ``DefaultMLMCollator``:
+
+    * ``attention_mask``: 3-D Boolean tensor ``(batch, seq_len, seq_len)`` — a
+      block-diagonal mask so that each protein sequence only attends to itself.
+    * ``positions``: 2-D Long tensor ``(batch, seq_len)`` — per-sequence position
+      indices that reset to 0 at the start of every protein.
+
+    Both are consumed by ``MLMLoss.loss_fn``, which branches on ``attention_mask.ndim``.
+    """
+
+    def __init__(
+        self,
+        tokenizer: Tokenizer,
+        block_size: int,
+        noise_schedule: NoiseSchedule,
+    ):
+        self.tokenizer = tokenizer
+        self.block_size = block_size
+        self.noise_schedule = noise_schedule
+
+    def __call__(
+        self,
+        examples: List[BaseCollatorInput],
+    ) -> MLMBatch:
+        input_ids = torch.stack(
+            [torch.tensor(e["input_ids"], dtype=torch.long) for e in examples]
+        )  # (bsz, seq_len)
+        bsz, seq_len = input_ids.shape
+        eos_id: int = self.tokenizer.eos_token_id
+
+        # --- block attention mask -------------------------------------------
+        # segment_start[b, i] = True when position i begins a new protein:
+        #   always True at position 0, and at any position immediately after EOS.
+        segment_start = torch.cat(
+            [
+                torch.ones(bsz, 1, dtype=torch.bool),
+                input_ids[:, :-1] == eos_id,
+            ],
+            dim=1,
+        )  # (bsz, seq_len)
+
+        segment_ids = segment_start.long().cumsum(dim=1) - 1  # (bsz, seq_len)
+        # True where query and key belong to the same protein
+        block_mask = segment_ids.unsqueeze(2) == segment_ids.unsqueeze(1)
+        # (bsz, seq_len, seq_len)
+
+        # --- per-sequence reset positions ------------------------------------
+        arange = torch.arange(seq_len).unsqueeze(0)  # (1, seq_len)
+        # For each position, record the absolute index of the current segment start
+        last_start = (arange * segment_start.long()).cummax(dim=1).values
+        reset_positions = (arange - last_start).long()  # (bsz, seq_len)
+
+        # --- MLM masking -----------------------------------------------------
+        target_ids = input_ids.clone()
+        t = torch.rand(bsz)
+        mask = torch.rand(bsz, seq_len) < t.unsqueeze(1)
+        masked_input_ids = input_ids.clone()
+        masked_input_ids[mask] = self.tokenizer.mask_token_id
+
+        return {
+            "input_ids": masked_input_ids,
+            "attention_mask": block_mask,
+            "target_ids": target_ids,
+            "positions": reset_positions,
+            "segment_ids": segment_ids,
+            "fixed_positions_mask": None,
+        }
