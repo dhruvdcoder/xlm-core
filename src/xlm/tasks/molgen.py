@@ -502,6 +502,7 @@ class DeNovoEval:
         compute_uniqueness: bool = True,
         compute_qed: bool = True,
         compute_sa: bool = True,
+        convert_to_smile: bool = True
     ):
         self.use_bracket_safe = use_bracket_safe
         self.compute_diversity = compute_diversity
@@ -509,6 +510,7 @@ class DeNovoEval:
         self.compute_uniqueness = compute_uniqueness
         self.compute_qed = compute_qed
         self.compute_sa = compute_sa
+        self.convert_to_smile = convert_to_smile
 
         # Lazy-loaded TDC oracles (to avoid import overhead)
         self._oracle_qed = None
@@ -575,7 +577,7 @@ class DeNovoEval:
         all_smiles = []
         for pred in predictions:
             safe_str = pred.get("text", "")
-            smiles = self._safe_to_smiles_with_bracket_handling(safe_str)
+            smiles = self._safe_to_smiles_with_bracket_handling(safe_str) if self.convert_to_smile else safe_str
             pred["smiles"] = smiles  # Add SMILES to prediction dict
             if (
                 smiles is not None
