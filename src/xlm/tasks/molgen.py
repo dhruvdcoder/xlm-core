@@ -556,12 +556,16 @@ class DeNovoEval:
         self,
         predictions: List[Dict[str, Any]],
         tokenizer: Any = None,
+        **kwargs: Any,
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         """Evaluate predictions and return updated predictions + aggregated metrics.
 
         Args:
             predictions: List of prediction dicts with 'text' field containing SAFE strings
             tokenizer: Optional tokenizer (not used for denovo, but kept for interface consistency)
+            **kwargs: Additional keyword arguments (ignored, accepted for
+                forward-compatibility with ``CompositePostHocEvaluator``
+                which passes ``dataloader_name``).
 
         Returns:
             Tuple of:
@@ -917,6 +921,7 @@ class FragmentEval(DeNovoEval):
         self,
         predictions: List[Dict[str, Any]],
         tokenizer: Any = None,
+        **kwargs: Any,
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         """Evaluate fragment generation predictions.
 

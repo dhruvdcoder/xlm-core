@@ -9,13 +9,27 @@ from xlm.datamodule import (
 from jaxtyping import Float, Integer
 from torch import Tensor as TT
 from xlm.noise import NoiseSchedule
-from typing import Callable, Dict, List, Literal, Optional, Any
+from typing import Any, Callable, Dict, List, Literal, Mapping, Optional
 from .types_mlm import MLMBatch
 from xlm.utils.nn import pad_truncate_list
 from xlm.utils.rank_zero import RankedLogger
 from torch.utils.data import IterableDataset
 
 logger = RankedLogger(__name__, rank_zero_only=True)
+
+
+def seq2seq_suffix_ids(
+    e: Mapping[str, Any],
+    target_field: str = "target_ids",
+) -> List[int]:
+    """Suffix token ids from ``target_field``, with legacy ``input_ids`` fallback."""
+    tf = target_field
+    if tf in e:
+        return list(e[tf])  # type: ignore[arg-type]
+    if tf == "target_ids" and "input_ids" in e:
+        return list(e["input_ids"])
+    return []
+
 
 ################################################################################
 # region: Collators
@@ -379,6 +393,7 @@ class MLMSeq2SeqTrainCollator(Collator):
             "max", "block", None
         ] = "block",  # None is max in seq without a limit. max is max in seq upto block_size
         loss_on_padding: bool = True,
+        target_field: str = "target_ids",
     ):
         self.tokenizer = tokenizer
         self.noise_schedule = noise_schedule
@@ -388,14 +403,18 @@ class MLMSeq2SeqTrainCollator(Collator):
         self.add_eos = add_eos
         self.truncate = truncate
         self.loss_on_padding = loss_on_padding
+        self.target_field = target_field
 
     def __call__(
         self,
         examples: List[Seq2SeqCollatorInput],
     ) -> MLMBatch:
+        suffix_lists = [
+            seq2seq_suffix_ids(e, self.target_field) for e in examples
+        ]
         prefix_suffix = prepare_prefix_suffix_ids(
             [e["prompt_ids"] for e in examples],
-            [e["input_ids"] for e in examples],
+            suffix_lists,
             self.tokenizer.pad_token_id,
             self.tokenizer.mask_token_id,
             eos_token_id=self.tokenizer.eos_token_id if self.add_eos else None,
@@ -432,6 +451,9 @@ class MLMSeq2SeqCollator(Collator):
             "max", "block", None
         ] = "block",  # None is max in seq without a limit. max is max in seq upto block_size
         loss_on_padding: bool = True,
+        prompt_field: str = "prompt_ids",
+        target_field: str = "target_ids",
+        pass_through_fields: Optional[List[str]] = None,
     ):
         self.tokenizer = tokenizer
         self.noise_schedule = noise_schedule
@@ -441,18 +463,47 @@ class MLMSeq2SeqCollator(Collator):
         self.add_eos = add_eos
         self.truncate = truncate
         self.loss_on_padding = loss_on_padding
+        self.prompt_field = prompt_field
+        self.target_field = target_field
+        self.pass_through_fields = (
+            list(pass_through_fields)
+            if pass_through_fields is not None
+            else ["answer", "target"]
+        )
+
+    def _prompt_ids(self, examples: List[Seq2SeqCollatorInput]) -> List[List[int]]:
+        pf = self.prompt_field
+        return [e[pf] for e in examples]  # type: ignore[misc]
+
+    def _suffix_ids(self, e: Mapping[str, Any]) -> List[int]:
+        return seq2seq_suffix_ids(e, self.target_field)
+
+    def _suffix_lists(self, examples: List[Seq2SeqCollatorInput]) -> List[List[int]]:
+        return [self._suffix_ids(e) for e in examples]
+
+    def _merge_pass_through(
+        self,
+        examples: List[Mapping[str, Any]],
+        batch: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        if not examples:
+            return batch
+        for key in self.pass_through_fields:
+            if key in examples[0]:
+                batch[key] = [ex[key] for ex in examples]
+        return batch
 
     def __call__(
         self,
         examples: List[Seq2SeqCollatorInput],
     ) -> MLMBatch:
         prefix = prepare_prefix_ids(
-            [e["prompt_ids"] for e in examples],
+            self._prompt_ids(examples),
             self.tokenizer.pad_token_id,
             max_seq_len=self.input_block_size,
         )
         suffix = mlm_single_segment_collate_fn(
-            [e["input_ids"] for e in examples],
+            self._suffix_lists(examples),
             self.tokenizer.pad_token_id,
             self.tokenizer.mask_token_id,
             bos_token_id=self.tokenizer.bos_token_id if self.add_bos else None,
@@ -461,17 +512,18 @@ class MLMSeq2SeqCollator(Collator):
             truncate=self.truncate,
             loss_on_padding=self.loss_on_padding,
         )
-        return MLMBatch(
-            input_ids=torch.cat(
+        batch = {
+            "input_ids": torch.cat(
                 [prefix["input_ids"], suffix["input_ids"]], dim=1
             ),
-            attention_mask=torch.cat(
+            "attention_mask": torch.cat(
                 [prefix["attention_mask"], suffix["attention_mask"]], dim=1
             ),
-            target_ids=torch.cat(
+            "target_ids": torch.cat(
                 [prefix["input_ids"], suffix["target_ids"]], dim=1
             ),
-        )
+        }
+        return self._merge_pass_through(examples, batch)  # type: ignore[return-value]
 
 
 class _MLMSeq2SeqPredCollator(MLMSeq2SeqCollator):
@@ -484,12 +536,12 @@ class _MLMSeq2SeqPredCollator(MLMSeq2SeqCollator):
         examples: List[Seq2SeqCollatorInput],
     ) -> MLMBatch:
         prefix = prepare_prefix_ids(
-            [e["prompt_ids"] for e in examples],
+            self._prompt_ids(examples),
             self.tokenizer.pad_token_id,
             max_seq_len=self.input_block_size,
         )
         suffix = mlm_single_segment_collate_fn(
-            [e["input_ids"] for e in examples],
+            self._suffix_lists(examples),
             self.tokenizer.pad_token_id,
             self.tokenizer.mask_token_id,
             bos_token_id=self.tokenizer.bos_token_id if self.add_bos else None,
@@ -500,39 +552,51 @@ class _MLMSeq2SeqPredCollator(MLMSeq2SeqCollator):
             mask_all=True,
         )
 
-        return MLMBatch(
-            input_ids=torch.cat(
+        batch = {
+            "input_ids": torch.cat(
                 [prefix["input_ids"], suffix["input_ids"]], dim=1
             ),
-            attention_mask=torch.cat(
+            "attention_mask": torch.cat(
                 [prefix["attention_mask"], suffix["attention_mask"]], dim=1
             ),
-            target_ids=torch.cat(
+            "target_ids": torch.cat(
                 [prefix["input_ids"], suffix["target_ids"]], dim=1
             ),
-        )
+        }
+        return self._merge_pass_through(examples, batch)  # type: ignore[return-value]
 
 
 class MLMSeq2SeqPredCollator(MLMSeq2SeqCollator):
-    """Input contains only the prefix and target_ids contain only the suffix if present."""
+    """Prefix-only or prefix+suffix: batch ``target_ids`` is omitted when every suffix is empty."""
 
     def __call__(
         self,
         examples: List[Seq2SeqCollatorInput],
     ) -> MLMBatch:
-
+        pf = self.prompt_field
         prefix = prepare_prefix_ids(
             [
-                e["prompt_ids"]
+                e[pf]  # type: ignore[misc]
                 + [self.tokenizer.bos_token_id] * int(self.add_bos)
                 for e in examples
             ],
             self.tokenizer.pad_token_id,
             max_seq_len=self.input_block_size,
         )
+        suffix_lists = self._suffix_lists(examples)
+        if all(len(s) == 0 for s in suffix_lists):
+            batch = {
+                "input_ids": prefix["input_ids"],
+                "attention_mask": prefix["attention_mask"],
+            }
+            return self._merge_pass_through(examples, batch)  # type: ignore[return-value]
+        if any(len(s) == 0 for s in suffix_lists):
+            raise ValueError(
+                "Mixed empty and non-empty suffix in one batch is not supported."
+            )
         # simply add eos and pad on right
         add_eos = int(self.add_eos)
-        max_len = max(len(e["input_ids"]) + add_eos for e in examples)
+        max_len = max(len(s) + add_eos for s in suffix_lists)
         if self.block_size is not None and max_len > self.block_size:
             raise ValueError(
                 f"Max length of target is greater than block size. {max_len} > {self.block_size}"
@@ -540,20 +604,20 @@ class MLMSeq2SeqPredCollator(MLMSeq2SeqCollator):
         max_len = self.block_size
         target_ids = [
             pad_truncate_list(
-                e["input_ids"]
-                + [self.tokenizer.eos_token_id] * int(self.add_eos),
+                s + [self.tokenizer.eos_token_id] * int(self.add_eos),
                 max_len,
                 self.tokenizer.pad_token_id,
                 pad_left=False,
             )
-            for e in examples
+            for s in suffix_lists
         ]
 
-        return MLMBatch(
-            input_ids=prefix["input_ids"],
-            attention_mask=prefix["attention_mask"],
-            target_ids=torch.tensor(target_ids, dtype=torch.long),
-        )
+        batch = {
+            "input_ids": prefix["input_ids"],
+            "attention_mask": prefix["attention_mask"],
+            "target_ids": torch.tensor(target_ids, dtype=torch.long),
+        }
+        return self._merge_pass_through(examples, batch)  # type: ignore[return-value]
 
 
 class MLMInfillWithExactTargetPredCollator(DefaultMLMCollator):
@@ -627,11 +691,12 @@ def print_batch_mlm(
     print(batch["input_ids"][0])
     print("attention_mask (int):")
     print(batch["attention_mask"][0].int())
-    print("target_ids:")
-    print(batch["target_ids"][0])
-    print("target tokens:")
-    _target_ids = _replace_100_with_pad(batch["target_ids"][0], tokenizer)
-    print(tokenizer.decode(_target_ids))
+    if "target_ids" in batch:
+        print("target_ids:")
+        print(batch["target_ids"][0])
+        print("target tokens:")
+        _target_ids = _replace_100_with_pad(batch["target_ids"][0], tokenizer)
+        print(tokenizer.decode(_target_ids))
 
 
 class DefaultInfillMLMCollator(Collator):

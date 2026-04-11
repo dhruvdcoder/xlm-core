@@ -1,0 +1,52 @@
+# @package _global_
+defaults:
+  - override /callbacks: default_hf
+  - override /datamodule: math500_dream
+  - override /noise_schedule: dummy
+  - override /model_type: dream_eval
+  - override /model: dream_7b
+
+per_device_batch_size: 4
+global_batch_size: 4
+block_size: 512
+monitored_metric: null
+init_dtype: bfloat16
+skip_init_weights: true
+
+global_components:
+  tokenizer:
+    _target_: xlm.backbones.dream.DreamTokenizer.from_pretrained
+    pretrained_model_name_or_path: dream-org/Dream-v0-Instruct-7B
+
+hub:
+  repo_id: dream-org/Dream-v0-Instruct-7B
+
+eval:
+  split: test
+
+predictor:
+  max_new_tokens: ${block_size}
+  max_steps: 512
+  temperature: 0.0
+  confidence: top_prob
+  block_size: 16
+  generate_until:
+    - <|endoftext|>
+    - "Problem:"
+    - <|eot_id|>
+    - <|beginoftext|>
+
+
+log_predictions:
+  _target_: xlm.log_predictions.LogPredictions
+  writers:
+    - file
+  additional_fields_from_batch:
+    - answer
+
+post_hoc_evaluator:
+  _target_: xlm.tasks.math500.Math500Eval
+
+trainer:
+  max_steps: 0
+  num_sanity_val_steps: 0

@@ -1,0 +1,22 @@
+# Minimal map-style eval dataset manager (no manual cache; optional HF map cache).
+_target_: xlm.datamodule.EvalDatasetManager
+collator: ???
+full_name: ???
+preprocess_function: null
+preprocess_function_kwargs: {}
+load_from_cache_file: false
+filter_fn: null
+filter_suffix: null
+columns_to_remove: null
+columns_to_keep: null
+stages:
+  - validate
+  - test
+dataloader_kwargs:
+  batch_size: ${per_device_batch_size}
+  num_workers: ${num_dataloader_workers}
+  shuffle: false
+  pin_memory: true
+  persistent_workers: false
+  prefetch_factor: ${dataloader_prefetch_factor}
+  drop_last: false

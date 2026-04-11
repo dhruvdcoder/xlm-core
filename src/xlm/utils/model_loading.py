@@ -4,12 +4,14 @@ This module provides a single, consistent interface for loading models
 for inference tasks (generation, evaluation, push to hub, demos).
 """
 
+import contextlib
 import os
 from typing import Any, Optional, cast
 
 import hydra
 import torch
 from omegaconf import DictConfig, OmegaConf
+from transformers.modeling_utils import no_init_weights
 
 from xlm.harness import Harness
 from xlm.utils.hf_hub import (
@@ -20,6 +22,40 @@ from xlm.utils.hf_hub import (
 from xlm.utils.rank_zero import RankedLogger
 
 logger = RankedLogger(__name__, rank_zero_only=True)
+
+_STR_TO_DTYPE = {
+    "float32": torch.float32,
+    "float16": torch.float16,
+    "bfloat16": torch.bfloat16,
+}
+
+
+def _resolve_init_dtype(cfg: DictConfig) -> Optional[torch.dtype]:
+    """Read ``init_dtype`` from config (if present) and resolve to a torch dtype."""
+    raw = OmegaConf.select(cfg, "init_dtype", default=None)
+    if raw is None:
+        return None
+    if isinstance(raw, str):
+        if raw not in _STR_TO_DTYPE:
+            raise ValueError(
+                f"Unsupported init_dtype '{raw}'. Choose from {list(_STR_TO_DTYPE)}."
+            )
+        return _STR_TO_DTYPE[raw]
+    return raw
+
+
+@contextlib.contextmanager
+def _default_dtype_ctx(dtype: Optional[torch.dtype]):
+    """Temporarily set ``torch.set_default_dtype`` if *dtype* is not None."""
+    if dtype is None:
+        yield
+        return
+    orig = torch.get_default_dtype()
+    torch.set_default_dtype(dtype)
+    try:
+        yield
+    finally:
+        torch.set_default_dtype(orig)
 
 
 def load_model_for_inference(
@@ -136,6 +172,8 @@ def load_model_for_inference(
     module_cls = hydra.utils.get_class(cfg.lightning_module._target_)
     return_ckpt_path: Optional[str] = None
 
+    init_dtype = _resolve_init_dtype(cfg)
+
     if full_ckpt_path is not None:
         # Load from full checkpoint
         logger.info(f"Loading model from full checkpoint: {full_ckpt_path}")
@@ -148,7 +186,8 @@ def load_model_for_inference(
         if manual_ema_restore:
             load_kwargs["manual_ema_restore"] = True
 
-        lightning_module = module_cls.load_from_checkpoint(**load_kwargs)
+        with _default_dtype_ctx(init_dtype):
+            lightning_module = module_cls.load_from_checkpoint(**load_kwargs)
         return_ckpt_path = full_ckpt_path
     else:
         # Instantiate new model
@@ -162,9 +201,21 @@ def load_model_for_inference(
         if manual_ema_restore:
             instantiate_kwargs["manual_ema_restore"] = True
 
-        lightning_module = hydra.utils.instantiate(
-            cfg.lightning_module, **instantiate_kwargs
+        skip_init = (
+            OmegaConf.select(cfg, "skip_init_weights", default=False)
+            and model_only_ckpt_path is not None
         )
+        if skip_init:
+            logger.info(
+                "Skipping weight initialization (skip_init_weights=True, "
+                "pretrained weights will be loaded)"
+            )
+        skip_ctx = no_init_weights() if skip_init else contextlib.nullcontext()
+
+        with _default_dtype_ctx(init_dtype), skip_ctx:
+            lightning_module = hydra.utils.instantiate(
+                cfg.lightning_module, **instantiate_kwargs
+            )
 
     lightning_module = cast(Harness, lightning_module)
 

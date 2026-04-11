@@ -1,0 +1,12 @@
+# @package _global_
+# Shared Dream harness + predictor. Compose via `dream` (training + LM metrics) or `dream_eval` (eval-only).
+lightning_module:
+  _target_: xlm.harness.Harness
+
+predictor:
+  _target_: dream.predictor_dream.DreamPredictor
+  logits_hook:
+    _target_: mlm.predictor_mlm.LogitsShiftBy1
+
+tags:
+  model_type: dream
