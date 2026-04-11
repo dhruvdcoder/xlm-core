@@ -53,13 +53,13 @@ model_harness:
 
 **Resolved component configs:**
 
-| Component | Config file | `_target_` |
-|---|---|---|
-| model_harness | `configs/common/model_harness/default.yaml` | `dd.diffusion.base.lm_harness_eval.Evaluator.manual_instantiate` |
-| model | `configs/common/model_harness/model/dream.yaml` | `dd.diffusion.dream.modelling_dream.DreamModel.from_pretrained` |
-| tokenizer | `configs/common/model_harness/tokenizer/dream.yaml` | `dd.diffusion.dream.tokenization_dream.DreamTokenizer.from_pretrained` |
-| predictor | `configs/common/model_harness/predictor/semi_ar.yaml` | `dd.diffusion.base.prediction.SemiARPredictor` |
-| task | `configs/evals/task/math500.yaml` | sets `args.tasks=math500`, `args.num_fewshot=4`, points to custom tasks dir |
+| Component     | Config file                                           | `_target_`                                                                  |
+|---------------|-------------------------------------------------------|-----------------------------------------------------------------------------|
+| model_harness | `configs/common/model_harness/default.yaml`           | `dd.diffusion.base.lm_harness_eval.Evaluator.manual_instantiate`            |
+| model         | `configs/common/model_harness/model/dream.yaml`       | `dd.diffusion.dream.modelling_dream.DreamModel.from_pretrained`             |
+| tokenizer     | `configs/common/model_harness/tokenizer/dream.yaml`   | `dd.diffusion.dream.tokenization_dream.DreamTokenizer.from_pretrained`      |
+| predictor     | `configs/common/model_harness/predictor/semi_ar.yaml` | `dd.diffusion.base.prediction.SemiARPredictor`                              |
+| task          | `configs/evals/task/math500.yaml`                     | sets `args.tasks=math500`, `args.num_fewshot=4`, points to custom tasks dir |
 
 ### 1.3 The Model Harness: `dd.diffusion.base.lm_harness_eval.Evaluator`
 
@@ -395,17 +395,17 @@ predictor:
 
 ### 3.4 Comparison: lm-eval-harness vs xlm-core eval
 
-| Aspect | lm-eval-harness | xlm-core eval (proposed) |
-|---|---|---|
-| Lines of code | ~5000 (task.py + evaluator.py + registry + filters + ...) | ~500 (4 files) |
-| Model interface | `LM` base class with `loglikelihood`, `generate_until`, etc. | `GenerativeModel` protocol with single `generate_from_prompts` |
-| Task definition | YAML + registration + ConfigurableTask (1800 lines) | YAML + EvalTaskConfig dataclass (~100 lines) |
-| Request dispatch | `Instance` objects grouped by type | Simple `List[str]` prompts |
-| Filters | `FilterEnsemble` with registry | Plain `Callable` |
-| Metrics | Registry-based with aggregation functions | Dict of `Callable` |
-| Fewshot | Complex sampler with caching | Simple random sampling |
-| Multi-GPU | Built-in padding + gather | Not needed initially (single GPU) |
-| Caching | SQLite-based request/response cache | Not needed initially |
+| Aspect           | lm-eval-harness                                              | xlm-core eval (proposed)                                       |
+|------------------|--------------------------------------------------------------|----------------------------------------------------------------|
+| Lines of code    | ~5000 (task.py + evaluator.py + registry + filters + ...)    | ~500 (4 files)                                                 |
+| Model interface  | `LM` base class with `loglikelihood`, `generate_until`, etc. | `GenerativeModel` protocol with single `generate_from_prompts` |
+| Task definition  | YAML + registration + ConfigurableTask (1800 lines)          | YAML + EvalTaskConfig dataclass (~100 lines)                   |
+| Request dispatch | `Instance` objects grouped by type                           | Simple `List[str]` prompts                                     |
+| Filters          | `FilterEnsemble` with registry                               | Plain `Callable`                                               |
+| Metrics          | Registry-based with aggregation functions                    | Dict of `Callable`                                             |
+| Fewshot          | Complex sampler with caching                                 | Simple random sampling                                         |
+| Multi-GPU        | Built-in padding + gather                                    | Not needed initially (single GPU)                              |
+| Caching          | SQLite-based request/response cache                          | Not needed initially                                           |
 
 ### 3.5 Implementation Plan
 
@@ -581,8 +581,8 @@ we write task-specific preprocessing functions for LLM eval datasets:
 def math500_preprocess_fn(example, tokenizer, *, num_fewshot=4, fewshot_examples=None):
     """Construct prompt with fewshot context and tokenize.
 
-    Returns dict with 'input_ids' (prompt tokens) for Dream's
-    diffusion_generate, which pads with mask tokens and denoises.
+    Returns dict with 'input_ids' (prompt tokens) for DreamPredictor,
+    which pads with mask tokens and iteratively denoises.
     """
     prompt = ""
     for ex in fewshot_examples[:num_fewshot]:
@@ -635,46 +635,46 @@ before computing pass@k or majority-vote accuracy.
 
 ### 5.4 Prompt-Conditioned Generation with Dream
 
-Dream's `diffusion_generate` already supports prompt conditioning. It pads
-`input_ids` with `mask_token_id` to `max_length`, then only denoises the
-masked positions:
+`DreamPredictor.predict()` supports prompt conditioning. It pads
+`input_ids` with `mask_token_id` to `max_length`, then iteratively
+denoises only the masked positions:
 
 ```python
-# generation_dream.py:_sample
-x = F.pad(input_ids, (0, max_length - input_ids.shape[1]), value=mask_token_id)
+# predictor_dream.py:predict
+x = F.pad(x, (0, total_len - x.shape[-1]), value=mask_token_id)
 # ...
-for i in range(steps):
-    mask_index = (x == mask_token_id)
-    # only generate at masked positions
+for step in range(self.max_steps):
+    masked = x == mask_token_id
+    # only unmask at masked positions
 ```
 
 So the preprocessing function provides the prompt as `input_ids`, and
-`diffusion_generate` appends mask tokens and generates the continuation.
-No changes to the model or predictor.
+the predictor appends mask tokens and generates the continuation.
 
 ### 5.5 Summary: Effort Estimate
 
-| Change | Effort | Touches existing code? |
-|---|---|---|
-| `CompositePostHocEvaluator` class | ~30 lines, new class | No |
-| Pass `dataloader_name` to `eval()` | 1 line in `compute_post_hoc_metrics` | Yes, minimal |
-| Separate results file output | ~15 lines in `compute_post_hoc_metrics` | Yes, additive |
-| `Math500Eval` class | ~40 lines, new class | No |
-| `math500_preprocess_fn` | ~30 lines, new function | No |
-| Hydra configs (dataset + evaluator) | YAML files | No |
+| Change                              | Effort                                  | Touches existing code? |
+|-------------------------------------|-----------------------------------------|------------------------|
+| `CompositePostHocEvaluator` class   | ~30 lines, new class                    | No                     |
+| Pass `dataloader_name` to `eval()`  | 1 line in `compute_post_hoc_metrics`    | Yes, minimal           |
+| Separate results file output        | ~15 lines in `compute_post_hoc_metrics` | Yes, additive          |
+| `Math500Eval` class                 | ~40 lines, new class                    | No                     |
+| `math500_preprocess_fn`             | ~30 lines, new function                 | No                     |
+| Hydra configs (dataset + evaluator) | YAML files                              | No                     |
 
 Total: ~120 lines of new code + YAML configs. The harness changes are two
 small additions (pass `dataloader_name`, write results file).
 
 ### 5.6 Comparison: Native Proposal vs Standalone Eval Module (Section 3)
 
-| Aspect | Standalone eval module (Section 3) | Native post_hoc_evaluator (this section) |
-|---|---|---|
-| New code | ~500 lines (4 new files) | ~120 lines (new classes + functions) |
-| New abstractions | `EvalTask`, `ResultProcessor`, `evaluate()`, `GenerativeModel`, `PredictorAdapter` | `CompositePostHocEvaluator`, task-specific `Eval` classes |
-| Training-time eval | Separate, must be wired in | Built-in (existing hooks) |
-| Standalone eval | Dedicated entry point | `trainer.test()` or `trainer.predict()` |
-| Multiple datasets | Managed by `evaluate()` | Multiple prediction dataloaders + composite evaluator |
-| Multiple predictions/prompt | Must implement | Already solved (`replicate_examples` + grouping) |
-| Config structure | New `configs/eval/` tree | Extends existing experiment configs |
-| Model interface | New `GenerativeModel` protocol + adapter | Uses existing `Predictor` protocol directly |
+| Aspect                      | Standalone eval module (Section 3)                                                 | Native post_hoc_evaluator (this section)                  |
+|-----------------------------|------------------------------------------------------------------------------------|-----------------------------------------------------------|
+| New code                    | ~500 lines (4 new files)                                                           | ~120 lines (new classes + functions)                      |
+| New abstractions            | `EvalTask`, `ResultProcessor`, `evaluate()`, `GenerativeModel`, `PredictorAdapter` | `CompositePostHocEvaluator`, task-specific `Eval` classes |
+| Training-time eval          | Separate, must be wired in                                                         | Built-in (existing hooks)                                 |
+| Standalone eval             | Dedicated entry point                                                              | `trainer.test()` or `trainer.predict()`                   |
+| Multiple datasets           | Managed by `evaluate()`                                                            | Multiple prediction dataloaders + composite evaluator     |
+| Multiple predictions/prompt | Must implement                                                                     | Already solved (`replicate_examples` + grouping)          |
+| Config structure            | New `configs/eval/` tree                                                           | Extends existing experiment configs                       |
+| Model interface             | New `GenerativeModel` protocol + adapter                                           | Uses existing `Predictor` protocol directly               |
+

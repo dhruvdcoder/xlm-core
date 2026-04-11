@@ -15,7 +15,7 @@ This model was migrated from xlm.lm.mlm to be an external model.
 
 from .model_mlm import RotaryTransformerMLMModel
 from .loss_mlm import MLMLoss
-from .predictor_mlm import MLMPredictor
+from .predictor_mlm import LogitsShiftBy1, MLMPredictor
 from .datamodule_mlm import (
     DefaultMLMCollator,
     MLMSeq2SeqTrainCollator,
@@ -35,6 +35,7 @@ from .history_mlm import HistoryTopKPlugin
 __all__ = [
     "RotaryTransformerMLMModel",
     "MLMLoss",
+    "LogitsShiftBy1",
     "MLMPredictor",
     "DefaultMLMCollator",
     "MLMSeq2SeqTrainCollator",

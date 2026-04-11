@@ -372,7 +372,7 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
     model: nn.Module
     config: DictConfig
     predictor: Predictor
-    loss_function: LossFunction
+    loss_function: Optional[LossFunction]
     noise_schedule: NoiseSchedule
     predictions_dir: Path
     tokenizer: Tokenizer
@@ -521,7 +521,11 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
             self.predictor.model = self.model
 
     def instantiate_loss_function(self):
-        self.loss_function = hydra.utils.instantiate(self.config.loss)
+        loss_cfg = OmegaConf.select(self.config, "loss", default=None)
+        if loss_cfg is None:
+            self.loss_function = None
+            return
+        self.loss_function = hydra.utils.instantiate(loss_cfg)
         if self.loss_function.tokenizer is None:
             self.loss_function.tokenizer = self.tokenizer
         if self.loss_function.model is None:
@@ -539,23 +543,28 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
         self,
         cfg: DictConfig,
     ):
-        """Attache metrics as modules"""
-        diagnostic_metrics: Dict[
-            Literal["train", "val", "test", "predict"],
-            Dict[
-                str, Dict[str, MetricWrapper]
-            ],  # k1, k2 = dl_name, metric_name
-        ] = (
-            hydra.utils.instantiate(cfg.diagnostic_metrics) or {}
+        """Attach metrics as modules. Either may be null/omitted for eval-only runs."""
+        diagnostic_cfg = OmegaConf.select(
+            cfg, "diagnostic_metrics", default=None
         )
-        reported_metrics: Dict[
-            Literal["train", "val", "test", "predict"],
-            Dict[
-                str, Dict[str, MetricWrapper]
-            ],  # k1, k2 = dl_name, metric_name
-        ] = (
-            hydra.utils.instantiate(cfg.reported_metrics) or {}
-        )
+        if diagnostic_cfg is None:
+            diagnostic_metrics: Dict[
+                Literal["train", "val", "test", "predict"],
+                Dict[str, Dict[str, MetricWrapper]],
+            ] = {}
+        else:
+            diagnostic_metrics = (
+                hydra.utils.instantiate(diagnostic_cfg) or {}
+            )
+
+        reported_cfg = OmegaConf.select(cfg, "reported_metrics", default=None)
+        if reported_cfg is None:
+            reported_metrics: Dict[
+                Literal["train", "val", "test", "predict"],
+                Dict[str, Dict[str, MetricWrapper]],
+            ] = {}
+        else:
+            reported_metrics = hydra.utils.instantiate(reported_cfg) or {}
         self.diagnostic_metrics = to_nested_module_dict(diagnostic_metrics)
         self.reported_metrics = to_nested_module_dict(reported_metrics)
         if "log_predictions" in cfg:
@@ -612,7 +621,7 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
         if self.loss_function is not None:
             if hasattr(self.loss_function, "configure"):
                 self.loss_function.configure(self)
-        if self.config.get("compile", False):
+        if self.config.get("compile", False) and self.loss_function is not None:
             # Issue: 1: We need to execute the prediction loop in eager mode
             # We need to execute the prediction loop in eager mode, but torch.compile.set_stance
             # is only available in torch >= 2.6. In torch 2.5, there is no way to tell torch to
@@ -768,6 +777,12 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
         """
         dataloader_name = dataloader_name or "lm"
         if "lm" in dataloader_name:
+            if self.loss_function is None:
+                raise RuntimeError(
+                    "This dataloader expects LM loss (name contains 'lm') but "
+                    "config has no `loss` key. Add `loss:` for training/validation "
+                    "on LM dataloaders, or use prediction-only dataloaders for eval."
+                )
             return self.loss_function(
                 batch, batch_idx, dataloader_idx, dataloader_name
             )
@@ -1349,20 +1364,20 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
         dataloader_name: str,
         epoch: int,
         step: int,
-        update_logged_predictions: bool = True,
     ) -> Optional[Dict[str, Any]]:
         """Compute post-hoc metrics on logged predictions.
 
         Similar to compute_generative_perplexity, but for arbitrary post-hoc metrics.
         Loads predictions from jsonl, computes per-sample and global metrics,
-        and logs aggregated results.
+        and logs aggregated results.  Results (per-sample + aggregated) are
+        written to a separate JSON file; the original predictions JSONL is
+        never modified.
 
         Args:
             split: train/val/test/predict
             dataloader_name: Name of the dataloader
             epoch: Current epoch
             step: Current step
-            update_logged_predictions: If True, update predictions jsonl with per-sample metrics
 
         Returns:
             Dictionary of aggregated metrics, or None if no evaluator
@@ -1383,11 +1398,10 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
 
         # 2. Compute metrics using evaluator
         predictions, aggregated_metrics = self.post_hoc_evaluator.eval(
-            predictions, tokenizer=self.tokenizer
+            predictions,
+            tokenizer=self.tokenizer,
+            dataloader_name=dataloader_name,
         )
-        # Add aggregated metrics to all predictions because we don't have access to the logged predictions directory.
-        for prediction in predictions:
-            prediction.update(**aggregated_metrics)
 
         # 3. Log aggregated metrics
         for metric_name, metric_value in aggregated_metrics.items():
@@ -1401,15 +1415,21 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
                 add_dataloader_idx=False,
             )
 
-        # 4. Update predictions jsonl with per-sample metrics
-        if update_logged_predictions:
-            self.log_predictions.update_predictions(
-                predictions,
-                step,
-                epoch,
-                split,
-                dataloader_name,
-                self,
+        # 4. Write results to a separate JSON file
+        results_path = (
+            self.predictions_dir
+            / f"{split}/{dataloader_name}/results_{epoch=}_{step=}.json"
+        )
+        results_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(results_path, "w") as f:
+            json.dump(
+                {
+                    "aggregated_metrics": aggregated_metrics,
+                    "predictions": predictions,
+                },
+                f,
+                indent=2,
+                default=str,
             )
 
         return aggregated_metrics
@@ -1551,7 +1571,6 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
                         dataloader_name,
                         self.trainer.current_epoch,
                         self.trainer.global_step,
-                        update_logged_predictions=True,
                     )
 
     def on_test_epoch_start(self) -> None:
@@ -1573,7 +1592,6 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
                         dataloader_name,
                         self.trainer.current_epoch,
                         self.trainer.global_step,
-                        update_logged_predictions=True,
                     )
 
     def on_predict_end(self) -> None:
@@ -1589,7 +1607,6 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
             "unconditional_prediction",
             self.trainer.current_epoch,
             self.trainer.global_step,
-            update_logged_predictions=True,
         )
 
     def on_load_checkpoint(self, checkpoint: dict) -> None:

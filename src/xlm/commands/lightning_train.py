@@ -10,12 +10,14 @@ if "PROJECT_ROOT" not in os.environ:
 os.environ["HYDRA_FULL_ERROR"] = "1"
 
 # region: Import necessary modules
+import contextlib
 from typing import Any, Dict, List
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from lightning import seed_everything
 from lightning.pytorch.loggers import Logger
 from lightning import Callback
+from transformers.modeling_utils import no_init_weights
 from xlm.utils.rank_zero import RankedLogger
 
 logger = RankedLogger(__name__, rank_zero_only=True)
@@ -150,13 +152,22 @@ def train(cfg: DictConfig):
     # )
     # instantiate the model
     torch.set_float32_matmul_precision("medium")
-    lightning_module = hydra.utils.instantiate(
-        cfg.lightning_module,
-        cfg,
-        tokenizer=tokenizer,
-        datamodule=datamodule,
-        _recursive_=False,
-    )
+    will_load_weights = ckpt_path is not None or model_only_ckpt_path is not None
+    skip_init = cfg.get("skip_init_weights", False) and will_load_weights
+    if skip_init:
+        logger.info(
+            "Skipping weight initialization (skip_init_weights=True, "
+            "pretrained weights will be loaded)"
+        )
+    skip_ctx = no_init_weights() if skip_init else contextlib.nullcontext()
+    with skip_ctx:
+        lightning_module = hydra.utils.instantiate(
+            cfg.lightning_module,
+            cfg,
+            tokenizer=tokenizer,
+            datamodule=datamodule,
+            _recursive_=False,
+        )
     if model_only_ckpt_path is not None:
         message = lightning_module.model.load_state_dict(
             torch.load(model_only_ckpt_path)

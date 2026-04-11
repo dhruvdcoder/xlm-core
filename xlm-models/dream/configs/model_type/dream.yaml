@@ -1,15 +1,7 @@
 # @package _global_
-# Dream (prd2-style) diffusion LM — set `loss` in the experiment config (training not wired here).
+# Training: dream_base + LM accumulated_loss metrics (requires prefix/update_fn from experiment or overrides).
 defaults:
+  - dream_base
   - /metrics@reported_metrics.train.lm.accumulated_loss: accumulated_loss
   - /metrics@reported_metrics.val.lm.accumulated_loss: accumulated_loss
   - /metrics@reported_metrics.test.lm.accumulated_loss: accumulated_loss
-
-lightning_module:
-  _target_: xlm.harness.Harness
-
-predictor:
-  _target_: dream.predictor_dream.DreamPredictor
-
-tags:
-  model_type: dream

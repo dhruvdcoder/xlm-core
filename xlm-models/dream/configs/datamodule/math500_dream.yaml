@@ -1,0 +1,13 @@
+# @package _global_
+defaults:
+  - default
+  - /collator@datamodule.dataset_managers.val.math500_prediction.collator: math500_pred_dream
+  - /collator@datamodule.dataset_managers.test.math500_prediction.collator: math500_pred_dream
+  - /datasets@datamodule.dataset_managers.val.math500_prediction: math500_test
+  - /datasets@datamodule.dataset_managers.test.math500_prediction: math500_test
+
+datamodule:
+  print_batch_fn: dream.datamodule_dream.print_batch_dream
+
+tags:
+  dataset: math500

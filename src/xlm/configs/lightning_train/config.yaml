@@ -94,6 +94,9 @@ log_predictions:
     - file
     - logger
 
+diagnostic_metrics: null
+reported_metrics: null
+
 tags:
   debug: false
   model_type: ???

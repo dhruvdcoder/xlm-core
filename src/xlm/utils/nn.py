@@ -187,18 +187,22 @@ def sample_from_logits(
     return perturbed_logits.argmax(dim=-1)
 
 
-def sample_from_top_k(k: int, logits: torch.Tensor) -> torch.Tensor:
+def sample_from_top_k(
+    k: int, logits: torch.Tensor, temperature: float = 1.0
+) -> torch.Tensor:
     """
     Sample from the top-k logits using the Gumbel-Max trick.
     Args:
-        logits: (*batch, seq_len, vocab_size) can have any number of leading dimensions.
         k: The number of top logits to consider for sampling.
+        logits: (*batch, seq_len, vocab_size) can have any number of leading dimensions.
+        temperature: Sampling temperature applied before filtering.
     Returns:
         (*batch, seq_len)
     """
     # Get the top-k logits and their indices
     if logits.shape[-1] < k:
         k = logits.shape[-1]
+    logits = logits / temperature
     top_k_logits, top_k_indices = torch.topk(
         logits, k, dim=-1
     )  # (*batch, seq_len, k)
@@ -224,7 +228,9 @@ def sample_from_top_k(k: int, logits: torch.Tensor) -> torch.Tensor:
     return sampled_indices_full  # (*batch, seq_len)
 
 
-def sample_from_top_p(p: float, logits: torch.Tensor) -> torch.Tensor:
+def sample_from_top_p(
+    p: float, logits: torch.Tensor, temperature: float = 1.0
+) -> torch.Tensor:
     """
     Sample from the top-p logits using the Gumbel-Max trick.
 
@@ -232,6 +238,7 @@ def sample_from_top_p(p: float, logits: torch.Tensor) -> torch.Tensor:
         p (float): The cumulative probability threshold. Must be between 0 and 1.
         logits (torch.Tensor): A tensor of shape (*batch, seq_len, vocab_size) representing
                                the unnormalized log probabilities for each token.
+        temperature: Sampling temperature applied before filtering.
 
     Returns:
         torch.Tensor: A tensor of shape (*batch, seq_len) containing the sampled token indices.
@@ -239,7 +246,8 @@ def sample_from_top_p(p: float, logits: torch.Tensor) -> torch.Tensor:
     if not (0.0 < p <= 1.0):
         raise ValueError(f"Parameter p must be in (0, 1], got {p}")
 
-    # Compute softmax probabilities
+    logits = logits / temperature
+
     probs = torch.softmax(
         logits, dim=-1
     )  # Shape: (*batch, seq_len, vocab_size)
@@ -320,9 +328,9 @@ def pad_truncate_list(
     if not pad_left:
         padded = ids[:max_len] + pad_values
     else:
-        padded = pad_values + ids[
-            -max_len:
-        ]  # when padding left, truncate left side
+        padded = (
+            pad_values + ids[-max_len:]
+        )  # when padding left, truncate left side
     if return_num_padded:
         return padded, num_padded
     else:

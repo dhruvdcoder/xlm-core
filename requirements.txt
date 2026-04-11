@@ -21,3 +21,4 @@ pydot
 tabulate
 pandas
 simple_slurm
+math-verify
