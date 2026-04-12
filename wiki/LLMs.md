@@ -121,7 +121,7 @@ The Dream model type consists of two layers on top of the upstream `DreamModelCo
 
 **`DreamModel`:** Inherits from `DreamModelCore`, sets `config_class = DreamConfig`, and serves as the pure forward-pass model (`input_ids -> MaskedLMOutput`). No generation logic lives in the model itself — all generation is handled by the predictor.
 
-**`DreamBackbone`:** Subclass of `DreamModel` that adapts the forward signature to the xlm-core MLM predictor protocol (`x_t, attention_mask, positions -> logits`). It converts a 2D `attention_mask` to the 4D format Dream's attention layers expect and returns raw logits (not `MaskedLMOutput`). HF checkpoints (e.g. Dream-v0-Instruct-7B) load directly without key-prefix issues since the weight names are identical to `DreamModelCore`.
+**`DreamXLMModel`:** Subclass of `DreamModel` that adapts the forward signature to the xlm-core MLM predictor protocol (`x_t, attention_mask, positions -> logits`). It converts a 2D `attention_mask` to the 4D format Dream's attention layers expect and returns raw logits (not `MaskedLMOutput`). HF checkpoints (e.g. Dream-v0-Instruct-7B) load directly without key-prefix issues since the weight names are identical to `DreamModelCore`.
 
 ### 13. Dream Predictor (`dream/predictor_dream.py`)
 
@@ -194,13 +194,13 @@ The seq2seq collators (`MLMSeq2SeqTrainCollator`, `MLMSeq2SeqCollator`, `MLMSeq2
 - `model_type/dream_base.yaml` — Shared base: sets `Harness` as the lightning module, `DreamPredictor` as the predictor with `LogitsShiftBy1` logits hook.
 - `model_type/dream.yaml` — Training variant: composes `dream_base` + `accumulated_loss` reported metrics for train/val/test. Existing config, now simplified to a 6-line file composing `dream_base`.
 - `model_type/dream_eval.yaml` — Eval-only variant: composes `dream_base` with no additional metrics.
-- `model/dream_7b.yaml` — Model config for `DreamBackbone` matching the [Dream-v0-Instruct-7B](https://huggingface.co/Dream-org/Dream-v0-Instruct-7B) architecture (Qwen2-based, 28 layers, GQA, RoPE).
+- `model/dream_7b.yaml` — Model config for `DreamXLMModel` matching the [Dream-v0-Instruct-7B](https://huggingface.co/Dream-org/Dream-v0-Instruct-7B) architecture (Qwen2-based, 28 layers, GQA, RoPE).
 - `collator/math500_pred_dream.yaml` — `MLMSeq2SeqPredCollator` configured for MATH-500 with `pass_through_fields: [answer, target]`.
 - `datamodule/math500_dream.yaml` — Datamodule composing the MATH-500 eval dataset with the Dream collator for val and test splits.
 - `experiment/math500_dream_eval.yaml` — Full experiment config for MATH-500 eval on Dream-7B: loads the Dream tokenizer, sets `init_dtype: bfloat16`, `skip_init_weights: true`, 512 diffusion steps, block-based unmasking (block_size=16), top_prob confidence, generate_until stop tokens, and `Math500Eval` post-hoc evaluator.
 - `debug/math500_debug.yaml` — Debug variant with reduced parameters for local testing.
 
-**`dream/__init__.py`:** Exports `DreamConfig`, `DreamModel`, `DreamBackbone`, `DreamPredictor`, `LogitsShiftBy1`, and `print_batch_dream`.
+**`dream/__init__.py`:** Exports `DreamConfig`, `DreamModel`, `DreamXLMModel`, `DreamPredictor`, `LogitsShiftBy1`, and `print_batch_dream`.
 
 **`dream/datamodule_dream.py`:** New file with `print_batch_dream` — a debug batch printer that logs the first example's decoded prompt for Dream/MLM prediction batches.
 
@@ -208,10 +208,10 @@ The seq2seq collators (`MLMSeq2SeqTrainCollator`, `MLMSeq2SeqCollator`, `MLMSeq2
 
 All MLM changes are designed to be backward-compatible. The table below summarizes the risks:
 
-| Change | Risk | Mitigation |
-|--------|------|------------|
-| `confidence` without `threshold` no longer errors | Low — new code path activates instead of crash | Old configs with both `confidence` + `threshold` are unchanged |
-| `MLMSeq2SeqPredCollator` may omit `target_ids` | Medium — only affects prompt-only batches | Only triggers when all suffixes are empty (new use case) |
-| Batch dicts built via `dict()` not `MLMBatch()` | Low — structurally identical | Pass-through fields are extra keys; existing code ignores them |
-| `tokenizer=None` allowed at init | None — Harness always sets tokenizer before use | `_require_tokenizer()` raises if used before set |
-| `target_field` defaults to `"target_ids"` with `input_ids` fallback | None — existing data uses `input_ids` and fallback handles it | Explicit `target_field="input_ids"` can be set if needed |
+| Change                                                              | Risk                                                          | Mitigation                                                     |
+|---------------------------------------------------------------------|---------------------------------------------------------------|----------------------------------------------------------------|
+| `confidence` without `threshold` no longer errors                   | Low — new code path activates instead of crash                | Old configs with both `confidence` + `threshold` are unchanged |
+| `MLMSeq2SeqPredCollator` may omit `target_ids`                      | Medium — only affects prompt-only batches                     | Only triggers when all suffixes are empty (new use case)       |
+| Batch dicts built via `dict()` not `MLMBatch()`                     | Low — structurally identical                                  | Pass-through fields are extra keys; existing code ignores them |
+| `tokenizer=None` allowed at init                                    | None — Harness always sets tokenizer before use               | `_require_tokenizer()` raises if used before set               |
+| `target_field` defaults to `"target_ids"` with `input_ids` fallback | None — existing data uses `input_ids` and fallback handles it | Explicit `target_field="input_ids"` can be set if needed       |

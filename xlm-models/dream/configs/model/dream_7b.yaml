@@ -1,4 +1,4 @@
-_target_: dream.dream_model.DreamBackbone
+_target_: dream.dream_model.DreamXLMModel
 config:
   _target_: dream.configuration_dream.DreamConfig
   # Aligned with https://huggingface.co/Dream-org/Dream-v0-Instruct-7B/blob/main/config.json

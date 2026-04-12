@@ -15,7 +15,7 @@ class DreamModel(DreamModelCore):
     config_class = DreamConfig
 
 
-class DreamBackbone(DreamModel):
+class DreamXLMModel(DreamModel):
     """Same weights as ``DreamModel``; ``forward`` matches the MLM predictor protocol.
 
     Accepts 2D ``attention_mask``, converts to 4D for Dream attention, and returns
