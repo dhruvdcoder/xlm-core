@@ -1,0 +1,7 @@
+# @package _global_
+# Training: dream_base + LM accumulated_loss metrics (requires prefix/update_fn from experiment or overrides).
+defaults:
+  - dream_base
+  - /metrics@reported_metrics.train.lm.accumulated_loss: accumulated_loss
+  - /metrics@reported_metrics.val.lm.accumulated_loss: accumulated_loss
+  - /metrics@reported_metrics.test.lm.accumulated_loss: accumulated_loss

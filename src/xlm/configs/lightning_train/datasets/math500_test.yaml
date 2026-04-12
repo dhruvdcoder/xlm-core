@@ -1,0 +1,12 @@
+defaults:
+  - default_eval
+
+collator: ???
+full_name: HuggingFaceH4/MATH-500/test
+preprocess_function: xlm.tasks.math500.math500_preprocess_fn
+preprocess_function_kwargs:
+  num_fewshot: 4
+columns_to_keep:
+  - prompt_ids
+  - target_ids
+  - answer
