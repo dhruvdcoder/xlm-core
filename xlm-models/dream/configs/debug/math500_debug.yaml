@@ -16,19 +16,21 @@ dataloader_persistent_workers: False
 
 trainer:
   log_every_n_steps: 1
-  limit_train_batches: 5
-  limit_val_batches: 5
-  limit_test_batches: 5
+  limit_train_batches: 1
+  limit_val_batches: 1
+  limit_test_batches: 1
 
 datamodule:
   dataset_managers:
     val:
       math500_prediction:
+        full_name: HuggingFaceH4/MATH-500/test[:1]
         preprocess_function_kwargs:
           num_fewshot: 1
         load_from_cache_file: false
     test:
       math500_prediction:
+        full_name: HuggingFaceH4/MATH-500/test[:1]
         preprocess_function_kwargs:
           num_fewshot: 1
         load_from_cache_file: false

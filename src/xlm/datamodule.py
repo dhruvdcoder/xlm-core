@@ -645,6 +645,30 @@ class SimpleSpaceTokenizerWithCyclicPads(SimpleSpaceTokenizer):
         )
 
 
+class SimpleSpaceTokenizerWithDeletion(SimpleSpaceTokenizer):
+
+    delete_token_str = "[DEL]"
+
+    def __init__(self, vocab: Sequence[str], **kwargs):
+        super().__init__(vocab=vocab, **kwargs)
+        del_str = self.delete_token_str
+        if del_str in self._vocab_str_to_int:
+            raise ValueError(
+                f"Deletion token {del_str!r} collides with an existing vocab entry"
+            )
+        new_id = len(self._vocab_str_to_int)
+        self._vocab_str_to_int[del_str] = new_id
+        self._vocab_int_to_str[new_id] = del_str
+        self.delete_token = del_str
+        self.delete_token_id = new_id
+
+    @classmethod
+    def for_numbers(
+        cls, vocab_size: int, **kwargs
+    ) -> "SimpleSpaceTokenizerWithDeletion":
+        return cls(vocab=list(map(str, range(vocab_size))), **kwargs)
+
+
 # endregion: Tokenizers
 ################################################################################
 

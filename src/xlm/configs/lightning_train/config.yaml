@@ -23,6 +23,7 @@ global_flags: null
 checkpointing_dir: ${paths.output_dir}/checkpoints
 resume_from_checkpoint: true
 resume_checkpoint_path: null
+init_dtype: null
 compile: false
 per_device_batch_size: 64
 per_device_val_batch_size: ${per_device_batch_size}

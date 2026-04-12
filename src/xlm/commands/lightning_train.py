@@ -18,6 +18,12 @@ from lightning import seed_everything
 from lightning.pytorch.loggers import Logger
 from lightning import Callback
 from transformers.modeling_utils import no_init_weights
+from xlm.utils.hf_hub import (
+    download_model_weights,
+    load_model_weights_into_model,
+    repo_id_from_hf_path,
+)
+from xlm.utils.model_loading import _default_dtype_ctx, _resolve_init_dtype
 from xlm.utils.rank_zero import RankedLogger
 
 logger = RankedLogger(__name__, rank_zero_only=True)
@@ -127,6 +133,27 @@ def train(cfg: DictConfig):
                 )
             model_only_ckpt_path = cfg.model_only_checkpoint_path
 
+    if model_only_ckpt_path is None and ckpt_path is None:
+        hub_repo_id = OmegaConf.select(cfg, "hub.repo_id", default=None)
+        if hub_repo_id is not None:
+            repo_id = repo_id_from_hf_path(hub_repo_id) or hub_repo_id
+            revision = OmegaConf.select(cfg, "hub.revision", default="main")
+            logger.info(
+                "Downloading model weights from Hugging Face Hub for training: "
+                f"{repo_id} (revision={revision})"
+            )
+            model_only_ckpt_path = download_model_weights(
+                repo_id=repo_id,
+                revision=revision,
+                token=os.getenv("HF_HUB_KEY"),
+            )
+    elif ckpt_path is not None and OmegaConf.select(
+        cfg, "hub.repo_id", default=None
+    ) is not None:
+        logger.warning(
+            "Ignoring hub.repo_id because a Lightning resume checkpoint is set."
+        )
+
     logger.info(f"Instantiating trainer <{cfg.trainer._target_}>")
     trainer = hydra.utils.instantiate(
         cfg.trainer, callbacks=callbacks, logger=loggers
@@ -153,14 +180,21 @@ def train(cfg: DictConfig):
     # instantiate the model
     torch.set_float32_matmul_precision("medium")
     will_load_weights = ckpt_path is not None or model_only_ckpt_path is not None
-    skip_init = cfg.get("skip_init_weights", False) and will_load_weights
+    skip_init = (
+        model_only_ckpt_path is not None and ckpt_path is None
+    ) or (
+        cfg.get("skip_init_weights", False) and will_load_weights
+    )
     if skip_init:
         logger.info(
-            "Skipping weight initialization (skip_init_weights=True, "
-            "pretrained weights will be loaded)"
+            "Skipping random weight init (pretrained or Lightning checkpoint will "
+            "supply weights; lowers peak CPU RAM during module construction)."
         )
     skip_ctx = no_init_weights() if skip_init else contextlib.nullcontext()
-    with skip_ctx:
+    init_dtype = _resolve_init_dtype(cfg)
+    if init_dtype is not None:
+        logger.info(f"Instantiating lightning module with init_dtype={init_dtype}")
+    with _default_dtype_ctx(init_dtype), skip_ctx:
         lightning_module = hydra.utils.instantiate(
             cfg.lightning_module,
             cfg,
@@ -169,14 +203,30 @@ def train(cfg: DictConfig):
             _recursive_=False,
         )
     if model_only_ckpt_path is not None:
-        message = lightning_module.model.load_state_dict(
-            torch.load(model_only_ckpt_path)
+        load_target = getattr(
+            lightning_module.model, "dream", lightning_module.model
         )
-        logger.warning(
-            "Loading weights for `model` from a pretrained model at "
-            f"{model_only_ckpt_path} before call to `trainer.fit` => before `.setup()` and `.configure_model()`"
+        logger.info(
+            f"Loading pretrained weights into {type(load_target).__name__} from "
+            f"{model_only_ckpt_path}"
         )
-        logger.warning(message)
+        load_model_weights_into_model(
+            load_target,
+            model_only_ckpt_path,
+            map_location="cpu",
+            strict=True,
+            weights_only=True,
+        )
+
+    # init_dtype lowers peak RAM during construction, but training uses float32 batch
+    # tensors and optimizers unless the Trainer runs full bf16 — mixed dtypes then
+    # break matmuls. Cast parameters back to float32 for the fit loop.
+    if init_dtype is not None and init_dtype != torch.float32:
+        logger.info(
+            "Casting module parameters to float32 for training "
+            f"(construction used init_dtype={init_dtype})."
+        )
+        lightning_module.float()
 
     # train
     if cfg.job_type == "train":
