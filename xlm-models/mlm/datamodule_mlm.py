@@ -162,6 +162,7 @@ def prepare_prefix_ids(
     pad_token_id: int,
     max_seq_len: Optional[int] = None,
     truncate: Literal["max", "block", None] = "block",
+    pad_left: bool = True
 ) -> Dict[str, TT]:
     """
     Prepare prefix ids for seq2seq tasks.
@@ -200,11 +201,11 @@ def prepare_prefix_ids(
                 temp,
                 max_len,
                 pad_token_id,
-                pad_left=True,
+                pad_left=pad_left,
             )
         )
         attention_mask.append(
-            pad_truncate_list([1] * len(temp), max_len, 0, pad_left=True)
+            pad_truncate_list([1] * len(temp), max_len, 0, pad_left=pad_left)
         )
 
     return {
@@ -658,6 +659,85 @@ class MLMInfillWithExactTargetPredCollator(DefaultMLMCollator):
                 f"Target ids and input ids have different shapes. {batch['target_ids'].shape} != {batch['input_ids'].shape}"
             )
         return batch
+
+class MLMDreamInfillPredCollator(Collator):
+    def __init__(
+        self,
+        tokenizer: Tokenizer,
+        add_bos: bool = True,
+        add_eos: bool = True,
+        pass_through_fields: Optional[List[str]] = None,
+        mask_expansion: bool = False,
+        fix_middle_length: Optional[int] = None,
+        max_tokens: Optional[int] = None,
+        max_prompt_len: Optional[int] = None,
+        max_gen_len: Optional[int] = None,
+        min_gen_len: Optional[int] = None,
+        pad_to_max_len: bool = False,
+    ):
+        self.tokenizer = tokenizer
+        self.add_bos = add_bos
+        self.add_eos = add_eos
+        self.pass_through_fields = (
+            list(pass_through_fields)
+            if pass_through_fields is not None
+            else []
+        )
+        self.mask_expansion = mask_expansion
+        self.fix_middle_length = fix_middle_length
+        self.max_tokens = max_tokens
+        self.max_prompt_len = max_prompt_len
+        self.max_gen_len = max_gen_len
+        self.min_gen_len = min_gen_len
+        self.pad_to_max_len = pad_to_max_len
+
+    def __call__(
+        self,
+        examples: List[BaseCollatorInput],
+    ) -> MLMBatch:
+        def _middle_mask_len(e: Mapping[str, Any]) -> int:
+            if self.fix_middle_length is not None:
+                return int(self.fix_middle_length)
+            if not self.mask_expansion:
+                return len(e["middle_ids"])
+            return self.min_gen_len
+
+        input_ids = [
+            [self.tokenizer.bos_token_id] * int(self.add_bos)
+            + list(e["prefix_ids"])
+            + [self.tokenizer.mask_token_id] * _middle_mask_len(e)
+            + list(e['suffix_ids'])
+            + [self.tokenizer.eos_token_id] * int(self.add_eos)
+            for e in examples
+        ]
+            
+        input_ids = [p[-self.max_prompt_len:] for p in input_ids]
+        if not self.mask_expansion:
+            max_seq_len = self.max_tokens if self.pad_to_max_len else min(self.max_tokens, max([len(p)+self.max_gen_len for p in input_ids]))
+            batch = prepare_prefix_ids(
+                input_ids,
+                self.tokenizer.pad_token_id,
+                max_seq_len=max_seq_len,
+                truncate="block",
+                pad_left=False
+            )
+        else: # Keep batch size as 1
+            max_prompt_len_batch = max(len(p) for p in input_ids)
+            batch = prepare_prefix_ids(
+                input_ids,
+                self.tokenizer.pad_token_id,
+                max_seq_len=max_prompt_len_batch,
+                truncate="block",
+                pad_left=False
+            )
+        batch["prefix_lens"] = [len([self.tokenizer.bos_token_id] * int(self.add_bos)
+                + list(e["prefix_ids"])) for e in examples]
+        batch["middle_lens"] = [len(e["middle_ids"]) for e in examples]
+ 
+        for key in self.pass_through_fields:
+            if key in examples[0]:
+                batch[key] = [ex[key] for ex in examples]
+        return batch 
 
 
 def _replace_100_with_pad(ids: torch.Tensor, tokenizer: Tokenizer):

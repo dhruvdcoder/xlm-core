@@ -27,7 +27,7 @@ STANDARD_XLM_MODELS_DIRS = ["xlm-models"]
 ENV_XLM_MODELS_PATH = "XLM_MODELS_PATH"  # dir containing external models
 ENV_XLM_MODELS_PACKAGES = "XLM_MODELS_PACKAGES"  # installed python packages containing external models, comma separated list of package names
 CORE_XLM_MODELS = (
-    "arlm:mlm:ilm:mdlm:flexmdm"  # core models available in xlm-models package
+    "arlm:mlm:ilm:mdlm:flexmdm:dream:dreamon"  # core models available in xlm-models package
 )
 
 

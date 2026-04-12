@@ -1,0 +1,15 @@
+_target_: mlm.datamodule_mlm.MLMDreamInfillPredCollator
+tokenizer: ${global_components:tokenizer}
+add_bos: false
+add_eos: false
+mask_expansion: true
+max_tokens: 2048
+max_prompt_len: 2048
+min_gen_len: 64
+max_gen_len: 64
+pad_to_max_len: false
+pass_through_fields:
+  - canonical_solution
+  - prefix
+  - suffix
+  - task_id

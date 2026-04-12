@@ -1313,9 +1313,13 @@ class EvalDatasetManager:
         stages: Optional[
             List[Literal["fit", "validate", "test", "predict"]]
         ] = None,
+        load_func: Optional[str] = None,
+        load_func_kwargs: Optional[Dict[str, Any]] = None,
     ):
         self.collator = collator
         self.full_name = full_name
+        self.load_func = load_func
+        self.load_func_kwargs = load_func_kwargs or {}
         self.dataloader_kwargs = dataloader_kwargs
         self.preprocess_function = preprocess_function
         self.preprocess_function_kwargs = preprocess_function_kwargs or {}
@@ -1404,7 +1408,13 @@ class EvalDatasetManager:
         logger.info(
             f"EvalDatasetManager: preparing {self.full_name} (no manual cache)"
         )
-        ds = self._download(num_proc=num_proc)
+        if self.load_func:
+            load_fn: Callable[..., Any] = get_function(
+                self.load_func
+            )
+            ds = load_fn(**self.load_func_kwargs)
+        else:
+            ds = self._download(num_proc=num_proc)
         ds = self._preprocess(ds, tokenizer, num_proc=num_proc)
         return ds
 

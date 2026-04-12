@@ -1,0 +1,22 @@
+# @package _global_
+defaults:
+  - default
+  - /collator@datamodule.dataset_managers.val.humaneval_infill_prediction.collator: humaneval_infill_pred_dreamon
+  - /collator@datamodule.dataset_managers.test.humaneval_infill_prediction.collator: humaneval_infill_pred_dreamon
+  - /datasets@datamodule.dataset_managers.val.humaneval_infill_prediction: humaneval_infill_test
+  - /datasets@datamodule.dataset_managers.test.humaneval_infill_prediction: humaneval_infill_test
+
+datamodule:
+  print_batch_fn: dream.datamodule_dream.print_batch_dream
+  dataset_managers:
+    test:
+      humaneval_infill_prediction:
+        load_func_kwargs:
+          benchmark_name: single-line
+    val:
+      humaneval_infill_prediction:
+        load_func_kwargs:
+          benchmark_name: single-line
+
+tags:
+  dataset: humaneval_infill
