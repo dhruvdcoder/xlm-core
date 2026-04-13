@@ -1,4 +1,4 @@
-from typing import Optional, Protocol, Tuple, TypedDict, List, Union
+from typing import Optional, Protocol, Tuple, TypedDict, List, Union, Any
 
 from jaxtyping import Float, Integer, Bool
 from torch import Tensor as TT
@@ -35,6 +35,7 @@ class MLMBatch(TypedDict, total=False):
     target_ids: Optional[Integer[TT, " batch seq_len"]]
     positions: Optional[Integer[TT, " batch seq_len"]]
     segment_ids: Optional[Integer[TT, " batch seq_len"]]
+    block_mask: Optional[Any]  # FlexAttention BlockMask built in PackedMLMCollator; None otherwise
     fixed_positions_mask: Optional[Bool[TT, " batch seq_len"]]
 
 

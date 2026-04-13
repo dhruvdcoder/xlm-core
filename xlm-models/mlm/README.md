@@ -54,7 +54,7 @@ xlm job_type=train job_name=uniref50_packed_mlm_run experiment=uniref50_packed_m
 
 With FlexAttention (recommended — fused Triton kernel, no O(seq²) mask materialisation):
 ```bash
-xlm job_type=train job_name=uniref50_packed_mlm_run experiment=uniref50_packed_mlm \
+xlm job_type=train job_name=uniref50_packed_mlm_debug experiment=uniref50_packed_mlm debug=overfit \
     model.use_flex_attn=true
 ```
 

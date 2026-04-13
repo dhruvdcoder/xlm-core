@@ -688,6 +688,12 @@ class PackedMLMCollator(Collator):
       indices that reset to 0 at the start of every protein.
 
     Both are consumed by ``MLMLoss.loss_fn``, which branches on ``attention_mask.ndim``.
+
+    When ``use_flex_attn=True``, a FlexAttention ``BlockMask`` is also built here
+    on the CPU (inside the DataLoader worker) and stored as ``batch["block_mask"]``.
+    Building it in the collator keeps it outside the ``torch.compile``d ``loss_fn``
+    region, eliminating the graph-break that would otherwise occur.
+    ``MLMLoss.__call__`` moves it to the correct device before calling ``loss_fn``.
     """
 
     def __init__(
@@ -695,10 +701,12 @@ class PackedMLMCollator(Collator):
         tokenizer: Tokenizer,
         block_size: int,
         noise_schedule: NoiseSchedule,
+        use_flex_attn: bool = False,
     ):
         self.tokenizer = tokenizer
         self.block_size = block_size
         self.noise_schedule = noise_schedule
+        self.use_flex_attn = use_flex_attn
 
     def __call__(
         self,
@@ -739,11 +747,31 @@ class PackedMLMCollator(Collator):
         masked_input_ids = input_ids.clone()
         masked_input_ids[mask] = self.tokenizer.mask_token_id
 
+        # --- FlexAttention BlockMask (optional, built on CPU in the worker) --
+        flex_block_mask = None
+        if self.use_flex_attn:
+            from torch.nn.attention.flex_attention import create_block_mask as _cbm
+            seg_flat = segment_ids.reshape(-1)  # CPU tensor, shape [bsz * seq_len]
+            seq_len_int: int = seq_len
+            def _doc_mask_mod(b, h, q_idx, kv_idx,
+                               _sf=seg_flat, _sl=seq_len_int):
+                return _sf[b * _sl + q_idx] == _sf[b * _sl + kv_idx]
+            flex_block_mask = _cbm(
+                _doc_mask_mod,
+                B=bsz,
+                H=None,
+                Q_LEN=seq_len,
+                KV_LEN=seq_len,
+                device="cpu",
+                _compile=False,  # no Triton on CPU workers
+            )
+
         return {
             "input_ids": masked_input_ids,
             "attention_mask": block_mask,
             "target_ids": target_ids,
             "positions": reset_positions,
             "segment_ids": segment_ids,
+            "block_mask": flex_block_mask,
             "fixed_positions_mask": None,
         }
