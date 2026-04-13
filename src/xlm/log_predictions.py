@@ -478,6 +478,8 @@ class LogPredictions:
         """
         if self.additional_fields_from_batch is not None:
             for field in self.additional_fields_from_batch:
+                if field not in batch:
+                    continue
                 for i, pred in enumerate(predictions):
                     pred[field] = batch[field][i]
         return predictions

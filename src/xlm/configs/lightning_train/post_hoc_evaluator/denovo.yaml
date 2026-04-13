@@ -1,7 +1,14 @@
-_target_: xlm.tasks.molgen.DeNovoEval
+_target_: xlm.tasks.safe_molgen.DeNovoEval
 use_bracket_safe: ${oc.select:use_bracket_safe,true}
 compute_diversity: True
 compute_validity: True
 compute_uniqueness: True
 compute_qed: True
 compute_sa: True
+compute_fcd: False
+fcd_reference_dataset_path: null
+fcd_reference_dataset_name: null
+fcd_reference_split: "train"
+fcd_reference_column: "smiles"
+fcd_num_reference: 10000
+fcd_unique_generated: True

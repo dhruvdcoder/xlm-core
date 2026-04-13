@@ -1,3 +1,5 @@
+import pickle
+import random
 import torch
 from torch.utils.data import IterableDataset
 from xlm.datamodule import (
@@ -14,6 +16,7 @@ from .types_mlm import MLMBatch
 from xlm.utils.nn import pad_truncate_list
 from xlm.utils.rank_zero import RankedLogger
 from torch.utils.data import IterableDataset
+from xlm.tasks.safe_molgen import ZINC_LENGTH_REF_FILE
 
 logger = RankedLogger(__name__, rank_zero_only=True)
 
@@ -33,6 +36,7 @@ def seq2seq_suffix_ids(
 
 ################################################################################
 # region: Collators
+
 
 class MLMEmptyDataset(IterableDataset):
     def __init__(
@@ -74,8 +78,51 @@ class MLMEmptyDataset(IterableDataset):
 
     def __iter__(self):
         for _ in range(self.num_examples):
-            ex = {"input_ids": [self.tokenizer.mask_token_id] * self.max_length}
+            ex = {
+                "input_ids": [self.tokenizer.mask_token_id] * self.max_length
+            }
             yield ex
+
+
+class MLMEmptyDatasetFromLengthRef(IterableDataset):
+    """Yields all-mask sequences whose lengths are sampled from a reference file.
+
+    Each line of the file is an integer sequence length. On each iteration,
+    a length is drawn uniformly at random and clamped to ``min_length``.
+    BOS/EOS are not included — the collator adds them as usual.
+    """
+
+    def __init__(
+        self,
+        tokenizer: Tokenizer,
+        num_examples: int,
+        length_ref_file: str = str(ZINC_LENGTH_REF_FILE),
+        min_length: int = 1,
+    ):
+        self.tokenizer = tokenizer
+        self.num_examples = num_examples
+        self.min_length = min_length
+        if length_ref_file.endswith(".txt"):
+            with open(length_ref_file) as f:
+                self.lengths = [
+                    int(line.strip()) for line in f if line.strip()
+                ]
+        elif length_ref_file.endswith(".pkl"):
+            with open(length_ref_file, "rb") as f:
+                self.lengths = pickle.load(f)
+        else:
+            raise ValueError(
+                f"length_ref_file {length_ref_file!r} must end with .txt or .pkl"
+            )
+        if not self.lengths:
+            raise ValueError(
+                f"length_ref_file {length_ref_file!r} contains no integer lengths"
+            )
+
+    def __iter__(self):
+        for _ in range(self.num_examples):
+            n = max(random.choice(self.lengths), self.min_length)
+            yield {"input_ids": [self.tokenizer.mask_token_id] * n}
 
 
 def mlm_single_segment_collate_fn(
@@ -129,9 +176,23 @@ def mlm_single_segment_collate_fn(
         attention_mask.append(_attention_mask)
         _target_ids = _ids.clone()
         if mask_positions is not None:
-            positions_to_mask.append(torch.tensor([True]*add_bos + mask_positions[i] + [True]*add_eos + [True]*(len(_ids) - len(temp))))
+            positions_to_mask.append(
+                torch.tensor(
+                    [True] * add_bos
+                    + mask_positions[i]
+                    + [True] * add_eos
+                    + [True] * (len(_ids) - len(temp))
+                )
+            )
             assert len(_ids) == len(positions_to_mask[i])
-            fixed_positions_mask.append(torch.tensor([False]*add_bos + [not _ for _ in mask_positions[i]] + [False]*add_eos + [False]*(len(_ids) - len(temp))))
+            fixed_positions_mask.append(
+                torch.tensor(
+                    [False] * add_bos
+                    + [not _ for _ in mask_positions[i]]
+                    + [False] * add_eos
+                    + [False] * (len(_ids) - len(temp))
+                )
+            )
         if not loss_on_padding:
             _target_ids[~_attention_mask] = -100
 
@@ -153,7 +214,11 @@ def mlm_single_segment_collate_fn(
         "input_ids": input_ids,
         "attention_mask": attention_mask,
         "target_ids": torch.stack(target_ids, dim=0),
-        "fixed_positions_mask": torch.stack(fixed_positions_mask, dim=0) if mask_positions is not None else None
+        "fixed_positions_mask": (
+            torch.stack(fixed_positions_mask, dim=0)
+            if mask_positions is not None
+            else None
+        ),
     }
 
 
@@ -734,5 +799,11 @@ class DefaultInfillMLMCollator(Collator):
             max_seq_len=self.block_size,
             truncate=self.truncate,
             loss_on_padding=self.loss_on_padding,
-            mask_positions=[[token == self.tokenizer.mask_token_id for token in e["prompt_ids"]] for e in examples]
+            mask_positions=[
+                [
+                    token == self.tokenizer.mask_token_id
+                    for token in e["prompt_ids"]
+                ]
+                for e in examples
+            ],
         )

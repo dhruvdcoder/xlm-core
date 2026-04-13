@@ -5,8 +5,8 @@ _target_: xlm.datamodule.DatasetManager
 collator: ??? # model specific collator
 full_name: datamol-io/safe-gpt/train # <repo>/<ds_name>/<split_to_download>
 full_name_debug: datamol-io/safe-gpt/train
-preprocess_function: null #xlm.tasks.molgen.safe_bracket_preprocess_fn
-on_the_fly_processor: xlm.tasks.molgen.safe_bracket_on_the_fly_processor_combined #xlm.datamodule.token_ids_to_input_ids
+preprocess_function: null #xlm.tasks.safe_molgen.safe_bracket_preprocess_fn
+on_the_fly_processor: xlm.tasks.safe_molgen.safe_bracket_on_the_fly_processor_combined #xlm.datamodule.token_ids_to_input_ids
 on_the_fly_processor_kwargs:
     block_size: ${block_size}
 on_the_fly_group_processor: null
