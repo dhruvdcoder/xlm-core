@@ -4568,7 +4568,7 @@
 
 
 <h3 id="mlm.model_mlm.RotaryTransformerMLMModel.forward" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">forward</span><span class="p">(</span><span class="n">x_t</span><span class="p">,</span> <span class="n">attention_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">positions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">token_type_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">segment_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">block_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">forward</span><span class="p">(</span><span class="n">x_t</span><span class="p">,</span> <span class="n">attention_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">positions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">block_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 </h3>
 
@@ -4613,7 +4613,8 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The attention mask of shape (*batch, seq_len), which is True for non-padding tokens.</p>
+                <p>Boolean mask <code>(*batch, seq_len)</code> — valid (non-padding)
+tokens.  Ignored when <code>block_mask</code> is set (packed + FlexAttention).</p>
               </div>
             </td>
             <td>
@@ -4629,28 +4630,8 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The positions of the tokens of shape (*batch, seq_len)</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>segment_ids</code>
-            </td>
-            <td>
-                  <code><span title="typing.Optional">Optional</span>[<span title="jaxtyping.Integer">Integer</span>[<span title="torch.Tensor">Tensor</span>, &#39; *batch seq_len&#39;]]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Optional integer tensor (*batch, seq_len) produced by
-PackedMLMCollator.  When present and use_flex_attn=True, a
-BlockMask is built from it (document masking) and used in place
-of the full 3-D boolean attention_mask.  The BlockMask is
-constructed once here and shared across all transformer layers to
-amortise its cost.</p>
+                <p>Per-token RoPE positions <code>(*batch, seq_len)</code>.  Required for
+packed sequences (reset at each segment boundary).</p>
               </div>
             </td>
             <td>
@@ -4665,11 +4646,8 @@ amortise its cost.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Optional pre-built FlexAttention BlockMask.  When
-provided (built by <code>PackedMLMCollator</code> with
-<code>use_flex_attn=True</code>), it is used directly and
-<code>create_block_mask</code> is <em>not</em> called in the forward pass,
-avoiding a graph break under <code>torch.compile</code>.</p>
+                <p>FlexAttention <code>BlockMask</code> for packed training when
+<code>use_flex_attn=True</code>.  When set, <code>attention_mask</code> is ignored.</p>
               </div>
             </td>
             <td>

@@ -3834,6 +3834,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#mlm.types_mlm.PackedFlexMLMBatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;PackedFlexMLMBatch
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#mlm.types_mlm.MLMSeq2SeqPredictionBatch" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4595,13 +4606,13 @@
           <tr class="doc-section-item">
             <td><code><span title="mlm.types_mlm.MLMBatch.attention_mask">attention_mask</span></code></td>
             <td>
-                  <code><span title="torch.Tensor">Tensor</span></code>
+                  <code><span title="typing_extensions.NotRequired">NotRequired</span>[<span title="torch.Tensor">Tensor</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
                 <p>Boolean mask — shape <code>(batch, seq_len)</code> for standard
-padded batches (True = valid token), or <code>(batch, seq_len, seq_len)</code>
-for packed sequences with per-protein block attention.</p>
+padded batches (True = valid token).  Omitted when <code>model.use_flex_attn</code>
+and using <code>PackedMLMCollator</code> (FlexAttention only).</p>
               </div>
             </td>
           </tr>
@@ -4623,24 +4634,31 @@ for packed sequences with per-protein block attention.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Optional per-token position indices.  When present (packed
-sequences) they reset to 0 at the start of each protein; when absent
-<code>MLMLoss</code> derives positions from the 1-D attention mask.</p>
+                <p>Per-token RoPE positions.  Required for packed FlexAttention
+batches; otherwise <code>MLMLoss</code> derives from the 1-D <code>attention_mask</code>.</p>
               </div>
             </td>
           </tr>
           <tr class="doc-section-item">
             <td><code><span title="mlm.types_mlm.MLMBatch.segment_ids">segment_ids</span></code></td>
             <td>
-                  <code><span title="typing.Optional">Optional</span>[<span title="jaxtyping.Integer">Integer</span>[<span title="torch.Tensor">Tensor</span>, &#39; batch seq_len&#39;]]</code>
+                  <code><span title="typing_extensions.NotRequired">NotRequired</span>[<span title="jaxtyping.Integer">Integer</span>[<span title="torch.Tensor">Tensor</span>, &#39; batch seq_len&#39;]]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Optional integer tensor <code>(batch, seq_len)</code> where each
-position holds the 0-based index of the protein it belongs to within
-the packed block.  Produced by <code>PackedMLMCollator</code> and consumed by
-<code>RotaryTransformerMLMModel</code> to build a <code>BlockMask</code> for
-FlexAttention-based document masking.</p>
+                <p>Packed batches only — per-token segment index (for <code>mask_mod</code>).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlm.types_mlm.MLMBatch.block_mask">block_mask</span></code></td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="typing.Any">Any</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>FlexAttention <code>BlockMask</code> from <code>PackedMLMCollator</code> when
+<code>model.use_flex_attn=True</code>.</p>
               </div>
             </td>
           </tr>
@@ -4658,6 +4676,56 @@ not be masked (used by infilling collators).</p>
           </tr>
       </tbody>
     </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="mlm.types_mlm.PackedFlexMLMBatch" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>PackedFlexMLMBatch</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="typing.TypedDict">TypedDict</span></code></p>
+
+
+
+        <p>Batch from <code>PackedMLMCollator</code> when <code>model.use_flex_attn=True</code>.</p>
+<p><code>segment_ids</code> match the FlexAttention <code>BlockMask</code> and are reused in
+<code>MLMLoss.__call__</code> for GPU <code>mask_mod</code> patching (no duplicate EOS logic).</p>
 
 
 
