@@ -29,6 +29,9 @@ lr_scheduler:
   num_training_steps: ${trainer.max_steps}
   monitor: "train/loss"
 
+model:
+  use_flex_attn: true
+
 callbacks:
   checkpoint_every_n_steps:
     every_n_train_steps: 2500

@@ -1,5 +1,7 @@
 from typing import Optional, Protocol, Tuple, TypedDict, List, Union, Any
 
+from typing_extensions import NotRequired
+
 from jaxtyping import Float, Integer, Bool
 from torch import Tensor as TT
 
@@ -15,28 +17,39 @@ class MLMBatch(TypedDict, total=False):
     Attributes:
         input_ids: The (possibly masked) input token ids.
         attention_mask: Boolean mask — shape ``(batch, seq_len)`` for standard
-            padded batches (True = valid token), or ``(batch, seq_len, seq_len)``
-            for packed sequences with per-protein block attention.
+            padded batches (True = valid token).  Omitted when ``model.use_flex_attn``
+            and using ``PackedMLMCollator`` (FlexAttention only).
         target_ids: Ground-truth token ids (masks replaced with original tokens).
-        positions: Optional per-token position indices.  When present (packed
-            sequences) they reset to 0 at the start of each protein; when absent
-            ``MLMLoss`` derives positions from the 1-D attention mask.
-        segment_ids: Optional integer tensor ``(batch, seq_len)`` where each
-            position holds the 0-based index of the protein it belongs to within
-            the packed block.  Produced by ``PackedMLMCollator`` and consumed by
-            ``RotaryTransformerMLMModel`` to build a ``BlockMask`` for
-            FlexAttention-based document masking.
+        positions: Per-token RoPE positions.  Required for packed FlexAttention
+            batches; otherwise ``MLMLoss`` derives from the 1-D ``attention_mask``.
+        segment_ids: Packed batches only — per-token segment index (for ``mask_mod``).
+        block_mask: FlexAttention ``BlockMask`` from ``PackedMLMCollator`` when
+            ``model.use_flex_attn=True``.
         fixed_positions_mask: Optional boolean mask marking positions that should
             not be masked (used by infilling collators).
     """
 
     input_ids: Integer[TT, " batch seq_len"]
-    attention_mask: TT  # 2-D (batch, seq_len) or 3-D (batch, seq_len, seq_len)
+    attention_mask: NotRequired[TT]
     target_ids: Optional[Integer[TT, " batch seq_len"]]
     positions: Optional[Integer[TT, " batch seq_len"]]
-    segment_ids: Optional[Integer[TT, " batch seq_len"]]
-    block_mask: Optional[Any]  # FlexAttention BlockMask built in PackedMLMCollator; None otherwise
+    segment_ids: NotRequired[Integer[TT, " batch seq_len"]]
+    block_mask: Optional[Any]
     fixed_positions_mask: Optional[Bool[TT, " batch seq_len"]]
+
+
+class PackedFlexMLMBatch(TypedDict):
+    """Batch from ``PackedMLMCollator`` when ``model.use_flex_attn=True``.
+
+    ``segment_ids`` match the FlexAttention ``BlockMask`` and are reused in
+    ``MLMLoss.__call__`` for GPU ``mask_mod`` patching (no duplicate EOS logic).
+    """
+
+    input_ids: Integer[TT, " batch seq_len"]
+    target_ids: Integer[TT, " batch seq_len"]
+    positions: Integer[TT, " batch seq_len"]
+    segment_ids: Integer[TT, " batch seq_len"]
+    block_mask: Any
 
 
 class MLMSeq2SeqPredictionBatch(TypedDict):
@@ -73,8 +86,9 @@ class MLMModel(Protocol):
     def __call__(
         self,
         input_ids: Integer[TT, " batch seq_len"],
-        attention_mask: Integer[TT, " batch seq_len"],
-        target_ids: Optional[Integer[TT, " batch seq_len"]] = None,
+        attention_mask: Optional[Integer[TT, " batch seq_len"]] = None,
+        positions: Optional[Integer[TT, " batch seq_len"]] = None,
+        block_mask: Any = None,
     ) -> Float[TT, " batch seq_len vocab_size"]: ...
 
 

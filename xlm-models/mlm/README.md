@@ -25,7 +25,7 @@ Key differences from the standard variant:
 |---|---|---|
 | Packing | one protein per slot, padded | multiple proteins per block, no padding |
 | Cropping | first `block_size` tokens | random window of `block_size` (DPLM-style) |
-| Attention | full 2-D mask | **block-diagonal** — each protein only attends to itself; 3-D boolean mask (default) or `BlockMask` via FlexAttention (`model.use_flex_attn=true`) |
+| Attention | full 2-D mask | **FlexAttention** — `BlockMask` only (`model.use_flex_attn=true`); no dense mask tensor |
 | Positions | monotonic 0…`block_size-1` | **reset to 0** at the start of each protein |
 | Collator | `DefaultMLMCollator` | `PackedMLMCollator` |
 
@@ -37,32 +37,26 @@ Key differences from the standard variant:
    longer than `block_size` to a random window of that length, then concatenates them
    with EOS separators and chunks into exactly-`block_size` blocks.
 3. `PackedMLMCollator` receives a pre-packed block and computes:
-   - a **3-D block-diagonal attention mask** `(batch, seq_len, seq_len)` by detecting
-     segment boundaries at each EOS position,
-   - **per-sequence reset positions** that restart at 0 after every EOS,
+   - a FlexAttention **`BlockMask`** (document boundaries from EOS-derived segment ids),
+   - **per-sequence reset positions** for RoPE (restart at 0 after every EOS),
    - standard random MLM masking.
-4. `MLMLoss.loss_fn` branches on `attention_mask.ndim`: when 3-D it uses the precomputed
-   `positions` from the batch directly; when 2-D it falls back to the existing cumsum
-   logic for the standard padded case.
+4. `MLMLoss.loss_fn` branches on `model.use_flex_attn`: when true it passes
+   `block_mask` and `positions` (attention is FlexAttention); otherwise it uses the
+   cumsum path with a 1-D `attention_mask` for padded batches.
 
 ### Training
 
-Standard (3-D boolean mask, SDPA fallback):
+Packed training uses FlexAttention (`BlockMask` + Triton kernel); requires PyTorch ≥ 2.5 with `flex_attention`.
+
 ```bash
 xlm job_type=train job_name=uniref50_packed_mlm_run experiment=uniref50_packed_mlm
-```
-
-With FlexAttention (recommended — fused Triton kernel, no O(seq²) mask materialisation):
-```bash
-xlm job_type=train job_name=uniref50_packed_mlm_debug experiment=uniref50_packed_mlm debug=overfit \
-    model.use_flex_attn=true
 ```
 
 ### Debug / inspect sequence packing (`debug=overfit`, batch_size=2)
 
 Use `per_device_batch_size=2` to see two packed blocks side-by-side, making it easy to
-inspect that EOS separators land at the right places and that the block-diagonal mask
-and reset positions are correct.
+inspect that EOS separators land at the right places and that reset positions (and
+document masking via `block_mask`) behave as expected.
 
 ```bash
 xlm job_type=train job_name=uniref50_packed_mlm_debug experiment=uniref50_packed_mlm \

@@ -211,7 +211,7 @@ class RotaryTransformerLayer(nn.Module):
             if not _FLEX_ATTN_AVAILABLE:
                 raise RuntimeError(
                     "flex_attention is not available in this PyTorch build. "
-                    "Upgrade to PyTorch ≥ 2.5 or set use_flex_attn=False."
+                    "Upgrade to PyTorch ≥ 2.5, or omit block_mask and use a dense attention_mask."
                 )
             attn_output = _flex_attn_compiled(
                 q_rotary,

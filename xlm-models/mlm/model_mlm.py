@@ -80,60 +80,25 @@ class RotaryTransformerMLMModel(torch.nn.Module, Model):
         x_t: Integer[TT, " *batch seq_len"],
         attention_mask: Optional[Bool[TT, " *batch seq_len"]] = None,
         positions: Optional[Integer[TT, " *batch seq_len"]] = None,
-        token_type_ids: Optional[Integer[TT, " *batch seq_len"]] = None,
-        segment_ids: Optional[Integer[TT, " *batch seq_len"]] = None,
         block_mask=None,
     ) -> Float[TT, " *batch seq_len vocab_size"]:
         """
         Args:
             x_t: The input tokens of shape (*batch, seq_len)
-            attention_mask: The attention mask of shape (*batch, seq_len), which is True for non-padding tokens.
-            positions: The positions of the tokens of shape (*batch, seq_len)
-            segment_ids: Optional integer tensor (*batch, seq_len) produced by
-                PackedMLMCollator.  When present and use_flex_attn=True, a
-                BlockMask is built from it (document masking) and used in place
-                of the full 3-D boolean attention_mask.  The BlockMask is
-                constructed once here and shared across all transformer layers to
-                amortise its cost.
-            block_mask: Optional pre-built FlexAttention BlockMask.  When
-                provided (built by ``PackedMLMCollator`` with
-                ``use_flex_attn=True``), it is used directly and
-                ``create_block_mask`` is *not* called in the forward pass,
-                avoiding a graph break under ``torch.compile``.
+            attention_mask: Boolean mask ``(*batch, seq_len)`` — valid (non-padding)
+                tokens.  Ignored when ``block_mask`` is set (packed + FlexAttention).
+            positions: Per-token RoPE positions ``(*batch, seq_len)``.  Required for
+                packed sequences (reset at each segment boundary).
+            block_mask: FlexAttention ``BlockMask`` for packed training when
+                ``use_flex_attn=True``.  When set, ``attention_mask`` is ignored.
         """
         if attention_mask is not None:
             attention_mask = attention_mask.to(torch.bool)
 
         x = self.embed_tokens(x_t)  # shape (batch_size, seq_len, d_model)
 
-        # Resolve the block mask to use for FlexAttention.
-        # Priority:  pre-built block_mask (from collator) > build from segment_ids > None
         if block_mask is not None:
-            # Fastest path: BlockMask was built in the DataLoader worker and
-            # moved to the correct device by MLMLoss.__call__.  No Python
-            # overhead here; the forward pass stays graph-break-free under
-            # torch.compile.
-            attention_mask = None
-        elif self.use_flex_attn and segment_ids is not None:
-            # Fallback for cases where the collator did not pre-build the mask
-            # (e.g. use_flex_attn=True was set on the model but the collator
-            # was not updated).  Kept for backward compatibility.
-            from torch.nn.attention.flex_attention import create_block_mask
-            bsz, seq_len = x_t.shape
-            seg_flat = segment_ids.to(x.device).reshape(-1)
-            seq_len_int: int = seq_len
-            def _doc_mask_mod(b, h, q_idx, kv_idx,
-                               _sf=seg_flat, _sl=seq_len_int):
-                return _sf[b * _sl + q_idx] == _sf[b * _sl + kv_idx]
-            block_mask = create_block_mask(
-                _doc_mask_mod,
-                B=bsz,
-                H=None,
-                Q_LEN=seq_len,
-                KV_LEN=seq_len,
-                device=x.device,
-                _compile=True,
-            )
+            # BlockMask from PackedMLMCollator; moved to device in MLMLoss.__call__.
             attention_mask = None
 
         for block in self.encoder:
