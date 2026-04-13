@@ -2384,6 +2384,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../xlm/tasks/uniref50/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>uniref50
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -4540,11 +4568,96 @@
 
 
 
-        <p>Input to the MLM.
-Attributes:
-    input_ids (Integer[TT, " batch seq_len"]): The input ids to the model.
-    attention_mask (Integer[TT, " batch seq_len"]): 1 for tokens that are not padding.
-    target_ids (Optional[Integer[TT, " batch seq_len"]]): The target ids to the model.</p>
+        <p>Input to the MLM.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="mlm.types_mlm.MLMBatch.input_ids">input_ids</span></code></td>
+            <td>
+                  <code><span title="jaxtyping.Integer">Integer</span>[<span title="torch.Tensor">Tensor</span>, &#39; batch seq_len&#39;]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The (possibly masked) input token ids.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlm.types_mlm.MLMBatch.attention_mask">attention_mask</span></code></td>
+            <td>
+                  <code><span title="torch.Tensor">Tensor</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Boolean mask — shape <code>(batch, seq_len)</code> for standard
+padded batches (True = valid token), or <code>(batch, seq_len, seq_len)</code>
+for packed sequences with per-protein block attention.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlm.types_mlm.MLMBatch.target_ids">target_ids</span></code></td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="jaxtyping.Integer">Integer</span>[<span title="torch.Tensor">Tensor</span>, &#39; batch seq_len&#39;]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Ground-truth token ids (masks replaced with original tokens).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlm.types_mlm.MLMBatch.positions">positions</span></code></td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="jaxtyping.Integer">Integer</span>[<span title="torch.Tensor">Tensor</span>, &#39; batch seq_len&#39;]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional per-token position indices.  When present (packed
+sequences) they reset to 0 at the start of each protein; when absent
+<code>MLMLoss</code> derives positions from the 1-D attention mask.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlm.types_mlm.MLMBatch.segment_ids">segment_ids</span></code></td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="jaxtyping.Integer">Integer</span>[<span title="torch.Tensor">Tensor</span>, &#39; batch seq_len&#39;]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional integer tensor <code>(batch, seq_len)</code> where each
+position holds the 0-based index of the protein it belongs to within
+the packed block.  Produced by <code>PackedMLMCollator</code> and consumed by
+<code>RotaryTransformerMLMModel</code> to build a <code>BlockMask</code> for
+FlexAttention-based document masking.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="mlm.types_mlm.MLMBatch.fixed_positions_mask">fixed_positions_mask</span></code></td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="jaxtyping.Bool">Bool</span>[<span title="torch.Tensor">Tensor</span>, &#39; batch seq_len&#39;]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional boolean mask marking positions that should
+not be masked (used by infilling collators).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
 

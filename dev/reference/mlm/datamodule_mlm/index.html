@@ -2384,6 +2384,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../xlm/tasks/uniref50/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>uniref50
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -3693,6 +3721,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#mlm.datamodule_mlm.PackedMLMCollator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;PackedMLMCollator
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#mlm.datamodule_mlm.prepare_prefix_ids" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4874,6 +4913,70 @@ TODO (efficiency): This is not ideal for seq2seq training as we will be wasting 
 
 
         <p>Identical to DefaultMLMCollator but expects the prompt_ids to already contain masks.</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="mlm.datamodule_mlm.PackedMLMCollator" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>PackedMLMCollator</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="xlm.datamodule.Collator">Collator</span></code></p>
+
+
+
+        <p>MLM collator for packed protein sequences (e.g. UniRef50).</p>
+<p>Expects pre-packed <code>input_ids</code> produced by <code>pack_sequences</code> / <code>pack_sequences_fn</code>:
+each example is a block of exactly <code>block_size</code> tokens where individual
+sequences are separated by EOS tokens.</p>
+<p>Produces three extras compared to <code>DefaultMLMCollator</code>:</p>
+<ul>
+<li><code>attention_mask</code>: 3-D Boolean tensor <code>(batch, seq_len, seq_len)</code> — a
+  block-diagonal mask so that each protein sequence only attends to itself.</li>
+<li><code>positions</code>: 2-D Long tensor <code>(batch, seq_len)</code> — per-sequence position
+  indices that reset to 0 at the start of every protein.</li>
+</ul>
+<p>Both are consumed by <code>MLMLoss.loss_fn</code>, which branches on <code>attention_mask.ndim</code>.</p>
+<p>When <code>use_flex_attn=True</code>, a FlexAttention <code>BlockMask</code> is also built here
+on the CPU (inside the DataLoader worker) and stored as <code>batch["block_mask"]</code>.
+Building it in the collator keeps it outside the <code>torch.compile</code>d <code>loss_fn</code>
+region, eliminating the graph-break that would otherwise occur.
+<code>MLMLoss.__call__</code> moves it to the correct device before calling <code>loss_fn</code>.</p>
 
 
 
