@@ -1,18 +1,18 @@
 # @package _global_
+# UniRef50 with ESM vocabulary, sequence packing, block attention, and
+# per-sequence position resets.  Analogous to owt_packed.yaml.
 defaults:
   - default
-  - /datasets@datamodule.dataset_managers.train.lm: lm1b_train
-  - /datasets@datamodule.dataset_managers.val.lm: lm1b_test
+  - /datasets@datamodule.dataset_managers.train.lm: uniref50_packed_train
+  - /datasets@datamodule.dataset_managers.val.lm: uniref50_packed_val
   - /datasets@datamodule.dataset_managers.val.unconditional_prediction: text_unconditional_prediction
   - /datasets@datamodule.dataset_managers.test.unconditional_prediction: text_unconditional_prediction
   - /datasets@datamodule.dataset_managers.predict.unconditional_prediction: text_unconditional_prediction
 
-
 global_components:
   tokenizer:
-    _target_: xlm.datamodule.BertTokenizerFast.from_pretrained
-    pretrained_model_name_or_path: bert-base-uncased
-
+    _target_: xlm.datamodule.EsmTokenizer.from_pretrained
+    pretrained_model_name_or_path: facebook/esm2_t30_150M_UR50D
 
 datamodule:
   print_batch_fn: ???
@@ -27,6 +27,5 @@ datamodule:
       unconditional_prediction:
         dataset_constructor_str: ???
 
-
 tags:
-  dataset: lm1b
+  dataset: uniref50_packed

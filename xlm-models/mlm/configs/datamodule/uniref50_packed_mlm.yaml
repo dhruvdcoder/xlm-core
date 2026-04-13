@@ -1,0 +1,30 @@
+# @package _global_
+defaults:
+  - uniref50_packed
+  - /collator@datamodule.dataset_managers.train.lm.collator: packed_mlm
+  - /collator@datamodule.dataset_managers.val.lm.collator: packed_mlm
+  - /collator@datamodule.dataset_managers.val.unconditional_prediction.collator: default_mlm
+  - /collator@datamodule.dataset_managers.test.unconditional_prediction.collator: default_mlm
+  - /collator@datamodule.dataset_managers.predict.unconditional_prediction.collator: default_mlm
+
+datamodule:
+  print_batch_fn: mlm.datamodule_mlm.print_batch_mlm
+  dataset_managers:
+    val:
+      unconditional_prediction:
+        dataset_constructor_str: mlm.datamodule_mlm.MLMEmptyDataset
+        dataset_kwargs:
+          max_length: ${datamodule.block_size}
+    test:
+      unconditional_prediction:
+        dataset_constructor_str: mlm.datamodule_mlm.MLMEmptyDataset
+        dataset_kwargs:
+          max_length: ${datamodule.block_size}
+    predict:
+      unconditional_prediction:
+        dataset_constructor_str: mlm.datamodule_mlm.MLMEmptyDataset
+        dataset_kwargs:
+          max_length: ${datamodule.block_size}
+
+tags:
+  dataset: uniref50_packed
