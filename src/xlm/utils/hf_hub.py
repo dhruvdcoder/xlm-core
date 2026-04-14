@@ -148,7 +148,9 @@ def _shard_paths_from_safetensors_index(index_path: str) -> list[Path]:
         index = json.load(f)
     weight_map = index.get("weight_map")
     if not isinstance(weight_map, dict) or not weight_map:
-        raise ValueError(f"Invalid safetensors index (no weight_map): {index_path}")
+        raise ValueError(
+            f"Invalid safetensors index (no weight_map): {index_path}"
+        )
     shard_names = sorted(set(weight_map.values()))
     index_dir = path.parent
     out: list[Path] = []
@@ -215,6 +217,7 @@ def load_model_state_dict_from_file(
     checkpoint_path: str,
     map_location: str = "cpu",
     weights_only: bool = True,
+    mmap: bool = True,
 ):
     """Load model state dict from a checkpoint file (safetensors or pickle).
 
@@ -227,29 +230,35 @@ def load_model_state_dict_from_file(
         checkpoint_path: Path to model weights, index JSON, or pytorch_model.bin.
         map_location: Device to load tensors to.
         weights_only: If True, use weights_only for pickle (PyTorch >= 1.13).
-
+        mmap: If True, use mmap for loading the checkpoint. Saves CPU RAM.
     Returns:
         State dict for model.load_state_dict().
     """
     path = Path(checkpoint_path)
     if not path.is_file():
-        raise FileNotFoundError(f"No checkpoint file found at '{checkpoint_path}'")
+        raise FileNotFoundError(
+            f"No checkpoint file found at '{checkpoint_path}'"
+        )
 
     if _is_safetensors_sharded_index(path):
-        return _state_dict_from_safetensors_index(checkpoint_path, map_location=map_location)
+        return _state_dict_from_safetensors_index(
+            checkpoint_path, map_location=map_location
+        )
 
     if path.suffix == ".safetensors":
         from safetensors.torch import load_file
 
         return load_file(checkpoint_path, device=map_location)
     # Pickle format (.bin, .pt)
-    load_kwargs: dict = {"map_location": map_location}
+    load_kwargs: dict = {"map_location": map_location, "mmap": mmap}
     if weights_only:
         load_kwargs["weights_only"] = True
     try:
         return torch.load(checkpoint_path, **load_kwargs)
     except TypeError:
+        # for older pytorch versions
         load_kwargs.pop("weights_only", None)
+        load_kwargs.pop("mmap", None)
         return torch.load(checkpoint_path, **load_kwargs)
 
 
@@ -276,7 +285,9 @@ def load_model_weights_into_model(
     """
     path = Path(checkpoint_path)
     if not path.is_file():
-        raise FileNotFoundError(f"No checkpoint file found at '{checkpoint_path}'")
+        raise FileNotFoundError(
+            f"No checkpoint file found at '{checkpoint_path}'"
+        )
 
     if _is_safetensors_sharded_index(path):
         _load_sharded_safetensors_into_model(

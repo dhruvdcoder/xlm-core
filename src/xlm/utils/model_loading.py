@@ -211,6 +211,10 @@ def load_model_for_inference(
                 "pretrained weights will be loaded)"
             )
         skip_ctx = no_init_weights() if skip_init else contextlib.nullcontext()
+        # no_init_weights() will temporarily disable all random init operations which will save significant time in loading large models when we know that we will be loading pretrained weights anyway so no need to random init.
+        # FUTURE: We can only use no_init_weights() but not init_empty_weights()
+        # because lightning trainer expects real weights to be present.
+        # A major feature would be to support empty init weights but that would require making changes to the trainer to support it.
 
         with _default_dtype_ctx(init_dtype), skip_ctx:
             lightning_module = hydra.utils.instantiate(
@@ -267,7 +271,9 @@ def _get_full_checkpoint_path(
     # Build the config path to check
     if config_prefix:
         # Try both ckpt_path and checkpoint_path variants
-        ckpt_path = OmegaConf.select(cfg, f"{config_prefix}.ckpt_path", default=None)
+        ckpt_path = OmegaConf.select(
+            cfg, f"{config_prefix}.ckpt_path", default=None
+        )
         if ckpt_path is None:
             ckpt_path = OmegaConf.select(
                 cfg, f"{config_prefix}.checkpoint_path", default=None
@@ -354,7 +360,9 @@ def _get_model_only_checkpoint_path(
         # Download from HF Hub
         repo_id = repo_id_from_hf_path(hub_repo_id) or hub_repo_id
         revision = OmegaConf.select(cfg, "hub.revision", default="main")
-        logger.info(f"Downloading model weights from Hugging Face Hub: {repo_id}")
+        logger.info(
+            f"Downloading model weights from Hugging Face Hub: {repo_id}"
+        )
 
         return download_model_weights(
             repo_id=repo_id,
