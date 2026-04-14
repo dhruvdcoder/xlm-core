@@ -215,3 +215,10 @@ All MLM changes are designed to be backward-compatible. The table below summariz
 | Batch dicts built via `dict()` not `MLMBatch()`                     | Low — structurally identical                                  | Pass-through fields are extra keys; existing code ignores them |
 | `tokenizer=None` allowed at init                                    | None — Harness always sets tokenizer before use               | `_require_tokenizer()` raises if used before set               |
 | `target_field` defaults to `"target_ids"` with `input_ids` fallback | None — existing data uses `input_ids` and fallback handles it | Explicit `target_field="input_ids"` can be set if needed       |
+
+
+# Initializing large models 
+Above we have discussed how to skip init ops to make the model creation faster. But this will not reduce the temporary CPU memory usage because the weights will first be loaded into the CPU memory and then moved to the GPU memory.
+
+Following are some lightning native solutions: 
+1. https://github.com/Lightning-AI/pytorch-lightning/pull/18385

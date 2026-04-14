@@ -150,7 +150,7 @@ def train(cfg: DictConfig):
     # )
     # instantiate the model
     torch.set_float32_matmul_precision("medium")
-    will_load_weights = ckpt_path is not None or model_only_ckpt_path is not None
+    will_load_weights = ckpt_path is not None or model_only_ckpt_path
     skip_init = cfg.get("skip_init_weights", False) and will_load_weights
     if skip_init:
         logger.info(

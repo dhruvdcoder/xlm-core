@@ -42,3 +42,38 @@ def remove_trailing_pads(
         else:
             break
     return text
+
+
+def remove_trailing_pads_show_the_count(
+    text: str,
+    tokenizer: Tokenizer,
+    tokens_to_remove: Optional[List[str]] = None,
+) -> str:
+    """Remove trailing special tokens from decoded text and show the count of the removed tokens.
+
+    Uses the same suffix rules as :func:`remove_trailing_pads`. Each successful end strip
+    increments the count. If any strips occurred, appends ``" [removed N]"`` to the result.
+    """
+    tokens_to_remove = tokens_to_remove or [tokenizer.pad_token]
+    suffixes: List[str] = []
+    for t in tokens_to_remove:
+        if not t:
+            continue
+        suffixes.append(f" {t}")
+        suffixes.append(t)
+    # Longest first so e.g. " </s>" wins over "</s>" when both could apply
+    suffixes = sorted(set(suffixes), key=len, reverse=True)
+    if not suffixes:
+        return text
+    removed = 0
+    while True:
+        for suf in suffixes:
+            if text.endswith(suf):
+                text = text[: -len(suf)]
+                removed += 1
+                break
+        else:
+            break
+    if removed:
+        return f"{text} [removed {removed}*{tokens_to_remove}]"
+    return text

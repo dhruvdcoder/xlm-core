@@ -721,7 +721,7 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
         )
         if hasattr(self.model, "get_param_groups"):
             groups = self.model.get_param_groups()
-        else:
+        elif hasattr(self.model, "get_named_params_for_weight_decay") and hasattr(self.model, "get_named_params_for_no_weight_decay"):
             main_params_with_weight_decay = list(
                 p for _, p in self.model.get_named_params_for_weight_decay()
             )
@@ -740,6 +740,10 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
                     "params": main_params_without_weight_decay,
                     "weight_decay": 0.0,
                 },
+            ]
+        else:
+            groups = [
+                {"params": self.model.parameters()},
             ]
         optimizer = partial_optimizer(groups)
         lr_scheduler: LRSchedulerWithConfig = self.create_lr_scheduler(
