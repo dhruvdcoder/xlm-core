@@ -39,31 +39,30 @@ class MLMLoss(LossFunction[MLMBatch, MLMLossDict]):
         dataloader_idx: Optional[int] = None,
         dataloader_name: Optional[str] = None,
     ) -> MLMLossDict:
-        # Move FlexAttention BlockMask to the correct device here, before the
-        # compiled loss_fn.  BlockMask is a custom PyTorch object so Lightning's
-        # auto-transfer does not handle it; moving it in __call__ (which is NOT
-        # compiled) keeps the compiled region graph-break-free.
+        # Build the FlexAttention BlockMask here (main process, before the compiled
+        # loss_fn) from segment_ids, which cross the DataLoader queue as plain tensors.
+        # Building it in the collator worker would embed a locally-scoped mask_mod
+        # closure inside BlockMask, which pickle cannot serialize.
         use_flex = getattr(self.model, "use_flex_attn", False)
-        block_mask = batch.get("block_mask")
-        if block_mask is not None and use_flex:
+        if use_flex and batch.get("block_mask") is None:
+            from torch.nn.attention.flex_attention import create_block_mask
             target_device = batch["input_ids"].device
-            if block_mask.kv_indices.device != target_device:
-                block_mask = block_mask.to(target_device)
-            # The collator builds the BlockMask on CPU; the mask_mod closure it
-            # stores captures a CPU `seg` tensor and uses 2-D indexing
-            # (seg[b, q_idx]).  Inductor cannot lower multi-index gathers as
-            # pointwise subgraphs, and the CPU tensor causes a device mismatch.
-            # Replace mask_mod here (before any compiled region) with a fresh
-            # closure that (1) holds the already-GPU segment_ids and (2) uses
-            # flattened 1-D indexing — a single-index load, which is lowerable.
             segment_ids = batch["segment_ids"]
             seg_flat = segment_ids.to(target_device).reshape(-1)
-            seq_len_int: int = segment_ids.shape[1]
+            bsz, seq_len_int = segment_ids.shape
 
-            def _patched_mask_mod(b, h, q_idx, kv_idx, _sf=seg_flat, _sl=seq_len_int):
+            def _doc_mask_mod(b, h, q_idx, kv_idx, _sf=seg_flat, _sl=seq_len_int):
                 return _sf[b * _sl + q_idx] == _sf[b * _sl + kv_idx]
 
-            block_mask.mask_mod = _patched_mask_mod
+            block_mask = create_block_mask(
+                _doc_mask_mod,
+                B=bsz,
+                H=None,
+                Q_LEN=seq_len_int,
+                KV_LEN=seq_len_int,
+                device=target_device,
+                _compile=False,
+            )
             batch = {**batch, "block_mask": block_mask}
         loss_dict = self.loss_fn(
             batch, batch_idx, dataloader_idx, dataloader_name

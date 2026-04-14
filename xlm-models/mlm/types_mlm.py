@@ -41,15 +41,15 @@ class MLMBatch(TypedDict, total=False):
 class PackedFlexMLMBatch(TypedDict):
     """Batch from ``PackedMLMCollator`` when ``model.use_flex_attn=True``.
 
-    ``segment_ids`` match the FlexAttention ``BlockMask`` and are reused in
-    ``MLMLoss.__call__`` for GPU ``mask_mod`` patching (no duplicate EOS logic).
+    ``segment_ids`` are passed to ``MLMLoss.__call__`` to build the FlexAttention
+    ``BlockMask`` on the training device, avoiding pickling of locally-scoped
+    mask_mod closures across DataLoader worker queues.
     """
 
     input_ids: Integer[TT, " batch seq_len"]
     target_ids: Integer[TT, " batch seq_len"]
     positions: Integer[TT, " batch seq_len"]
     segment_ids: Integer[TT, " batch seq_len"]
-    block_mask: Any
 
 
 class MLMSeq2SeqPredictionBatch(TypedDict):
