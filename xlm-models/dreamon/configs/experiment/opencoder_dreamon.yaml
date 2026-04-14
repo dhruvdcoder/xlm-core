@@ -1,0 +1,60 @@
+# @package _global_
+defaults:
+  - override /callbacks: debug_v2
+  - override /datamodule: opencoder_dreamon
+  - override /noise_schedule: dummy
+  - override /model_type: dreamon
+  - override /model: dreamon_7b # Backbone is the same for Dream and DreamCoder
+
+per_device_batch_size: 1
+global_batch_size: 2
+monitored_metric: null
+init_dtype: bfloat16
+skip_init_weights: true
+
+hub:
+  repo_id: Dream-org/Dream-Coder-v0-Base-7B 
+
+global_components:
+  tokenizer:
+    _target_: xlm.tasks.opencoder.get_tokenizer
+    pretrained_model_name_or_path: Dream-org/Dream-Coder-v0-Base-7B 
+
+predictor:
+  mask_expansion: true
+  diffusion_kwargs:
+    dtype: bf16
+    steps: 256
+    max_gen_len: 64
+    min_gen_len: 64
+    alg: entropy
+    batch_size: 1
+    pad_to_max_len: false
+    alg_temp: 0.0
+    temperature: 0.2
+    top_p: 0.9
+    delete_eos_token: true
+    pad_eos_to_right: true
+    show_progress: false
+    max_tokens: 2048
+
+log_predictions:
+  _target_: xlm.log_predictions.LogPredictions
+  writers:
+    - file
+  additional_fields_from_batch:
+    - task_id
+    - prefix
+    - suffix
+    - canonical_solution
+
+post_hoc_evaluator:
+  _target_: xlm.tasks.humaneval_infill_task.HumanEvalInfillEval
+  benchmark_name: test
+  
+trainer:
+  max_steps: 2
+  val_check_interval: 1
+  num_sanity_val_steps: 0
+  check_val_every_n_epoch: 1
+  limit_val_batches: 1

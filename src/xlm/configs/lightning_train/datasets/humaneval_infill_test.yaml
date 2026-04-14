@@ -1,0 +1,14 @@
+defaults:
+  - default_eval
+
+collator: ???
+load_func: xlm.tasks.humaneval_infill_task.load_func
+load_func_kwargs:
+  benchmark_name: ???
+preprocess_function: xlm.tasks.humaneval_infill_task.humaneval_infill_preprocess_fn
+full_name: null
+columns_to_keep:
+  - canonical_solution
+  - prompt
+  - suffix
+  - task_id

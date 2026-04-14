@@ -1,0 +1,10 @@
+# @package _global_
+# Eval / inference: merge Harness + DreamOnPredictor at config root (same pattern as ``dream_eval``).
+lightning_module:
+  _target_: xlm.harness.Harness
+
+predictor:
+  _target_: dreamon.predictor_dreamon.DreamOnPredictor
+
+tags:
+  model_type: dreamon

@@ -1,0 +1,20 @@
+# @package _global_
+
+lightning_module:
+  _target_: xlm.harness.Harness
+
+predictor:
+  _target_: dreamon.predictor_dreamon.DreamOnPredictor
+
+loss:
+  _target_: dreamon.loss_dreamon.DreamOnLoss
+  token_reweighting: false
+  alpha: 0.25
+  gamma: 2.0
+  time_reweighting: linear
+  weight_eos: true
+  max_delete: 64
+
+tags:
+  model_type: dreamon
+

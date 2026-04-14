@@ -609,7 +609,15 @@ class SimpleSpaceTokenizer(PreTrainedTokenizer):
                 vocab.append(line.strip())
         return cls(vocab=vocab, **kwargs)
 
-
+class SimpleSpaceTokenizerWithDeletion(SimpleSpaceTokenizer):
+    
+    def __init__(self, vocab: Sequence[str], **kwargs):
+        super().__init__(vocab=vocab, **kwargs)
+        del_token_id = len(self._vocab_str_to_int)
+        self._vocab_str_to_int["[DEL]"] = del_token_id
+        self._vocab_int_to_str[del_token_id] = "[DEL]"
+        setattr(self, "delete_token", "[DEL]")
+        setattr(self, "delete_token_id", del_token_id)
 class SimpleSpaceTokenizerWithCyclicPads(SimpleSpaceTokenizer):
     """SimpleSpaceTokenizer with cyclic pad tokens (pad_0..pad_{n-1})."""
 
@@ -1280,6 +1288,21 @@ class LocalDatasetManager(DatasetManager):
                     num_proc=num_proc,
                 )["train"]
             return ds
+        elif self.ds_type == "parquet":
+            load_kwargs_copy = self.load_kwargs.copy()
+            if "data_files" in load_kwargs_copy:
+                data_files = load_kwargs_copy.pop("data_files")
+            else:
+                file_name = f"{self._split_to_download}.parquet"
+                _path = Path(self.full_name).parent
+                data_files = str(_path / file_name)
+            ds = datasets.load_dataset(
+                "parquet",
+                data_files=data_files,
+                **load_kwargs_copy,
+                num_proc=num_proc,
+            )['train']
+            return ds
         else:
             raise ValueError(f"Unsupported dataset type: {self.ds_type}")
 
@@ -1313,9 +1336,13 @@ class EvalDatasetManager:
         stages: Optional[
             List[Literal["fit", "validate", "test", "predict"]]
         ] = None,
+        load_func: Optional[str] = None,
+        load_func_kwargs: Optional[Dict[str, Any]] = None,
     ):
         self.collator = collator
         self.full_name = full_name
+        self.load_func = load_func
+        self.load_func_kwargs = load_func_kwargs or {}
         self.dataloader_kwargs = dataloader_kwargs
         self.preprocess_function = preprocess_function
         self.preprocess_function_kwargs = preprocess_function_kwargs or {}
@@ -1404,7 +1431,13 @@ class EvalDatasetManager:
         logger.info(
             f"EvalDatasetManager: preparing {self.full_name} (no manual cache)"
         )
-        ds = self._download(num_proc=num_proc)
+        if self.load_func:
+            load_fn: Callable[..., Any] = get_function(
+                self.load_func
+            )
+            ds = load_fn(**self.load_func_kwargs)
+        else:
+            ds = self._download(num_proc=num_proc)
         ds = self._preprocess(ds, tokenizer, num_proc=num_proc)
         return ds
 
