@@ -5504,8 +5504,9 @@ not be masked (used by infilling collators).</p>
 
 
         <p>Batch from <code>PackedMLMCollator</code> when <code>model.use_flex_attn=True</code>.</p>
-<p><code>segment_ids</code> match the FlexAttention <code>BlockMask</code> and are reused in
-<code>MLMLoss.__call__</code> for GPU <code>mask_mod</code> patching (no duplicate EOS logic).</p>
+<p><code>segment_ids</code> are passed to <code>MLMLoss.__call__</code> to build the FlexAttention
+<code>BlockMask</code> on the training device, avoiding pickling of locally-scoped
+mask_mod closures across DataLoader worker queues.</p>
 
 
 
