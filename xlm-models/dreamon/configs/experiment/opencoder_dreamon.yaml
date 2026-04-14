@@ -7,16 +7,13 @@ defaults:
   - override /model: dreamon_7b # Backbone is the same for Dream and DreamCoder
 
 per_device_batch_size: 1
-global_batch_size: 1
+global_batch_size: 2
 monitored_metric: null
 init_dtype: bfloat16
 skip_init_weights: true
 
 hub:
   repo_id: Dream-org/Dream-Coder-v0-Base-7B 
-
-eval:
-  split: test
 
 global_components:
   tokenizer:
@@ -53,10 +50,11 @@ log_predictions:
 
 post_hoc_evaluator:
   _target_: xlm.tasks.humaneval_infill_task.HumanEvalInfillEval
-  benchmark_name: single-line
-
+  benchmark_name: test
+  
 trainer:
   max_steps: 2
-  val_check_interval: null
+  val_check_interval: 1
   num_sanity_val_steps: 0
-  check_val_every_n_epoch: null
+  check_val_every_n_epoch: 1
+  limit_val_batches: 1

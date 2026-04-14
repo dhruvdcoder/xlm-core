@@ -134,9 +134,9 @@ def get_split_ids(example,tokenizer,middle_strategy,middle_line_num):
         prefix_str = prefix_str + "\n".join(prefix_lines) + '\n'
         suffix_str = "\n".join(suffix_lines) + suffix_str
         
-        prefix_ids = tokenizer.encode(prefix_str, add_special_tokens=False)   
-        middle_ids = tokenizer.encode(middle_str, add_special_tokens=False)
-        suffix_ids = tokenizer.encode(suffix_str, add_special_tokens=False)
+        prefix_ids = tokenizer.encode(prefix_str)   
+        middle_ids = tokenizer.encode(middle_str)
+        suffix_ids = tokenizer.encode(suffix_str)
 
         return torch.tensor(prefix_ids), torch.tensor(middle_ids), torch.tensor(suffix_ids)
 
@@ -173,12 +173,12 @@ class DreamOnInfillTrainCollator:
         if self.truncation not in ("error", "left", "right"):
             raise ValueError(f"Invalid truncation={self.truncation}")
         
-        input_ids = []
-        labels = []
-        attention_mask = []
-        position_ids = []
-        loss_mask = []
-        t = []
+        input_ids_batch = []
+        labels_batch = []
+        attention_mask_batch = []
+        position_ids_batch = []
+        loss_mask_batch = []
+        t_batch = []
         for e in examples:
             prefix_ids, middle_ids, suffix_ids = get_split_ids(e, self.tokenizer, self.middle_strategy, self.middle_line_num)
             prompt_ids = torch.tensor(e['prompt_ids'])
@@ -253,18 +253,18 @@ class DreamOnInfillTrainCollator:
             # Loss mask (only for merged part)
             loss_mask = (input_ids == self.tokenizer.mask_token_id) & (attention_mask == 1)
 
-            input_ids.append(input_ids)
-            labels.append(labels)
-            attention_mask.append(attention_mask)
-            position_ids.append(position_ids)
-            loss_mask.append(loss_mask)
-            t.append(t)
+            input_ids_batch.append(input_ids)
+            labels_batch.append(labels)
+            attention_mask_batch.append(attention_mask)
+            position_ids_batch.append(position_ids)
+            loss_mask_batch.append(loss_mask)
+            t_batch.append(t)
 
         return {
-            "input_ids": torch.stack(input_ids, dim=0),
-            "labels": torch.stack(labels, dim=0),
-            "attention_mask": torch.stack(attention_mask, dim=0),
-            "position_ids": torch.stack(position_ids, dim=0),
-            "loss_mask": torch.stack(loss_mask, dim=0),
-            "t": torch.stack(t, dim=0)
+            "input_ids": torch.stack(input_ids_batch, dim=0),
+            "labels": torch.stack(labels_batch, dim=0),
+            "attention_mask": torch.stack(attention_mask_batch, dim=0),
+            "position_ids": torch.stack(position_ids_batch, dim=0),
+            "loss_mask": torch.stack(loss_mask_batch, dim=0),
+            "t": torch.stack(t_batch, dim=0)
         }

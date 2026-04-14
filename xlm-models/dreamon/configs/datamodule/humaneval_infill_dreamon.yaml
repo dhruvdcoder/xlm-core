@@ -12,11 +12,11 @@ datamodule:
     test:
       humaneval_infill_prediction:
         load_func_kwargs:
-          benchmark_name: single-line
+          benchmark_name: test
     val:
       humaneval_infill_prediction:
         load_func_kwargs:
-          benchmark_name: single-line
+          benchmark_name: test
 
 tags:
   dataset: humaneval_infill

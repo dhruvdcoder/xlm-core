@@ -4,7 +4,7 @@ collator: ??? # model specific collator
 full_name: opencoder/val
 full_name_debug: opencoder/val
 load_kwargs:
-    data_files: /scratch4/workspace/dmaram_umass_edu-dmaram/learned-correctors/data/opencoder-stage2-edu/eval_data.parquet
+    data_files: ???
 preprocess_function: xlm.tasks.opencoder.opencoder_preprocess_fn
 preprocess_function_kwargs:
     prompt_key: prompt

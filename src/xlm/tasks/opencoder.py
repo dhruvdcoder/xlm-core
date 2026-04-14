@@ -1,6 +1,7 @@
 from typing import Any, Dict
 from transformers import AutoTokenizer
 import re
+from xlm.tasks.humaneval_infill_task import HFTokenizerWrapper
 
 def extract_code_block(response: str):
         """
@@ -43,8 +44,8 @@ def opencoder_preprocess_fn(
     )
     response_chat_str = response + tokenizer.eos_token
 
-    prompt_ids_output = tokenizer.encode(prompt_chat_str, add_special_tokens=False)
-    response_ids_output = tokenizer.encode(response_chat_str, add_special_tokens=False)
+    prompt_ids_output = tokenizer.encode(prompt_chat_str)
+    response_ids_output = tokenizer.encode(response_chat_str)
     prefix, code_block, suffix = extract_code_block(response_chat_str)
 
     return {
@@ -57,4 +58,6 @@ def opencoder_preprocess_fn(
 
 
 def get_tokenizer(pretrained_model_name_or_path: str):
-    return AutoTokenizer.from_pretrained(pretrained_model_name_or_path,trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path,trust_remote_code=True)
+    tokenizer = HFTokenizerWrapper(tokenizer)
+    return tokenizer

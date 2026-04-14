@@ -91,24 +91,24 @@ class DreamOnLoss:
         # We use weighted loss
         loss_mask = loss_mask.to(loss.device)
         loss = loss.masked_fill(~loss_mask, 0)
-        if self.config.diffusion.token_reweighting:
+        if self.token_reweighting:
             loss = (
-                self.config.diffusion.alpha
-                * (1 - torch.exp(-loss)) ** self.config.diffusion.gamma
+                self.alpha
+                * (1 - torch.exp(-loss)) ** self.gamma
                 * loss
             )
 
-        if self.config.diffusion.time_reweighting == "original":
+        if self.time_reweighting == "original":
             raise NotImplementedError
             weight = 1 / t[:, None].float().expand(labels.size())
-        elif self.config.diffusion.time_reweighting == "linear":
+        elif self.time_reweighting == "linear":
             weight = 1 - t.float().expand(labels.size())
         else:
             raise NotImplementedError
 
         loss = loss * weight.reshape(-1)
 
-        if self.config.diffusion.weight_eos and self.config.data.max_delete > 0:
+        if self.weight_eos and self.max_delete > 0:
             non_eos_mask = (shift_labels != self.tokenizer.eos_token_id) & loss_mask
             non_eos_loss = loss.clone()  
             non_eos_loss[~non_eos_mask] = 0  
@@ -127,14 +127,7 @@ class DreamOnLoss:
         else:
             valid_token_this_rank = torch.sum(loss_mask)
 
-            if self.config.data.balance_dp_token:
-                torch.distributed.all_reduce(valid_token_this_rank)
-                dp_size = (
-                    torch.distributed.get_world_size()
-                )
-            else:
-                dp_size = 1
 
-            loss = torch.sum(loss) / valid_token_this_rank * dp_size
+            loss = torch.sum(loss) / valid_token_this_rank 
 
         return {"loss": loss}

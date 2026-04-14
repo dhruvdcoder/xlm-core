@@ -23,4 +23,4 @@ config:
   pad_token_id: 151643
   bos_token_id: 151643
   eos_token_id: 151643
-  torch_dtype: "bfloat16"
+  torch_dtype: bfloat16
