@@ -24,6 +24,13 @@ post_hoc_evaluator:
 datamodule:
   print_batch_fn: flexmdm.datamodule_flexmdm.print_batch_flexmdm
 
+predictor:
+  _target_: flexmdm.predictor_flexmdm.FlexMDMPredictor
+  max_steps: 1000
+  top_k: 1
+  top_p: null
+  len_predict_type: ${len_predict_type}
+
 model:
   force_flash_attn: false
   len_head_type: mlp

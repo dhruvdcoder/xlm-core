@@ -31,6 +31,7 @@ import numpy as np
 import torch
 from transformers import PreTrainedTokenizerBase
 
+from xlm import flags
 from xlm.utils.rank_zero import warn_once, RankedLogger
 
 logger = RankedLogger(__name__, rank_zero_only=True)
@@ -261,16 +262,18 @@ def safe2bracketsafe(safe_str: str, seed: Optional[int] = None) -> str:
     digits in the string.
     """
     try:
+        if flags.DEBUG_OVERFIT:
+            seed = seed or 1
+        else:
+            seed = seed or np.random.randint(
+               0, 1000000
+            )  # for reproducibility draw from global random state
         return BracketSAFEConverter().encoder(
             Chem.MolFromSmiles(safe_str),
             allow_empty=True,
             canonical=False,
             randomize=True,
-            seed=1,
-            # seed=seed
-            # or np.random.randint(
-            #    0, 1000000
-            # ),  # for reproducibility draw from global random state
+            seed=seed
         )
     except:  # noqa: E722
         return safe_str
@@ -1135,7 +1138,7 @@ class DeNovoEval:
         smiles = safe_to_smiles(safe_str, fix=True)
 
         if (
-            smiles is not None
+            smiles # not None or empty string
         ):  # Explicitly check for None (invalid conversions)
             # Take largest fragment (removes salts, counter-ions, etc.)
             # This is heuristic used in genmol but it can artifically raise the validity score.

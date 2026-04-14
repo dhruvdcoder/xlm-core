@@ -942,11 +942,12 @@ class DatasetManager:
                 "tokenizer": tokenizer,
                 **self.on_the_fly_processor_kwargs,
             }
+            map_kwargs = {} if self.is_iterable_dataset else dict(load_from_cache_file=self.on_the_fly_load_from_cache_file)
             dataset = dataset.map(
                 processor,
                 batched=False,
                 fn_kwargs=kwargs,
-                load_from_cache_file=self.on_the_fly_load_from_cache_file,
+                **map_kwargs,
             )
             return dataset
         return dataset
