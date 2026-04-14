@@ -1,0 +1,11 @@
+# @package _global_
+defaults:
+  - default
+  - /collator@datamodule.dataset_managers.train.lm.collator:  infill_dreamon
+  - /collator@datamodule.dataset_managers.val.lm.collator: infill_dreamon
+  - /datasets@datamodule.dataset_managers.train.lm: opencoder_train
+  - /datasets@datamodule.dataset_managers.val.lm: opencoder_val
+
+tags:
+  dataset: opencoder_dreamon
+

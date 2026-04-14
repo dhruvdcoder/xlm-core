@@ -1,0 +1,24 @@
+_target_: xlm.datamodule.LocalDatasetManager
+ds_type: "parquet"
+collator: ??? # model specific collator
+full_name: opencoder/train
+full_name_debug: opencoder/train
+load_kwargs:
+    data_files: /scratch4/workspace/dmaram_umass_edu-dmaram/learned-correctors/data/opencoder-stage2-edu/train_data.parquet
+preprocess_function: xlm.tasks.opencoder.opencoder_preprocess_fn
+preprocess_function_kwargs:
+    prompt_key: prompt
+    response_key: response
+on_the_fly_processor: xlm.datamodule.token_ids_to_input_ids
+on_the_fly_group_processor: null
+stages:
+    - fit
+dataloader_kwargs:
+    batch_size: ${per_device_batch_size} # per device, depends on the device type
+    num_workers: ${num_dataloader_workers} 
+    shuffle: null # can't specify shuffle for IterableDataset
+    pin_memory: True
+    persistent_workers: False # INFO: see: https://github.com/huggingface/datasets/issues/7447
+    prefetch_factor: ${dataloader_prefetch_factor}
+    drop_last: True
+model_name: null

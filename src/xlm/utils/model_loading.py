@@ -1,7 +1,8 @@
-"""Unified model loading for inference across commands.
+"""Unified model loading for inference and optional train-time weight bootstrap.
 
 This module provides a single, consistent interface for loading models
-for inference tasks (generation, evaluation, push to hub, demos).
+for inference tasks (generation, evaluation, push to hub, demos) and for
+resolving Hub/local model-only checkpoints used by ``lightning_train``.
 """
 
 import contextlib

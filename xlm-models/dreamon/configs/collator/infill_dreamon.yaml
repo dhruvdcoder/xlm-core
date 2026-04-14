@@ -1,0 +1,12 @@
+_target_: dreamon.datamodule_dreamon.DreamOnInfillTrainCollator
+tokenizer: ${global_components:tokenizer}
+max_length: 1024
+middle_strategy: line
+middle_line_num: null
+truncation: right
+merge_prob: 0.5
+max_delete: 64
+merge_schedule: dynamic_inverse
+use_uniform_merge_prob: 0.5
+expand_token_id: 151667
+
