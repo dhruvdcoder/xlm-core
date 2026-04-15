@@ -222,3 +222,5 @@ Above we have discussed how to skip init ops to make the model creation faster. 
 
 Following are some lightning native solutions: 
 1. https://github.com/Lightning-AI/pytorch-lightning/pull/18385
+
+Meta-init: deferred, not needed for 7B. The 7B model in bf16 is ~14 GB on CPU, well within range. The current no_init_weights() + load-weights-on-CPU flow works fine with FSDP -- Lightning's FSDPStrategy.setup() shards from CPU to GPUs. Restructuring Harness.__init__ to defer instantiate_model() into configure_model() would be a large refactor (predictor, loss, metrics all depend on self.model existing at init time). This is a future optimization for 30B+ models.

@@ -731,12 +731,18 @@ class DreamBaseModel(DreamPreTrainedModel):
                 "You must specify exactly one of input_ids or inputs_embeds"
             )
 
-        if self.gradient_checkpointing and self.training:
-            if use_cache:
-                logger.warning_once(
-                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
-                )
-                use_cache = False
+        # KV cache is mutated in-place. Activation checkpointing (model gradient_checkpointing
+        # or FSDP activation_checkpointing) re-runs layer forwards during backward; with
+        # use_cache=True the cache is appended twice so K/V seq length no longer matches Q
+        # or the 4D attention mask (e.g. 2048 vs 1024). Training uses full sequences and
+        # does not need KV cache.
+        if self.training and use_cache:
+            logger.warning_once(
+                "`use_cache=True` is not supported during training when activation checkpointing "
+                "may run (including FSDP); KV cache would be corrupted on recompute. "
+                "Setting `use_cache=False`..."
+            )
+            use_cache = False
 
         if inputs_embeds is None:
             inputs_embeds = self.embed_tokens(input_ids)

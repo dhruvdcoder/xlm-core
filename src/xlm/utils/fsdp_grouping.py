@@ -2,7 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, MutableMapping, Tuple, Union, cast
+import importlib
+from typing import (
+    Any,
+    Dict,
+    List,
+    MutableMapping,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 try:
     from omegaconf import DictConfig, OmegaConf
@@ -11,6 +22,39 @@ except ImportError:  # pragma: no cover
     OmegaConf = None  # type: ignore
 
 GroupEntry = Tuple[str, bool]
+
+
+def make_layer_wrap_policy(*class_paths: str) -> Set[Type[Any]]:
+    """Resolve dotted class paths into a set of layer classes for Lightning ``FSDPStrategy``.
+
+    Use in Hydra YAML::
+
+        auto_wrap_policy:
+          _target_: xlm.utils.fsdp_grouping.make_layer_wrap_policy
+          _args_:
+            - xlm.backbones.dream.modeling_dream.DreamDecoderLayer
+
+    This matches Lightning's recommended pattern of passing ``{nn.TransformerDecoderLayer}``
+    style sets to ``auto_wrap_policy`` / ``activation_checkpointing_policy``.
+    """
+    classes: Set[Type[Any]] = set()
+    for path in class_paths:
+        module_path, class_name = path.rsplit(".", 1)
+        mod = importlib.import_module(module_path)
+        classes.add(getattr(mod, class_name))
+    return classes
+
+
+def fsdp_bf16_mixed_precision():
+    """Default FSDP mixed precision: bf16 params, fp32 reductions (matches DreamOn reference)."""
+    import torch
+    from torch.distributed.fsdp import MixedPrecision
+
+    return MixedPrecision(
+        param_dtype=torch.bfloat16,
+        reduce_dtype=torch.float32,
+        buffer_dtype=torch.float32,
+    )
 
 
 def _get_int(

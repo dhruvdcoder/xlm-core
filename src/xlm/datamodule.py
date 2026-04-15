@@ -75,6 +75,7 @@ from transformers import (
     PreTrainedTokenizerBase,
 )
 from lightning.pytorch.strategies import DDPStrategy as LDDPStrategy
+from lightning.pytorch.strategies import FSDPStrategy as LFSDPStrategy
 from lightning.pytorch.strategies import (
     SingleDeviceStrategy as LSingleDeviceStrategy,
 )
@@ -153,6 +154,7 @@ except ImportError:
 
 SingleDeviceStrategy = (LSingleDeviceStrategy, FSingleDeviceStrategy)
 DDPStrategy = (LDDPStrategy, FDDPStrategy)
+DistributedStrategy = (LDDPStrategy, FDDPStrategy, LFSDPStrategy)
 
 
 class Tokenizer(Protocol):
@@ -1577,7 +1579,7 @@ class BaseDataModule(L.LightningDataModule):
         if self.trainer is None:
             logger.warning("Trainer is not setup. Cannot check grad accum.")
             return
-        if self._is_ddp():
+        if self._is_distributed():
             num_nodes = self.trainer.num_nodes
             num_gpus_per_node = self.trainer.num_devices
             accum_steps = self.trainer.accumulate_grad_batches
@@ -1599,10 +1601,10 @@ class BaseDataModule(L.LightningDataModule):
                     f"per_device_batch_size ({self.train_dataloader_kwargs['batch_size']}) * num_nodes ({num_nodes}) * num_gpus_per_node ({num_gpus_per_node}) * accum_steps ({accum_steps})."
                 )
 
-    def _is_ddp(self) -> bool:
+    def _is_distributed(self) -> bool:
         if self.trainer is not None:
             strategy = self.trainer.strategy
-            if isinstance(strategy, DDPStrategy):
+            if isinstance(strategy, DistributedStrategy):
                 return True
             elif isinstance(strategy, SingleDeviceStrategy):
                 return False
@@ -1612,7 +1614,7 @@ class BaseDataModule(L.LightningDataModule):
                 )
         else:
             logger.warning(
-                "Tried to detect DDP strategy before trainer was set."
+                "Tried to detect distributed strategy before trainer was set."
                 " Are you calling `LightningDataModule.*_dataloader()` methods manually?"
                 " Make sure you know what you are doing!"
             )
@@ -1766,7 +1768,7 @@ class TextDataModule(BaseDataModule):
                     manual_cache_dir=self.manual_cache_dir,
                     tokenizer=self.tokenizer,
                     block_size=self.block_size,
-                    is_ddp=self._is_ddp(),
+                    is_ddp=self._is_distributed(),
                     rank=self.rank,
                     world_size=self.world_size,
                     num_dataset_workers=self.num_dataset_workers,
@@ -1782,7 +1784,7 @@ class TextDataModule(BaseDataModule):
                 if split_ == split:
                     dl = ds_wrapper.get_dataloader(
                         split,
-                        is_ddp=self._is_ddp(),
+                        is_ddp=self._is_distributed(),
                         rank=self.rank,
                         world_size=self.world_size,
                     )

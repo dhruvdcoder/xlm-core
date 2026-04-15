@@ -1,0 +1,6 @@
+# @package trainer.strategy
+# Model-specific options (auto_wrap_policy, mixed_precision, etc.) belong in experiment YAML.
+_target_: lightning.pytorch.strategies.FSDPStrategy
+sharding_strategy: FULL_SHARD
+cpu_offload: false
+use_orig_params: false
