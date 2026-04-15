@@ -518,7 +518,11 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
         if self.predictor.noise_schedule is None:
             self.predictor.noise_schedule = self.noise_schedule
         if self.predictor.model is None:
-            self.predictor.model = self.model
+            # Bypass nn.Module.__setattr__ to avoid registering the model as a
+            # submodule of the predictor (it is already self.model).  Dual
+            # registration causes FSDP to traverse the same FlatParameters
+            # twice, roughly doubling GPU memory usage.
+            object.__setattr__(self.predictor, "model", self.model)
 
     def instantiate_loss_function(self):
         loss_cfg = OmegaConf.select(self.config, "loss", default=None)
