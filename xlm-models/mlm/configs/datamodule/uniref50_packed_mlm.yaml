@@ -3,28 +3,28 @@ defaults:
   - uniref50_packed
   - /collator@datamodule.dataset_managers.train.lm.collator: packed_mlm
   - /collator@datamodule.dataset_managers.val.lm.collator: packed_mlm
-  - /collator@datamodule.dataset_managers.val.unconditional_prediction.collator: default_mlm
-  - /collator@datamodule.dataset_managers.test.unconditional_prediction.collator: default_mlm
-  - /collator@datamodule.dataset_managers.predict.unconditional_prediction.collator: default_mlm
+  - /collator@datamodule.dataset_managers.val.unconditional_prediction.collator: papl_unconditional
+  - /collator@datamodule.dataset_managers.test.unconditional_prediction.collator: papl_unconditional
+  - /collator@datamodule.dataset_managers.predict.unconditional_prediction.collator: papl_unconditional
 
 datamodule:
   print_batch_fn: mlm.datamodule_mlm.print_batch_mlm
   dataset_managers:
     val:
       unconditional_prediction:
-        dataset_constructor_str: mlm.datamodule_mlm.MLMEmptyDataset
+        dataset_constructor_str: mlm.papl_unconditional.PaplUnconditionalMLMDataset
         dataset_kwargs:
-          max_length: ${datamodule.block_size}
+          lengths: [100, 200, 300, 400, 500, 600, 700, 800]
     test:
       unconditional_prediction:
-        dataset_constructor_str: mlm.datamodule_mlm.MLMEmptyDataset
+        dataset_constructor_str: mlm.papl_unconditional.PaplUnconditionalMLMDataset
         dataset_kwargs:
-          max_length: ${datamodule.block_size}
+          lengths: [100, 200, 300, 400, 500, 600, 700, 800]
     predict:
       unconditional_prediction:
-        dataset_constructor_str: mlm.datamodule_mlm.MLMEmptyDataset
+        dataset_constructor_str: mlm.papl_unconditional.PaplUnconditionalMLMDataset
         dataset_kwargs:
-          max_length: ${datamodule.block_size}
+          lengths: [100, 200, 300, 400, 500, 600, 700, 800]
 
 tags:
   dataset: uniref50_packed
