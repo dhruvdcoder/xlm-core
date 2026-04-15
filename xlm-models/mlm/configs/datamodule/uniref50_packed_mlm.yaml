@@ -15,16 +15,19 @@ datamodule:
         dataset_constructor_str: mlm.papl_unconditional.PaplUnconditionalMLMDataset
         dataset_kwargs:
           lengths: [100, 200, 300, 400, 500, 600, 700, 800]
+          examples_per_node: 100
     test:
       unconditional_prediction:
         dataset_constructor_str: mlm.papl_unconditional.PaplUnconditionalMLMDataset
         dataset_kwargs:
           lengths: [100, 200, 300, 400, 500, 600, 700, 800]
+          examples_per_node: 100
     predict:
       unconditional_prediction:
         dataset_constructor_str: mlm.papl_unconditional.PaplUnconditionalMLMDataset
         dataset_kwargs:
           lengths: [100, 200, 300, 400, 500, 600, 700, 800]
+          examples_per_node: 100
 
 tags:
   dataset: uniref50_packed

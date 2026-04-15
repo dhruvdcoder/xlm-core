@@ -5,14 +5,11 @@ defaults:
   - override /model_type: mlm
   - override /model: rotary_transformer_mlm
 
-per_device_batch_size: 32
-global_batch_size: 512
+per_device_batch_size: 64
+global_batch_size: 1024
 block_size: 1024
 num_dataloader_workers: 5
 monitored_metric: val/lm/accumulated_loss
-
-datamodule:
-  print_batch_fn: mlm.datamodule_mlm.print_batch_mlm
 
 trainer:
   max_steps: 1000_000
@@ -24,10 +21,12 @@ optimizer:
   lr: 0.0001
 
 lr_scheduler:
-  name: "constant_with_warmup"
+  name: "cosine_with_min_lr"
   num_warmup_steps: 2000
   num_training_steps: ${trainer.max_steps}
   monitor: "train/loss"
+  min_lr: 1.0e-6
+  num_cycles: 2.0
 
 model:
   use_flex_attn: true
@@ -36,3 +35,7 @@ callbacks:
   checkpoint_every_n_steps:
     every_n_train_steps: 2500
     keep_multiple: 40 # Keep every (keep_multiple * every_n_train_steps) permanently = 2500 * 40 = 100_000
+
+loggers:
+  wandb:
+    project: BPTT
