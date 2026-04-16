@@ -111,16 +111,6 @@ class MLMLoss(LossFunction[MLMBatch, MLMLossDict]):
         if not self.loss_on_visible_tokens:
             ignore = ignore.logical_or(input_ids != self.mask_token_id_tensor)  # type: ignore
         targets[ignore] = -100
-        if ignore.all():
-            # Need to do this manually because pytorch doesn't do the logical thing. See https://github.com/pytorch/pytorch/issues/70348
-            return {
-                "loss": torch.tensor(
-                    0.0,
-                    device=logits.device,
-                    dtype=logits.dtype,
-                    requires_grad=True,
-                )
-            }
 
         logits_T = logits.transpose(1, 2)
 
