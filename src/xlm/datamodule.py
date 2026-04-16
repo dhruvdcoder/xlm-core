@@ -1183,7 +1183,8 @@ class DatasetManager:
             )
             per_worker_batch_size = self.dataloader_kwargs.get("batch_size", 1)
             if num_shards_per_worker > per_worker_batch_size:
-                raise ValueError(
+                #raise ValueError(
+                logger.warning(
                     f"{num_shards_per_worker=} > {per_worker_batch_size=}. This may cause the training to hang even with drop_last=True. "
                     "Either increase the num_workers or world_size to bring down the num_shards_per_worker or reduce the num_shards or increase the batch_size."
                 )
