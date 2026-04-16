@@ -654,6 +654,15 @@ class SimpleSpaceTokenizerWithCyclicPads(SimpleSpaceTokenizer):
             **kwargs,
         )
 
+class SimpleSpaceTokenizerWithDeletion(SimpleSpaceTokenizer):
+    
+    def __init__(self, vocab: Sequence[str], **kwargs):
+        super().__init__(vocab=vocab, **kwargs)
+        del_token_id = len(self._vocab_str_to_int)
+        self._vocab_str_to_int["[DEL]"] = del_token_id
+        self._vocab_int_to_str[del_token_id] = "[DEL]"
+        setattr(self, "delete_token", "[DEL]")
+        setattr(self, "delete_token_id", del_token_id)
 
 # endregion: Tokenizers
 ################################################################################
