@@ -39,31 +39,6 @@ def seq2seq_suffix_ids(
 
 
 class MLMEmptyDataset(IterableDataset):
-    def __init__(
-        self,
-        tokenizer: Tokenizer,
-        num_examples: int,
-        max_length: int,
-    ):
-        """
-        Args:
-            tokenizer_kwargs: Keyword arguments for the tokenizer.
-            TODO: Might want the option to add BOS.
-
-        """
-        self.tokenizer = tokenizer
-        self.num_examples = num_examples
-        self.max_length = max_length
-
-    def __iter__(self):
-        for _ in range(self.num_examples):
-            ex = {
-                "input_ids": [self.tokenizer.mask_token_id] * self.max_length
-            }
-            yield ex
-
-
-class MLMEmptyDataset(IterableDataset):
     """Empty dataset for unconditional MLM generation. Yields all-mask sequences."""
 
     def __init__(
@@ -536,14 +511,18 @@ class MLMSeq2SeqCollator(Collator):
             else ["answer", "target"]
         )
 
-    def _prompt_ids(self, examples: List[Seq2SeqCollatorInput]) -> List[List[int]]:
+    def _prompt_ids(
+        self, examples: List[Seq2SeqCollatorInput]
+    ) -> List[List[int]]:
         pf = self.prompt_field
         return [e[pf] for e in examples]  # type: ignore[misc]
 
     def _suffix_ids(self, e: Mapping[str, Any]) -> List[int]:
         return seq2seq_suffix_ids(e, self.target_field)
 
-    def _suffix_lists(self, examples: List[Seq2SeqCollatorInput]) -> List[List[int]]:
+    def _suffix_lists(
+        self, examples: List[Seq2SeqCollatorInput]
+    ) -> List[List[int]]:
         return [self._suffix_ids(e) for e in examples]
 
     def _merge_pass_through(
@@ -867,7 +846,9 @@ class PackedMLMCollator(Collator):
         segment_ids = segment_start.long().cumsum(dim=1) - 1
 
         # --- per-sequence reset positions ------------------------------------
-        arange = torch.arange(seq_len, device=input_ids.device).unsqueeze(0)  # (1, seq_len)
+        arange = torch.arange(seq_len, device=input_ids.device).unsqueeze(
+            0
+        )  # (1, seq_len)
         # For each position, record the absolute index of the current segment start
         last_start = (arange * segment_start.long()).cummax(dim=1).values
         reset_positions = (arange - last_start).long()  # (bsz, seq_len)

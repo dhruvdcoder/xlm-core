@@ -87,7 +87,11 @@ class AutoModelForCausalLMGenerativePerplexityEvaluator(
     supported_models = ["gpt2", "gpt2-medium", "gpt2-large", "gpt2-xl"]
 
     def __init__(
-        self, name: str, batch_size: int = 64, device: Optional[str] = None, max_length: Optional[int] = None
+        self,
+        name: str,
+        batch_size: int = 64,
+        device: Optional[str] = None,
+        max_length: Optional[int] = None,
     ):
         """
         Args:
@@ -145,7 +149,7 @@ class AutoModelForCausalLMGenerativePerplexityEvaluator(
             Some models like GPT2 only have EOS token. In those cases, we will not be able to evaluate EOS generation
             because PAD will be set to EOS and the EOS token will be lost.
         """
-        
+
         self.pretrained_model = (
             cast(
                 torch.nn.Module,
@@ -154,10 +158,8 @@ class AutoModelForCausalLMGenerativePerplexityEvaluator(
             .to(device)
             .eval()
         )
-        
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            self.name
-        )
+
+        self.tokenizer = AutoTokenizer.from_pretrained(self.name)
         self.device = device
         original_vocab_size = self.tokenizer.vocab_size
         # eos token
@@ -186,7 +188,7 @@ class AutoModelForCausalLMGenerativePerplexityEvaluator(
             samples,
             # padding="longest",
             padding=False,
-            truncation=self.max_length is not None,
+            truncation=True if self.max_length is not None else False,
             max_length=self.max_length,
             return_attention_mask=True,
             return_tensors="pt",
