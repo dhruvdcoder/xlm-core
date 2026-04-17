@@ -25,6 +25,7 @@ import os
 import torch
 import torch.utils.checkpoint
 from torch import nn
+import torch.nn.functional as F
 
 from transformers.activations import ACT2FN
 from transformers.cache_utils import Cache, DynamicCache
@@ -43,6 +44,7 @@ from transformers.utils import (
 )
 from transformers import PretrainedConfig
 from xlm.backbones.dream.configuration_base import DreamConfigBase
+from flexmdm.model_flexmdm import TimestepEmbedder
 
 if is_flash_attn_2_available():
     from transformers.modeling_flash_attention_utils import (
@@ -55,6 +57,67 @@ logger = logging.get_logger(__name__)
 
 _CHECKPOINT_FOR_DOC = "Dream-7B"
 _CONFIG_FOR_DOC = "DreamConfigBase"
+
+class RMSNormModulations(nn.Module):
+    """
+    Produces the modulation parameters for RMSNorm.
+    """
+
+    def __init__(
+        self, cond_dim: int, dim: int, num_modulation_parameters: int = 2
+    ):
+        """
+        Initializes the RMSNormModulations module.
+
+        Args:
+            cond_dim (int): The dimension of the conditioning input.
+            dim (int): The hidden size.
+        """
+        super().__init__()
+        self.num_modulation_parameters = num_modulation_parameters
+        self.modulation = nn.Linear(
+            cond_dim, num_modulation_parameters * dim, bias=True
+        )
+        self.modulation.weight.data.zero_()
+        self.modulation.bias.data.zero_()
+
+    def forward(self, c: torch.Tensor) -> List[torch.Tensor]:
+        """
+        Forward pass of the RMSNormModulations module.
+
+        Args:
+            c (torch.Tensor): The conditioning input tensor.
+
+        Returns:
+            Tuple[torch.Tensor]: The modulation parameters for RMSNorm.
+                Each tensor has shape (bsz, 1, dim). When num_modulation_paramters=6, these tensors stand for
+                the shift and scale parameters for the MHA and MLP layers, and the gating parameters:
+                shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp.
+        """
+        # Apply the linear layer to get output of shape (bsz, 6 * dim).
+        # Then add one dimension to the output to get shape (bsz, 1, 6 * dim).
+        # Finally, chunk the output into 6 tensors of shape (bsz, 1, dim).
+        return self.modulation(c)[:, None].chunk(
+            self.num_modulation_parameters, dim=2
+        )
+
+    # add jit.script to make it faster ?
+    @staticmethod
+    def ada_ln_modulate(
+        x: torch.Tensor, scale: torch.Tensor
+    ) -> torch.Tensor:
+        """
+        Applies adaLN modulation to the input tensor.
+
+        Args:
+            x: The input tensor of shape (bsz, seq_len, dim).
+            shift: The shift parameter tensor of shape (bsz, 1, dim).
+            scale: The scale parameter tensor of shape (bsz, 1, dim).
+
+        Returns:
+            The modulated output tensor of shape (bsz, seq_len, dim).
+        """
+        return x * (1.0 + scale)
 
 
 # Copied from transformers.models.llama.modeling_llama.LlamaRMSNorm with Llama->Dream
@@ -561,6 +624,13 @@ class DreamDecoderLayer(nn.Module):
             config.hidden_size, eps=config.rms_norm_eps
         )
 
+        self.use_time_embedding = config.use_time_embedding
+        if config.use_time_embedding:
+            d_cond = getattr(config, "d_cond", config.hidden_size // 2)
+            self.rms_norm_modulations = RMSNormModulations(
+                d_cond, config.hidden_size
+            )
+
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -573,6 +643,7 @@ class DreamDecoderLayer(nn.Module):
         position_embeddings: Optional[
             Tuple[torch.Tensor, torch.Tensor]
         ] = None,  # will become mandatory in v4.46
+        c: Optional[torch.FloatTensor] = None,
         **kwargs,
     ) -> Tuple[
         torch.FloatTensor,
@@ -602,7 +673,15 @@ class DreamDecoderLayer(nn.Module):
 
         residual = hidden_states
 
-        hidden_states = self.input_layernorm(hidden_states)
+        if self.use_time_embedding:
+            scale_msa, scale_mlp = (
+                self.rms_norm_modulations(c)
+            )
+            hidden_states = RMSNormModulations.rms_norm_modulate(
+                self.input_layernorm(hidden_states), scale_msa
+            )   
+        else:
+            hidden_states = self.input_layernorm(hidden_states)
 
         # Self Attention
         hidden_states, self_attn_weights, present_key_value = self.self_attn(
@@ -619,7 +698,12 @@ class DreamDecoderLayer(nn.Module):
 
         # Fully Connected
         residual = hidden_states
-        hidden_states = self.post_attention_layernorm(hidden_states)
+        if self.use_time_embedding:
+            hidden_states = RMSNormModulations.rms_norm_modulate(
+                self.post_attention_layernorm(hidden_states), scale_mlp
+            )
+        else:
+            hidden_states = self.post_attention_layernorm(hidden_states)
         hidden_states = self.mlp(hidden_states)
         hidden_states = residual + hidden_states
 
@@ -687,6 +771,12 @@ class DreamBaseModel(DreamPreTrainedModel):
         # Initialize weights and apply final processing
         self.post_init()
 
+        if config.use_time_embedding:
+            d_cond = getattr(config, "d_cond", config.hidden_size // 2)
+            self.sigma_map = TimestepEmbedder(d_cond, 256)
+        else:
+            self.sigma_map = None
+
     def get_input_embeddings(self):
         return self.embed_tokens
 
@@ -705,6 +795,7 @@ class DreamBaseModel(DreamPreTrainedModel):
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
         cache_position: Optional[torch.LongTensor] = None,
+        t: Optional[torch.FloatTensor] = None,
     ) -> Union[Tuple, BaseModelOutput]:
         output_attentions = (
             output_attentions
@@ -774,6 +865,10 @@ class DreamBaseModel(DreamPreTrainedModel):
         all_hidden_states = () if output_hidden_states else None
         all_self_attns = () if output_attentions else None
 
+        if self.sigma_map is not None:
+            c = F.silu(self.sigma_map(t))
+        else:
+            c = None
         for decoder_layer in self.layers:
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
@@ -789,6 +884,7 @@ class DreamBaseModel(DreamPreTrainedModel):
                     use_cache,
                     cache_position,
                     position_embeddings,
+                    c
                 )
             else:
                 layer_outputs = decoder_layer(
@@ -800,6 +896,7 @@ class DreamBaseModel(DreamPreTrainedModel):
                     use_cache=use_cache,
                     cache_position=cache_position,
                     position_embeddings=position_embeddings,
+                    c=c,
                 )
 
             hidden_states = layer_outputs[0]
@@ -877,6 +974,7 @@ class DreamModelCore(DreamPreTrainedModel):
         return_dict: Optional[bool] = None,
         cache_position: Optional[torch.LongTensor] = None,
         num_logits_to_keep: int = 0,
+        t: Optional[torch.FloatTensor] = None,
         **loss_kwargs,
     ) -> Union[Tuple, MaskedLMOutput]:
         output_attentions = (
@@ -907,6 +1005,7 @@ class DreamModelCore(DreamPreTrainedModel):
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
             cache_position=cache_position,
+            t=t,
         )
 
         hidden_states = outputs[0]
