@@ -82,6 +82,63 @@ def _build_split(
     return datasets.Dataset.from_dict(rows)
 
 
+#: Per-shard ``len(token_ids)`` plan for ``mem/raw_varlen/train``.
+#:
+#: Designed so :func:`xlm.datamodule.pack_sequences` (with
+#: ``use_bos=True``, ``drop_last=True``, ``block_size=8``) yields
+#: **3 / 4 / 3 / 6** blocks per contiguous shard when the dataset is
+#: converted via ``Dataset.to_iterable_dataset(num_shards=4)``.
+#:
+#: Per-example contribution to the packed stream is ``bos + tokens + eos
+#: = len + 2``.  Stream totals per shard:
+#:   shard 0: 4+4+4+4 + 4*2 = 24 -> 24 // 8 = 3 blocks
+#:   shard 1: 6+6+6+6 + 4*2 = 32 -> 32 // 8 = 4 blocks
+#:   shard 2: 4+4+4+4 + 4*2 = 24 -> 24 // 8 = 3 blocks
+#:   shard 3: 10+10+10+10 + 4*2 = 48 -> 48 // 8 = 6 blocks
+#:
+#: Under ``split_dataset_by_node(world_size=2)`` (contiguous shard
+#: distribution) the per-rank totals are therefore **7 vs 9 batches**
+#: at ``batch_size=1`` -- the canonical "uneven shards hang DDP"
+#: pathology.  See
+#: ``tests/integration/datamodule/test_dataset_manager_ddp_cpu.py``
+#: ``TestIterableDdpPackSequencesUnevenBatches``.
+VARLEN_SHARD_LENGTHS: List[List[int]] = [
+    [4, 4, 4, 4],
+    [6, 6, 6, 6],
+    [4, 4, 4, 4],
+    [10, 10, 10, 10],
+]
+
+
+def _build_varlen_split(
+    seed: int,
+    shard_lengths: Sequence[Sequence[int]],
+    id_offset: int,
+) -> datasets.Dataset:
+    """Build an in-memory split with **variable** ``token_ids`` lengths.
+
+    Rows are emitted shard by shard in the order of ``shard_lengths`` so
+    that ``Dataset.to_iterable_dataset(num_shards=len(shard_lengths))``
+    -- which chunks contiguously -- places each ``shard_lengths[i]``
+    group into shard ``i``.  This gives the test deterministic control
+    over per-shard token counts (and therefore over the number of
+    packed blocks each shard produces under
+    :func:`xlm.datamodule.pack_sequences`).
+    """
+    rng = random.Random(seed)
+    rows: Dict[str, List[Any]] = {"id": [], "text": [], "token_ids": []}
+    next_id = id_offset
+    for shard in shard_lengths:
+        for ln in shard:
+            rows["id"].append(next_id)
+            rows["text"].append(f"row_{next_id}")
+            rows["token_ids"].append(
+                [rng.randint(_TOKEN_ID_LO, _TOKEN_ID_HI) for _ in range(ln)]
+            )
+            next_id += 1
+    return datasets.Dataset.from_dict(rows)
+
+
 def build_inmem_datasets() -> Dict[str, datasets.Dataset]:
     """Build the canonical in-memory dataset registry.
 
@@ -98,6 +155,14 @@ def build_inmem_datasets() -> Dict[str, datasets.Dataset]:
         # 60 examples = enough for to_iterable_dataset(num_shards=4) and
         # multi-rank * multi-worker tests.
         "mem/raw_large/train": _build_split(seed=3, n=60, id_offset=1000),
+        # Variable-length sequences laid out so contiguous sharding by
+        # ``to_iterable_dataset(num_shards=4)`` gives unequal per-shard
+        # token streams; see ``VARLEN_SHARD_LENGTHS`` for the exact plan.
+        "mem/raw_varlen/train": _build_varlen_split(
+            seed=4,
+            shard_lengths=VARLEN_SHARD_LENGTHS,
+            id_offset=2000,
+        ),
     }
 
 
@@ -312,6 +377,11 @@ class IdTrackingCollator:
     def __call__(
         self, examples: Sequence[Mapping[str, Any]]
     ) -> Dict[str, Any]:
+        # ``id`` is dropped by group processors that change batch size
+        # (e.g. ``xlm.datamodule.pack_sequences``).  Fall back to an empty
+        # list so coverage-style assertions can still inspect everything
+        # else (``input_ids`` shapes, batch counts, ...).
+        has_id = bool(examples) and "id" in examples[0]
         return {
             "input_ids": torch.tensor(
                 [list(e["input_ids"]) for e in examples], dtype=torch.long
@@ -322,5 +392,5 @@ class IdTrackingCollator:
             "token_type_ids": torch.tensor(
                 [list(e["token_type_ids"]) for e in examples], dtype=torch.long
             ),
-            "ids": [int(e["id"]) for e in examples],
+            "ids": [int(e["id"]) for e in examples] if has_id else [],
         }
