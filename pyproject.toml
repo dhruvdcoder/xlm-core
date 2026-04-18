@@ -31,6 +31,9 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "gpu: marks tests requiring a GPU",
     "cli: marks CLI / subprocess integration tests",
+    "integration: marks integration tests (deselect with '-m \"not integration\"')",
+    "ddp: marks tests that spawn multiple processes for DDP",
+    "slurm: marks integration tests that submit a SLURM job (sbatch)",
 ]
 addopts = "-v --tb=short"
 

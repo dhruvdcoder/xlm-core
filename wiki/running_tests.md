@@ -17,13 +17,19 @@ tests/
 ├── configs/
 │   └── debug/
 │       └── smoke.yaml       # Hydra bundle for CLI smoke tests (use with --config-dir tests/configs)
-├── conftest.py              # Shared fixtures (tokenizer, batches, tiny model kwargs)
+├── conftest.py              # Shared fixtures (tokenizer, batches, tiny model kwargs,
+│                            # plus DatasetManager fixtures: inmem_datasets,
+│                            # patched_download, dataset_manager_factory, ...)
+├── datamodule_helpers.py    # Importable helpers for DatasetManager tests
+│                            # (in-memory dataset registry, patch helpers,
+│                            # IdTrackingCollator, processors). Used by both
+│                            # tests/core/ and tests/integration/.
 ├── core/                    # Unit tests for xlm core components
 │   ├── test_tokenizers.py
 │   ├── test_collators.py
 │   ├── test_noise.py
 │   ├── test_metrics.py
-│   ├── test_datamodule.py
+│   ├── test_datamodule.py   # Single-method DatasetManager matrix (fast)
 │   └── test_harness.py
 ├── models/                  # Unit tests for each model family
 │   ├── _base.py             # Base test mixin classes (BaseModelTests, BaseLossTests, …)
@@ -31,12 +37,24 @@ tests/
 │   ├── mdlm/
 │   ├── arlm/
 │   └── ilm/
-└── cli/                     # CLI / integration tests
-    ├── test_train.py
-    ├── test_eval.py
-    ├── test_generate.py
-    ├── test_scaffold.py
-    └── test_smoke.py        # End-to-end xlm subprocess smoke (slow)
+├── cli/                     # CLI / integration tests
+│   ├── test_train.py
+│   ├── test_eval.py
+│   ├── test_generate.py
+│   ├── test_scaffold.py
+│   └── test_smoke.py        # End-to-end xlm subprocess smoke (slow)
+└── integration/             # End-to-end and multi-process DatasetManager tests
+    │                        # (lifecycle, CPU DDP, Lightning DDP, SLURM);
+    │                        # see wiki/integration_tests.md for the architecture.
+    ├── _runner.py           # run_cpu_distributed (torch.distributed.run launcher)
+    ├── _slurm.py            # submit_sbatch_and_wait (sbatch --wait wrapper)
+    ├── _scripts/            # Subprocess entrypoints for the CPU DDP runner
+    └── datamodule/
+        ├── test_dataset_manager_lifecycle.py        # Single-process end-to-end
+        ├── test_dataset_manager_ddp_cpu.py          # CPU multi-process DDP
+        ├── test_dataset_manager_ddp_lightning_cpu.py
+        ├── test_dataset_manager_ddp_slurm.py        # GPU DDP via sbatch (opt-in)
+        └── slurm/                                   # SLURM scenario sandboxes
 ```
 
 ## End-to-end CLI smoke tests
@@ -127,6 +145,9 @@ Tests use the following `pytest` markers (defined in `pyproject.toml`):
 | `slow` | Tests that are expensive (full training steps, large models, real datasets). Deselect with `-m "not slow"`. |
 | `gpu`  | Tests that require a CUDA GPU.                                                                              |
 | `cli`  | Tests that invoke the `xlm` CLI as a subprocess.                                                            |
+| `integration` | Tests under `tests/integration/` (end-to-end lifecycle, CPU DDP, Lightning DDP, SLURM). Subprocess startup + dataset construction make them slower than unit tests. The fast single-method `DatasetManager` matrix lives in `tests/core/test_datamodule.py` and is **not** marked `integration`. |
+| `ddp`  | Tests that spawn multiple processes for distributed coverage (CPU `gloo` or GPU `nccl`).                     |
+| `slurm`| Tests that submit a real SLURM job. Auto-skipped unless `sbatch` is on PATH **and** `XLM_INTEGRATION_SLURM_ENABLE=1`. |
 
 You can combine markers:
 
@@ -144,6 +165,79 @@ coverage report
 
 Coverage settings are in `pyproject.toml` under `[tool.coverage.*]`.
 The current threshold is `fail_under = 90`.
+
+## Integration tests
+
+The `tests/integration/` suite exercises end-to-end `DatasetManager`
+lifecycles, real DDP multi-process behaviour, and end-to-end
+`lightning.Trainer` runs.  See [`integration_tests.md`](./integration_tests.md)
+for the full architecture, fixtures, and a mermaid diagram.
+
+> **Looking for the per-method `DatasetManager` tests?**  Every branch
+> of `__init__` / `prepare_data` / `setup` / `get_dataloader` is
+> covered by `tests/core/test_datamodule.py` (single-process, ~1 s,
+> runs as part of the fast unit suite).  The integration suite
+> covers what those tests *cannot* exercise in a single process.
+
+The integration suite is split into three tiers controlled by markers:
+
+| Tier | Marker selector | What it does | Typical runtime |
+| --- | --- | --- | --- |
+| Single-process lifecycle | `integration and not ddp` | End-to-end `prepare_data -> setup -> get_dataloader -> iterate` for both map-style and iterable backends in one Python process. | ~1 s |
+| CPU multi-process DDP | `integration and ddp and not slurm` | Spawns `world_size` processes via `torch.distributed.run --backend=gloo`; covers `split_dataset_by_node`, `StatefulDistributedSampler`, `set_epoch`, `make_infinite`, plus one CPU Lightning Trainer DDP run. | ~2 min |
+| SLURM multi-GPU DDP | `integration and slurm` | Submits a real GPU `nccl` job via `sbatch --wait`. Opt-in: see below. | depends on queue |
+
+### Run the single-process lifecycle tier
+
+```bash
+pytest -m "integration and not ddp" tests/integration/
+```
+
+Fast (~1 s), no subprocesses; safe to run on every push.
+
+### Run the CPU multi-process DDP tier
+
+```bash
+pytest -m "integration and ddp and not slurm" tests/integration/
+```
+
+Spawns Python subprocesses with `gloo`.  Expect ~10-15 s per test.
+Requires nothing beyond the standard test environment.
+
+### Run the SLURM tier (multi-GPU)
+
+The SLURM tests are double-gated: they auto-skip without `sbatch` on
+PATH and *also* without `XLM_INTEGRATION_SLURM_ENABLE=1`.  This
+prevents accidental job submissions on cluster login nodes.
+
+```bash
+XLM_INTEGRATION_SLURM_ENABLE=1 \
+pytest -m "integration and slurm" tests/integration/
+```
+
+If the default partition / GRES in
+[`tests/integration/datamodule/slurm/ddp_iterable_shards/script.sh`](../tests/integration/datamodule/slurm/ddp_iterable_shards/script.sh)
+does not match your cluster, override via
+`XLM_INTEGRATION_SBATCH_ARGS` (comma-separated, forwarded verbatim
+to `sbatch`):
+
+```bash
+XLM_INTEGRATION_SLURM_ENABLE=1 \
+XLM_INTEGRATION_SBATCH_ARGS="--partition=gpu,--qos=debug" \
+pytest -m "integration and slurm" tests/integration/
+```
+
+Per-rank `rank_<RANK>.json` result files and SLURM `slurm-*.out` logs
+land in pytest's `tmp_path`; on failure the assertion message points
+at the directory.
+
+### Run the entire integration suite locally
+
+```bash
+pytest -m "integration and not slurm" tests/integration/
+```
+
+This runs everything that does not require SLURM (~2 min).
 
 ## Writing new tests
 

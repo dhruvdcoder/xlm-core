@@ -1,8 +1,17 @@
 """Root conftest.py -- shared fixtures for the entire test suite."""
 
+from pathlib import Path
+from typing import Any, Callable, Dict
+
+import datasets
 import pytest
 import torch
 
+from tests.datamodule_helpers import (
+    IdTrackingCollator,
+    build_inmem_datasets,
+    make_patched_download,
+)
 from xlm.datamodule import SimpleSpaceTokenizer
 from xlm.noise import DummyNoiseSchedule
 
@@ -114,3 +123,116 @@ def tiny_model_kwargs(simple_tokenizer):
         rotary_emb_dim=16,
         max_length=64,
     )
+
+
+# ---------------------------------------------------------------------------
+# DatasetManager fixtures
+# ---------------------------------------------------------------------------
+#
+# Used by the fast single-method tests in ``tests/core/test_datamodule.py``
+# *and* by the multi-process / SLURM tests in ``tests/integration/``.
+# All datasets are in-memory; the patched ``_download`` makes sure no
+# network I/O ever happens during testing.  See
+# :mod:`tests.datamodule_helpers` for the registry contents and the
+# ``id`` numbering scheme.
+
+
+@pytest.fixture(scope="session")
+def inmem_datasets() -> Dict[str, datasets.Dataset]:
+    """Canonical in-memory datasets keyed by ``"<repo>/<ds>/<split>"``."""
+    return build_inmem_datasets()
+
+
+@pytest.fixture()
+def patched_download(
+    monkeypatch: pytest.MonkeyPatch,
+    inmem_datasets: Dict[str, datasets.Dataset],
+) -> Dict[str, datasets.Dataset]:
+    """Monkey-patch ``DatasetManager._download`` to read from memory.
+
+    The returned dict is a per-test copy of :func:`inmem_datasets`; tests
+    may register additional entries on it before constructing a
+    ``DatasetManager``.
+    """
+    registry: Dict[str, datasets.Dataset] = dict(inmem_datasets)
+    monkeypatch.setattr(
+        "xlm.datamodule.DatasetManager._download",
+        make_patched_download(registry),
+        raising=True,
+    )
+    return registry
+
+
+@pytest.fixture()
+def manual_cache_dir(tmp_path: Path) -> Path:
+    """A clean per-test directory for the DatasetManager manual cache."""
+    cache = tmp_path / "manual_cache"
+    cache.mkdir()
+    return cache
+
+
+@pytest.fixture()
+def result_dir(tmp_path: Path) -> Path:
+    """A clean per-test directory for distributed-runner result files."""
+    out = tmp_path / "results"
+    out.mkdir()
+    return out
+
+
+@pytest.fixture()
+def simple_collator(simple_tokenizer) -> IdTrackingCollator:
+    """A collator that stacks fixed-length tensors and tracks example ids."""
+    return IdTrackingCollator(tokenizer=simple_tokenizer)
+
+
+_PREPROCESS_FN = "tests.datamodule_helpers.example_to_input_ids"
+
+
+@pytest.fixture()
+def dataset_manager_factory(
+    simple_tokenizer,
+    simple_collator: IdTrackingCollator,
+    patched_download: Dict[str, datasets.Dataset],
+    manual_cache_dir: Path,
+) -> Callable[..., Any]:
+    """Return a callable building a ``DatasetManager`` with sensible defaults.
+
+    Default config:
+
+    * reads the in-memory dataset at ``mem/raw/train`` via the patched
+      ``_download`` (no network);
+    * runs :func:`tests.datamodule_helpers.example_to_input_ids` as the
+      preprocess function with ``columns_to_keep=["id"]`` so the unique
+      ``id`` survives the ``ds.map(remove_columns=...)`` step;
+    * uses ``batch_size=2``, ``num_workers=0`` (no multiprocessing in the
+      dataloader -- the multi-proc *runner* tests override this);
+    * disables shuffle in dataloader_kwargs (the train-DDP map-style path
+      attaches its own sampler and rejects ``shuffle=True``).
+
+    Pass any kwarg accepted by :class:`xlm.datamodule.DatasetManager` to
+    override.  ``manual_cache_dir`` is **not** a constructor kwarg; tests
+    receive it via the :func:`manual_cache_dir` fixture and pass it to
+    ``prepare_data``/``setup`` themselves.
+    """
+    from xlm.datamodule import DatasetManager
+
+    def _make(
+        full_name: str = "mem/raw/train",
+        **overrides: Any,
+    ):
+        defaults: Dict[str, Any] = dict(
+            collator=simple_collator,
+            full_name=full_name,
+            full_name_debug=full_name,
+            dataloader_kwargs={
+                "batch_size": 2,
+                "num_workers": 0,
+                "pin_memory": False,
+            },
+            preprocess_function=_PREPROCESS_FN,
+            columns_to_keep=["id"],
+        )
+        defaults.update(overrides)
+        return DatasetManager(**defaults)
+
+    return _make
