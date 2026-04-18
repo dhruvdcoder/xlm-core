@@ -64,7 +64,7 @@ class RMSNormModulations(nn.Module):
     """
 
     def __init__(
-        self, cond_dim: int, dim: int, num_modulation_parameters: int = 2
+        self, cond_dim: int, dim: int, num_modulation_parameters: int = 4
     ):
         """
         Initializes the RMSNormModulations module.
@@ -90,24 +90,24 @@ class RMSNormModulations(nn.Module):
 
         Returns:
             Tuple[torch.Tensor]: The modulation parameters for RMSNorm.
-                Each tensor has shape (bsz, 1, dim). When num_modulation_paramters=6, these tensors stand for
+                Each tensor has shape (bsz, 1, dim). When num_modulation_paramters=4, these tensors stand for
                 the shift and scale parameters for the MHA and MLP layers, and the gating parameters:
-                shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp.
+                scale_msa, shift_msa, scale_mlp, shift_mlp
         """
-        # Apply the linear layer to get output of shape (bsz, 6 * dim).
-        # Then add one dimension to the output to get shape (bsz, 1, 6 * dim).
-        # Finally, chunk the output into 6 tensors of shape (bsz, 1, dim).
+        # Apply the linear layer to get output of shape (bsz, 4 * dim).
+        # Then add one dimension to the output to get shape (bsz, 1, 4 * dim).
+        # Finally, chunk the output into 4 tensors of shape (bsz, 1, dim).
         return self.modulation(c)[:, None].chunk(
             self.num_modulation_parameters, dim=2
         )
 
     # add jit.script to make it faster ?
     @staticmethod
-    def ada_ln_modulate(
-        x: torch.Tensor, scale: torch.Tensor
+    def rms_norm_modulate(
+        x: torch.Tensor, shift: torch.Tensor, scale: torch.Tensor
     ) -> torch.Tensor:
         """
-        Applies adaLN modulation to the input tensor.
+        Applies RMSNorm modulation to the input tensor.
 
         Args:
             x: The input tensor of shape (bsz, seq_len, dim).
@@ -117,7 +117,7 @@ class RMSNormModulations(nn.Module):
         Returns:
             The modulated output tensor of shape (bsz, seq_len, dim).
         """
-        return x * (1.0 + scale)
+        return x * (1.0 + scale) + shift
 
 
 # Copied from transformers.models.llama.modeling_llama.LlamaRMSNorm with Llama->Dream
@@ -626,9 +626,8 @@ class DreamDecoderLayer(nn.Module):
 
         self.use_time_embedding = config.use_time_embedding
         if config.use_time_embedding:
-            d_cond = getattr(config, "d_cond", config.hidden_size // 2)
             self.rms_norm_modulations = RMSNormModulations(
-                d_cond, config.hidden_size
+                config.d_cond, config.hidden_size
             )
 
     def forward(
@@ -674,11 +673,11 @@ class DreamDecoderLayer(nn.Module):
         residual = hidden_states
 
         if self.use_time_embedding:
-            scale_msa, scale_mlp = (
+            shift_msa, scale_msa, shift_mlp, scale_mlp = (
                 self.rms_norm_modulations(c)
             )
             hidden_states = RMSNormModulations.rms_norm_modulate(
-                self.input_layernorm(hidden_states), scale_msa
+                self.input_layernorm(hidden_states), shift_msa, scale_msa
             )   
         else:
             hidden_states = self.input_layernorm(hidden_states)
@@ -700,7 +699,7 @@ class DreamDecoderLayer(nn.Module):
         residual = hidden_states
         if self.use_time_embedding:
             hidden_states = RMSNormModulations.rms_norm_modulate(
-                self.post_attention_layernorm(hidden_states), scale_mlp
+                self.post_attention_layernorm(hidden_states), shift_mlp, scale_mlp
             )
         else:
             hidden_states = self.post_attention_layernorm(hidden_states)
@@ -772,8 +771,7 @@ class DreamBaseModel(DreamPreTrainedModel):
         self.post_init()
 
         if config.use_time_embedding:
-            d_cond = getattr(config, "d_cond", config.hidden_size // 2)
-            self.sigma_map = TimestepEmbedder(d_cond, 256)
+            self.sigma_map = TimestepEmbedder(config.d_cond, 256)
         else:
             self.sigma_map = None
 
