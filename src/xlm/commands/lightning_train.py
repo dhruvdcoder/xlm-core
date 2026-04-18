@@ -175,7 +175,7 @@ def train(cfg: DictConfig):
             lightning_module.model,
             model_only_ckpt_path,
             map_location="cpu",
-            strict=True,
+            strict=cfg.strict_model_only_load,
             weights_only=True,
         )
 

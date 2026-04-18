@@ -277,6 +277,14 @@ class TokenizerMixin:
             if (token := getattr(self, special_token)) is None:
                 raise ValueError(f"{special_token} is not set")
 
+def load_auto_tokenizer(pretrained_model_name_or_path: str, special_tokens: dict = None ):
+    tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path,trust_remote_code=True)
+    if special_tokens is not None:
+        tokenizer.add_special_tokens({"additional_special_tokens": list(special_tokens.values())})
+        for token_name, token in special_tokens.items():
+            setattr(tokenizer,f'{token_name}_id',tokenizer.convert_tokens_to_ids(token))
+    tokenizer.full_vocab_size = tokenizer.__len__()
+    return tokenizer
 
 class BertTokenizer(TokenizerMixin, _BertTokenizer):  # type: ignore
     def __init__(self, *args, **kwargs):  # type: ignore
