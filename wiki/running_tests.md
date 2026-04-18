@@ -14,6 +14,9 @@
 
 ```
 tests/
+├── configs/
+│   └── debug/
+│       └── smoke.yaml       # Hydra bundle for CLI smoke tests (use with --config-dir tests/configs)
 ├── conftest.py              # Shared fixtures (tokenizer, batches, tiny model kwargs)
 ├── core/                    # Unit tests for xlm core components
 │   ├── test_tokenizers.py
@@ -32,8 +35,37 @@ tests/
     ├── test_train.py
     ├── test_eval.py
     ├── test_generate.py
-    └── test_scaffold.py
+    ├── test_scaffold.py
+    └── test_smoke.py        # End-to-end xlm subprocess smoke (slow)
 ```
+
+## End-to-end CLI smoke tests
+
+These tests live in [`tests/cli/test_smoke.py`](tests/cli/test_smoke.py). Each case runs the real `xlm` console script as a **subprocess** with:
+
+- `--config-dir` pointing at [`tests/configs`](tests/configs), so Hydra can resolve the `debug` group.
+- `debug=smoke`, which loads [`tests/configs/debug/smoke.yaml`](tests/configs/debug/smoke.yaml): a minimal run (5 training steps, validation at step 3, batch size 1, CPU strategy, no checkpointing).
+- `trainer_strategy=cpu` so runs do not require a GPU.
+
+A session-scoped fixture first runs `job_type=prepare_data` for each unique experiment in `SMOKE_RUNS`, then the parametrized test runs `job_type=train` (or whatever you list). Success means the subprocess exits with code 0.
+
+**Run smoke tests only** (requires `xlm` on your `PATH`, e.g. `pip install -e .`):
+
+```bash
+pytest tests/cli/test_smoke.py -m "cli and slow" -v
+```
+
+Markers `cli` and `slow` are defined in `pyproject.toml` under `[tool.pytest.ini_options]`.
+
+**Caches:** point these at existing caches to avoid re-downloading datasets (the `prepare_data` step respects them):
+
+```bash
+export HF_HOME=/path/to/huggingface/cache
+export HF_DATASETS_CACHE=/path/to/datasets/cache
+export DATA_DIR=/path/to/local/data
+```
+
+**Add a new combo:** append a `(experiment_name, job_type)` tuple to `SMOKE_RUNS` in [`tests/cli/test_smoke.py`](tests/cli/test_smoke.py). The parametrized test id becomes `experiment_name-job_type`.
 
 ## Running tests
 
