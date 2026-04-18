@@ -595,10 +595,9 @@ class FlexMDMSeq2SeqPredCollator(Collator):
 def flexmdm_train_collate_fn(
     prompt_ids: Optional[List[List[int]]],
     target_ids: List[List[int]],
-    suffix_ids: Optional[List[List[int]]],
     pad_token_id: int,
-    bos_token_id: Optional[int],
-    eos_token_id: Optional[int],
+    bos_token_id: int,
+    eos_token_id: int,
     max_seq_len: Optional[int] = None,
 ) -> Dict[str, TT]:
     """
@@ -614,31 +613,15 @@ def flexmdm_train_collate_fn(
         Input:
             - prompt_ids = [The quick brown fox]
             - target_ids = [jumped over the lazy dog]
-        Output (when bos_token_id is set):
+        Output:
             - ids   = [The quick brown fox] [bos] [jumped over the lazy dog] [eos] [pad pad pad]
             - fixed = [ 1    1     1    1     1      0     0    0    0   0     1     0   0   0 ]
-        When bos_token_id is None, no BOS token is inserted between prefix and target.
-
-    Prompt and Suffix case:
-        Input:
-            - prompt_ids = [The quick brown fox]
-            - target_ids = [jumped over ]
-            - suffix_ids = [the lazy dog]
-        Output:
-            - ids   = [The quick brown fox] [jumped over] [the lazy dog] [eos] [pad pad pad]
-            - fixed = [ 1    1     1    1     0      0     1    1    1     1     0   0   0 ]
     """
 
     # start with prompt ids, if any, followed by bos
     if prompt_ids is not None:
-        ids = [
-            _prompt_ids + ([bos_token_id] if bos_token_id is not None else [])
-            for _prompt_ids in prompt_ids
-        ]
-        fixed = [
-            [1] * (len(_prompt_ids) + (1 if bos_token_id is not None else 0))
-            for _prompt_ids in prompt_ids
-        ]
+        ids = [_prompt_ids + [bos_token_id] for _prompt_ids in prompt_ids]
+        fixed = [[1] * (len(_prompt_ids) + 1) for _prompt_ids in prompt_ids]
     else:
         ids = [[] for _ in target_ids]
         fixed = [[] for _ in target_ids]
@@ -649,26 +632,19 @@ def flexmdm_train_collate_fn(
         _fixed + [0] * len(target_ids[i]) for i, _fixed in enumerate(fixed)
     ]
 
-    if suffix_ids is not None and len(suffix_ids):
-        ids = [_ids + suffix_ids[i] for i, _ids in enumerate(ids)]
-        fixed = [
-            _fixed + [1] + [1] * (len(suffix_ids[i])-1) for i, _fixed in enumerate(fixed) # Allow insertions to the left of suffix
-        ]
-
     assert max_seq_len is not None
 
     # truncate, add eos, pad
     for i, _ids in enumerate(ids):
-        pad_length = max_seq_len - (len(_ids) + (1 if eos_token_id is not None else 0))
         ids[i] = (
             _ids[: max_seq_len - 1]
-            + ([eos_token_id] if eos_token_id is not None else [])
-            + [pad_token_id] * pad_length
+            + [eos_token_id]
+            + [pad_token_id] * (max_seq_len - len(_ids) - 1)
         )
         fixed[i] = (
             fixed[i][: max_seq_len - 1]
-            + ([1] if eos_token_id is not None else [])
-            + [0] * pad_length
+            + [1]
+            + [0] * (max_seq_len - len(fixed[i]) - 1)
         )
 
     ids = torch.tensor(ids)
@@ -685,14 +661,10 @@ class FlexMDMTrainCollator(Collator):
         tokenizer: Tokenizer,
         block_size: int,
         input_block_size: Optional[int] = 0,
-        add_bos: bool = True,
-        add_eos: bool = True,
     ):
         self.block_size = block_size
         self.input_block_size = input_block_size
         self.tokenizer = tokenizer
-        self.add_bos = add_bos
-        self.add_eos = add_eos
         try:
             self._vocab_size = len(self.tokenizer)
         except TypeError:
@@ -709,14 +681,9 @@ class FlexMDMTrainCollator(Collator):
                 else None
             ),
             target_ids=[e["input_ids"] for e in examples],
-            suffix_ids=(
-                [e["suffix_ids"] for e in examples]
-                if "suffix_ids" in examples[0]
-                else None
-            ),
             pad_token_id=self.tokenizer.pad_token_id,
-            bos_token_id=self.tokenizer.bos_token_id if self.add_bos else None,
-            eos_token_id=self.tokenizer.eos_token_id if self.add_eos else None,
+            bos_token_id=self.tokenizer.bos_token_id,
+            eos_token_id=self.tokenizer.eos_token_id,
             max_seq_len=(self.input_block_size + self.block_size),
         )
 
@@ -725,37 +692,20 @@ def flexmdm_pred_collate_fn(
     num_examples: int,
     prompt_ids: Optional[List[List[int]]],
     target_ids: List[List[int]],
-    suffix_ids: Optional[List[List[int]]],
     pad_token_id: int,
-    mask_token_id: int,
-    bos_token_id: Optional[int],
-    eos_token_id: Optional[int],
+    bos_token_id: int,
+    eos_token_id: int,
     max_seq_len: Optional[int] = None,
 ) -> Dict[str, Optional[TT]]:
 
     if prompt_ids is not None:  # conditional case: start with [prefix] [bos]
-        ids = [
-            _prompt_ids + ([bos_token_id] if bos_token_id is not None else [])
-            for _prompt_ids in prompt_ids
-        ]
+        ids = [_prompt_ids + [bos_token_id] for _prompt_ids in prompt_ids]
         fixed_gaps = [
-            [1] * (len(_prompt_ids) + (1 if bos_token_id is not None else 0))
-            for _prompt_ids in prompt_ids
+            [1] * (len(_prompt_ids) + 1) for _prompt_ids in prompt_ids
         ]
     else:  # unconditional case: start with empty
         ids = [[] for _ in range(num_examples)]
         fixed_gaps = [[] for _ in range(num_examples)]
-    
-    ids = [_ids + [mask_token_id] for i,_ids in enumerate(ids)]
-    fixed_gaps = [_fixed + [0] for i, _fixed in enumerate(fixed_gaps)]
-
-    # add suffix if present (fixed tokens)
-    if suffix_ids is not None and len(suffix_ids):
-        ids = [_ids + suffix_ids[i] for i, _ids in enumerate(ids)]
-        fixed_gaps = [
-            _fixed + [1] + [1] * (len(suffix_ids[i])-1) # Allow insertions to the left of suffix
-            for i, _fixed in enumerate(fixed_gaps)
-        ]
 
     assert max_seq_len is not None
 
@@ -766,14 +716,13 @@ def flexmdm_pred_collate_fn(
 
     # add eos, pad
     for i, _ids in enumerate(ids):
-        pad_length = max_seq_len - (len(_ids) + (1 if eos_token_id is not None else 0))
         ids[i] = (
             _ids
-            + ([eos_token_id] if eos_token_id is not None else [])
-            + [pad_token_id] * pad_length
+            + [eos_token_id]
+            + [pad_token_id] * (max_seq_len - len(_ids) - 1)
         )
         fixed_gaps[i] = (
-            fixed_gaps[i] + ([1] if eos_token_id is not None else []) + [0] * pad_length
+            fixed_gaps[i] + [0] + [0] * (max_seq_len - len(fixed_gaps[i]) - 1)
         )
 
     ids = torch.tensor(ids)
@@ -784,7 +733,7 @@ def flexmdm_pred_collate_fn(
         for i, _target_ids in enumerate(target_ids):
             target_ids[i] = (
                 _target_ids
-                + ([eos_token_id] if eos_token_id is not None else [])
+                + [eos_token_id]
                 + [pad_token_id] * (max_seq_len - len(_target_ids) - 1)
             )
         target_ids = torch.tensor(target_ids)
@@ -806,10 +755,9 @@ class FlexMDMPredCollator(Collator):
     Conditional case:
         Input:
             - prompt_ids = [The quick brown fox]
-        Output (when add_bos is True):
+        Output:
             - ids          = [The quick brown fox] [bos] [eos] [pad pad pad]
             - fixed[_gaps] = [ 1    1     1    1     1     0     1   1   1 ]
-        When add_bos is False, no BOS is inserted after the prefix.
     """
 
     def __init__(
@@ -817,14 +765,10 @@ class FlexMDMPredCollator(Collator):
         tokenizer: Tokenizer,
         block_size: int,
         input_block_size: Optional[int] = 0,
-        add_bos: bool = True,
-        add_eos: bool = True,
     ):
         self.block_size = block_size
         self.input_block_size = input_block_size
         self.tokenizer = tokenizer
-        self.add_bos = add_bos
-        self.add_eos = add_eos
         try:
             self._vocab_size = len(self.tokenizer)
         except TypeError:
@@ -841,15 +785,9 @@ class FlexMDMPredCollator(Collator):
                 [e["prompt_ids"] for e in examples] if has_prefix else None
             ),
             target_ids=[e["input_ids"] for e in examples],
-            suffix_ids=(
-                [e["suffix_ids"] for e in examples]
-                if "suffix_ids" in examples[0]
-                else None
-            ),
             pad_token_id=self.tokenizer.pad_token_id,
-            mask_token_id=self.tokenizer.mask_token_id,
-            bos_token_id=self.tokenizer.bos_token_id if self.add_bos else None,
-            eos_token_id=self.tokenizer.eos_token_id if self.add_eos else None,
+            bos_token_id=self.tokenizer.bos_token_id,
+            eos_token_id=self.tokenizer.eos_token_id,
             max_seq_len=(
                 (self.input_block_size + self.block_size)
                 if has_prefix
