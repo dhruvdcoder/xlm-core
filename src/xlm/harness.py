@@ -35,6 +35,7 @@ from xlm.noise import NoiseSchedule
 from xlm.utils.rank_zero import RankedLogger
 import lightning as L
 from huggingface_hub import PyTorchModelHubMixin
+from xlm.utils.omegaconf_resolvers import dummy_resolvers
 
 # Import LogPredictions classes from the new module
 from xlm.log_predictions import (
@@ -433,6 +434,9 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
             cfg = _cfg
         super().__init__()
         self.config = cfg
+        # save hyperparameters as a plain dict
+        with dummy_resolvers():
+            self.save_hyperparameters(OmegaConf.to_container(cfg, resolve=True))
         self.datamodule = datamodule  # hold a reference to the datamodule
         self.update_omegaconf_resolvers()
         self.setup_vocab(tokenizer)
@@ -448,7 +452,9 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
         # validate and save config at the end
         self.validate_config(self.config)
         # Save hyperparameters as a plain dict.
-        self.save_hyperparameters(OmegaConf.to_container(cfg, resolve=True))
+        # moved the hyperparam saving before the resolvers are updated to point to real instances of tokenizer and datamodule
+        #self.save_hyperparameters(OmegaConf.to_container(cfg, resolve=True))
+        # remove real instances of tokenizer from the hparams
         # Dictionary to store whether we have printed the batch
         self.printed_batches: Set[str] = set()
         self.last_global_step_logged_at_which_logged_predictions: int = -1
