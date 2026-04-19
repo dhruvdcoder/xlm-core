@@ -277,6 +277,21 @@ class TokenizerMixin:
             if (token := getattr(self, special_token)) is None:
                 raise ValueError(f"{special_token} is not set")
 
+def load_auto_tokenizer(pretrained_model_name_or_path: str, special_tokens: dict = None ):
+    """Load a Hugging Face ``AutoTokenizer`` for Hydra/config-driven setups.
+    Args:
+      pretrained_model_name_or_path: Model id or path passed to ``AutoTokenizer.from_pretrained``.
+      special_tokens: Optional mapping from **token attribute names** (e.g. ``"mask_token"``) to
+          **literal token strings** (e.g. ``"<|mask|>"``). Values are registered as additional
+          special tokens, and ``{key}_id`` is set on the tokenizer for each key.
+    """
+    tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path,trust_remote_code=True)
+    if special_tokens is not None:
+        tokenizer.add_special_tokens({"additional_special_tokens": list(special_tokens.values())})
+        for token_name, token in special_tokens.items():
+            setattr(tokenizer,f'{token_name}_id',tokenizer.convert_tokens_to_ids(token))
+    tokenizer.full_vocab_size = tokenizer.__len__()
+    return tokenizer
 
 class BertTokenizer(TokenizerMixin, _BertTokenizer):  # type: ignore
     def __init__(self, *args, **kwargs):  # type: ignore

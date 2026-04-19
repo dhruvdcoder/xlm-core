@@ -40,6 +40,8 @@ class DreamConfigBase(PretrainedConfig):
         attention_dropout=0.0,
         mask_token_id=151666,
         pad_token_id=151643,
+        use_time_embedding=False,
+        d_cond=None,
         **kwargs,
     ):
         self.vocab_size = vocab_size
@@ -73,3 +75,5 @@ class DreamConfigBase(PretrainedConfig):
         )
         self.mask_token_id = mask_token_id
         self.pad_token_id = pad_token_id
+        self.use_time_embedding = use_time_embedding
+        self.d_cond = d_cond if d_cond is not None else hidden_size // 2

@@ -1,4 +1,5 @@
-from typing import Callable, Dict, List
+from contextlib import contextmanager
+from typing import Callable, Dict, Iterable, Iterator, List
 import omegaconf
 import os
 import torch
@@ -91,3 +92,59 @@ def remove_keys_with_double_underscores(
     This can be used to remove keys that are only present for computational purposes and are not part of the final config.
     """
     return dictconfig_filter_key(d, lambda k: not k.startswith("__"))
+
+DEFAULT_DUMMY_RESOLVER_NAMES: tuple = (
+    "datamodule",
+    "tokenizer",
+    "lightning_module",
+    "global_components",
+)
+
+
+@contextmanager
+def dummy_resolvers(
+    names: Iterable[str] = DEFAULT_DUMMY_RESOLVER_NAMES,
+) -> Iterator[None]:
+    """Temporarily install passthrough OmegaConf resolvers for ``names``.
+
+    For each name, a dummy resolver is registered (replacing any existing
+    resolver) that returns the unresolved interpolation string
+    ``"${<name>:<attr>}"``. This lets ``OmegaConf.resolve()`` succeed early
+    in the config lifecycle, before the real resolvers (which depend on the
+    datamodule, tokenizer, etc.) are available.
+
+    On exit, the previously registered resolver is restored for each name; if
+    no resolver was registered before, the dummy is removed.
+    """
+    # BaseContainer._resolvers is the underlying dict that OmegaConf consults
+    # in OmegaConf._get_resolver / register_new_resolver. Saving and restoring
+    # entries here preserves the exact wrapped callables (with their cache /
+    # _parent_ / _node_ / _root_ behavior) rather than rewrapping them.
+    from omegaconf.basecontainer import BaseContainer
+
+    resolvers_dict: Dict[str, Callable] = (
+        BaseContainer._resolvers  # type: ignore[attr-defined]
+    )
+
+    names = list(names)
+    saved: Dict[str, Callable] = {
+        name: resolvers_dict[name]
+        for name in names
+        if name in resolvers_dict
+    }
+
+    for name in names:
+        omegaconf.OmegaConf.register_new_resolver(
+            name,
+            lambda attr, _name=name: "${" + _name + ":" + str(attr) + "}",
+            replace=True,
+        )
+
+    try:
+        yield
+    finally:
+        for name in names:
+            if name in saved:
+                resolvers_dict[name] = saved[name]
+            else:
+                omegaconf.OmegaConf.clear_resolver(name)
