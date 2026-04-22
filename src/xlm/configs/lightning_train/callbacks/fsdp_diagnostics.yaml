@@ -1,0 +1,5 @@
+fsdp_diagnostics:
+  _target_: xlm.utils.fsdp_diagnostics_callback.FSDPDiagnosticsCallback
+  num_logged_batches: 3
+  log_module_tree_top_k: 5
+  log_to_logger: true

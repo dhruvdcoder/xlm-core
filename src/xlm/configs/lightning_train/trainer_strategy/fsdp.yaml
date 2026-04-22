@@ -4,3 +4,4 @@ _target_: lightning.pytorch.strategies.FSDPStrategy
 sharding_strategy: FULL_SHARD
 cpu_offload: false
 use_orig_params: false
+state_dict_type: sharded

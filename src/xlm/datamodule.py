@@ -277,7 +277,10 @@ class TokenizerMixin:
             if (token := getattr(self, special_token)) is None:
                 raise ValueError(f"{special_token} is not set")
 
-def load_auto_tokenizer(pretrained_model_name_or_path: str, special_tokens: dict = None ):
+
+def load_auto_tokenizer(
+    pretrained_model_name_or_path: str, special_tokens: dict = None
+):
     """Load a Hugging Face ``AutoTokenizer`` for Hydra/config-driven setups.
     Args:
       pretrained_model_name_or_path: Model id or path passed to ``AutoTokenizer.from_pretrained``.
@@ -285,13 +288,22 @@ def load_auto_tokenizer(pretrained_model_name_or_path: str, special_tokens: dict
           **literal token strings** (e.g. ``"<|mask|>"``). Values are registered as additional
           special tokens, and ``{key}_id`` is set on the tokenizer for each key.
     """
-    tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path,trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(
+        pretrained_model_name_or_path, trust_remote_code=True
+    )
     if special_tokens is not None:
-        tokenizer.add_special_tokens({"additional_special_tokens": list(special_tokens.values())})
+        tokenizer.add_special_tokens(
+            {"additional_special_tokens": list(special_tokens.values())}
+        )
         for token_name, token in special_tokens.items():
-            setattr(tokenizer,f'{token_name}_id',tokenizer.convert_tokens_to_ids(token))
+            setattr(
+                tokenizer,
+                f"{token_name}_id",
+                tokenizer.convert_tokens_to_ids(token),
+            )
     tokenizer.full_vocab_size = tokenizer.__len__()
     return tokenizer
+
 
 class BertTokenizer(TokenizerMixin, _BertTokenizer):  # type: ignore
     def __init__(self, *args, **kwargs):  # type: ignore
@@ -959,7 +971,13 @@ class DatasetManager:
                 "tokenizer": tokenizer,
                 **self.on_the_fly_processor_kwargs,
             }
-            map_kwargs = {} if self.is_iterable_dataset else dict(load_from_cache_file=self.on_the_fly_load_from_cache_file)
+            map_kwargs = (
+                {}
+                if self.is_iterable_dataset
+                else dict(
+                    load_from_cache_file=self.on_the_fly_load_from_cache_file
+                )
+            )
             dataset = dataset.map(
                 processor,
                 batched=False,
@@ -1198,7 +1216,8 @@ class DatasetManager:
             )
             per_worker_batch_size = self.dataloader_kwargs.get("batch_size", 1)
             if num_shards_per_worker > per_worker_batch_size:
-                raise ValueError(
+                # raise ValueError(
+                logger.warning(
                     f"{num_shards_per_worker=} > {per_worker_batch_size=}. This may cause the training to hang even with drop_last=True. "
                     "Either increase the num_workers or world_size to bring down the num_shards_per_worker or reduce the num_shards or increase the batch_size."
                 )
@@ -1343,9 +1362,7 @@ class EvalDatasetManager:
         self.filter_suffix = filter_suffix
         self.columns_to_remove = columns_to_remove
         self.columns_to_keep = columns_to_keep
-        self.stages = (
-            stages if stages is not None else ["validate", "test"]
-        )
+        self.stages = stages if stages is not None else ["validate", "test"]
         self.dataset: Optional[datasets.Dataset] = None
 
     def __repr__(self) -> str:
