@@ -7,7 +7,7 @@ Reports, on rank 0:
        ``num_logged_batches`` training steps.
 
 These three signals together let us distinguish OOM root causes:
-    - if (1) shows the wrong policy / dtype, the YAML did not merge;
+    - if (1) shows the wrong policy / dtype, the config is not right, eg. YAML did not merge correctly, etc.;
     - if (2) shows only one FSDP unit / no CheckpointWrappers, the auto-wrap or
       activation-checkpointing policy did not fire on the target layer class
       (so the model is effectively un-sharded or fully materialized);
@@ -52,9 +52,7 @@ def _format_class_set(value: Any) -> str:
         return "None"
     if isinstance(value, (set, frozenset, list, tuple)):
         try:
-            names = sorted(
-                getattr(c, "__name__", repr(c)) for c in value
-            )
+            names = sorted(getattr(c, "__name__", repr(c)) for c in value)
             return "{" + ", ".join(names) + "}"
         except Exception:
             return repr(value)
@@ -157,9 +155,7 @@ class FSDPDiagnosticsCallback(Callback):
                     self._render_mixed_precision(mp_cfg)
                 )
 
-        self._log.info(
-            "[FSDPDiagnostics setup] " + self._kv(info), rank=0
-        )
+        self._log.info("[FSDPDiagnostics setup] " + self._kv(info), rank=0)
 
     # ------------------------------------------------------------------
     # Post-wrap structure dump
