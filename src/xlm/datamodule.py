@@ -877,10 +877,13 @@ class DatasetManager:
             if self.columns_to_keep: 
                 columns_to_remove = [col for col in ds.column_names if col not in self.columns_to_keep]
             if self.columns_to_remove: columns_to_remove.extend(self.columns_to_remove)
+            # HF datasets rejects num_proc=0; None means single-process map. Dump
+            # runs set num_dataset_workers=0 for RAM; that must not propagate as 0 here.
+            map_num_proc = num_proc if num_proc is not None and num_proc > 0 else None
             ds = ds.map(
                 preprocess_fn,
                 batched=False,
-                num_proc=num_proc,
+                num_proc=map_num_proc,
                 fn_kwargs=fn_kwargs,
                 remove_columns=columns_to_remove,
             )
