@@ -73,5 +73,10 @@ nav:
 
   - Developers:
       - CONTRIBUTING: guide/CONTRIBUTING.md
+      - Dependencies: developers/dependencies.md
+      - Testing:
+          - Running Tests: developers/testing/running-tests.md
+          - Unit Tests: developers/testing/unit-tests.md
+          - Integration Tests: developers/testing/integration-tests.md
 
   - API Reference: reference/
