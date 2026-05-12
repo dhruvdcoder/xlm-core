@@ -49,6 +49,26 @@ def print_checkpoint_info(full_state_dict: dict) -> None:
             logger.info(f"full_state_dict[{k}]: {v}")
 
 
+def _step_info_prefix(full_state_dict: dict) -> str:
+    """Build the ``epoch=...-step=..._`` prefix from a Lightning checkpoint."""
+    step = full_state_dict.get("global_step", None)
+    epoch = full_state_dict.get("epoch", None)
+    return f"{epoch=}-{step=}_"
+
+
+def filter_model_state_dict(full_state_dict: dict) -> dict:
+    """Keep only ``"model.*"`` keys and strip the ``"model."`` prefix.
+
+    Used by :func:`main` to convert a full Lightning checkpoint state-dict
+    into a plain model state-dict suitable for ``model.load_state_dict``.
+    """
+    return {
+        key[len("model.") :]: value
+        for key, value in full_state_dict.items()
+        if key.startswith("model.")
+    }
+
+
 @hydra.main(**_HYDRA_PARAMS)
 def main(cfg: ExtractModelStateConfig) -> None:
     with open(cfg.checkpoint_path, "rb") as f:
@@ -57,16 +77,10 @@ def main(cfg: ExtractModelStateConfig) -> None:
             "state_dict"
         ]  # lightning module state_dict
         print_checkpoint_info(_full_state_dict)
-        if cfg.add_step_info:
-            step = _full_state_dict.get("global_step", None)
-            epoch = _full_state_dict.get("epoch", None)
-            prefix = f"{epoch=}-{step=}_"
-        else:
-            prefix = ""
-        model_state_dict = {}
-        for key in full_state_dict.keys():
-            if key.startswith("model."):
-                model_state_dict[key[6:]] = full_state_dict[key]
+        prefix = (
+            _step_info_prefix(_full_state_dict) if cfg.add_step_info else ""
+        )
+        model_state_dict = filter_model_state_dict(full_state_dict)
     cfg.output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path = Path(cfg.output_path)
     fname = prefix + output_path.name
