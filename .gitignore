@@ -46,10 +46,12 @@ site
 # editor files
 .cursorindexingignore
 oracle/fpscores.pkl
-.cursor/plans/dreamon_in_xlm-core_e37b5d3d.plan.md
+.cursor/plans
 
 # protein eval — generated artifacts and eval venvs
 vendor/dplm/.venv-esmfold/
 evals/protein_eval/*/esmfold_pdb/
 evals/protein_eval/*/metrics.jsonl
 evals/protein_eval/logs/
+.pytest_cache/
+docs/**/linkedin
