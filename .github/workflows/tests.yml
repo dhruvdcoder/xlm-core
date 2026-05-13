@@ -25,4 +25,11 @@ jobs:
           pip install -r requirements/test_requirements.txt
 
       - name: Run non-GPU tests
-        run: pytest -m "not gpu"
+        run: pytest -m "not gpu" --cov-report=xml
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          fail_ci_if_error: false
