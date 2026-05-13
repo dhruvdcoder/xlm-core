@@ -29,3 +29,38 @@ class TestMDLMModel(BaseModelTests):
             return model(x, t, attention_mask=mask, positions=positions)
 
         return _run
+
+    def test_positions_default_to_cumsum_minus_one(
+        self, model, simple_tokenizer
+    ):
+        """When ``positions=None`` the model must derive positions from
+        ``attention_mask.cumsum(dim=1) - 1``. This branch was previously
+        untested — all existing tests pass an explicit ``positions``
+        tensor.
+        """
+        torch.manual_seed(123)
+        bs, seq_len = 2, 12
+        vocab = simple_tokenizer.vocab_size
+
+        x = torch.randint(0, vocab, (bs, seq_len))
+        # Mark the last 3 positions of example 0 as padding so cumsum
+        # gives non-trivial behavior (zeroed at padding via clamp(min=0)).
+        attn = torch.ones(bs, seq_len, dtype=torch.bool)
+        attn[0, -3:] = False
+        t = torch.rand(bs)
+
+        explicit_positions = (attn.cumsum(dim=1) - 1).clamp(min=0)
+
+        model.eval()
+        with torch.no_grad():
+            out_implicit = model(x, t, attention_mask=attn, positions=None)
+            out_explicit = model(
+                x, t, attention_mask=attn, positions=explicit_positions
+            )
+
+        # Both code paths must produce identical logits.
+        assert torch.allclose(out_implicit, out_explicit, atol=1e-5), (
+            "MDLMModel produced different logits when positions were "
+            "derived implicitly from the attention mask vs. passed "
+            "explicitly; the cumsum-1 derivation is inconsistent."
+        )

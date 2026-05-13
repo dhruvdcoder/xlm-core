@@ -71,6 +71,13 @@ nav:
       - Evaluate: guide/eval.md
       - FAQ: guide/faq.md
 
+  - Models:
+      - Overview: models/index.md
+      - ARLM: models/arlm.md
+      - ILM: models/ilm.md
+      - MDLM: models/mdlm.md
+      - MLM: models/mlm.md
+
   - Developers:
       - CONTRIBUTING: guide/CONTRIBUTING.md
       - Dependencies: developers/dependencies.md

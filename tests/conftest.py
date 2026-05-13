@@ -56,6 +56,31 @@ def dummy_noise_schedule():
     return DummyNoiseSchedule()
 
 
+@pytest.fixture()
+def real_loglinear_schedule():
+    """A real :class:`ContinuousTimeLogLinearSchedule` for tests.
+
+    Many collators and predictors (``DefaultMDLMCollator``, ``MDLMPredictor``,
+    ``DefaultILMCollator``, etc.) call ``noise_schedule.sample_t`` and
+    ``noise_schedule(t)`` during collation/prediction, and the catch-all
+    ``DummyNoiseSchedule`` raises on every call. This fixture builds a tiny,
+    deterministic-shaped, real schedule that any of those tests can use.
+
+    Note: ``ContinuousTimeLogLinearSchedule.__init__`` raises
+    ``NotImplementedError`` if ``sigma_min > 0`` (verified by
+    ``tests/models/mdlm/test_noise_mdlm.py::TestContinuousTimeLogLinearSchedule
+    ::test_sigma_min_positive_not_implemented``), so we use ``sigma_min=0.0``.
+    """
+    from mdlm.noise_mdlm import ContinuousTimeLogLinearSchedule
+
+    return ContinuousTimeLogLinearSchedule(
+        sigma_min=0.0,
+        sigma_max=4.0,
+        antithetic_sampling=True,
+        eps=1e-3,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Batch / tensor helpers
 # ---------------------------------------------------------------------------

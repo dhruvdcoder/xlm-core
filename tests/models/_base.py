@@ -88,14 +88,28 @@ class BaseModelTests:
             simple_tokenizer.vocab_size,
         )
 
-    def test_gradient_flows(self, run_forward):
-        """At least one parameter receives a non-None gradient."""
+    def test_gradient_flows(self, run_forward, model):
+        """At least one model parameter receives a non-None gradient.
+
+        Previously this only asserted ``logits.requires_grad`` — that is
+        trivially true after any non-detached forward, regardless of whether
+        gradients actually reach the model. The captured ``model`` fixture
+        lets us assert the real invariant.
+        """
+        # Make sure no stale grads bias the check.
+        model.zero_grad(set_to_none=True)
         logits = run_forward(batch_size=BATCH_SIZE, seq_len=SEQ_LEN)
-        logits.sum().backward()
-        # We can't access `model` directly here because it's captured
-        # inside run_forward, but the gradient check still works because
-        # .backward() propagates through the captured model.
         assert logits.requires_grad
+        logits.sum().backward()
+        grads = [
+            p.grad
+            for p in model.parameters()
+            if p.requires_grad and p.grad is not None
+        ]
+        assert grads, "no model parameter received a gradient"
+        assert any(torch.any(g != 0) for g in grads), (
+            "all model parameter gradients are exactly zero"
+        )
 
     def test_weight_decay_param_split(self, model):
         """Weight-decay and no-weight-decay sets are disjoint and exhaustive."""
@@ -184,6 +198,12 @@ class BaseCollatorTests:
         n = len(raw_examples)
         assert batch["input_ids"].shape[0] == n
         assert batch["input_ids"].shape == batch["attention_mask"].shape
+        # If the collator declares a ``block_size`` (as all standard
+        # train collators do), enforce the upper bound so that
+        # block-size truncation behavior is actually exercised.
+        block_size = getattr(collator, "block_size", None)
+        if block_size is not None:
+            assert batch["input_ids"].shape[1] <= block_size
 
 
 # endregion

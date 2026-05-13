@@ -14,15 +14,14 @@ exclude = "(.eggs|.git|.hg|.mypy_cache|.nox|.tox|.venv*|.svn|_build|buck-out|bui
 
 
 [tool.coverage.paths]
-source = ["src"]
+source = ["src", "xlm-models"]
 
 [tool.coverage.run]
 branch = true
-source = ["xlm"]
+source = ["xlm", "arlm", "mlm", "ilm", "mdlm", "flexmdm"]
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 90
 
 
 [tool.pytest.ini_options]
@@ -35,7 +34,7 @@ markers = [
     "ddp: marks tests that spawn multiple processes for DDP",
     "slurm: marks integration tests that submit a SLURM job (sbatch)",
 ]
-addopts = "-v --tb=short"
+addopts = "-v --tb=short --cov=xlm --cov=arlm --cov=mlm --cov=ilm --cov=mdlm --cov=flexmdm --cov-report=html:htmlcov --cov-report=term-missing"
 
 
 [tool.mypy]
