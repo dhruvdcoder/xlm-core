@@ -18,7 +18,8 @@ pytdc==0.4.1
 easydict
 openbabel-wheel==3.1.1.22
 rdkit
-torch_fcd
+# PyTorch FCD backend (import path: fcd_torch); PyPI distribution is hyphenated:
+fcd-torch
 fcd
 transformers==4.57.1 # other versions may not work.
 setuptools<82.0.0
