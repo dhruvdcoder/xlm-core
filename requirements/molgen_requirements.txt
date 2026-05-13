@@ -1,4 +1,6 @@
 # Requirements for Molecule Generation. Largely based on GenMol: https://github.com/NVIDIA-Digital-Bio/genmol/blob/main/env/requirements.txt
+# Optional heavyweight install via setuptools extra: pip install "xlm-core[molgen]"
+# Lightweight SAFE stack without Biomemo: pip install "xlm-core[safe]"
 # bionemo sub-packages
 bionemo-moco>=0.0.2.1
 

@@ -141,13 +141,21 @@ ranked_logger = RankedLogger(__name__, rank_zero_only=False)
 
 safe_imported = False
 try:
-    import safe as sf
+    import safe
     from safe.tokenizer import SAFETokenizer as _SAFETokenizer
 
     safe_imported = True
 except ImportError:
     safe_imported = False
     _SAFETokenizer = _BertTokenizer
+
+
+def _ensure_safe_libs_for_datamodule_tokenizer() -> None:
+    if not safe_imported:
+        raise ImportError(
+            "SAFETokenizer requires the optional SAFE molecules stack "
+            '(safe-mol, rdkit, datamol). Install with `pip install "xlm-core[safe]"`.'
+        )
 
 
 ################################################################################
@@ -527,6 +535,7 @@ class BertTokenizerFastWithCyclicPads(BertTokenizerFast):
 
 class SAFETokenizer(TokenizerMixin, _SAFETokenizer):
     def __init__(self, *args, **kwargs):
+        _ensure_safe_libs_for_datamodule_tokenizer()
         super().__init__(*args, **kwargs)
         _tok = self.get_pretrained()
         _tok.add_tokens(["<", ">"])  # for bracket_safe
@@ -535,6 +544,7 @@ class SAFETokenizer(TokenizerMixin, _SAFETokenizer):
     def from_pretrained(
         cls, pretrained_model_name_or_path: str, *args, **kwargs
     ):
+        _ensure_safe_libs_for_datamodule_tokenizer()
         tokenizer = super().from_pretrained(
             pretrained_model_name_or_path, *args, **kwargs
         )

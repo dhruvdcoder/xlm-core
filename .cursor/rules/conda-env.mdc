@@ -1,0 +1,47 @@
+---
+description: Always use the project conda env for Python / pip / pytest in xlm-core
+alwaysApply: true
+---
+
+# xlm-core conda environment
+
+This workspace has a dedicated conda env. **Always activate it before running
+Python, `pip`, `pytest`, or any tool that imports from the project.**
+
+```bash
+conda activate /scratch3/workspace/dhruveshpate_umass_edu-idlm/xlm-core/.venv_xlm_core
+```
+
+Do **not** fall back to system Python (`/usr/bin/python`) or `pip install
+--break-system-packages`; PEP 668 will block it and packages won't be visible
+to the project. Do **not** create ad-hoc venvs in the workspace.
+
+## Concrete patterns
+
+```bash
+# ❌ BAD — system python, packages won't reach the project env
+python3 -m pip install cairosvg
+pip install --user --break-system-packages cairosvg
+pytest tests/
+
+# ✅ GOOD — activate first, then run normally
+conda activate /scratch3/workspace/dhruveshpate_umass_edu-idlm/xlm-core/.venv_xlm_core
+pip install cairosvg
+pytest tests/
+```
+
+For one-off shell calls where activation state may not persist, prefix
+explicitly:
+
+```bash
+# ✅ GOOD — single-shot invocation without relying on shell state
+/scratch3/workspace/dhruveshpate_umass_edu-idlm/xlm-core/.venv_xlm_core/bin/python -m pytest tests/
+/scratch3/workspace/dhruveshpate_umass_edu-idlm/xlm-core/.venv_xlm_core/bin/pip install cairosvg
+```
+
+## Verifying you're in the right env
+
+```bash
+which python   # should print .../.venv_xlm_core/bin/python
+python -c "import sys; print(sys.prefix)"
+```
