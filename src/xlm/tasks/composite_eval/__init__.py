@@ -8,7 +8,7 @@ Usage in Hydra config::
         math500_prediction:
           _target_: xlm.tasks.math500.Math500Eval
         denovo_prediction:
-          _target_: xlm.tasks.molgen.DeNovoEval
+          _target_: xlm.tasks.safe_molgen.DeNovoEval
           use_bracket_safe: true
 """
 
