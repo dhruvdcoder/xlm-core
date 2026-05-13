@@ -1,0 +1,32 @@
+# @package _global_
+defaults:
+  - safe
+  - /collator@datamodule.dataset_managers.train.lm.collator: default_mlm
+  - /collator@datamodule.dataset_managers.val.unconditional_prediction.collator: unconditional_pred_mlm
+  - /collator@datamodule.dataset_managers.test.unconditional_prediction.collator: unconditional_pred_mlm
+  - /collator@datamodule.dataset_managers.predict.unconditional_prediction.collator: unconditional_pred_mlm
+
+datamodule:
+  print_batch_fn: mlm.datamodule_mlm.print_batch_mlm
+  dataset_managers:
+    val:
+      unconditional_prediction:
+        dataset_constructor_str: mlm.datamodule_mlm.MLMEmptyDatasetFromLengthRef
+        dataset_kwargs:
+          length_ref_file: ${length_ref_file}
+          min_length: 10
+    test:
+      unconditional_prediction:
+        dataset_constructor_str: mlm.datamodule_mlm.MLMEmptyDatasetFromLengthRef
+        dataset_kwargs:
+          length_ref_file: ${length_ref_file}
+          min_length: 10
+    predict:
+      unconditional_prediction:
+        dataset_constructor_str: mlm.datamodule_mlm.MLMEmptyDatasetFromLengthRef
+        dataset_kwargs:
+          length_ref_file: ${length_ref_file}
+          min_length: 10
+
+tags:
+  dataset: safe

@@ -9,6 +9,7 @@ with open("src/xlm/version.py", "r") as version_file:
 
 PATH_ROOT = os.path.dirname(__file__)
 
+
 def load_requirements(
     path_dir: str = PATH_ROOT, comment_char: str = "#"
 ) -> List:
@@ -16,7 +17,35 @@ def load_requirements(
         reqs = [ln.strip() for ln in file.readlines()]
     return reqs
 
+
+def load_requirements_optional(relative_filename: str) -> List[str]:
+    """Extras list for setuptools (strip blanks and inline ``#`` comments)."""
+    path = os.path.join(PATH_ROOT, relative_filename)
+    with open(path, "r") as file:
+        lines = file.readlines()
+    reqs = []
+    for ln in lines:
+        s = ln.split("#")[0].strip()
+        if s:
+            reqs.append(s)
+    return reqs
+
+
 install_requires = load_requirements()
+
+_safe_reqs = load_requirements_optional("requirements/safe_extra.txt")
+_molgen_reqs = load_requirements_optional("requirements/molgen_requirements.txt")
+_llm_eval_reqs = load_requirements_optional("requirements/llm_eval.txt")
+
+extras_require = {
+    "safe": _safe_reqs,
+    "molgen": _molgen_reqs,
+    "llm_eval": _llm_eval_reqs,
+    "all": list(
+        dict.fromkeys(_safe_reqs + _molgen_reqs + _llm_eval_reqs),
+    ),
+}
+
 
 setup(
     name="xlm-core",
@@ -31,25 +60,30 @@ setup(
             "tests",
         ],
     ),
-    description='XLM Framework',
+    description="XLM Framework",
     long_description="""
     XLM is a unified framework for developing and comparing small non-autoregressive language models. It uses PyTorch as the deep learning framework, PyTorch Lightning for training utilities, and Hydra for configuration management. XLM provides core components for flexible data handling and training, useful architectural implementations for non-autoregressive workflows, and support for arbitrary runtime code injection. Custom model implementations that leverage the core components of xlm can be found in the xlm-models package. The package also includes a few preconfigured synthetic planning and language-modeling datasets.
 
     Usage:
         pip install xlm-core
-
-    Command usage:
+        pip install "xlm-core[safe]"     # optional: SAFE molecule preprocessing / evaluators
+        pip install "xlm-core[molgen]"   # optional: fuller GenMol / Biomemo stack (molgen_requirements.txt)
+        pip install "xlm-core[llm_eval]" # optional: ANTLR build of math-verify (LLM benchmarks)
+        pip install "xlm-core[all]"      # union of safe + molgen + llm_eval (used in CI)
         xlm job_type=[JOB_TYPE] job_name=[JOB_NAME] experiment=[CONFIG_PATH]
        
         The job_type argument can be one of train ,eval and generate. The experiment argument should point to the root hydra config file.
 """,
-    install_requires = install_requires,
-    project_urls={
-        "Source Code": "https://github.com/dhruvdcoder/xlm-core"
-    },
+    install_requires=install_requires,
+    extras_require=extras_require,
+    project_urls={"Source Code": "https://github.com/dhruvdcoder/xlm-core"},
     package_dir={"": "src"},
     package_data={
-        "xlm": ["configs/**/*.yaml", "configs/**/*.yml"],
+        "xlm": [
+            "configs/**/*.yaml",
+            "configs/**/*.yml",
+            "src/xlm/tasks/zinc_len.pkl",
+        ],
     },
     keywords=[
         "AI",
@@ -63,7 +97,7 @@ setup(
         "console_scripts": [
             "xlm=xlm.__main__:main",
             "xlm-scaffold=xlm.commands.scaffold_model:main",
-            "xlm-push-to-hub=xlm.commands.push_to_hub:main"
+            "xlm-push-to-hub=xlm.commands.push_to_hub:main",
         ],
     },
     python_requires=">=3.11",

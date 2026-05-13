@@ -442,6 +442,12 @@ class LogPredictions:
             )
         self.inject_target = inject_target
         self.additional_fields_from_batch = additional_fields_from_batch
+        if additional_fields_from_batch:
+            for writer in self.writers:
+                if writer.fields_to_keep_in_output is not None:
+                    writer.fields_to_keep_in_output = list(
+                        writer.fields_to_keep_in_output
+                    ) + list(additional_fields_from_batch)
 
     def _get_trainer_info(
         self, pl_module: L.LightningModule, trainer: Optional[L.Trainer]
@@ -472,6 +478,8 @@ class LogPredictions:
         """
         if self.additional_fields_from_batch is not None:
             for field in self.additional_fields_from_batch:
+                if field not in batch:
+                    continue
                 for i, pred in enumerate(predictions):
                     pred[field] = batch[field][i]
         return predictions

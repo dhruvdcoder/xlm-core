@@ -47,6 +47,7 @@ site
 .cursorindexingignore
 oracle/fpscores.pkl
 .cursor/plans
+src/xlm/backbones/dream_on
 
 # protein eval — generated artifacts and eval venvs
 vendor/dplm/.venv-esmfold/

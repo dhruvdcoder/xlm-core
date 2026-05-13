@@ -121,8 +121,12 @@ class MetricWrapper(torch.nn.Module):
 def mean_metric_update_fn(
     batch: Dict[str, Any], loss_dict: Dict[str, Any], tokenizer: Any = None
 ) -> Dict[str, Any]:
+    if "batch_loss" in loss_dict:
+        value = loss_dict["batch_loss"]
+    else:
+        value = loss_dict["loss"].detach()
     return {
-        "value": loss_dict["batch_loss"],
+        "value": value,
     }
 
 

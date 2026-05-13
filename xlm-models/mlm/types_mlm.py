@@ -2,6 +2,11 @@ from typing import Optional, Protocol, Tuple, TypedDict, List, Union, Any
 
 from typing_extensions import NotRequired
 
+try:
+    from typing import NotRequired
+except ImportError:
+    from typing_extensions import NotRequired
+
 from jaxtyping import Float, Integer, Bool
 from torch import Tensor as TT
 
@@ -57,7 +62,7 @@ class MLMSeq2SeqPredictionBatch(TypedDict):
 
     input_ids: Integer[TT, " batch prefix_seq_len"]  # left-padded
     attention_mask: Integer[TT, " batch prefix_seq_len"]
-    target_ids: Integer[TT, " batch suffix_seq_len"]
+    target_ids: NotRequired[Integer[TT, " batch suffix_seq_len"]]
 
 
 class MLMUncondtionalPredictionBatch:

@@ -10,12 +10,18 @@ if "PROJECT_ROOT" not in os.environ:
 os.environ["HYDRA_FULL_ERROR"] = "1"
 
 # region: Import necessary modules
+import contextlib
 from typing import Any, Dict, List
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from lightning import seed_everything
 from lightning.pytorch.loggers import Logger
 from lightning import Callback
+from transformers.modeling_utils import no_init_weights
+from xlm.utils.model_loading import (
+    load_model_weights_into_model,
+    _get_model_only_checkpoint_path,
+)
 from xlm.utils.rank_zero import RankedLogger
 
 logger = RankedLogger(__name__, rank_zero_only=True)
@@ -109,21 +115,15 @@ def train(cfg: DictConfig):
                 ckpt_path = os.path.join(cfg.checkpointing_dir, "last.ckpt")
             if not os.path.isfile(ckpt_path):
                 ckpt_path = None
-    # check if we have model only checkpoint
-    model_only_ckpt_path = None
-    if cfg.get("model_only_checkpoint_path", None) is not None:
-        if ckpt_path is not None:
+    if ckpt_path is not None:
+        has_model_only = cfg.get("model_only_checkpoint_path", None) is not None
+        has_hub = OmegaConf.select(cfg, "hub.repo_id", default=None) is not None
+        if has_model_only or has_hub:
             logger.error(
-                "model_only_checkpoint_path and resume_from_checkpoint cannot both be provided."
-                " We will use the resume_from_checkpoint path "
-                f"{ckpt_path} for the model weights as well."
+                "Resume checkpoint is set; model-only / Hub weight sources are ignored. "
+                f"Using {ckpt_path} for model weights."
             )
-        else:
-            if not os.path.isfile(cfg.model_only_checkpoint_path):
-                raise ValueError(
-                    f"The model only checkpoint path {cfg.model_only_checkpoint_path} does not exist."
-                )
-            model_only_ckpt_path = cfg.model_only_checkpoint_path
+    model_only_ckpt_path = _get_model_only_checkpoint_path(cfg, "", True, ckpt_path)
 
     logger.info(f"Instantiating trainer <{cfg.trainer._target_}>")
     trainer = hydra.utils.instantiate(
@@ -150,22 +150,34 @@ def train(cfg: DictConfig):
     # )
     # instantiate the model
     torch.set_float32_matmul_precision("medium")
-    lightning_module = hydra.utils.instantiate(
-        cfg.lightning_module,
-        cfg,
-        tokenizer=tokenizer,
-        datamodule=datamodule,
-        _recursive_=False,
-    )
+    will_load_weights = ckpt_path is not None or model_only_ckpt_path
+    skip_init = cfg.get("skip_init_weights", False) and will_load_weights
+    if skip_init:
+        logger.info(
+            "Skipping weight initialization (skip_init_weights=True, "
+            "pretrained weights will be loaded)"
+        )
+    skip_ctx = no_init_weights() if skip_init else contextlib.nullcontext()
+    with skip_ctx:
+        lightning_module = hydra.utils.instantiate(
+            cfg.lightning_module,
+            cfg,
+            tokenizer=tokenizer,
+            datamodule=datamodule,
+            _recursive_=False,
+        )
     if model_only_ckpt_path is not None:
-        message = lightning_module.model.load_state_dict(
-            torch.load(model_only_ckpt_path)
-        )
         logger.warning(
-            "Loading weights for `model` from a pretrained model at "
-            f"{model_only_ckpt_path} before call to `trainer.fit` => before `.setup()` and `.configure_model()`"
+            "Loading weights for `model` from "
+            f"{model_only_ckpt_path} before `trainer.fit` (before `.setup()` / `.configure_model()`)."
         )
-        logger.warning(message)
+        load_model_weights_into_model(
+            lightning_module.model,
+            model_only_ckpt_path,
+            map_location="cpu",
+            strict=cfg.strict_model_only_load,
+            weights_only=True,
+        )
 
     # train
     if cfg.job_type == "train":

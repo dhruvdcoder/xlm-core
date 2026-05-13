@@ -1,4 +1,5 @@
 import os
+from copy import deepcopy
 from pathlib import Path
 from pprint import pformat
 from typing import (
@@ -15,6 +16,11 @@ from typing import (
     Optional,
     cast,
 )
+
+try:
+    from typing import NotRequired
+except ImportError:
+    from typing_extensions import NotRequired
 import shutil
 from torchdata.stateful_dataloader import StatefulDataLoader
 from torchdata.stateful_dataloader.sampler import (
@@ -70,6 +76,7 @@ from transformers import (
 )
 from transformers.models.esm.tokenization_esm import EsmTokenizer as _EsmTokenizer
 from lightning.pytorch.strategies import DDPStrategy as LDDPStrategy
+from lightning.pytorch.strategies import FSDPStrategy as LFSDPStrategy
 from lightning.pytorch.strategies import (
     SingleDeviceStrategy as LSingleDeviceStrategy,
 )
@@ -88,7 +95,7 @@ from transformers import (
     PreTrainedTokenizer,
     PreTrainedTokenizerBase,
     AddedToken,
-    AutoTokenizer,  
+    AutoTokenizer,
 )
 
 __all__ = [
@@ -114,6 +121,7 @@ __all__ = [
     # Dataset managers
     "DatasetManager",
     "LocalDatasetManager",
+    "EvalDatasetManager",
     "UnconditionalGenerationDatasetManager",
     # Data modules
     "BaseDataModule",
@@ -133,7 +141,7 @@ ranked_logger = RankedLogger(__name__, rank_zero_only=False)
 
 safe_imported = False
 try:
-    import safe as sf
+    import safe
     from safe.tokenizer import SAFETokenizer as _SAFETokenizer
 
     safe_imported = True
@@ -142,11 +150,20 @@ except ImportError:
     _SAFETokenizer = _BertTokenizer
 
 
+def _ensure_safe_libs_for_datamodule_tokenizer() -> None:
+    if not safe_imported:
+        raise ImportError(
+            "SAFETokenizer requires the optional SAFE molecules stack "
+            '(safe-mol, rdkit, datamol). Install with `pip install "xlm-core[safe]"`.'
+        )
+
+
 ################################################################################
 # region: Types
 
 SingleDeviceStrategy = (LSingleDeviceStrategy, FSingleDeviceStrategy)
 DDPStrategy = (LDDPStrategy, FDDPStrategy)
+DistributedStrategy = (LDDPStrategy, FDDPStrategy, LFSDPStrategy)
 
 
 class Tokenizer(Protocol):
@@ -224,6 +241,7 @@ class TrainTestSplitConfig(TypedDict):
     seed: int
     split: Literal["train", "test"]
 
+
 class Collator(Protocol):
     tokenizer: Tokenizer
     block_size: int
@@ -267,6 +285,34 @@ class TokenizerMixin:
         ]:
             if (token := getattr(self, special_token)) is None:
                 raise ValueError(f"{special_token} is not set")
+
+
+def load_auto_tokenizer(
+    pretrained_model_name_or_path: str, special_tokens: dict = None
+):
+    """Load a Hugging Face ``AutoTokenizer`` for Hydra/config-driven setups.
+    Args:
+      pretrained_model_name_or_path: Model id or path passed to ``AutoTokenizer.from_pretrained``.
+      special_tokens: Optional mapping from **token attribute names** (e.g. ``"mask_token"``) to
+          **literal token strings** (e.g. ``"<|mask|>"``). Values are registered as additional
+          special tokens, and ``{key}_id`` is set on the tokenizer for each key.
+    """
+    tokenizer = AutoTokenizer.from_pretrained(
+        pretrained_model_name_or_path, trust_remote_code=True
+    )
+    if special_tokens is not None:
+        tokenizer.add_special_tokens(
+            {"additional_special_tokens": list(special_tokens.values())}
+        )
+        for token_name, token in special_tokens.items():
+            setattr(
+                tokenizer,
+                f"{token_name}_id",
+                tokenizer.convert_tokens_to_ids(token),
+            )
+    tokenizer.full_vocab_size = tokenizer.__len__()
+    return tokenizer
+
 
 class BertTokenizer(TokenizerMixin, _BertTokenizer):  # type: ignore
     def __init__(self, *args, **kwargs):  # type: ignore
@@ -328,6 +374,7 @@ class GPT2Tokenizer(TokenizerMixin, _GPT2Tokenizer):  # type: ignore
         )
         tokenizer.post_creation()
         return tokenizer
+
 
 class GPT2TokenizerFast(TokenizerMixin, _GPT2TokenizerFast):  # type: ignore
     def __init__(self, *args, **kwargs):  # type: ignore
@@ -414,20 +461,21 @@ def add_cyclic_pad_tokens(
         )
 
 
-def get_cyclic_pad_token_ids(
-    tokenizer: Any, n: int
-) -> List[int]:
+def get_cyclic_pad_token_ids(tokenizer: Any, n: int) -> List[int]:
     """
     Return [pad_0_token_id, ..., pad_{n-1}_token_id].
     Raises AttributeError if any pad_i_token_id is missing.
     """
     return [getattr(tokenizer, f"pad_{i}_token_id") for i in range(n)]
 
+
 class GPT2TokenizerWithCyclicPads(GPT2Tokenizer):
     """GPT2Tokenizer with cyclic pad tokens (pad_0..pad_{n-1})."""
 
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path: str, *args, **kwargs):
+    def from_pretrained(
+        cls, pretrained_model_name_or_path: str, *args, **kwargs
+    ):
         num_cyclic_pad_tokens = kwargs.pop("num_cyclic_pad_tokens")
         tokenizer = super(GPT2Tokenizer, cls).from_pretrained(
             pretrained_model_name_or_path, *args, **kwargs
@@ -441,7 +489,9 @@ class GPT2TokenizerFastWithCyclicPads(GPT2TokenizerFast):
     """GPT2TokenizerFast with cyclic pad tokens (pad_0..pad_{n-1})."""
 
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path: str, *args, **kwargs):
+    def from_pretrained(
+        cls, pretrained_model_name_or_path: str, *args, **kwargs
+    ):
         num_cyclic_pad_tokens = kwargs.pop("num_cyclic_pad_tokens")
         tokenizer = super(GPT2TokenizerFast, cls).from_pretrained(
             pretrained_model_name_or_path, *args, **kwargs
@@ -455,7 +505,9 @@ class BertTokenizerWithCyclicPads(BertTokenizer):
     """BertTokenizer with cyclic pad tokens (pad_0..pad_{n-1})."""
 
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path: str, *args, **kwargs):
+    def from_pretrained(
+        cls, pretrained_model_name_or_path: str, *args, **kwargs
+    ):
         num_cyclic_pad_tokens = kwargs.pop("num_cyclic_pad_tokens")
         tokenizer = super(BertTokenizer, cls).from_pretrained(
             pretrained_model_name_or_path, *args, **kwargs
@@ -469,7 +521,9 @@ class BertTokenizerFastWithCyclicPads(BertTokenizerFast):
     """BertTokenizerFast with cyclic pad tokens (pad_0..pad_{n-1})."""
 
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path: str, *args, **kwargs):
+    def from_pretrained(
+        cls, pretrained_model_name_or_path: str, *args, **kwargs
+    ):
         num_cyclic_pad_tokens = kwargs.pop("num_cyclic_pad_tokens")
         tokenizer = super(BertTokenizerFast, cls).from_pretrained(
             pretrained_model_name_or_path, *args, **kwargs
@@ -481,6 +535,7 @@ class BertTokenizerFastWithCyclicPads(BertTokenizerFast):
 
 class SAFETokenizer(TokenizerMixin, _SAFETokenizer):
     def __init__(self, *args, **kwargs):
+        _ensure_safe_libs_for_datamodule_tokenizer()
         super().__init__(*args, **kwargs)
         _tok = self.get_pretrained()
         _tok.add_tokens(["<", ">"])  # for bracket_safe
@@ -489,6 +544,7 @@ class SAFETokenizer(TokenizerMixin, _SAFETokenizer):
     def from_pretrained(
         cls, pretrained_model_name_or_path: str, *args, **kwargs
     ):
+        _ensure_safe_libs_for_datamodule_tokenizer()
         tokenizer = super().from_pretrained(
             pretrained_model_name_or_path, *args, **kwargs
         )
@@ -696,10 +752,12 @@ class DatasetManager:
         filter_suffix: Optional[str] = None,
         preprocess_function: Optional[str] = None,
         preprocess_function_kwargs: Optional[Dict[str, Any]] = None,
+        preprocess_load_from_cache_file: Optional[bool] = None,
         on_the_fly_filter_fn: Optional[str] = None,
         on_the_fly_processor: Optional[str] = None,
         on_the_fly_processor_kwargs: Optional[Dict[str, Any]] = None,
         on_the_fly_group_processor: Optional[str] = None,
+        on_the_fly_load_from_cache_file: Optional[bool] = None,
         on_the_fly_group_processor_kwargs: Optional[Dict[str, Any]] = None,
         on_the_fly_group_processor_remove_columns: Optional[List[str]] = None,
         model_name: Optional[str] = None,
@@ -768,17 +826,23 @@ class DatasetManager:
         self.filter_fn = filter_fn
         if filter_fn is not None:
             if filter_suffix is None:
-                raise ValueError("filter_suffix is required when filter_fn is provided")
+                raise ValueError(
+                    "filter_suffix is required when filter_fn is provided"
+                )
             self.filter_suffix = filter_suffix
         else:
             self.filter_suffix = None
         self.preprocess_function = preprocess_function
         self.preprocess_function_kwargs = preprocess_function_kwargs or {}
+        self.preprocess_load_from_cache_file = preprocess_load_from_cache_file
         self.on_the_fly_filter_fn = on_the_fly_filter_fn
         self.on_the_fly_processor = on_the_fly_processor
         self.on_the_fly_processor_kwargs = on_the_fly_processor_kwargs or {}
         self.on_the_fly_group_processor = on_the_fly_group_processor
-        self.on_the_fly_group_processor_kwargs = on_the_fly_group_processor_kwargs or {}
+        self.on_the_fly_group_processor_kwargs = (
+            on_the_fly_group_processor_kwargs or {}
+        )
+        self.on_the_fly_load_from_cache_file = on_the_fly_load_from_cache_file
         self.on_the_fly_group_processor_remove_columns = (
             on_the_fly_group_processor_remove_columns
         )
@@ -809,7 +873,9 @@ class DatasetManager:
         self.make_infinite = False
         if make_infinite:
             if not self.is_iterable_dataset:
-                raise ValueError("make_infinite is only supported for IterableDataset")
+                raise ValueError(
+                    "make_infinite is only supported for IterableDataset"
+                )
             self.make_infinite = True
 
     def __repr__(self) -> str:
@@ -837,7 +903,9 @@ class DatasetManager:
         if name[0] == "/":
             name = name[1:]
         logger.info(f"Downloading {self.full_name}")
-        split_to_download = self._split_to_download if not self.train_test_split else 'train'
+        split_to_download = (
+            self._split_to_download if not self.train_test_split else "train"
+        )
         ds = datasets.load_dataset(
             name,
             split=split_to_download,
@@ -852,7 +920,9 @@ class DatasetManager:
             try:
                 ds = ds[self.train_test_split["split"]]
             except KeyError:
-                raise ValueError(f"Invalid split to use: {self.train_test_split['split']}")
+                raise ValueError(
+                    f"Invalid split to use: {self.train_test_split['split']}"
+                )
 
         return ds
 
@@ -874,9 +944,14 @@ class DatasetManager:
                 **self.preprocess_function_kwargs,
             }
             columns_to_remove = []
-            if self.columns_to_keep: 
-                columns_to_remove = [col for col in ds.column_names if col not in self.columns_to_keep]
-            if self.columns_to_remove: columns_to_remove.extend(self.columns_to_remove)
+            if self.columns_to_keep:
+                columns_to_remove = [
+                    col
+                    for col in ds.column_names
+                    if col not in self.columns_to_keep
+                ]
+            if self.columns_to_remove:
+                columns_to_remove.extend(self.columns_to_remove)
             # HF datasets rejects num_proc=0; None means single-process map. Dump
             # runs set num_dataset_workers=0 for RAM; that must not propagate as 0 here.
             map_num_proc = num_proc if num_proc is not None and num_proc > 0 else None
@@ -886,6 +961,7 @@ class DatasetManager:
                 num_proc=map_num_proc,
                 fn_kwargs=fn_kwargs,
                 remove_columns=columns_to_remove,
+                load_from_cache_file=self.preprocess_load_from_cache_file,
             )
         return ds
 
@@ -894,7 +970,9 @@ class DatasetManager:
             return Path(manual_cache_dir) / self.full_name
         else:
             repo, ds_name, split = self.full_name.split("/")
-            full_name_with_filter = f"{repo}/{ds_name}_{self.filter_suffix}/{split}"
+            full_name_with_filter = (
+                f"{repo}/{ds_name}_{self.filter_suffix}/{split}"
+            )
             return Path(manual_cache_dir) / full_name_with_filter
 
     def _clean_manual_cache(self, manual_cache_dir: str) -> None:
@@ -932,7 +1010,19 @@ class DatasetManager:
                 "tokenizer": tokenizer,
                 **self.on_the_fly_processor_kwargs,
             }
-            dataset = dataset.map(processor, batched=False, fn_kwargs=kwargs)
+            map_kwargs = (
+                {}
+                if self.is_iterable_dataset
+                else dict(
+                    load_from_cache_file=self.on_the_fly_load_from_cache_file
+                )
+            )
+            dataset = dataset.map(
+                processor,
+                batched=False,
+                fn_kwargs=kwargs,
+                **map_kwargs,
+            )
             return dataset
         return dataset
 
@@ -1094,7 +1184,7 @@ class DatasetManager:
                     buffer_size=self.shuffle_buffer_size,
                     seed=self.shuffle_seed,
                 )
-            
+
             dataset = self._apply_on_the_fly_processors(dataset, tokenizer)
             dataset = self._apply_on_the_fly_group_processors(
                 dataset,
@@ -1165,7 +1255,8 @@ class DatasetManager:
             )
             per_worker_batch_size = self.dataloader_kwargs.get("batch_size", 1)
             if num_shards_per_worker > per_worker_batch_size:
-                raise ValueError(
+                # raise ValueError(
+                logger.warning(
                     f"{num_shards_per_worker=} > {per_worker_batch_size=}. This may cause the training to hang even with drop_last=True. "
                     "Either increase the num_workers or world_size to bring down the num_shards_per_worker or reduce the num_shards or increase the batch_size."
                 )
@@ -1268,6 +1359,180 @@ class LocalDatasetManager(DatasetManager):
             return ds
         else:
             raise ValueError(f"Unsupported dataset type: {self.ds_type}")
+
+
+class EvalDatasetManager:
+    """Minimal map-style dataset manager for eval-only splits.
+
+    Unlike :class:`DatasetManager`, this does not support iterable datasets,
+    manual disk caching, on-the-fly processors, or training dataloaders.
+    Manual cache is omitted because cache paths do not distinguish tokenizer /
+    model; HF ``Dataset.map`` auto-cache is optional via ``load_from_cache_file``
+    (hashes ``fn_kwargs`` including the tokenizer).
+
+    Implements the same duck-typed API as :class:`DatasetManager` for
+    :class:`TextDataModule`: ``prepare_data``, ``setup``, ``get_dataloader``,
+    ``set_epoch``.
+    """
+
+    def __init__(
+        self,
+        collator: Collator,
+        full_name: str,
+        dataloader_kwargs: DataLoaderKwargs,
+        preprocess_function: Optional[str] = None,
+        preprocess_function_kwargs: Optional[Dict[str, Any]] = None,
+        load_from_cache_file: bool = False,
+        filter_fn: Optional[Callable[..., Any]] = None,
+        filter_suffix: Optional[str] = None,
+        columns_to_remove: Optional[List[str]] = None,
+        columns_to_keep: Optional[List[str]] = None,
+        stages: Optional[
+            List[Literal["fit", "validate", "test", "predict"]]
+        ] = None,
+    ):
+        self.collator = collator
+        self.full_name = full_name
+        self.dataloader_kwargs = dataloader_kwargs
+        self.preprocess_function = preprocess_function
+        self.preprocess_function_kwargs = preprocess_function_kwargs or {}
+        self.load_from_cache_file = load_from_cache_file
+        self.filter_fn = filter_fn
+        self.filter_suffix = filter_suffix
+        self.columns_to_remove = columns_to_remove
+        self.columns_to_keep = columns_to_keep
+        self.stages = stages if stages is not None else ["validate", "test"]
+        self.dataset: Optional[datasets.Dataset] = None
+
+    def __repr__(self) -> str:
+        return f"EvalDatasetManager(full_name={self.full_name})"
+
+    @property
+    def _split_to_download(self) -> str:
+        return self.full_name.split("/")[-1]
+
+    @property
+    def name(self) -> str:
+        return "/".join(self.full_name.split("/")[:2])
+
+    def _download(self, num_proc: Optional[int] = None) -> datasets.Dataset:
+        name = self.name
+        if name[0] == "/":
+            name = name[1:]
+        logger.info(f"Downloading {self.full_name}")
+        return datasets.load_dataset(
+            name,
+            split=self._split_to_download,
+            num_proc=num_proc,
+            token=os.environ.get("HF_HUB_KEY"),
+        )
+
+    def _preprocess(
+        self,
+        ds: datasets.Dataset,
+        tokenizer: Tokenizer,
+        num_proc: Optional[int] = None,
+    ) -> datasets.Dataset:
+        if self.filter_fn is not None:
+            resolved_filter: Callable[..., Any] = get_function(
+                self.filter_fn  # type: ignore[arg-type]
+            )
+            ds = ds.filter(resolved_filter)
+        if self.preprocess_function is not None:
+            preprocess_fn: Callable[..., Any] = get_function(
+                self.preprocess_function
+            )
+            fn_kwargs = {
+                "tokenizer": tokenizer,
+                **self.preprocess_function_kwargs,
+            }
+            columns_to_remove: List[str] = []
+            if self.columns_to_keep:
+                columns_to_remove = [
+                    col
+                    for col in ds.column_names
+                    if col not in self.columns_to_keep
+                ]
+            if self.columns_to_remove:
+                columns_to_remove.extend(self.columns_to_remove)
+            ds = ds.map(
+                preprocess_fn,
+                batched=False,
+                num_proc=num_proc,
+                fn_kwargs=fn_kwargs,
+                remove_columns=columns_to_remove,
+                load_from_cache_file=self.load_from_cache_file,
+            )
+        return ds
+
+    def set_epoch(self, epoch: int) -> None:
+        return
+
+    def prepare_data(
+        self,
+        manual_cache_dir: str,
+        tokenizer: Tokenizer,
+        num_proc: Optional[int] = None,
+        load: bool = False,
+    ) -> Optional[datasets.Dataset]:
+        del manual_cache_dir, load  # API parity with DatasetManager; unused
+        logger.info(
+            f"EvalDatasetManager: preparing {self.full_name} (no manual cache)"
+        )
+        ds = self._download(num_proc=num_proc)
+        ds = self._preprocess(ds, tokenizer, num_proc=num_proc)
+        return ds
+
+    def setup(
+        self,
+        stage: Literal["fit", "validate", "test", "predict"],
+        manual_cache_dir: str,
+        tokenizer: Tokenizer,
+        block_size: int,
+        is_ddp: bool,
+        rank: int,
+        world_size: int,
+        num_dataset_workers: Optional[int] = None,
+    ) -> None:
+        del block_size, is_ddp, rank, world_size  # map-style eval; unused
+        if stage in self.stages and self.dataset is None:
+            ds = self.prepare_data(
+                manual_cache_dir,
+                tokenizer,
+                num_proc=num_dataset_workers,
+                load=True,
+            )
+            self.dataset = ds
+
+    def get_dataloader(
+        self,
+        type: Literal["train", "val", "test", "predict"],
+        is_ddp: bool,
+        rank: int,
+        world_size: int,
+    ) -> Union[DataLoader, StatefulDataLoader]:
+        del is_ddp, rank, world_size
+        if type == "train":
+            raise ValueError(
+                "EvalDatasetManager does not support train dataloaders"
+            )
+        if self.dataset is None:
+            raise RuntimeError(
+                f"EvalDatasetManager.setup must run before get_dataloader; "
+                f"dataset is None for {self.full_name}"
+            )
+        if self.dataloader_kwargs.get("shuffle", False):
+            logger.warning(
+                f"Shuffle is set to True for {self.full_name} {type} dataloader. "
+                "This will be ignored as eval dataloaders are not shuffled."
+            )
+        self.dataloader_kwargs["shuffle"] = False
+        return DataLoader(
+            self.dataset,
+            collate_fn=self.collator,
+            sampler=None,
+            **self.dataloader_kwargs,
+        )
 
 
 class UnconditionalGenerationDatasetManager:
@@ -1385,7 +1650,7 @@ class BaseDataModule(L.LightningDataModule):
         if self.trainer is None:
             logger.warning("Trainer is not setup. Cannot check grad accum.")
             return
-        if self._is_ddp():
+        if self._is_distributed():
             num_nodes = self.trainer.num_nodes
             num_gpus_per_node = self.trainer.num_devices
             accum_steps = self.trainer.accumulate_grad_batches
@@ -1407,10 +1672,10 @@ class BaseDataModule(L.LightningDataModule):
                     f"per_device_batch_size ({self.train_dataloader_kwargs['batch_size']}) * num_nodes ({num_nodes}) * num_gpus_per_node ({num_gpus_per_node}) * accum_steps ({accum_steps})."
                 )
 
-    def _is_ddp(self) -> bool:
+    def _is_distributed(self) -> bool:
         if self.trainer is not None:
             strategy = self.trainer.strategy
-            if isinstance(strategy, DDPStrategy):
+            if isinstance(strategy, DistributedStrategy):
                 return True
             elif isinstance(strategy, SingleDeviceStrategy):
                 return False
@@ -1420,7 +1685,7 @@ class BaseDataModule(L.LightningDataModule):
                 )
         else:
             logger.warning(
-                "Tried to detect DDP strategy before trainer was set."
+                "Tried to detect distributed strategy before trainer was set."
                 " Are you calling `LightningDataModule.*_dataloader()` methods manually?"
                 " Make sure you know what you are doing!"
             )
@@ -1459,7 +1724,14 @@ class TextDataModule(BaseDataModule):
         # dataset_managers: List[DatasetManager],
         dataset_managers: Dict[
             Literal["train", "val", "test", "predict"],
-            Dict[str, DatasetManager],  # k=dl_name
+            Dict[
+                str,
+                Union[
+                    DatasetManager,
+                    EvalDatasetManager,
+                    UnconditionalGenerationDatasetManager,
+                ],
+            ],
         ],
         noise_schedule: Optional[NoiseSchedule] = None,
         rewrite_manual_cache: bool = False,
@@ -1539,7 +1811,11 @@ class TextDataModule(BaseDataModule):
         self.print_batch_fn(batch, split, self.tokenizer, dl_name)
 
     def prepare_data(self) -> None:
-        ds_wrapper: DatasetManager
+        ds_wrapper: Union[
+            DatasetManager,
+            EvalDatasetManager,
+            UnconditionalGenerationDatasetManager,
+        ]
         for split, ds_managers in self.dataset_managers.items():
             for dl_name, ds_wrapper in ds_managers.items():
                 ds_wrapper.prepare_data(
@@ -1551,7 +1827,11 @@ class TextDataModule(BaseDataModule):
     def setup(
         self, stage: Literal["fit", "validate", "test", "predict"]
     ) -> None:
-        ds_wrapper: DatasetManager
+        ds_wrapper: Union[
+            DatasetManager,
+            EvalDatasetManager,
+            UnconditionalGenerationDatasetManager,
+        ]
         for split, ds_managers in self.dataset_managers.items():
             for dl_name, ds_wrapper in ds_managers.items():
                 ds_wrapper.setup(
@@ -1559,7 +1839,7 @@ class TextDataModule(BaseDataModule):
                     manual_cache_dir=self.manual_cache_dir,
                     tokenizer=self.tokenizer,
                     block_size=self.block_size,
-                    is_ddp=self._is_ddp(),
+                    is_ddp=self._is_distributed(),
                     rank=self.rank,
                     world_size=self.world_size,
                     num_dataset_workers=self.num_dataset_workers,
@@ -1575,7 +1855,7 @@ class TextDataModule(BaseDataModule):
                 if split_ == split:
                     dl = ds_wrapper.get_dataloader(
                         split,
-                        is_ddp=self._is_ddp(),
+                        is_ddp=self._is_distributed(),
                         rank=self.rank,
                         world_size=self.world_size,
                     )
@@ -1600,7 +1880,11 @@ class TextDataModule(BaseDataModule):
         return self._get_dataloaders("predict")
 
     def set_epoch(self, epoch: int) -> None:
-        ds_wrapper: DatasetManager
+        ds_wrapper: Union[
+            DatasetManager,
+            EvalDatasetManager,
+            UnconditionalGenerationDatasetManager,
+        ]
         for split, ds_managers in self.dataset_managers.items():
             for dl_name, ds_wrapper in ds_managers.items():
                 ds_wrapper.set_epoch(epoch)
@@ -1702,7 +1986,9 @@ def pack_sequences(
     eos = tokenizer.eos_token_id
     bos = tokenizer.bos_token_id if use_bos else None
     if eos is None:
-        raise ValueError("Tokenizer must have eos_token_id for sequence packing")
+        raise ValueError(
+            "Tokenizer must have eos_token_id for sequence packing"
+        )
     if use_bos and bos is None:
         bos = eos
 
@@ -1770,6 +2056,20 @@ class DefaultEmptyDataset(IterableDataset):
             yield ex
 
 
+def replicate_examples(
+    examples: Dict[str, List[List[int]]], tokenizer, num_samples: int
+):
+    """Repeat each example in the dictionary `num_samples` times such that the repeated examples are contiguous in the list."""
+    examples_replicated = {}
+    for key in examples:
+        replicated: List[List[int]] = []
+        for ex in examples[key]:
+            for _ in range(num_samples):
+                replicated.append(deepcopy(ex))
+        examples_replicated[key] = replicated
+    return examples_replicated
+
+
 # endregion: Processors
 ################################################################################
 
@@ -1793,19 +2093,20 @@ class BaseCollatorInput(TypedDict):
 
 
 class Seq2SeqCollatorInput(TypedDict):
-    """Dict with values that are lists of raw input_ids, attention_mask, and token_type_ids.
-
-    This is the input to the collator for pre-training.
-
-    The elements of the lists can be of different lengths.
+    """Input rows for MLM seq2seq collators (see ``mlm.datamodule_mlm``).
 
     Attributes:
-        input_ids (List[int]): The input ids.
-        prompt_ids (List[int]): The target ids.
+        prompt_ids: Prefix / prompt token ids (collator ``prompt_field``;
+            default ``prompt_ids``).
+        target_ids: Suffix token ids when using ``target_field`` (default
+            ``target_ids``); may be empty or omitted for prompt-only batches.
+        input_ids: Legacy suffix field; used if ``target_field`` is
+            ``target_ids`` and ``target_ids`` is absent from the row.
     """
 
-    input_ids: List[int]
     prompt_ids: List[int]
+    input_ids: NotRequired[List[int]]
+    target_ids: NotRequired[List[int]]
 
 
 class InfillingCollatorInput(TypedDict):

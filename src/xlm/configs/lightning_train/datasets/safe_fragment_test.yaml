@@ -1,0 +1,43 @@
+defaults:
+  - default_text
+
+_target_: xlm.datamodule.LocalDatasetManager
+ds_type: "csv"
+load_kwargs:
+    data_files: ${oc.env:DATA_DIR,.}/genmol_fragments.csv
+collator: ??? # model specific collator
+full_name: ${oc.env:DATA_DIR,.}/${oc.select:molgen_task_name,motif_extension}/test # Directory path (file specified in load_kwargs)
+full_name_debug: ${oc.env:DATA_DIR,.}/${oc.select:molgen_task_name,motif_extension}/test
+preprocess_function: xlm.tasks.safe_molgen.genmol_fragment_preprocess_fn
+preprocess_function_kwargs:
+    fragment_column: ${oc.select:molgen_task_name,motif_extension}
+on_the_fly_processor: xlm.datamodule.token_ids_to_input_ids_and_prompt_ids
+on_the_fly_processor_kwargs:
+    block_size: ${block_size}
+on_the_fly_group_processor: xlm.datamodule.replicate_examples
+on_the_fly_group_processor_kwargs:
+    num_samples: ${num_conditional_prediction_samples}
+columns_to_remove: 
+    - name
+    - smiles
+    - linker_design
+    - motif_extension
+    - scaffold_decoration
+    - superstructure_generation
+stages:
+    - test
+    - predict
+iterable_dataset_shards: null
+shuffle_buffer_size: null
+shuffle_seed: 42
+split_by_node: true
+dataloader_kwargs:
+    batch_size: ${per_device_batch_size}
+    num_workers: ${num_dataloader_workers} 
+    shuffle: null
+    pin_memory: True
+    persistent_workers: False
+    prefetch_factor: ${dataloader_prefetch_factor}
+    drop_last: False
+model_name: null
+use_manual_cache: true

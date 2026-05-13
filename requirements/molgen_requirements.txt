@@ -1,0 +1,26 @@
+# Requirements for Molecule Generation. Largely based on GenMol: https://github.com/NVIDIA-Digital-Bio/genmol/blob/main/env/requirements.txt
+# Optional heavyweight install via setuptools extra: pip install "xlm-core[molgen]"
+# Lightweight SAFE stack without Biomemo: pip install "xlm-core[safe]"
+# bionemo sub-packages
+bionemo-moco>=0.0.2.1
+
+# external dependencies
+#torch==2.6.0
+#numpy==1.26.4
+jaxtyping>=0.2.34
+pot>=0.9.5
+# scikit-learn==1.2.2 install this after due to soft bionemo-moco conflict
+einops
+pandas
+safe-mol==0.1.14
+datamol  # BracketSAFEConverter in xlm.tasks.safe_molgen uses datamol with safe.converter.SAFEConverter
+pytdc==0.4.1
+easydict
+openbabel-wheel==3.1.1.22
+rdkit
+# PyTorch FCD backend (import path: fcd_torch); PyPI distribution is hyphenated:
+fcd-torch
+fcd
+transformers==4.57.1 # other versions may not work.
+setuptools<82.0.0
+#numpy==1.26.4

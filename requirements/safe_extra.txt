@@ -1,0 +1,6 @@
+# Pinned SAFE / cheminformatics stack pulled from requirements/molgen_requirements.txt
+# Install: pip install "xlm-core[safe]"
+safe-mol==0.1.14
+datamol
+rdkit
+pytdc==0.4.1
