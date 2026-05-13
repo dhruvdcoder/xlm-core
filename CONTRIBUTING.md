@@ -52,7 +52,7 @@ We maintain a small library of models in a separate package called `xlm-models` 
 
 There are two ways to contribute a new model:
 
-1. **Contribute an external model**: External models live in their own repository and are not part of the `xlm-models` package. This mechanism is great for reproducing models from research papers because it allows you considerable flexibility in terms of implementation as we don't require you to follow any strict structure. Please see [External Models Guide](https://dhruveshp.com/xlm-core/latest/guide/external-models/) for the detailed instructions.
+1. **Contribute an external model**: External models live in their own repository and are not part of the `xlm-models` package. This mechanism is great for reproducing models from research papers because it allows you considerable flexibility in terms of implementation as we don't require you to follow any strict structure. Please see [External Models Guide](https://dhruveshp.com/xlm-core/dev/guide/external-models/) for the detailed instructions.
 
 2. **Contribute a model to the `xlm-models` package**: TODO: Add guide for this.
 
