@@ -15,6 +15,7 @@ model:
   rotary_emb_dim: 64
   max_length: ${eval:${block_size}+${oc.select:input_block_size,0}+4} #${predictor.max_length}
   force_flash_attn: false
+  use_flex_attn: false
   final_layer_without_normalization: false
 
 tags:

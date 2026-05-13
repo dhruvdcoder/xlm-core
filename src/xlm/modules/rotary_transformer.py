@@ -15,6 +15,18 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Module-level compiled flex_attention for document-masked packed sequences.
+# torch.compile generates a fused Triton kernel (FlashAttention-class performance)
+# on the first call for a given shape; subsequent calls reuse the compiled kernel.
+try:
+    from torch.nn.attention.flex_attention import flex_attention as _flex_attention
+    from torch.nn.attention.flex_attention import BlockMask
+    _flex_attn_compiled = torch.compile(_flex_attention)
+    _FLEX_ATTN_AVAILABLE = True
+except Exception:
+    _FLEX_ATTN_AVAILABLE = False
+    BlockMask = None  # type: ignore[assignment,misc]
+
 
 def add_bias_apply_dropout_scale(
     x: torch.Tensor,
@@ -135,12 +147,16 @@ class RotaryTransformerLayer(nn.Module):
         inp: torch.Tensor,
         attention_mask: torch.Tensor,
         positions: Optional[torch.Tensor] = None,
+        block_mask=None,  # Optional[BlockMask] — avoids hard import at call sites
     ) -> torch.Tensor:
         """
         Args:
             x: the input tensor of shape (bsz, seq_len, dim).
             attention_mask: the attention mask of shape (bsz, seq_len), which is True for non-padding tokens.
              It can also be of shape (bsz, seq_len (query), seq_len (key-value)), where the mask indicates which tokens are valid in the context.
+            block_mask: optional FlexAttention BlockMask for document-masked
+                packed sequences.  When provided, flex_attention is used instead
+                of F.scaled_dot_product_attention and attention_mask is ignored.
         """
         if self.rotary_emb is None:
             raise ValueError(
@@ -187,44 +203,53 @@ class RotaryTransformerLayer(nn.Module):
         # Perform scaled dot-product attention
         # Make the attention mask broadcastable to (bsz, query_seq_len(1), key_seq_len(seq_len))
         # Note we want to broadcast (copy) along the query_seq_len dimension
-        attn_mask = None
-        if attention_mask is not None:
-            if attention_mask.ndim == 2:  # (bsz, seq_len)
-                attn_mask = attention_mask.unsqueeze(1).unsqueeze(
-                    1
-                )  # shape (bsz, 1, 1, seq_len)
-            elif (
-                attention_mask.ndim == 3
-            ):  # (bsz, seq_len (query), seq_len (key-value))
-                attn_mask = attention_mask.unsqueeze(
-                    1
-                )  # shape (bsz, 1, seq_len (query), seq_len (key-value))
-            else:
-                raise ValueError(
-                    f"Attention mask must be of shape (bsz, seq_len) or (bsz, seq_len (query), seq_len (key-value)). Got {attention_mask.shape}"
+        if block_mask is not None:
+            # FlexAttention path: document masking for packed protein sequences.
+            # RoPE has already been applied to q and k above, so no score_mod needed.
+            # The compiled kernel avoids materialising the O(seq_len²) mask tensor
+            # and achieves FlashAttention-class memory and compute efficiency.
+            if not _FLEX_ATTN_AVAILABLE:
+                raise RuntimeError(
+                    "flex_attention is not available in this PyTorch build. "
+                    "Upgrade to PyTorch ≥ 2.5, or omit block_mask and use a dense attention_mask."
                 )
+            attn_output = _flex_attn_compiled(
+                q_rotary,
+                k_rotary,
+                v,
+                block_mask=block_mask,
+            )  # shape (bsz, n_heads, seq_len, head_dim)
+        else:
+            attn_mask = None
+            if attention_mask is not None:
+                if attention_mask.ndim == 2:  # (bsz, seq_len)
+                    attn_mask = attention_mask.unsqueeze(1).unsqueeze(
+                        1
+                    )  # shape (bsz, 1, 1, seq_len)
+                elif (
+                    attention_mask.ndim == 3
+                ):  # (bsz, seq_len (query), seq_len (key-value))
+                    attn_mask = attention_mask.unsqueeze(
+                        1
+                    )  # shape (bsz, 1, seq_len (query), seq_len (key-value))
+                else:
+                    raise ValueError(
+                        f"Attention mask must be of shape (bsz, seq_len) or (bsz, seq_len (query), seq_len (key-value)). Got {attention_mask.shape}"
+                    )
 
-        # UPGRADE: The following context manager is not compile friendly
-        # upto torch 2.5.1. It can be compiled with torch 2.6.0, but
-        # due to the new default of `torch.load(weights_only=True)`,
-        # torch 2.6.0 will not work with lightning 2.3, 2.4 or 2.5.
-        # So untill lightning supports torch 2.6, we cannot use this context manager.
-        with torch.nn.attention.sdpa_kernel(self.attn_backend):
-           attn_output = F.scaled_dot_product_attention(
-               q_rotary,
-               k_rotary,
-               v,
-               attn_mask=attn_mask,
-               dropout_p=self.dropout if self.training else 0.0,
-           )  # shape (bsz, n_heads, seq_len, head_dim)
-
-        #attn_output = F.scaled_dot_product_attention(
-        #    q_rotary,
-        #    k_rotary,
-        #    v,
-        #    attn_mask=attn_mask,
-        #    dropout_p=self.dropout if self.training else 0.0,
-        #)  # shape (bsz, n_heads, seq_len, head_dim)
+            # UPGRADE: The following context manager is not compile friendly
+            # upto torch 2.5.1. It can be compiled with torch 2.6.0, but
+            # due to the new default of `torch.load(weights_only=True)`,
+            # torch 2.6.0 will not work with lightning 2.3, 2.4 or 2.5.
+            # So untill lightning supports torch 2.6, we cannot use this context manager.
+            with torch.nn.attention.sdpa_kernel(self.attn_backend):
+               attn_output = F.scaled_dot_product_attention(
+                   q_rotary,
+                   k_rotary,
+                   v,
+                   attn_mask=attn_mask,
+                   dropout_p=self.dropout if self.training else 0.0,
+               )  # shape (bsz, n_heads, seq_len, head_dim)
 
         # Reshape and project output
         attn_output = (

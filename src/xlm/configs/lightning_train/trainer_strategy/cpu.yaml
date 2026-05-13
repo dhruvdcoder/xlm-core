@@ -1,3 +1,9 @@
-# @package trainer.strategy
-_target_: lightning.pytorch.strategies.SingleDeviceStrategy
-device: "cpu"
+# @package trainer
+# Keep accelerator in sync with SingleDeviceStrategy — base config uses
+# accelerator: cuda; without this override, Lightning attaches CUDAAccelerator
+# and fails with "Device should be GPU, got cpu instead".
+accelerator: cpu
+devices: 1
+strategy:
+  _target_: lightning.pytorch.strategies.SingleDeviceStrategy
+  device: cpu
