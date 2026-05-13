@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/tasks/molgen/">
+        <link rel="canonical" href="https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/utils/flops_estimation/">
       
       
-        <link rel="prev" href="../lm1b/">
+        <link rel="prev" href="../file_friendly_progress_callback/">
       
       
-        <link rel="next" href="../owt/">
+        <link rel="next" href="../fsdp_diagnostics_callback/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>molgen - XLM</title>
+        <title>flops_estimation - XLM</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#xlm.tasks.molgen" class="md-skip">
+        <a href="#xlm.utils.flops_estimation" class="md-skip">
           Skip to content
         </a>
       
@@ -118,7 +118,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              molgen
+              flops_estimation
             
           </span>
         </div>
@@ -1431,7 +1431,7 @@
   <span class="md-ellipsis">
     
   
-    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>commands
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>backbones
   
 
     
@@ -1444,6 +1444,266 @@
         
         <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_6_1_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6_1_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>backbones
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../backbones/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    backbones
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_1_2_2" id="__nav_6_1_2_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>dream
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_6_1_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_1_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>dream
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../backbones/dream/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dream
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../backbones/dream/configuration_base/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>configuration_base
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../backbones/dream/modeling_dream/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>modeling_dream
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../backbones/dream/tokenization_dream/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>tokenization_dream
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_1_3" id="__nav_6_1_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>commands
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_6_1_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_1_3">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2125,10 +2385,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1_12" >
         
           
-          <label class="md-nav__link" for="__nav_6_1_11" id="__nav_6_1_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_1_12" id="__nav_6_1_12_label" tabindex="0">
             
   
   
@@ -2146,8 +2406,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_6_1_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_1_11">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_6_1_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_1_12">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2421,8 +2681,6 @@
                 
   
   
-    
-  
   
   
     
@@ -2435,14 +2693,14 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1_13" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1_14" >
         
           
-          <label class="md-nav__link" for="__nav_6_1_13" id="__nav_6_1_13_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_1_14" id="__nav_6_1_14_label" tabindex="0">
             
   
   
@@ -2460,8 +2718,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_6_1_13_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_6_1_13">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_6_1_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_1_14">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2478,7 +2736,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../" class="md-nav__link">
+      <a href="../../tasks/" class="md-nav__link">
         
   
   
@@ -2506,7 +2764,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cfg/" class="md-nav__link">
+      <a href="../../tasks/cfg/" class="md-nav__link">
         
   
   
@@ -2534,7 +2792,35 @@
   
   
     <li class="md-nav__item">
-      <a href="../gram_graph_coloring/" class="md-nav__link">
+      <a href="../../tasks/composite_eval/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>composite_eval
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tasks/gram_graph_coloring/" class="md-nav__link">
         
   
   
@@ -2562,7 +2848,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../gram_n_queens/" class="md-nav__link">
+      <a href="../../tasks/gram_n_queens/" class="md-nav__link">
         
   
   
@@ -2590,7 +2876,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../lm1b/" class="md-nav__link">
+      <a href="../../tasks/lm1b/" class="md-nav__link">
         
   
   
@@ -2615,44 +2901,17 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>molgen
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../tasks/math500/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>molgen
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>math500
   
 
     
@@ -2661,264 +2920,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#xlm.tasks.molgen.SerializableSAFETokenizer" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SerializableSAFETokenizer
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label=" SerializableSAFETokenizer">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#xlm.tasks.molgen.SerializableSAFETokenizer.__getstate__" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;__getstate__
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#xlm.tasks.molgen.SerializableSAFETokenizer.__setstate__" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;__setstate__
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#xlm.tasks.molgen.SerializableSAFETokenizer.__getattr__" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;__getattr__
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#xlm.tasks.molgen.SerializableSAFETokenizer.__dir__" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;__dir__
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xlm.tasks.molgen.DeNovoEval" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;DeNovoEval
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label=" DeNovoEval">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#xlm.tasks.molgen.DeNovoEval.oracle_qed" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;oracle_qed
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#xlm.tasks.molgen.DeNovoEval.oracle_sa" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;oracle_sa
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#xlm.tasks.molgen.DeNovoEval.evaluator_diversity" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;evaluator_diversity
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#xlm.tasks.molgen.DeNovoEval.evaluator_validity" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;evaluator_validity
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#xlm.tasks.molgen.DeNovoEval.evaluator_uniqueness" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;evaluator_uniqueness
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#xlm.tasks.molgen.DeNovoEval.eval" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;eval
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xlm.tasks.molgen.FragmentEval" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;FragmentEval
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label=" FragmentEval">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#xlm.tasks.molgen.FragmentEval.eval" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;eval
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xlm.tasks.molgen.safe2bracketsafe" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;safe2bracketsafe
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xlm.tasks.molgen.bracketsafe2safe" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;bracketsafe2safe
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xlm.tasks.molgen.safe_to_smiles" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;safe_to_smiles
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xlm.tasks.molgen.safe_strings_to_smiles" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;safe_strings_to_smiles
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xlm.tasks.molgen.safe_bracket_on_the_fly_processor_combined" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;safe_bracket_on_the_fly_processor_combined
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xlm.tasks.molgen.genmol_fragment_preprocess_fn" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;genmol_fragment_preprocess_fn
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2931,7 +2932,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../owt/" class="md-nav__link">
+      <a href="../../tasks/owt/" class="md-nav__link">
         
   
   
@@ -2959,7 +2960,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../qm9/" class="md-nav__link">
+      <a href="../../tasks/qm9/" class="md-nav__link">
         
   
   
@@ -2987,7 +2988,35 @@
   
   
     <li class="md-nav__item">
-      <a href="../star/" class="md-nav__link">
+      <a href="../../tasks/safe_molgen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>safe_molgen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tasks/star/" class="md-nav__link">
         
   
   
@@ -3015,7 +3044,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../sudoku/" class="md-nav__link">
+      <a href="../../tasks/sudoku/" class="md-nav__link">
         
   
   
@@ -3043,7 +3072,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../sudoku_extreme/" class="md-nav__link">
+      <a href="../../tasks/sudoku_extreme/" class="md-nav__link">
         
   
   
@@ -3071,7 +3100,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../uniref50/" class="md-nav__link">
+      <a href="../../tasks/uniref50/" class="md-nav__link">
         
   
   
@@ -3104,8 +3133,10 @@
                 
   
   
+    
   
   
+  
     
     
     
@@ -3116,14 +3147,14 @@
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1_14" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1_15" checked>
         
           
-          <label class="md-nav__link" for="__nav_6_1_14" id="__nav_6_1_14_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_1_15" id="__nav_6_1_15_label" tabindex="0">
             
   
   
@@ -3141,8 +3172,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_6_1_14_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_1_14">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_6_1_15_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6_1_15">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3159,7 +3190,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         
   
   
@@ -3187,7 +3218,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/batch_size/" class="md-nav__link">
+      <a href="../batch_size/" class="md-nav__link">
         
   
   
@@ -3215,7 +3246,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/checkpoint_with_thinning/" class="md-nav__link">
+      <a href="../checkpoint_with_thinning/" class="md-nav__link">
         
   
   
@@ -3243,7 +3274,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/data/" class="md-nav__link">
+      <a href="../data/" class="md-nav__link">
         
   
   
@@ -3271,7 +3302,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/ddp/" class="md-nav__link">
+      <a href="../ddp/" class="md-nav__link">
         
   
   
@@ -3299,7 +3330,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/debug/" class="md-nav__link">
+      <a href="../debug/" class="md-nav__link">
         
   
   
@@ -3327,7 +3358,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/ema/" class="md-nav__link">
+      <a href="../ema/" class="md-nav__link">
         
   
   
@@ -3355,7 +3386,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/file_friendly_progress_callback/" class="md-nav__link">
+      <a href="../file_friendly_progress_callback/" class="md-nav__link">
         
   
   
@@ -3380,10 +3411,104 @@
                 
   
   
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>flops_estimation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
   
   
     <li class="md-nav__item">
-      <a href="../../utils/hf_hub/" class="md-nav__link">
+      <a href="../fsdp_diagnostics_callback/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>fsdp_diagnostics_callback
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fsdp_grouping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>fsdp_grouping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hf_hub/" class="md-nav__link">
         
   
   
@@ -3411,7 +3536,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/imports/" class="md-nav__link">
+      <a href="../imports/" class="md-nav__link">
         
   
   
@@ -3439,7 +3564,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/model_loading/" class="md-nav__link">
+      <a href="../model_loading/" class="md-nav__link">
         
   
   
@@ -3467,7 +3592,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/nn/" class="md-nav__link">
+      <a href="../nn/" class="md-nav__link">
         
   
   
@@ -3495,7 +3620,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/omegaconf_resolvers/" class="md-nav__link">
+      <a href="../omegaconf_resolvers/" class="md-nav__link">
         
   
   
@@ -3523,7 +3648,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/on_exception_checkpoint/" class="md-nav__link">
+      <a href="../on_exception_checkpoint/" class="md-nav__link">
         
   
   
@@ -3551,7 +3676,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/os/" class="md-nav__link">
+      <a href="../os/" class="md-nav__link">
         
   
   
@@ -3579,7 +3704,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/rank_zero/" class="md-nav__link">
+      <a href="../rank_zero/" class="md-nav__link">
         
   
   
@@ -3607,7 +3732,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/rich_utils/" class="md-nav__link">
+      <a href="../rich_utils/" class="md-nav__link">
         
   
   
@@ -3635,7 +3760,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/saving_utils/" class="md-nav__link">
+      <a href="../saving_utils/" class="md-nav__link">
         
   
   
@@ -3663,7 +3788,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/seed/" class="md-nav__link">
+      <a href="../seed/" class="md-nav__link">
         
   
   
@@ -3691,7 +3816,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/signal/" class="md-nav__link">
+      <a href="../signal/" class="md-nav__link">
         
   
   
@@ -3719,7 +3844,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/slurm/" class="md-nav__link">
+      <a href="../slurm/" class="md-nav__link">
         
   
   
@@ -3747,7 +3872,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/speed_monitor_callback/" class="md-nav__link">
+      <a href="../speed_monitor_callback/" class="md-nav__link">
         
   
   
@@ -3775,7 +3900,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/tensorboard_logging/" class="md-nav__link">
+      <a href="../tensorboard_logging/" class="md-nav__link">
         
   
   
@@ -3803,7 +3928,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/text/" class="md-nav__link">
+      <a href="../text/" class="md-nav__link">
         
   
   
@@ -3831,7 +3956,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/tqdm/" class="md-nav__link">
+      <a href="../tqdm/" class="md-nav__link">
         
   
   
@@ -3859,7 +3984,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/wandb/" class="md-nav__link">
+      <a href="../wandb/" class="md-nav__link">
         
   
   
@@ -5128,19 +5253,15 @@
 
 
 
-<h1 id="xlm.tasks.molgen" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>xlm.tasks.molgen</code>
+<h1 id="xlm.utils.flops_estimation" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>xlm.utils.flops_estimation</code>
 
 
 </h1>
 
     <div class="doc doc-contents first">
 
-        <p>Molecule generation task utilities and metrics.</p>
-<p>This module provides:
-- Data preprocessing for SAFE molecular representations
-- Conversion utilities between SAFE and SMILES formats
-- Comprehensive metrics for evaluating molecular generation (diversity, QED, SA, validity, uniqueness)</p>
+        <p>Generic FLOP estimates (Dream modeling helpers; see also gpt2_transformer MFU).</p>
 
 
 
@@ -5161,1288 +5282,6 @@
 
 
 
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="xlm.tasks.molgen.SerializableSAFETokenizer" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>SerializableSAFETokenizer</code>
-
-
-</h2>
-
-
-    <div class="doc doc-contents ">
-
-
-
-        <p>Wrapper around SAFE tokenizer that handles pickling/deepcopy.</p>
-<p>The underlying tokenizer from the safe library has a custom PreTokenizer
-that cannot be serialized. This wrapper provides dummy serialization by
-storing the model path and re-instantiating the tokenizer on unpickle.</p>
-
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="xlm.tasks.molgen.SerializableSAFETokenizer.__getstate__" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">__getstate__</span><span class="p">()</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Return state for pickling - only store the model path.</p>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="xlm.tasks.molgen.SerializableSAFETokenizer.__setstate__" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">__setstate__</span><span class="p">(</span><span class="n">state</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Restore from pickled state - re-instantiate tokenizer.</p>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="xlm.tasks.molgen.SerializableSAFETokenizer.__getattr__" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__getattr__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Delegate all attribute access to the underlying tokenizer.</p>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="xlm.tasks.molgen.SerializableSAFETokenizer.__dir__" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__dir__</span><span class="p">()</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Include both wrapper and tokenizer attributes in dir().</p>
-
-
-    </div>
-
-</div>
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="xlm.tasks.molgen.DeNovoEval" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>DeNovoEval</code>
-
-
-</h2>
-
-
-    <div class="doc doc-contents ">
-
-
-
-        <p>Post-hoc evaluator for de novo molecule generation.</p>
-<p>Computes molecular properties on logged predictions at epoch end, matching
-GenMol's evaluation semantics. Computes:
-- Per-sample: QED, SA, SMILES (added to each prediction dict)
-- Global: Diversity, Validity, Uniqueness (aggregated across all samples)</p>
-<p>This approach enables:
-- Global metric computation (diversity/uniqueness on full generated set)
-- Exact match with GenMol's evaluation methodology
-- Reusable components for other tasks (frag, lead, pmo)</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>use_bracket_safe</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If True, decode from bracket SAFE format</p>
-              </div>
-            </td>
-            <td>
-                  <code>False</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>compute_diversity</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If True, compute diversity metric</p>
-              </div>
-            </td>
-            <td>
-                  <code>True</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>compute_validity</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If True, compute validity metric</p>
-              </div>
-            </td>
-            <td>
-                  <code>True</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>compute_uniqueness</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If True, compute uniqueness metric</p>
-              </div>
-            </td>
-            <td>
-                  <code>True</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>compute_qed</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If True, compute QED scores</p>
-              </div>
-            </td>
-            <td>
-                  <code>True</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>compute_sa</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If True, compute SA scores</p>
-              </div>
-            </td>
-            <td>
-                  <code>True</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-children">
-
-
-
-
-
-
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="xlm.tasks.molgen.DeNovoEval.oracle_qed" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">oracle_qed</span></code>
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-  </span>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Lazy load QED oracle.</p>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="xlm.tasks.molgen.DeNovoEval.oracle_sa" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">oracle_sa</span></code>
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-  </span>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Lazy load SA oracle.</p>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="xlm.tasks.molgen.DeNovoEval.evaluator_diversity" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">evaluator_diversity</span></code>
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-  </span>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Lazy load diversity evaluator.</p>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="xlm.tasks.molgen.DeNovoEval.evaluator_validity" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">evaluator_validity</span></code>
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-  </span>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Lazy load validity evaluator.</p>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="xlm.tasks.molgen.DeNovoEval.evaluator_uniqueness" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">evaluator_uniqueness</span></code>
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-  </span>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Lazy load uniqueness evaluator.</p>
-
-    </div>
-
-</div>
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="xlm.tasks.molgen.DeNovoEval.eval" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="nb">eval</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Evaluate predictions and return updated predictions + aggregated metrics.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>predictions</code>
-            </td>
-            <td>
-                  <code><span title="typing.List">List</span>[<span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>List of prediction dicts with 'text' field containing SAFE strings</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>tokenizer</code>
-            </td>
-            <td>
-                  <code><span title="typing.Any">Any</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Optional tokenizer (not used for denovo, but kept for interface consistency)</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="typing.List">List</span>[<span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Tuple of:</p>
-              </div>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <ul>
-<li>predictions: Updated list with per-sample metrics added (smiles, qed, sa)</li>
-</ul>
-              </div>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="typing.Tuple">Tuple</span>[<span title="typing.List">List</span>[<span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]], <span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <ul>
-<li>aggregated_metrics: Dict of global metric values</li>
-</ul>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="xlm.tasks.molgen.FragmentEval" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>FragmentEval</code>
-
-
-</h2>
-
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="            DeNovoEval (xlm.tasks.molgen.DeNovoEval)" href="#xlm.tasks.molgen.DeNovoEval">DeNovoEval</a></code></p>
-
-
-
-        <p>Post-hoc evaluator for fragment-constrained molecule generation.</p>
-<p>Extends DeNovoEval with fragment-specific metrics:
-- All de novo metrics (validity, uniqueness, quality, QED, SA, diversity)
-- Distance: Tanimoto distance between generated and target molecules</p>
-<p>Based on GenMol's fragment evaluation methodology. Computes:
-- Per-sample: QED, SA, SMILES, distance (if target available)
-- Global: Diversity, Validity, Uniqueness, Quality, Distance (mean)</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>use_bracket_safe</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If True, decode from bracket SAFE format</p>
-              </div>
-            </td>
-            <td>
-                  <code>False</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>compute_diversity</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If True, compute diversity metric</p>
-              </div>
-            </td>
-            <td>
-                  <code>True</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>compute_validity</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If True, compute validity metric</p>
-              </div>
-            </td>
-            <td>
-                  <code>True</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>compute_uniqueness</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If True, compute uniqueness metric</p>
-              </div>
-            </td>
-            <td>
-                  <code>True</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>compute_qed</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If True, compute QED scores</p>
-              </div>
-            </td>
-            <td>
-                  <code>True</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>compute_sa</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If True, compute SA scores</p>
-              </div>
-            </td>
-            <td>
-                  <code>True</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>compute_distance</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If True, compute Tanimoto distance to target</p>
-              </div>
-            </td>
-            <td>
-                  <code>True</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="xlm.tasks.molgen.FragmentEval.eval" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="nb">eval</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Evaluate fragment generation predictions.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>predictions</code>
-            </td>
-            <td>
-                  <code><span title="typing.List">List</span>[<span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>List of prediction dicts with:
-- 'text': Generated SAFE string (full molecule)
-- 'truth': Target SAFE string (full molecule, optional)
-- 'raw_input': Fragment prompt SAFE string (optional)</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>tokenizer</code>
-            </td>
-            <td>
-                  <code><span title="typing.Any">Any</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Optional tokenizer (not used, kept for interface consistency)</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="typing.List">List</span>[<span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Tuple of:</p>
-              </div>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <ul>
-<li>predictions: Updated list with per-sample metrics added</li>
-</ul>
-              </div>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="typing.Tuple">Tuple</span>[<span title="typing.List">List</span>[<span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]], <span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <ul>
-<li>aggregated_metrics: Dict of global metric values</li>
-</ul>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-<h2 id="xlm.tasks.molgen.safe2bracketsafe" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">safe2bracketsafe</span><span class="p">(</span><span class="n">safe_str</span><span class="p">)</span></code>
-
-</h2>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Convert standard SAFE notation to bracket SAFE format.</p>
-<p>Bracket SAFE wraps interfragment attachment points in angle brackets.
-Example: "1" -&gt; "&lt;1&gt;", "%10" -&gt; "&lt;%10&gt;"</p>
-<p>Based on genmol/src/genmol/utils/bracket_safe_converter.py:133-137</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>safe_str</code>
-            </td>
-            <td>
-                  <code><span title="str">str</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>SAFE string in standard notation</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="str">str</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>SAFE string in bracket notation, or original string if conversion fails</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h2 id="xlm.tasks.molgen.bracketsafe2safe" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">bracketsafe2safe</span><span class="p">(</span><span class="n">safe_str</span><span class="p">)</span></code>
-
-</h2>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Convert bracket SAFE notation back to standard SAFE format.</p>
-<p>Removes angle brackets from interfragment attachment points and renumbers
-them to avoid conflicts with intrafragment attachment points.</p>
-<p>Based on genmol/src/genmol/utils/bracket_safe_converter.py:140-153</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>safe_str</code>
-            </td>
-            <td>
-                  <code><span title="str">str</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>SAFE string in bracket notation</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="str">str</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>SAFE string in standard notation</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h2 id="xlm.tasks.molgen.safe_to_smiles" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">safe_to_smiles</span><span class="p">(</span><span class="n">safe_str</span><span class="p">,</span> <span class="n">fix</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
-
-</h2>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Convert SAFE string to SMILES using safe library.</p>
-<p>Based on genmol/src/genmol/utils/utils_chem.py:26-30</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>safe_str</code>
-            </td>
-            <td>
-                  <code><span title="str">str</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>SAFE molecular representation</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>fix</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If True, filter out invalid fragments before decoding</p>
-              </div>
-            </td>
-            <td>
-                  <code>True</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>SMILES string, or None if conversion fails</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h2 id="xlm.tasks.molgen.safe_strings_to_smiles" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">safe_strings_to_smiles</span><span class="p">(</span><span class="n">safe_strings</span><span class="p">,</span> <span class="n">use_bracket_safe</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fix</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
-
-</h2>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Convert batch of SAFE strings to SMILES strings.</p>
-<p>Based on genmol/src/genmol/sampler.py:81-89</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>safe_strings</code>
-            </td>
-            <td>
-                  <code><span title="typing.List">List</span>[<span title="str">str</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>List of SAFE molecular representations</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>use_bracket_safe</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If True, convert from bracket SAFE first</p>
-              </div>
-            </td>
-            <td>
-                  <code>False</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>fix</code>
-            </td>
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If True, filter invalid fragments</p>
-              </div>
-            </td>
-            <td>
-                  <code>True</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="typing.List">List</span>[<span title="str">str</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>List of SMILES strings (invalid conversions are skipped)</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h2 id="xlm.tasks.molgen.safe_bracket_on_the_fly_processor_combined" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">safe_bracket_on_the_fly_processor_combined</span><span class="p">(</span><span class="n">example</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">,</span> <span class="n">block_size</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
-
-</h2>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Works directly on the raw strings</p>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h2 id="xlm.tasks.molgen.genmol_fragment_preprocess_fn" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">genmol_fragment_preprocess_fn</span><span class="p">(</span><span class="n">example</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">fragment_column</span><span class="o">=</span><span class="s1">&#39;linker_design&#39;</span><span class="p">)</span></code>
-
-</h2>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Preprocess GenMol fragment CSV data for fragment-constrained generation.</p>
-<p>Converts SMILES fragments and targets to SAFE format, then to bracket SAFE,
-and creates prompt_token_ids (fragment) and input_token_ids (full molecule).</p>
-<p>Based on GenMol's fragment evaluation dataset structure:
-- Input: Fragment SMILES (from <code>fragment_column</code>, default 'linker_design')
-- Target: Full molecule SMILES (from 'smiles' column)</p>
-<p>To use a different fragment column, pass <code>fragment_column</code> via
-<code>preprocess_function_kwargs</code> in the dataset config, or set
-<code>_fragment_column</code> in the example dict (overrides kwarg).</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>example</code>
-            </td>
-            <td>
-                  <code><span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Dataset example containing:
-- column named by <code>fragment_column</code>: SMILES with [n*] attachment points
-- 'smiles': Full target molecule SMILES
-- '_fragment_column' (optional): Overrides <code>fragment_column</code> if set</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>tokenizer</code>
-            </td>
-            <td>
-                  <code><span title="transformers.PreTrainedTokenizerBase">PreTrainedTokenizerBase</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Tokenizer for encoding</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>fragment_column</code>
-            </td>
-            <td>
-                  <code><span title="str">str</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>CSV column to use as fragment input (default: 'linker_design').
-Override via datamodule ... preprocess_function_kwargs.fragment_column.</p>
-              </div>
-            </td>
-            <td>
-                  <code>&#39;linker_design&#39;</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Example with 'prompt_token_ids' (fragment) and 'input_token_ids' (full molecule)</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
 
 
 

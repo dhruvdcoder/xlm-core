@@ -97,6 +97,26 @@
          <lastmod>2026-05-13</lastmod>
     </url>
     <url>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/backbones/</loc>
+         <lastmod>2026-05-13</lastmod>
+    </url>
+    <url>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/backbones/dream/</loc>
+         <lastmod>2026-05-13</lastmod>
+    </url>
+    <url>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/backbones/dream/configuration_base/</loc>
+         <lastmod>2026-05-13</lastmod>
+    </url>
+    <url>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/backbones/dream/modeling_dream/</loc>
+         <lastmod>2026-05-13</lastmod>
+    </url>
+    <url>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/backbones/dream/tokenization_dream/</loc>
+         <lastmod>2026-05-13</lastmod>
+    </url>
+    <url>
          <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/commands/</loc>
          <lastmod>2026-05-13</lastmod>
     </url>
@@ -233,6 +253,10 @@
          <lastmod>2026-05-13</lastmod>
     </url>
     <url>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/tasks/composite_eval/</loc>
+         <lastmod>2026-05-13</lastmod>
+    </url>
+    <url>
          <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/tasks/gram_graph_coloring/</loc>
          <lastmod>2026-05-13</lastmod>
     </url>
@@ -245,7 +269,7 @@
          <lastmod>2026-05-13</lastmod>
     </url>
     <url>
-         <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/tasks/molgen/</loc>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/tasks/math500/</loc>
          <lastmod>2026-05-13</lastmod>
     </url>
     <url>
@@ -254,6 +278,10 @@
     </url>
     <url>
          <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/tasks/qm9/</loc>
+         <lastmod>2026-05-13</lastmod>
+    </url>
+    <url>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/tasks/safe_molgen/</loc>
          <lastmod>2026-05-13</lastmod>
     </url>
     <url>
@@ -302,6 +330,18 @@
     </url>
     <url>
          <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/utils/file_friendly_progress_callback/</loc>
+         <lastmod>2026-05-13</lastmod>
+    </url>
+    <url>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/utils/flops_estimation/</loc>
+         <lastmod>2026-05-13</lastmod>
+    </url>
+    <url>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/utils/fsdp_diagnostics_callback/</loc>
+         <lastmod>2026-05-13</lastmod>
+    </url>
+    <url>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/utils/fsdp_grouping/</loc>
          <lastmod>2026-05-13</lastmod>
     </url>
     <url>
