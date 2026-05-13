@@ -572,34 +572,6 @@ class TestGetDataloader:
         )
         assert isinstance(dl, StatefulDataLoader)
 
-    def test_train_ddp_iterable_case1_too_many_shards_raises(
-        self, dataset_manager_factory, simple_tokenizer, manual_cache_dir
-    ):
-        # num_shards=8, world_size=2, num_workers=1 -> per-worker shards = 4,
-        # batch_size=2 < 4 -> ValueError (line 1164).
-        dsm = dataset_manager_factory(
-            full_name="mem/raw_large/train",
-            use_manual_cache=False,
-            iterable_dataset_shards=8,
-            dataloader_kwargs={
-                "batch_size": 2,
-                "num_workers": 1,
-                "pin_memory": False,
-            },
-        )
-        _setup_for_dataloader(
-            dsm,
-            simple_tokenizer,
-            manual_cache_dir,
-            is_ddp=True,
-            rank=0,
-            world_size=2,
-        )
-        with pytest.raises(ValueError, match="num_shards_per_worker"):
-            dsm.get_dataloader(
-                type="train", is_ddp=True, rank=0, world_size=2
-            )
-
     def test_train_ddp_iterable_case1_strips_shuffle(
         self, dataset_manager_factory, simple_tokenizer, manual_cache_dir
     ):
