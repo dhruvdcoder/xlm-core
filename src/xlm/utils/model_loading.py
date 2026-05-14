@@ -23,6 +23,28 @@ from xlm.utils.rank_zero import RankedLogger
 
 logger = RankedLogger(__name__, rank_zero_only=True)
 
+
+def _normalize_optional_str(val: Any) -> Optional[str]:
+    """Return a non-empty string or None.
+
+    Hydra CLI ``...=null`` / YAML ``null`` sometimes surface as the literal
+    string ``\"None\"``; treat those like missing so Hub / fallbacks work.
+    """
+    if val is None:
+        return None
+    try:
+        if OmegaConf.is_missing(val):
+            return None
+    except (ValueError, TypeError, AttributeError):
+        pass
+    if not isinstance(val, str):
+        val = str(val)
+    s = val.strip()
+    if not s or s.lower() in ("none", "null", "~"):
+        return None
+    return s
+
+
 _STR_TO_DTYPE = {
     "float32": torch.float32,
     "float16": torch.float16,
@@ -271,16 +293,18 @@ def _get_full_checkpoint_path(
     # Build the config path to check
     if config_prefix:
         # Try both ckpt_path and checkpoint_path variants
-        ckpt_path = OmegaConf.select(
-            cfg, f"{config_prefix}.ckpt_path", default=None
+        ckpt_path = _normalize_optional_str(
+            OmegaConf.select(cfg, f"{config_prefix}.ckpt_path", default=None)
         )
         if ckpt_path is None:
-            ckpt_path = OmegaConf.select(
-                cfg, f"{config_prefix}.checkpoint_path", default=None
+            ckpt_path = _normalize_optional_str(
+                OmegaConf.select(
+                    cfg, f"{config_prefix}.checkpoint_path", default=None
+                )
             )
     else:
         # Top-level: check hub_checkpoint_path
-        ckpt_path = cfg.get("hub_checkpoint_path", None)
+        ckpt_path = _normalize_optional_str(cfg.get("hub_checkpoint_path", None))
 
     if ckpt_path is not None:
         if not os.path.isfile(ckpt_path):
@@ -328,17 +352,23 @@ def _get_model_only_checkpoint_path(
     """
     # Check for model_only_checkpoint_path in config
     if config_prefix:
-        model_only_path = OmegaConf.select(
-            cfg, f"{config_prefix}.model_only_checkpoint_path", default=None
+        model_only_path = _normalize_optional_str(
+            OmegaConf.select(
+                cfg, f"{config_prefix}.model_only_checkpoint_path", default=None
+            )
         )
     else:
         # Top-level
-        model_only_path = cfg.get("model_only_checkpoint_path", None)
+        model_only_path = _normalize_optional_str(
+            cfg.get("model_only_checkpoint_path", None)
+        )
 
     # Check for hub.repo_id if enabled
     hub_repo_id = None
     if enable_hub_support:
-        hub_repo_id = OmegaConf.select(cfg, "hub.repo_id", default=None)
+        hub_repo_id = _normalize_optional_str(
+            OmegaConf.select(cfg, "hub.repo_id", default=None)
+        )
 
     # Conflict detection
     if full_ckpt_path is not None:
