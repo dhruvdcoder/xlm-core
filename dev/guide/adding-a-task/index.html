@@ -10,28 +10,28 @@
       
       
       
-        <link rel="canonical" href="https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/tasks/gram_n_queens/">
+        <link rel="canonical" href="https://dhruvdcoder.github.io/xlm-core/dev/guide/adding-a-task/">
       
       
-        <link rel="prev" href="../gram_graph_coloring/">
+        <link rel="prev" href="../quickstart/">
       
       
-        <link rel="next" href="../lm1b/">
+        <link rel="next" href="../push-to-hub/">
       
       
         
       
       
-      <link rel="icon" href="../../../../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>gram_n_queens - XLM</title>
+        <title>Adding a task or dataset - XLM</title>
       
     
     
-      <link rel="stylesheet" href="../../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
       
   
@@ -60,9 +60,9 @@
       
     
     
-      <link rel="stylesheet" href="../../../../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
-    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#xlm.tasks.gram_n_queens" class="md-skip">
+        <a href="#adding-a-new-task-or-dataset" class="md-skip">
           Skip to content
         </a>
       
@@ -98,7 +98,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../../.." title="XLM" class="md-header__button md-logo" aria-label="XLM" data-md-component="logo">
+    <a href="../.." title="XLM" class="md-header__button md-logo" aria-label="XLM" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -118,7 +118,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              gram_n_queens
+              Adding a task or dataset
             
           </span>
         </div>
@@ -203,7 +203,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../../.." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
   
@@ -220,11 +220,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../../../guide/quickstart/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../quickstart/" class="md-tabs__link">
           
   
   
@@ -244,7 +246,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../../models/" class="md-tabs__link">
+        <a href="../../models/" class="md-tabs__link">
           
   
   
@@ -264,7 +266,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../../guide/CONTRIBUTING/" class="md-tabs__link">
+        <a href="../CONTRIBUTING/" class="md-tabs__link">
           
   
   
@@ -282,7 +284,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../../" class="md-tabs__link">
+      <a href="../../reference/" class="md-tabs__link">
         
   
   
@@ -299,8 +301,6 @@
   
   
   
-    
-  
   
     
     
@@ -308,13 +308,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../reference/xlm/" class="md-tabs__link">
           
   
   
@@ -353,7 +351,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../../.." title="XLM" class="md-nav__button md-logo" aria-label="XLM" data-md-component="logo">
+    <a href="../.." title="XLM" class="md-nav__button md-logo" aria-label="XLM" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -383,7 +381,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../.." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -407,26 +405,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
             
   
   
@@ -444,7 +447,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -462,7 +465,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../guide/quickstart/" class="md-nav__link">
+      <a href="../quickstart/" class="md-nav__link">
         
   
   
@@ -487,10 +490,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../../../guide/adding-a-task/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a task or dataset
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -506,6 +536,142 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-pick-a-wiring-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Pick a wiring pattern
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-implement-task-code-srcxlmtasksyour_task__init__py" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Implement task code (src/xlm/tasks/&lt;your_task&gt;/__init__.py)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Implement task code (src/xlm/tasks/&lt;your_task&gt;/__init__.py)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#preprocess-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Preprocess function
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-add-dataset-yaml-srcxlmconfigslightning_traindatasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Add dataset YAML (src/xlm/configs/lightning_train/datasets/)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-compose-a-datamodule-config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Compose a datamodule config
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-wire-collators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Wire collators
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-wire-metrics-and-optional-post-hoc-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Wire metrics and optional post-hoc evaluation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-dependencies-and-extras" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Dependencies and extras
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-verify" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Verify
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-reference-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick reference table
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -518,7 +684,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../guide/push-to-hub/" class="md-nav__link">
+      <a href="../push-to-hub/" class="md-nav__link">
         
   
   
@@ -552,17 +718,20 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
         
           
-          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="">
             
   
   
@@ -598,7 +767,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../guide/data-pipeline/" class="md-nav__link">
+      <a href="../data-pipeline/" class="md-nav__link">
         
   
   
@@ -626,7 +795,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../guide/metrics/" class="md-nav__link">
+      <a href="../metrics/" class="md-nav__link">
         
   
   
@@ -662,7 +831,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../guide/external-models/" class="md-nav__link">
+      <a href="../external-models/" class="md-nav__link">
         
   
   
@@ -690,7 +859,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../guide/custom-commands/" class="md-nav__link">
+      <a href="../custom-commands/" class="md-nav__link">
         
   
   
@@ -718,7 +887,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../guide/extract-checkpoint/" class="md-nav__link">
+      <a href="../extract-checkpoint/" class="md-nav__link">
         
   
   
@@ -746,7 +915,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../guide/eval/" class="md-nav__link">
+      <a href="../eval/" class="md-nav__link">
         
   
   
@@ -774,7 +943,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../guide/faq/" class="md-nav__link">
+      <a href="../faq/" class="md-nav__link">
         
   
   
@@ -861,7 +1030,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../models/" class="md-nav__link">
+      <a href="../../models/" class="md-nav__link">
         
   
   
@@ -889,7 +1058,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../models/arlm/" class="md-nav__link">
+      <a href="../../models/arlm/" class="md-nav__link">
         
   
   
@@ -917,7 +1086,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../models/ilm/" class="md-nav__link">
+      <a href="../../models/ilm/" class="md-nav__link">
         
   
   
@@ -945,7 +1114,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../models/mdlm/" class="md-nav__link">
+      <a href="../../models/mdlm/" class="md-nav__link">
         
   
   
@@ -973,7 +1142,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../models/mlm/" class="md-nav__link">
+      <a href="../../models/mlm/" class="md-nav__link">
         
   
   
@@ -1060,7 +1229,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../guide/CONTRIBUTING/" class="md-nav__link">
+      <a href="../CONTRIBUTING/" class="md-nav__link">
         
   
   
@@ -1088,7 +1257,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../developers/dependencies/" class="md-nav__link">
+      <a href="../../developers/dependencies/" class="md-nav__link">
         
   
   
@@ -1168,7 +1337,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../developers/testing/running-tests/" class="md-nav__link">
+      <a href="../../developers/testing/running-tests/" class="md-nav__link">
         
   
   
@@ -1196,7 +1365,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../developers/testing/unit-tests/" class="md-nav__link">
+      <a href="../../developers/testing/unit-tests/" class="md-nav__link">
         
   
   
@@ -1224,7 +1393,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../developers/testing/integration-tests/" class="md-nav__link">
+      <a href="../../developers/testing/integration-tests/" class="md-nav__link">
         
   
   
@@ -1267,7 +1436,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../" class="md-nav__link">
+      <a href="../../reference/" class="md-nav__link">
         
   
   
@@ -1291,31 +1460,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   
@@ -1333,7 +1497,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1348,31 +1512,26 @@
                 
   
   
-    
   
   
-  
     
     
     
     
       
       
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1" >
         
           
-          
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_6_1" id="__nav_6_1_label" tabindex="">
+          <label class="md-nav__link" for="__nav_6_1" id="__nav_6_1_label" tabindex="0">
             
   
   
@@ -1390,7 +1549,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6_1">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1408,7 +1567,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../" class="md-nav__link">
+      <a href="../../reference/xlm/" class="md-nav__link">
         
   
   
@@ -1488,7 +1647,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../backbones/" class="md-nav__link">
+      <a href="../../reference/xlm/backbones/" class="md-nav__link">
         
   
   
@@ -1568,7 +1727,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../backbones/dream/" class="md-nav__link">
+      <a href="../../reference/xlm/backbones/dream/" class="md-nav__link">
         
   
   
@@ -1596,7 +1755,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../backbones/dream/configuration_base/" class="md-nav__link">
+      <a href="../../reference/xlm/backbones/dream/configuration_base/" class="md-nav__link">
         
   
   
@@ -1624,7 +1783,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../backbones/dream/modeling_dream/" class="md-nav__link">
+      <a href="../../reference/xlm/backbones/dream/modeling_dream/" class="md-nav__link">
         
   
   
@@ -1652,7 +1811,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../backbones/dream/tokenization_dream/" class="md-nav__link">
+      <a href="../../reference/xlm/backbones/dream/tokenization_dream/" class="md-nav__link">
         
   
   
@@ -1748,7 +1907,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/" class="md-nav__link">
+      <a href="../../reference/xlm/commands/" class="md-nav__link">
         
   
   
@@ -1776,7 +1935,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/cli_demo/" class="md-nav__link">
+      <a href="../../reference/xlm/commands/cli_demo/" class="md-nav__link">
         
   
   
@@ -1804,7 +1963,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/extract_checkpoint/" class="md-nav__link">
+      <a href="../../reference/xlm/commands/extract_checkpoint/" class="md-nav__link">
         
   
   
@@ -1832,7 +1991,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/extract_model_state_dict/" class="md-nav__link">
+      <a href="../../reference/xlm/commands/extract_model_state_dict/" class="md-nav__link">
         
   
   
@@ -1860,7 +2019,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/generate_star_graphs/" class="md-nav__link">
+      <a href="../../reference/xlm/commands/generate_star_graphs/" class="md-nav__link">
         
   
   
@@ -1888,7 +2047,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/hydra_callbacks/" class="md-nav__link">
+      <a href="../../reference/xlm/commands/hydra_callbacks/" class="md-nav__link">
         
   
   
@@ -1916,7 +2075,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/lightning_eval/" class="md-nav__link">
+      <a href="../../reference/xlm/commands/lightning_eval/" class="md-nav__link">
         
   
   
@@ -1944,7 +2103,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/lightning_generate/" class="md-nav__link">
+      <a href="../../reference/xlm/commands/lightning_generate/" class="md-nav__link">
         
   
   
@@ -1972,7 +2131,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/lightning_main/" class="md-nav__link">
+      <a href="../../reference/xlm/commands/lightning_main/" class="md-nav__link">
         
   
   
@@ -2000,7 +2159,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/lightning_prepare_data/" class="md-nav__link">
+      <a href="../../reference/xlm/commands/lightning_prepare_data/" class="md-nav__link">
         
   
   
@@ -2028,7 +2187,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/lightning_train/" class="md-nav__link">
+      <a href="../../reference/xlm/commands/lightning_train/" class="md-nav__link">
         
   
   
@@ -2056,7 +2215,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/push_to_hub/" class="md-nav__link">
+      <a href="../../reference/xlm/commands/push_to_hub/" class="md-nav__link">
         
   
   
@@ -2084,7 +2243,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/scaffold_model/" class="md-nav__link">
+      <a href="../../reference/xlm/commands/scaffold_model/" class="md-nav__link">
         
   
   
@@ -2112,7 +2271,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/split_owt/" class="md-nav__link">
+      <a href="../../reference/xlm/commands/split_owt/" class="md-nav__link">
         
   
   
@@ -2140,7 +2299,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../commands/train_tokenizer/" class="md-nav__link">
+      <a href="../../reference/xlm/commands/train_tokenizer/" class="md-nav__link">
         
   
   
@@ -2176,7 +2335,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../datamodule/" class="md-nav__link">
+      <a href="../../reference/xlm/datamodule/" class="md-nav__link">
         
   
   
@@ -2204,7 +2363,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../external_models/" class="md-nav__link">
+      <a href="../../reference/xlm/external_models/" class="md-nav__link">
         
   
   
@@ -2232,7 +2391,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../flags/" class="md-nav__link">
+      <a href="../../reference/xlm/flags/" class="md-nav__link">
         
   
   
@@ -2260,7 +2419,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../generative_perplexity/" class="md-nav__link">
+      <a href="../../reference/xlm/generative_perplexity/" class="md-nav__link">
         
   
   
@@ -2288,7 +2447,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../harness/" class="md-nav__link">
+      <a href="../../reference/xlm/harness/" class="md-nav__link">
         
   
   
@@ -2316,7 +2475,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../log_predictions/" class="md-nav__link">
+      <a href="../../reference/xlm/log_predictions/" class="md-nav__link">
         
   
   
@@ -2344,7 +2503,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../metrics/" class="md-nav__link">
+      <a href="../../reference/xlm/metrics/" class="md-nav__link">
         
   
   
@@ -2372,7 +2531,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../model/" class="md-nav__link">
+      <a href="../../reference/xlm/model/" class="md-nav__link">
         
   
   
@@ -2452,7 +2611,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../modules/" class="md-nav__link">
+      <a href="../../reference/xlm/modules/" class="md-nav__link">
         
   
   
@@ -2480,7 +2639,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../modules/ddit_simple/" class="md-nav__link">
+      <a href="../../reference/xlm/modules/ddit_simple/" class="md-nav__link">
         
   
   
@@ -2508,7 +2667,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../modules/ddit_simple_v2/" class="md-nav__link">
+      <a href="../../reference/xlm/modules/ddit_simple_v2/" class="md-nav__link">
         
   
   
@@ -2536,7 +2695,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../modules/encoder/" class="md-nav__link">
+      <a href="../../reference/xlm/modules/encoder/" class="md-nav__link">
         
   
   
@@ -2564,7 +2723,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../modules/gpt2_transformer/" class="md-nav__link">
+      <a href="../../reference/xlm/modules/gpt2_transformer/" class="md-nav__link">
         
   
   
@@ -2592,7 +2751,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../modules/position/" class="md-nav__link">
+      <a href="../../reference/xlm/modules/position/" class="md-nav__link">
         
   
   
@@ -2620,7 +2779,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../modules/regression/" class="md-nav__link">
+      <a href="../../reference/xlm/modules/regression/" class="md-nav__link">
         
   
   
@@ -2648,7 +2807,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../modules/rotary_transformer/" class="md-nav__link">
+      <a href="../../reference/xlm/modules/rotary_transformer/" class="md-nav__link">
         
   
   
@@ -2684,7 +2843,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../noise/" class="md-nav__link">
+      <a href="../../reference/xlm/noise/" class="md-nav__link">
         
   
   
@@ -2709,8 +2868,6 @@
                 
   
   
-    
-  
   
   
     
@@ -2723,11 +2880,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1_14" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1_14" >
         
           
           <label class="md-nav__link" for="__nav_6_1_14" id="__nav_6_1_14_label" tabindex="0">
@@ -2748,7 +2905,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_6_1_14_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_6_1_14_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6_1_14">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2766,7 +2923,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../" class="md-nav__link">
+      <a href="../../reference/xlm/tasks/" class="md-nav__link">
         
   
   
@@ -2794,7 +2951,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cfg/" class="md-nav__link">
+      <a href="../../reference/xlm/tasks/cfg/" class="md-nav__link">
         
   
   
@@ -2822,7 +2979,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../composite_eval/" class="md-nav__link">
+      <a href="../../reference/xlm/tasks/composite_eval/" class="md-nav__link">
         
   
   
@@ -2850,7 +3007,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../gram_graph_coloring/" class="md-nav__link">
+      <a href="../../reference/xlm/tasks/gram_graph_coloring/" class="md-nav__link">
         
   
   
@@ -2875,37 +3032,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>gram_n_queens
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../reference/xlm/tasks/gram_n_queens/" class="md-nav__link">
         
   
   
@@ -2921,59 +3051,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#xlm.tasks.gram_n_queens.gram_n_queens_preprocess_fn" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;gram_n_queens_preprocess_fn
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xlm.tasks.gram_n_queens.gram_n_queens_filter_8x8" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;gram_n_queens_filter_8x8
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#xlm.tasks.gram_n_queens.gram_n_queens_filter_10x10" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;gram_n_queens_filter_10x10
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2986,7 +3063,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../lm1b/" class="md-nav__link">
+      <a href="../../reference/xlm/tasks/lm1b/" class="md-nav__link">
         
   
   
@@ -3014,7 +3091,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../math500/" class="md-nav__link">
+      <a href="../../reference/xlm/tasks/math500/" class="md-nav__link">
         
   
   
@@ -3042,7 +3119,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../owt/" class="md-nav__link">
+      <a href="../../reference/xlm/tasks/owt/" class="md-nav__link">
         
   
   
@@ -3070,7 +3147,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../qm9/" class="md-nav__link">
+      <a href="../../reference/xlm/tasks/qm9/" class="md-nav__link">
         
   
   
@@ -3098,7 +3175,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../safe_molgen/" class="md-nav__link">
+      <a href="../../reference/xlm/tasks/safe_molgen/" class="md-nav__link">
         
   
   
@@ -3126,7 +3203,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../star/" class="md-nav__link">
+      <a href="../../reference/xlm/tasks/star/" class="md-nav__link">
         
   
   
@@ -3154,7 +3231,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../sudoku/" class="md-nav__link">
+      <a href="../../reference/xlm/tasks/sudoku/" class="md-nav__link">
         
   
   
@@ -3182,7 +3259,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../sudoku_extreme/" class="md-nav__link">
+      <a href="../../reference/xlm/tasks/sudoku_extreme/" class="md-nav__link">
         
   
   
@@ -3210,7 +3287,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../uniref50/" class="md-nav__link">
+      <a href="../../reference/xlm/tasks/uniref50/" class="md-nav__link">
         
   
   
@@ -3298,7 +3375,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/" class="md-nav__link">
         
   
   
@@ -3326,7 +3403,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/batch_size/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/batch_size/" class="md-nav__link">
         
   
   
@@ -3354,7 +3431,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/checkpoint_with_thinning/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/checkpoint_with_thinning/" class="md-nav__link">
         
   
   
@@ -3382,7 +3459,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/data/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/data/" class="md-nav__link">
         
   
   
@@ -3410,7 +3487,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/ddp/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/ddp/" class="md-nav__link">
         
   
   
@@ -3438,7 +3515,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/debug/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/debug/" class="md-nav__link">
         
   
   
@@ -3466,7 +3543,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/ema/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/ema/" class="md-nav__link">
         
   
   
@@ -3494,7 +3571,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/file_friendly_progress_callback/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/file_friendly_progress_callback/" class="md-nav__link">
         
   
   
@@ -3522,7 +3599,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/flops_estimation/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/flops_estimation/" class="md-nav__link">
         
   
   
@@ -3550,7 +3627,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/fsdp_diagnostics_callback/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/fsdp_diagnostics_callback/" class="md-nav__link">
         
   
   
@@ -3578,7 +3655,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/fsdp_grouping/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/fsdp_grouping/" class="md-nav__link">
         
   
   
@@ -3606,7 +3683,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/hf_hub/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/hf_hub/" class="md-nav__link">
         
   
   
@@ -3634,7 +3711,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/imports/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/imports/" class="md-nav__link">
         
   
   
@@ -3662,7 +3739,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/model_loading/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/model_loading/" class="md-nav__link">
         
   
   
@@ -3690,7 +3767,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/nn/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/nn/" class="md-nav__link">
         
   
   
@@ -3718,7 +3795,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/omegaconf_resolvers/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/omegaconf_resolvers/" class="md-nav__link">
         
   
   
@@ -3746,7 +3823,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/on_exception_checkpoint/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/on_exception_checkpoint/" class="md-nav__link">
         
   
   
@@ -3774,7 +3851,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/os/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/os/" class="md-nav__link">
         
   
   
@@ -3802,7 +3879,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/rank_zero/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/rank_zero/" class="md-nav__link">
         
   
   
@@ -3830,7 +3907,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/rich_utils/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/rich_utils/" class="md-nav__link">
         
   
   
@@ -3858,7 +3935,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/saving_utils/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/saving_utils/" class="md-nav__link">
         
   
   
@@ -3886,7 +3963,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/seed/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/seed/" class="md-nav__link">
         
   
   
@@ -3914,7 +3991,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/signal/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/signal/" class="md-nav__link">
         
   
   
@@ -3942,7 +4019,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/slurm/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/slurm/" class="md-nav__link">
         
   
   
@@ -3970,7 +4047,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/speed_monitor_callback/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/speed_monitor_callback/" class="md-nav__link">
         
   
   
@@ -3998,7 +4075,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/tensorboard_logging/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/tensorboard_logging/" class="md-nav__link">
         
   
   
@@ -4026,7 +4103,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/text/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/text/" class="md-nav__link">
         
   
   
@@ -4054,7 +4131,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/tqdm/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/tqdm/" class="md-nav__link">
         
   
   
@@ -4082,7 +4159,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../utils/wandb/" class="md-nav__link">
+      <a href="../../reference/xlm/utils/wandb/" class="md-nav__link">
         
   
   
@@ -4118,7 +4195,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../version/" class="md-nav__link">
+      <a href="../../reference/xlm/version/" class="md-nav__link">
         
   
   
@@ -4160,20 +4237,17 @@
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" >
         
           
-          <label class="md-nav__link" for="__nav_6_2" id="__nav_6_2_label" tabindex="">
+          <label class="md-nav__link" for="__nav_6_2" id="__nav_6_2_label" tabindex="0">
             
   
   
@@ -4209,7 +4283,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../arlm/" class="md-nav__link">
+      <a href="../../reference/arlm/" class="md-nav__link">
         
   
   
@@ -4237,7 +4311,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../arlm/datamodule_arlm/" class="md-nav__link">
+      <a href="../../reference/arlm/datamodule_arlm/" class="md-nav__link">
         
   
   
@@ -4265,7 +4339,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../arlm/loss_arlm/" class="md-nav__link">
+      <a href="../../reference/arlm/loss_arlm/" class="md-nav__link">
         
   
   
@@ -4293,7 +4367,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../arlm/metrics_arlm/" class="md-nav__link">
+      <a href="../../reference/arlm/metrics_arlm/" class="md-nav__link">
         
   
   
@@ -4321,7 +4395,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../arlm/model_arlm/" class="md-nav__link">
+      <a href="../../reference/arlm/model_arlm/" class="md-nav__link">
         
   
   
@@ -4349,7 +4423,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../arlm/predictor_arlm/" class="md-nav__link">
+      <a href="../../reference/arlm/predictor_arlm/" class="md-nav__link">
         
   
   
@@ -4377,7 +4451,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../arlm/types_arlm/" class="md-nav__link">
+      <a href="../../reference/arlm/types_arlm/" class="md-nav__link">
         
   
   
@@ -4419,20 +4493,17 @@
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_3" >
         
           
-          <label class="md-nav__link" for="__nav_6_3" id="__nav_6_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_6_3" id="__nav_6_3_label" tabindex="0">
             
   
   
@@ -4468,7 +4539,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../mlm/" class="md-nav__link">
+      <a href="../../reference/mlm/" class="md-nav__link">
         
   
   
@@ -4496,7 +4567,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../mlm/datamodule_mlm/" class="md-nav__link">
+      <a href="../../reference/mlm/datamodule_mlm/" class="md-nav__link">
         
   
   
@@ -4524,7 +4595,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../mlm/history_mlm/" class="md-nav__link">
+      <a href="../../reference/mlm/history_mlm/" class="md-nav__link">
         
   
   
@@ -4552,7 +4623,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../mlm/loss_mlm/" class="md-nav__link">
+      <a href="../../reference/mlm/loss_mlm/" class="md-nav__link">
         
   
   
@@ -4580,7 +4651,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../mlm/metrics_mlm/" class="md-nav__link">
+      <a href="../../reference/mlm/metrics_mlm/" class="md-nav__link">
         
   
   
@@ -4608,7 +4679,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../mlm/model_mlm/" class="md-nav__link">
+      <a href="../../reference/mlm/model_mlm/" class="md-nav__link">
         
   
   
@@ -4636,7 +4707,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../mlm/papl_unconditional/" class="md-nav__link">
+      <a href="../../reference/mlm/papl_unconditional/" class="md-nav__link">
         
   
   
@@ -4664,7 +4735,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../mlm/predictor_mlm/" class="md-nav__link">
+      <a href="../../reference/mlm/predictor_mlm/" class="md-nav__link">
         
   
   
@@ -4692,7 +4763,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../mlm/types_mlm/" class="md-nav__link">
+      <a href="../../reference/mlm/types_mlm/" class="md-nav__link">
         
   
   
@@ -4720,7 +4791,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../mlm/unbatch/" class="md-nav__link">
+      <a href="../../reference/mlm/unbatch/" class="md-nav__link">
         
   
   
@@ -4762,20 +4833,17 @@
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_4" >
         
           
-          <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="">
+          <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="0">
             
   
   
@@ -4811,7 +4879,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ilm/" class="md-nav__link">
+      <a href="../../reference/ilm/" class="md-nav__link">
         
   
   
@@ -4839,7 +4907,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ilm/datamodule_ilm/" class="md-nav__link">
+      <a href="../../reference/ilm/datamodule_ilm/" class="md-nav__link">
         
   
   
@@ -4867,7 +4935,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ilm/loss_ilm/" class="md-nav__link">
+      <a href="../../reference/ilm/loss_ilm/" class="md-nav__link">
         
   
   
@@ -4895,7 +4963,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ilm/metrics_ilm/" class="md-nav__link">
+      <a href="../../reference/ilm/metrics_ilm/" class="md-nav__link">
         
   
   
@@ -4923,7 +4991,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ilm/model_ilm/" class="md-nav__link">
+      <a href="../../reference/ilm/model_ilm/" class="md-nav__link">
         
   
   
@@ -4951,7 +5019,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ilm/nn/" class="md-nav__link">
+      <a href="../../reference/ilm/nn/" class="md-nav__link">
         
   
   
@@ -4979,7 +5047,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ilm/predictor_ilm/" class="md-nav__link">
+      <a href="../../reference/ilm/predictor_ilm/" class="md-nav__link">
         
   
   
@@ -5007,7 +5075,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../ilm/types_ilm/" class="md-nav__link">
+      <a href="../../reference/ilm/types_ilm/" class="md-nav__link">
         
   
   
@@ -5049,20 +5117,17 @@
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_5" >
         
           
-          <label class="md-nav__link" for="__nav_6_5" id="__nav_6_5_label" tabindex="">
+          <label class="md-nav__link" for="__nav_6_5" id="__nav_6_5_label" tabindex="0">
             
   
   
@@ -5098,7 +5163,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../mdlm/" class="md-nav__link">
+      <a href="../../reference/mdlm/" class="md-nav__link">
         
   
   
@@ -5126,7 +5191,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../mdlm/datamodule_mdlm/" class="md-nav__link">
+      <a href="../../reference/mdlm/datamodule_mdlm/" class="md-nav__link">
         
   
   
@@ -5154,7 +5219,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../mdlm/loss_mdlm/" class="md-nav__link">
+      <a href="../../reference/mdlm/loss_mdlm/" class="md-nav__link">
         
   
   
@@ -5182,7 +5247,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../mdlm/metrics_mdlm/" class="md-nav__link">
+      <a href="../../reference/mdlm/metrics_mdlm/" class="md-nav__link">
         
   
   
@@ -5210,7 +5275,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../mdlm/model_mdlm/" class="md-nav__link">
+      <a href="../../reference/mdlm/model_mdlm/" class="md-nav__link">
         
   
   
@@ -5238,7 +5303,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../mdlm/noise_mdlm/" class="md-nav__link">
+      <a href="../../reference/mdlm/noise_mdlm/" class="md-nav__link">
         
   
   
@@ -5266,7 +5331,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../mdlm/predictor_mdlm/" class="md-nav__link">
+      <a href="../../reference/mdlm/predictor_mdlm/" class="md-nav__link">
         
   
   
@@ -5294,7 +5359,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../mdlm/types_mdlm/" class="md-nav__link">
+      <a href="../../reference/mdlm/types_mdlm/" class="md-nav__link">
         
   
   
@@ -5346,118 +5411,190 @@
                   
 
 
-
-<div class="doc doc-object doc-module">
-
-
-
-<h1 id="xlm.tasks.gram_n_queens" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>xlm.tasks.gram_n_queens</code>
-
-
-</h1>
-
-    <div class="doc doc-contents first">
-
-        <p>Preprocessing for brozonoyer/gram-n-queens.</p>
-<p>Dataset has "input" (partial board) and "target" (complete solution).
-Vocabulary: 0=pad, 1=empty, 2=queen.
-We produce input_token_ids (target) and prompt_token_ids (input with empty→mask).</p>
-<p>Token ids use SimpleSpaceTokenizer.for_numbers like sudoku_extreme (via _convert_token_to_id(str(v))).</p>
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-<h2 id="xlm.tasks.gram_n_queens.gram_n_queens_preprocess_fn" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">gram_n_queens_preprocess_fn</span><span class="p">(</span><span class="n">example</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">)</span></code>
-
-</h2>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Preprocess gram-n-queens examples.</p>
-<p>Uses "input" (partial board) and "target" (complete solution).
-Empty cells (dataset 1) in the prompt are replaced with mask_token_id so the model
-knows which positions to predict.</p>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h2 id="xlm.tasks.gram_n_queens.gram_n_queens_filter_8x8" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">gram_n_queens_filter_8x8</span><span class="p">(</span><span class="n">example</span><span class="p">)</span></code>
-
-</h2>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Keep only 8×8 boards (fixed sequence length for batching).</p>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h2 id="xlm.tasks.gram_n_queens.gram_n_queens_filter_10x10" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">gram_n_queens_filter_10x10</span><span class="p">(</span><span class="n">example</span><span class="p">)</span></code>
-
-</h2>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Keep only 10×10 boards (fixed sequence length for batching).</p>
-
-
-    </div>
-
-</div>
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-
-
-
-
-
-
   
   
+
+
+<h1 id="adding-a-new-task-or-dataset">Adding a new task or dataset</h1>
+<p>This guide walks through wiring a Hugging Face dataset (or similar source) into xlm-core: Python preprocessing in <code>xlm.tasks</code>, Hydra configs under <code>configs/lightning_train/</code>, and alignment between <strong>dataloader names</strong> and <strong>metrics</strong>.</p>
+<p>Read these guides first if you have not worked with the pipeline before:</p>
+<ul>
+<li><a href="../data-pipeline/">Data Pipeline</a> — how <code>TextDataModule</code>, <code>DatasetManager</code>, and dataloader names connect to the <code>Harness</code>.</li>
+<li><a href="../metrics/">Metrics</a> — <code>MetricWrapper</code>, <code>reported_metrics</code>, and prediction/post-hoc behavior.</li>
+<li><a href="../eval/">Evaluate a model</a> — loading checkpoints for evaluation jobs.</li>
+</ul>
+<p>Cursor users may also invoke the <strong><code>xlm-create-task</code></strong> Agent Skill (<code>~/.cursor/skills/xlm-create-task/</code>) for a condensed checklist and copied excerpts.</p>
+<hr />
+<h2 id="1-pick-a-wiring-pattern">1. Pick a wiring pattern</h2>
+<table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Use when</th>
+<th>Typical config</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Standard LM / map dataset</strong></td>
+<td>Hub dataset; preprocess once and cache via <code>DatasetManager</code></td>
+<td><code>datasets/default_text.yaml</code> defaults → <a href="../../src/xlm/datamodule.py"><code>DatasetManager</code></a></td>
+</tr>
+<tr>
+<td><strong>Streaming / sequence packing</strong></td>
+<td>Huge corpus; packed blocks without per-example padding</td>
+<td><code>iterable_dataset_shards</code>, <code>on_the_fly_group_processor: xlm.datamodule.pack_sequences</code> (see <a href="../data-pipeline/">Data Pipeline</a>)</td>
+</tr>
+<tr>
+<td><strong>Eval-only / benchmarks</strong></td>
+<td>Smaller splits; avoid manual <code>save_to_disk</code> cache semantics</td>
+<td><code>datasets/default_eval.yaml</code> → <a href="../../src/xlm/datamodule.py"><code>EvalDatasetManager</code></a></td>
+</tr>
+<tr>
+<td><strong>Heavy optional dependencies</strong></td>
+<td>Chemistry stacks, etc.</td>
+<td>Lazy facade package that imports implementation on demand (<a href="../../src/xlm/tasks/safe_molgen/__init__.py"><code>safe_molgen/__init__.py</code></a>); document <code>pip install "xlm-core[...]"</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-implement-task-code-srcxlmtasksyour_task__init__py">2. Implement task code (<code>src/xlm/tasks/&lt;your_task&gt;/__init__.py</code>)</h2>
+<p>Put each task in its <strong>own directory</strong> under <a href="../../src/xlm/tasks/"><code>tasks/</code></a> with an <code>__init__.py</code> that defines preprocess functions, filters, evaluators, etc.</p>
+<p>Hydra resolves callables by <strong>dotted path</strong> (for example <code>xlm.tasks.owt.preprocess_fn</code>). You do <strong>not</strong> need to list every symbol in the parent <a href="../../src/xlm/tasks/__init__.py"><code>tasks/__init__.py</code></a>—that file is only a <strong>package marker</strong>, not a barrel re-export of all tasks.</p>
+<h3 id="preprocess-function">Preprocess function</h3>
+<p>Configured as <code>preprocess_function</code> on the dataset manager. At runtime it is loaded with <code>get_function</code> and passed to <code>datasets.Dataset.map</code>. The effective signature is:</p>
+<div class="highlight"><pre><span></span><code>(example: dict, tokenizer, **preprocess_function_kwargs) -&gt; dict
+</code></pre></div>
+<p>Return only the columns your downstream collator and model need (drop raw text via <code>columns_to_remove</code>, or restrict with <code>columns_to_keep</code> on eval configs).</p>
+<p><strong>Minimal LM-style preprocessing</strong> — encode raw text to token IDs; combine with <code>on_the_fly_processor: xlm.datamodule.token_ids_to_input_ids</code>:</p>
+<ul>
+<li>Code: <a href="../../src/xlm/tasks/owt/__init__.py"><code>owt/__init__.py</code></a></li>
+<li>Dataset YAML: <a href="../../src/xlm/configs/lightning_train/datasets/owt_train.yaml"><code>datasets/owt_train.yaml</code></a></li>
+</ul>
+<p><strong>Structured fields + different processors per split</strong> — build task-specific columns (for example <code>input_token_ids</code>, <code>prompt_token_ids</code>), then choose <code>on_the_fly_processor</code> per dataset YAML:</p>
+<ul>
+<li>Code: <a href="../../src/xlm/tasks/sudoku_extreme/__init__.py"><code>sudoku_extreme/__init__.py</code></a></li>
+<li>Train: <a href="../../src/xlm/configs/lightning_train/datasets/sudoku_extreme_train.yaml"><code>datasets/sudoku_extreme_train.yaml</code></a></li>
+<li>Prediction split overrides processor via defaults chain: <a href="../../src/xlm/configs/lightning_train/datasets/sudoku_extreme_val_pred.yaml"><code>datasets/sudoku_extreme_val_pred.yaml</code></a></li>
+</ul>
+<p><strong>Optional row filters</strong> — set <code>filter_fn</code> to a dotted path and <strong><code>filter_suffix</code></strong> (required when <code>filter_fn</code> is set). Example filter implementations live beside preprocessing in <a href="../../src/xlm/tasks/sudoku_extreme/__init__.py"><code>sudoku_extreme/__init__.py</code></a>.</p>
+<p><strong>Benchmark-style eval + post-hoc scoring</strong> — preprocessing builds prompt/target columns and carries gold answers through the batch for logging; a <strong><code>post_hoc_evaluator</code></strong> class scores saved predictions:</p>
+<ul>
+<li>Code: <a href="../../src/xlm/tasks/math500/__init__.py"><code>math500/__init__.py</code></a> (<code>math500_preprocess_fn</code>, <code>Math500Eval</code>)</li>
+<li>Eval dataset: <a href="../../src/xlm/configs/lightning_train/datasets/math500_test.yaml"><code>datasets/math500_test.yaml</code></a></li>
+</ul>
+<p><strong>Large optional imports</strong> — keep the default import surface light and defer heavy imports (see <a href="../../src/xlm/tasks/safe_molgen/__init__.py"><code>safe_molgen/__init__.py</code></a> delegating to <a href="../../src/xlm/tasks/safe_molgen/_safe_molgen_impl.py"><code>_safe_molgen_impl.py</code></a>).</p>
+<p>For larger tasks you may instead split logic into additional modules inside <code>tasks/&lt;your_task&gt;/</code> and re-export public symbols from <code>__init__.py</code>; Hydra paths stay <code>xlm.tasks.&lt;your_task&gt;.&lt;symbol&gt;</code>.</p>
+<hr />
+<h2 id="3-add-dataset-yaml-srcxlmconfigslightning_traindatasets">3. Add dataset YAML (<code>src/xlm/configs/lightning_train/datasets/</code>)</h2>
+<p>Create a new file or compose existing ones with Hydra <code>defaults:</code>.</p>
+<ol>
+<li>
+<p><strong>Training / general <code>DatasetManager</code></strong> — start from <a href="../../src/xlm/configs/lightning_train/datasets/default_text.yaml"><code>default_text.yaml</code></a>:</p>
+</li>
+<li>
+<p><code>full_name</code>: Hub path in the form <code>namespace/dataset_name/split</code> (last segment is the split passed to <code>load_dataset</code>).</p>
+</li>
+<li><code>full_name_debug</code>: optional smaller split used when <code>DEBUG_OVERFIT</code> is enabled.</li>
+<li><code>preprocess_function</code>, <code>preprocess_function_kwargs</code>.</li>
+<li><code>on_the_fly_processor</code> / <code>on_the_fly_group_processor</code> (mutually exclusive with group processors per <a href="../../src/xlm/datamodule.py"><code>DatasetManager</code></a>).</li>
+<li><code>columns_to_remove</code> or <code>columns_to_keep</code>.</li>
+<li><code>stages</code>: which Lightning stages use this manager (<code>fit</code>, <code>validate</code>, <code>test</code>, <code>predict</code>).</li>
+<li>
+<p><code>collator: ???</code> — resolved by experiment/model package via <code>/collator@...</code> overrides.</p>
+</li>
+<li>
+<p><strong>Eval-only <code>EvalDatasetManager</code></strong> — start from <a href="../../src/xlm/configs/lightning_train/datasets/default_eval.yaml"><code>default_eval.yaml</code></a>:</p>
+</li>
+<li>
+<p>No manual disk cache path; HF map cache optional via <code>load_from_cache_file</code>.</p>
+</li>
+<li>Typical <code>stages: [validate, test]</code>.</li>
+</ol>
+<p>Reuse patterns from <a href="../../src/xlm/configs/lightning_train/datasets/math500_test.yaml"><code>math500_test.yaml</code></a> for <code>columns_to_keep</code> and preprocess kwargs.</p>
+<hr />
+<h2 id="4-compose-a-datamodule-config">4. Compose a datamodule config</h2>
+<p>Datamodule skeleton: <a href="../../src/xlm/configs/lightning_train/datamodule/default.yaml"><code>datamodule/default.yaml</code></a>.</p>
+<p>Wire each <code>(split, dataloader_name)</code> to your dataset group using Hydra defaults, for example:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">defaults</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">default</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">/datasets@datamodule.dataset_managers.train.lm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">owt_train</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">/datasets@datamodule.dataset_managers.val.lm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">owt_val</span>
+</code></pre></div>
+<p>Full example: <a href="../../src/xlm/configs/lightning_train/datamodule/owt.yaml"><code>datamodule/owt.yaml</code></a>.</p>
+<p>If you introduce a <strong>new</strong> logical evaluation stream (for example <code>math500_prediction</code>), pick a <strong>new dataloader name</strong> and use it consistently across val/test <strong>and</strong> metrics:</p>
+<ul>
+<li>Example: <a href="../../xlm-models/dream/configs/datamodule/math500_dream.yaml"><code>xlm-models/dream/configs/datamodule/math500_dream.yaml</code></a></li>
+</ul>
+<p>Set <code>tags.dataset</code> in the experiment/datamodule root when you want W&amp;B or logging tags (same file).</p>
+<hr />
+<h2 id="5-wire-collators">5. Wire collators</h2>
+<p>Dataset YAMLs leave <code>collator: ???</code>. Resolve it from the model/experiment package:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">/collator@datamodule.dataset_managers.val.math500_prediction.collator</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">math500_pred_dream</span>
+</code></pre></div>
+<p>The collator must produce batch tensors your <strong>model</strong> and <strong>metric update functions</strong> expect.</p>
+<hr />
+<h2 id="6-wire-metrics-and-optional-post-hoc-evaluation">6. Wire metrics and optional post-hoc evaluation</h2>
+<p>Under <code>reported_metrics.&lt;train|val|test&gt;.&lt;dataloader_name&gt;</code>, each nested dict entry is a configured metric (typically <code>MetricWrapper</code>). <strong>The <code>&lt;dataloader_name&gt;</code> keys must match</strong> the keys under <code>datamodule.dataset_managers</code> for that stage — see <a href="../metrics/">Metrics</a>.</p>
+<p>Hydra composition often looks like:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">defaults</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">/metrics@reported_metrics.val.lm.accumulated_loss</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">accumulated_loss</span>
+</code></pre></div>
+<p>For dataloaders whose name contains <strong><code>prediction</code></strong>, epoch-end hooks run extra aggregates (generative perplexity and configured post-hoc evaluators); see <a href="../metrics/">Metrics</a>.</p>
+<p>Post-hoc evaluator <code>_target_</code> example:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">post_hoc_evaluator</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">_target_</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">xlm.tasks.math500.Math500Eval</span>
+</code></pre></div>
+<p>Experiment reference: <a href="../../xlm-models/dream/configs/experiment/math500_dream_eval.yaml"><code>xlm-models/dream/configs/experiment/math500_dream_eval.yaml</code></a>.</p>
+<hr />
+<h2 id="7-dependencies-and-extras">7. Dependencies and extras</h2>
+<p>If your task needs packages beyond core xlm-core, document them in the task module docstring and add or reference an optional extra in project requirements (for example <code>"xlm-core[safe]"</code>, files under <a href="../../requirements/"><code>requirements/</code></a>).</p>
+<hr />
+<h2 id="8-verify">8. Verify</h2>
+<ol>
+<li>Run <code>job_type=prepare_data</code> (rank 0 downloads and preprocesses/caches where applicable).</li>
+<li>Smoke train or eval with the smallest experiment config you can.</li>
+<li>Use <code>DEBUG_OVERFIT</code> and <code>full_name_debug</code> to force train-shaped data into val/test during debugging (<a href="../../src/xlm/datamodule.py"><code>DatasetManager</code></a>).</li>
+<li>Add or extend integration coverage under <code>tests/integration/datamodule/</code> when behavior is easy to regress.</li>
+</ol>
+<hr />
+<h2 id="quick-reference-table">Quick reference table</h2>
+<table>
+<thead>
+<tr>
+<th>Artifact</th>
+<th>Location</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Task preprocessing / filters / evaluators</td>
+<td><code>src/xlm/tasks/&lt;task&gt;/</code> (one directory per task)</td>
+</tr>
+<tr>
+<td>Dataset group YAML</td>
+<td><code>src/xlm/configs/lightning_train/datasets/</code></td>
+</tr>
+<tr>
+<td>Datamodule composition</td>
+<td><code>src/xlm/configs/lightning_train/datamodule/</code> (+ model repos under <code>xlm-models/</code>)</td>
+</tr>
+<tr>
+<td>Metric snippets</td>
+<td><code>src/xlm/configs/lightning_train/metrics/</code></td>
+</tr>
+<tr>
+<td>Pipeline implementation</td>
+<td><code>src/xlm/datamodule.py</code></td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
 
 
 
@@ -5507,10 +5644,10 @@ knows which positions to predict.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "toc.integrate"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "toc.integrate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
     
     
-      <script src="../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>

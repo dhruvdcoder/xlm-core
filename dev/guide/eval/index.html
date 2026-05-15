@@ -493,6 +493,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../adding-a-task/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a task or dataset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../push-to-hub/" class="md-nav__link">
         
   
@@ -537,10 +565,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
         
           
-          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="">
             
   
   
@@ -558,8 +586,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_4">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -733,6 +761,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evaluate
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -749,6 +795,58 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#authentication-hub-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentication (Hub only)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fallback-checkpoints-vs-hub" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fallback checkpoints vs Hub
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -5235,13 +5333,38 @@
 
 
 <h1 id="evaluate-a-model">Evaluate a model</h1>
-<p>You have three options to load a model for evaluation:
-1. From a full Lightning checkpoint (<code>.ckpt</code>). This checkpoint contains the model weights, optimizer state, and other training artifacts.
-2. From a model-only checkpoint (<code>.pt</code>). This checkpoint contains only the model weights. A model only checkpoint can be extracted from a full Lightning checkpoint using the <code>xlm job_type=extract_checkpoint</code> script.</p>
-<div class="highlight"><pre><span></span><code>xlm<span class="w"> </span><span class="nv">job_type</span><span class="o">=</span><span class="nb">eval</span><span class="w"> </span><span class="nv">job_name</span><span class="o">=</span>lm1b_ilm_hub<span class="w"> </span><span class="nv">experiment</span><span class="o">=</span>lm1b_ilm<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>+hub_checkpoint_path<span class="o">=</span>&lt;CHECKPOINT_PATH&gt;<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>+hub.repo_id<span class="o">=</span>&lt;YOUR_REPO_ID&gt;
+<p>Evaluation uses <code>job_type=eval</code> with the same <code>experiment=...</code> (and related Hydra defaults) as training so the <code>Harness</code>, datamodule, and tokenizer match the checkpoint or Hub layout.</p>
+<p>Weights are resolved by <code>load_model_for_inference()</code> with <strong><code>config_prefix=eval</code></strong> (see <code>src/xlm/utils/model_loading.py</code>). You can load from, in priority order:</p>
+<ol>
+<li><strong>Full Lightning checkpoint</strong> (<code>.ckpt</code>) — weights plus training metadata. Set <strong><code>eval.ckpt_path</code></strong> or <strong><code>eval.checkpoint_path</code></strong> (both are supported; <code>ckpt_path</code> is checked first).</li>
+<li><strong>Model-only checkpoint</strong> (<code>.pt</code> / state dict) — weights only. Extract from a full checkpoint with <code>xlm job_type=extract_checkpoint</code>, then set <strong><code>eval.model_only_checkpoint_path</code></strong>.</li>
+<li><strong>Hugging Face Hub</strong> — set <strong><code>hub.repo_id</code></strong> (e.g. <code>username/model-name</code>). Optionally pin <strong><code>hub.revision</code></strong> (branch, tag, or commit; default is <code>main</code>).</li>
+</ol>
+<p>If a <strong>full</strong> checkpoint path is set and valid, it always wins; <strong><code>hub.repo_id</code></strong> and <strong><code>eval.model_only_checkpoint_path</code></strong> are not used in that case.</p>
+<p>!!! note "<code>hub_checkpoint_path</code> is not for <code>eval</code>"
+    The top-level <strong><code>hub_checkpoint_path</code></strong> key is used by <strong><code>job_type=push_to_hub</code></strong>, not by <code>eval</code>. For evaluation from the Hub, use <strong><code>+hub.repo_id=...</code></strong> only (plus optional <strong><code>+hub.revision=...</code></strong>).</p>
+<h2 id="authentication-hub-only">Authentication (Hub only)</h2>
+<p>Set a token so weights can be downloaded:</p>
+<ul>
+<li>Export <strong><code>HF_HUB_KEY</code></strong>, or add it to <strong><code>.secrets.env</code></strong> (loaded automatically by the <code>xlm</code> entrypoint).</li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p><strong>Local full checkpoint:</strong></p>
+<div class="highlight"><pre><span></span><code>xlm<span class="w"> </span><span class="nv">job_type</span><span class="o">=</span><span class="nb">eval</span><span class="w"> </span><span class="nv">job_name</span><span class="o">=</span>lm1b_eval<span class="w"> </span><span class="nv">experiment</span><span class="o">=</span>lm1b_ilm<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>+eval.ckpt_path<span class="o">=</span>/path/to/epoch<span class="o">=</span><span class="m">0</span>-step<span class="o">=</span><span class="m">1000</span>.ckpt
 </code></pre></div>
+<p><strong>Local model-only weights:</strong></p>
+<div class="highlight"><pre><span></span><code>xlm<span class="w"> </span><span class="nv">job_type</span><span class="o">=</span><span class="nb">eval</span><span class="w"> </span><span class="nv">job_name</span><span class="o">=</span>lm1b_eval<span class="w"> </span><span class="nv">experiment</span><span class="o">=</span>lm1b_ilm<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>+eval.model_only_checkpoint_path<span class="o">=</span>/path/to/model.pt
+</code></pre></div>
+<p><strong>Weights from the Hub (no local <code>.ckpt</code> path):</strong></p>
+<div class="highlight"><pre><span></span><code>xlm<span class="w"> </span><span class="nv">job_type</span><span class="o">=</span><span class="nb">eval</span><span class="w"> </span><span class="nv">job_name</span><span class="o">=</span>lm1b_eval<span class="w"> </span><span class="nv">experiment</span><span class="o">=</span>lm1b_ilm<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>+hub.repo_id<span class="o">=</span>username/my-model<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>+hub.revision<span class="o">=</span>main
+</code></pre></div>
+<h2 id="fallback-checkpoints-vs-hub">Fallback checkpoints vs Hub</h2>
+<p>If you do <strong>not</strong> set <code>eval.ckpt_path</code>, <code>eval.checkpoint_path</code>, or <code>eval.model_only_checkpoint_path</code>, eval still looks under <strong><code>checkpointing_dir</code></strong> for <strong><code>best.ckpt</code></strong> or <strong><code>last.ckpt</code></strong>. If either exists, that <strong>full</strong> checkpoint is loaded and <strong>Hub weights are ignored</strong>.</p>
+<p>For a pure Hub eval, run with an output layout where those files are absent, or override <strong><code>checkpointing_dir</code></strong> to a directory without checkpoints.</p>
 
 
 
