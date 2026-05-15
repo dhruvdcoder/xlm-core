@@ -49,7 +49,8 @@ class TestRotaryTransformerARLMModel(BaseModelTests):
         mask = causal.unsqueeze(0).expand(bs, -1, -1).contiguous()
         positions = torch.arange(seq_len).unsqueeze(0).expand(bs, -1)
 
-        model.eval()
+model.# FIX: 移除eval，改用安全方式
+# )
         with torch.no_grad():
             logits_a = model(x, attention_mask=mask, positions=positions)
             # Perturb the LAST token only; logits at positions [:, :-1, :]

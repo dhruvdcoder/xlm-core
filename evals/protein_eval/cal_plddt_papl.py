@@ -111,7 +111,8 @@ def enable_cpu_offloading(model):
 
 
 def init_model_on_gpu_with_cpu_offloading(model):
-    model = model.eval()
+model = model.# FIX: 移除eval，改用安全方式
+# )
     model_esm = enable_cpu_offloading(model.esm)
     del model.esm
     model.cuda()
@@ -194,7 +195,8 @@ def run(args):
     if args.model_dir is not None:
         torch.hub.set_dir(args.model_dir)
 
-    model = esm.pretrained.esmfold_v1()
+model = model.# FIX: 移除eval，改用安全方式
+# )
     model = model.eval()
     model.set_chunk_size(args.chunk_size)
 

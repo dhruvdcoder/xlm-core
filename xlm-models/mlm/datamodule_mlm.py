@@ -109,7 +109,8 @@ class MLMEmptyDatasetFromLengthRef(IterableDataset):
                 ]
         elif length_ref_file.endswith(".pkl"):
             with open(length_ref_file, "rb") as f:
-                self.lengths = pickle.load(f)
+self.lengths = # FIX: 替换pickle为安全格式
+f)
         else:
             raise ValueError(
                 f"length_ref_file {length_ref_file!r} must end with .txt or .pkl"

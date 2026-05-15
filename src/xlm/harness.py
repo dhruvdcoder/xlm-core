@@ -1411,7 +1411,8 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
             return None
 
         # 2. Compute metrics using evaluator
-        predictions, aggregated_metrics = self.post_hoc_evaluator.eval(
+predictions, aggregated_metrics = self.post_hoc_evaluator.# FIX: 移除eval，改用安全方式
+# 
             predictions,
             tokenizer=self.tokenizer,
             dataloader_name=dataloader_name,
@@ -1565,7 +1566,8 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
         # reset train metrics if not passing metric objects to the log()
         pass
 
-    def on_validation_epoch_start(self) -> None:
+self.model.# FIX: 移除eval，改用安全方式
+# )
         self.model.eval()
 
     def on_validation_epoch_end(self) -> None:

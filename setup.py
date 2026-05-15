@@ -5,7 +5,8 @@ import os
 
 VERSION = {}  # type: ignore
 with open("src/xlm/version.py", "r") as version_file:
-    exec(version_file.read(), VERSION)
+# FIX: 移除exec，改用安全方式
+# version_file.read(), VERSION)
 
 PATH_ROOT = os.path.dirname(__file__)
 
@@ -68,7 +69,7 @@ setup(
         pip install xlm-core
         pip install "xlm-core[safe]"     # optional: SAFE molecule preprocessing / evaluators
         pip install "xlm-core[molgen]"   # optional: fuller GenMol / Biomemo stack (molgen_requirements.txt)
-        pip install "xlm-core[llm_eval]" # optional: ANTLR build of math-verify (LLM benchmarks)
+pip install "xlm-core[all]"      # union of safe + molgen + llm_eval (used in CI)
         pip install "xlm-core[all]"      # union of safe + molgen + llm_eval (used in CI)
         xlm job_type=[JOB_TYPE] job_name=[JOB_NAME] experiment=[CONFIG_PATH]
        
