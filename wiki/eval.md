@@ -465,12 +465,12 @@ advantages:
    metrics and standalone evaluation.
 2. **No new components in the library** — only new evaluator classes and
    dataset preprocessing functions, following the same patterns already
-   established by molgen (`DeNovoEval`, `FragmentEval`,
+   established by SAFE molecular generation (`DeNovoEval`, `FragmentEval`,
    `genmol_fragment_preprocess_fn`).
 
 ### 5.1 How the Existing Pipeline Works
 
-The current flow (used by molgen):
+The current flow (used by `safe_molgen`):
 
 ```
 on_validation_batch_end / on_test_batch_end
@@ -513,7 +513,7 @@ class CompositePostHocEvaluator:
             gsm8k_prediction:
               _target_: xlm.eval.GSM8KEval
             denovo_prediction:
-              _target_: xlm.tasks.molgen.DeNovoEval
+              _target_: xlm.tasks.safe_molgen.DeNovoEval
               use_bracket_safe: true
     """
     def __init__(self, evaluators: Dict[str, Any]):
@@ -574,7 +574,7 @@ class Math500Eval:
 
 #### D. Dataset preprocessing functions (prompt construction)
 
-Just as `safe_bracket_on_the_fly_processor_combined` constructs molgen inputs,
+Just as `safe_bracket_on_the_fly_processor_combined` constructs SAFE molecular-generation inputs,
 we write task-specific preprocessing functions for LLM eval datasets:
 
 ```python
@@ -615,7 +615,7 @@ demonstrates it:
        return examples_replicated
    ```
 
-2. **Evaluation**: `FragmentEval` (in `xlm.tasks.molgen`) groups predictions
+2. **Evaluation**: `FragmentEval` (in `xlm.tasks.safe_molgen`) groups predictions
    by their shared key before computing metrics:
    ```python
    @staticmethod

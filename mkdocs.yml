@@ -61,6 +61,7 @@ nav:
   - Home: index.md
   - Guide:
       - Quick Start: guide/quickstart.md
+      - Adding a task or dataset: guide/adding-a-task.md
       - Push to Hub: guide/push-to-hub.md
       - Conceptual Overview:
         - Data Pipeline: guide/data-pipeline.md

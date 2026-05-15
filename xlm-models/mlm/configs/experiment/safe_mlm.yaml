@@ -14,7 +14,7 @@ monitored_metric: val/validity
 num_dataloader_workers: 4
 use_bracket_safe: true
 num_unconditional_prediction_examples: 1000
-length_ref_file: src/xlm/tasks/zinc_len.pkl
+length_ref_file: src/xlm/tasks/safe_molgen/zinc_len.pkl
 
 post_hoc_evaluator:
   _target_: xlm.tasks.safe_molgen.DeNovoEval

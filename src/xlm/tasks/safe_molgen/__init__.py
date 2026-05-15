@@ -1,6 +1,6 @@
 """Public entry point for SAFE / molecular generation task code.
 
-Implementation lives in :mod:`~xlm.tasks._safe_molgen_impl` and loads on first use
+Implementation lives in :mod:`~xlm.tasks.safe_molgen._safe_molgen_impl` and loads on first use
 (attributes other than ``ZINC_LENGTH_REF_FILE`` trigger the import).
 
 Optional CHEMISTRY install::
@@ -26,7 +26,7 @@ _impl_mod: Any | None = None
 def _impl() -> Any:
     global _impl_mod
     if _impl_mod is None:
-        _impl_mod = importlib.import_module("xlm.tasks._safe_molgen_impl")
+        _impl_mod = importlib.import_module("xlm.tasks.safe_molgen._safe_molgen_impl")
     return _impl_mod
 
 

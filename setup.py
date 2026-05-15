@@ -82,7 +82,7 @@ setup(
         "xlm": [
             "configs/**/*.yaml",
             "configs/**/*.yml",
-            "src/xlm/tasks/zinc_len.pkl",
+            "tasks/safe_molgen/zinc_len.pkl",
         ],
     },
     keywords=[

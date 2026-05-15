@@ -57,5 +57,6 @@ xlm job_type=<JOB> job_name=<NAME> experiment=<CONFIG>
 ## Next Steps
 
 - [Quick Start](guide/quickstart.md) – Installation, CLI usage, and example workflow
+- [Adding a task or dataset](guide/adding-a-task.md) – Wiring `xlm.tasks`, Hydra configs, metrics, and evaluators
 - [API Reference](reference/api.md) – xlm-core and xlm-models API documentation
 - [Contributing](guide/contributing.md) – Guidelines for adding new models and features
