@@ -48,3 +48,11 @@ site
 oracle/fpscores.pkl
 .cursor/plans
 src/xlm/backbones/dream_on
+
+# protein eval — generated artifacts and eval venvs
+vendor/dplm/.venv-esmfold/
+evals/protein_eval/*/esmfold_pdb/
+evals/protein_eval/*/metrics.jsonl
+evals/protein_eval/logs/
+.pytest_cache/
+docs/**/linkedin

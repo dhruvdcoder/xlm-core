@@ -17,7 +17,8 @@ This module provides:
 - Data preprocessing for SAFE molecular representations
 - Conversion utilities between SAFE and SMILES formats
 - Post-hoc evaluators (:class:`DeNovoEval`, :class:`FragmentEval`) for diversity, QED, SA, validity, uniqueness, etc.
-- Optional FCD vs training set (``DeNovoEval`` + TDC) requires ``pip install xlm[fcd]`` or ``fcd_torch`` / TensorFlow ``FCD``
+- Optional FCD vs training set (``DeNovoEval``): ``compute_fcd`` expects ``fcd_torch``
+  (pinned in ``requirements/molgen_requirements.txt``, extra ``molgen``).
 """
 
 import itertools
@@ -36,7 +37,7 @@ from xlm.utils.rank_zero import warn_once, RankedLogger
 
 logger = RankedLogger(__name__, rank_zero_only=True)
 
-# Import SAFE library for molecular encoding/decoding
+# Import SAFE library for molecular encoding/decoding (pip install "xlm-core[safe]")
 try:
     import datamol as dm
     import safe as sf
@@ -45,20 +46,29 @@ try:
     from rdkit import Chem, RDLogger
 
     RDLogger.DisableLog("rdApp.*")
-except ImportError:
+except ImportError as exc:
     raise ImportError(
-        "Please install safe-mol, rdkit, and datamol: pip install safe-mol rdkit datamol"
-    )
+        'SAFE molecular tooling is optional; install pinned deps with '
+        '`pip install "xlm-core[safe]"`.'
+    ) from exc
 
-# Import TDC for molecular metrics
-try:
-    from tdc import Oracle, Evaluator
-except ImportError:
-    raise ImportError("Please install TDC: pip install pytdc")
+_tdc_oracle_evaluator: Optional[Tuple[Any, Any]] = None
 
 
-# use this file as a reference
-ZINC_LENGTH_REF_FILE = Path(__file__).parent / "zinc_len.pkl"
+def _get_tdc_oracle_evaluator() -> Tuple[Any, Any]:
+    """Return cached ``(Oracle, Evaluator)`` classes from PyTDC (lazy import)."""
+    global _tdc_oracle_evaluator
+    if _tdc_oracle_evaluator is None:
+        try:
+            from tdc import Oracle, Evaluator
+        except ImportError as exc:
+            raise ImportError(
+                'DeNovoEval / FragmentEval molecule metrics require PyTDC '
+                '(part of optional group `pip install "xlm-core[safe]"`).'
+            ) from exc
+        _tdc_oracle_evaluator = (Oracle, Evaluator)
+    return _tdc_oracle_evaluator
+
 
 ################################################################################
 # region: SAFE / Bracket SAFE conversion (from GenMol bracket_safe_converter.py)
@@ -442,8 +452,11 @@ def get_fcd_distance(
     try:
         from fcd_torch import FCD
         from fcd import canonical_smiles
-    except ImportError:
-        raise ImportError("Please install fcd_torch: pip install fcd_torch")
+    except ImportError as exc:
+        raise ImportError(
+            'FCD computation needs fcd_torch and fcd wheels (see '
+            '`requirements/molgen_requirements.txt` / `pip install "xlm-core[molgen]"`).'
+        ) from exc
 
     fcd = FCD(device="cpu", n_jobs=8)
     # filter out empty SMILES
@@ -931,6 +944,7 @@ class DeNovoEval:
     def oracle_qed(self):
         """Lazy load QED oracle."""
         if self._oracle_qed is None and self.compute_qed:
+            Oracle, _ = _get_tdc_oracle_evaluator()
             self._oracle_qed = Oracle("qed")
         return self._oracle_qed
 
@@ -938,6 +952,7 @@ class DeNovoEval:
     def oracle_sa(self):
         """Lazy load SA oracle."""
         if self._oracle_sa is None and self.compute_sa:
+            Oracle, _ = _get_tdc_oracle_evaluator()
             self._oracle_sa = Oracle("sa")
         return self._oracle_sa
 
@@ -945,6 +960,7 @@ class DeNovoEval:
     def evaluator_diversity(self):
         """Lazy load diversity evaluator."""
         if self._evaluator_diversity is None and self.compute_diversity:
+            _, Evaluator = _get_tdc_oracle_evaluator()
             self._evaluator_diversity = Evaluator("diversity")
         return self._evaluator_diversity
 
@@ -952,6 +968,7 @@ class DeNovoEval:
     def evaluator_validity(self):
         """Lazy load validity evaluator."""
         if self._evaluator_validity is None and self.compute_validity:
+            _, Evaluator = _get_tdc_oracle_evaluator()
             self._evaluator_validity = Evaluator("validity")
         return self._evaluator_validity
 
@@ -959,6 +976,7 @@ class DeNovoEval:
     def evaluator_uniqueness(self):
         """Lazy load uniqueness evaluator."""
         if self._evaluator_uniqueness is None and self.compute_uniqueness:
+            _, Evaluator = _get_tdc_oracle_evaluator()
             self._evaluator_uniqueness = Evaluator("uniqueness")
         return self._evaluator_uniqueness
 

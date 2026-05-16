@@ -61,6 +61,7 @@ nav:
   - Home: index.md
   - Guide:
       - Quick Start: guide/quickstart.md
+      - Adding a task or dataset: guide/adding-a-task.md
       - Push to Hub: guide/push-to-hub.md
       - Conceptual Overview:
         - Data Pipeline: guide/data-pipeline.md
@@ -71,7 +72,19 @@ nav:
       - Evaluate: guide/eval.md
       - FAQ: guide/faq.md
 
+  - Models:
+      - Overview: models/index.md
+      - ARLM: models/arlm.md
+      - ILM: models/ilm.md
+      - MDLM: models/mdlm.md
+      - MLM: models/mlm.md
+
   - Developers:
       - CONTRIBUTING: guide/CONTRIBUTING.md
+      - Dependencies: developers/dependencies.md
+      - Testing:
+          - Running Tests: developers/testing/running-tests.md
+          - Unit Tests: developers/testing/unit-tests.md
+          - Integration Tests: developers/testing/integration-tests.md
 
   - API Reference: reference/

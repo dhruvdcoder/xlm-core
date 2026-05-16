@@ -1,0 +1,33 @@
+# @package _global_
+defaults:
+  - uniref50_packed
+  - /collator@datamodule.dataset_managers.train.lm.collator: packed_mlm
+  - /collator@datamodule.dataset_managers.val.lm.collator: packed_mlm
+  - /collator@datamodule.dataset_managers.val.unconditional_prediction.collator: papl_unconditional
+  - /collator@datamodule.dataset_managers.test.unconditional_prediction.collator: papl_unconditional
+  - /collator@datamodule.dataset_managers.predict.unconditional_prediction.collator: papl_unconditional
+
+datamodule:
+  print_batch_fn: mlm.datamodule_mlm.print_batch_mlm
+  dataset_managers:
+    val:
+      unconditional_prediction:
+        dataset_constructor_str: mlm.papl_unconditional.PaplUnconditionalMLMDataset
+        dataset_kwargs:
+          lengths: [100, 200, 300, 400, 500, 600, 700, 800]
+          examples_per_node: 100
+    test:
+      unconditional_prediction:
+        dataset_constructor_str: mlm.papl_unconditional.PaplUnconditionalMLMDataset
+        dataset_kwargs:
+          lengths: [100, 200, 300, 400, 500, 600, 700, 800]
+          examples_per_node: 100
+    predict:
+      unconditional_prediction:
+        dataset_constructor_str: mlm.papl_unconditional.PaplUnconditionalMLMDataset
+        dataset_kwargs:
+          lengths: [100, 200, 300, 400, 500, 600, 700, 800]
+          examples_per_node: 100
+
+tags:
+  dataset: uniref50_packed

@@ -1,0 +1,5 @@
+_target_: mlm.datamodule_mlm.PackedMLMCollator
+block_size: ${block_size}
+tokenizer: ${global_components:tokenizer}
+noise_schedule: ${global_components:noise_schedule}
+use_flex_attn: ${model.use_flex_attn}

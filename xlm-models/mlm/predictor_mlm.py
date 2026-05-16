@@ -112,6 +112,11 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
         self.skip_special_tokens = skip_special_tokens
         self.confidence = confidence
         self.threshold = threshold
+        if confidence is not None and threshold is None:
+            raise ValueError(
+                "threshold must be provided when confidence-based position "
+                "selection is enabled (confidence is not None)."
+            )
         self.confidence_temperature = confidence_temperature
         self.temperature = temperature
         self.logits_hook = logits_hook

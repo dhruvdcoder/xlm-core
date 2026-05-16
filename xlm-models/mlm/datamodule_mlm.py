@@ -12,7 +12,7 @@ from jaxtyping import Float, Integer
 from torch import Tensor as TT
 from xlm.noise import NoiseSchedule
 from typing import Any, Callable, Dict, List, Literal, Mapping, Optional
-from .types_mlm import MLMBatch
+from .types_mlm import MLMBatch, PackedFlexMLMBatch
 from xlm.utils.nn import pad_truncate_list
 from xlm.utils.rank_zero import RankedLogger
 from torch.utils.data import IterableDataset
@@ -755,7 +755,10 @@ def print_batch_mlm(
     print("input_ids:")
     print(batch["input_ids"][0])
     print("attention_mask (int):")
-    print(batch["attention_mask"][0].int())
+    if "attention_mask" in batch:
+        print(batch["attention_mask"][0].int())
+    else:
+        print("(none — packed FlexAttention batch)")
     if "target_ids" in batch:
         print("target_ids:")
         print(batch["target_ids"][0])
@@ -807,3 +810,78 @@ class DefaultInfillMLMCollator(Collator):
                 for e in examples
             ],
         )
+
+
+class PackedMLMCollator(Collator):
+    """MLM collator for packed protein sequences (e.g. UniRef50).
+
+    Expects pre-packed ``input_ids`` produced by ``pack_sequences`` / ``pack_sequences_fn``:
+    each example is a block of exactly ``block_size`` tokens where individual
+    sequences are separated by EOS tokens.
+
+    Requires ``model.use_flex_attn=True`` (see Hydra ``packed_mlm`` collator config).
+    Outputs a :class:`PackedFlexMLMBatch`: ``input_ids``, ``target_ids``, RoPE
+    ``positions``, ``segment_ids`` (same tensor used to build ``block_mask``),
+    and a FlexAttention ``block_mask``.
+
+    The ``BlockMask`` is built on CPU inside the DataLoader worker so the compiled
+    ``loss_fn`` stays graph-break-free; ``MLMLoss.__call__`` moves it to the device.
+    """
+
+    def __init__(
+        self,
+        tokenizer: Tokenizer,
+        block_size: int,
+        noise_schedule: NoiseSchedule,
+        use_flex_attn: bool = False,
+    ):
+        self.tokenizer = tokenizer
+        self.block_size = block_size
+        self.noise_schedule = noise_schedule
+        self.use_flex_attn = use_flex_attn
+
+    def __call__(
+        self,
+        examples: List[BaseCollatorInput],
+    ) -> PackedFlexMLMBatch:
+        if not self.use_flex_attn:
+            raise ValueError(
+                "PackedMLMCollator requires model.use_flex_attn=True "
+                "(FlexAttention BlockMask + RoPE positions per segment)."
+            )
+
+        input_ids = torch.stack(
+            [torch.tensor(e["input_ids"], dtype=torch.long) for e in examples]
+        )  # (bsz, seq_len)
+        bsz, seq_len = input_ids.shape
+        eos_id: int = self.tokenizer.eos_token_id
+
+        # segment_start[b, i] = True at the start of each protein (pos 0 or after EOS).
+        segment_start = torch.cat(
+            [
+                torch.ones(bsz, 1, dtype=torch.bool, device=input_ids.device),
+                input_ids[:, :-1] == eos_id,
+            ],
+            dim=1,
+        )
+        segment_ids = segment_start.long().cumsum(dim=1) - 1
+
+        # --- per-sequence reset positions ------------------------------------
+        arange = torch.arange(seq_len, device=input_ids.device).unsqueeze(0)  # (1, seq_len)
+        # For each position, record the absolute index of the current segment start
+        last_start = (arange * segment_start.long()).cummax(dim=1).values
+        reset_positions = (arange - last_start).long()  # (bsz, seq_len)
+
+        # --- MLM masking -----------------------------------------------------
+        target_ids = input_ids.clone()
+        t = torch.rand(bsz)
+        mask = torch.rand(bsz, seq_len) < t.unsqueeze(1)
+        masked_input_ids = input_ids.clone()
+        masked_input_ids[mask] = self.tokenizer.mask_token_id
+
+        return {
+            "input_ids": masked_input_ids,
+            "target_ids": target_ids,
+            "positions": reset_positions,
+            "segment_ids": segment_ids,
+        }

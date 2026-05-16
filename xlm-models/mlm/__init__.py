@@ -24,6 +24,7 @@ from .datamodule_mlm import (
 )
 from .types_mlm import (
     MLMBatch,
+    PackedFlexMLMBatch,
     MLMSeq2SeqPredictionBatch,
     MLMUncondtionalPredictionBatch,
     MLMLossDict,
@@ -42,6 +43,7 @@ __all__ = [
     "MLMSeq2SeqCollator",
     "MLMSeq2SeqPredCollator",
     "MLMBatch",
+    "PackedFlexMLMBatch",
     "MLMSeq2SeqPredictionBatch",
     "MLMUncondtionalPredictionBatch",
     "MLMLossDict",

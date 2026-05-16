@@ -39,11 +39,13 @@ class RotaryTransformerMLMModel(torch.nn.Module, Model):
         rotary_emb_dim: int = 64,
         max_length: int = 1024,
         force_flash_attn: bool = False,
+        use_flex_attn: bool = False,
         final_layer_without_normalization: bool = False,
     ):
         super().__init__()
         self.padding_idx = padding_idx
         self.mask_idx = mask_idx
+        self.use_flex_attn = use_flex_attn
         self.embed_tokens = nn.Embedding(
             num_embeddings, d_model, padding_idx=padding_idx
         )
@@ -78,21 +80,29 @@ class RotaryTransformerMLMModel(torch.nn.Module, Model):
         x_t: Integer[TT, " *batch seq_len"],
         attention_mask: Optional[Bool[TT, " *batch seq_len"]] = None,
         positions: Optional[Integer[TT, " *batch seq_len"]] = None,
-        token_type_ids: Optional[Integer[TT, " *batch seq_len"]] = None,
+        block_mask=None,
     ) -> Float[TT, " *batch seq_len vocab_size"]:
         """
         Args:
             x_t: The input tokens of shape (*batch, seq_len)
-            attention_mask: The attention mask of shape (*batch, seq_len), which is True for non-padding tokens.
-            positions: The positions of the tokens of shape (*batch, seq_len)
+            attention_mask: Boolean mask ``(*batch, seq_len)`` — valid (non-padding)
+                tokens.  Ignored when ``block_mask`` is set (packed + FlexAttention).
+            positions: Per-token RoPE positions ``(*batch, seq_len)``.  Required for
+                packed sequences (reset at each segment boundary).
+            block_mask: FlexAttention ``BlockMask`` for packed training when
+                ``use_flex_attn=True``.  When set, ``attention_mask`` is ignored.
         """
         if attention_mask is not None:
             attention_mask = attention_mask.to(torch.bool)
 
         x = self.embed_tokens(x_t)  # shape (batch_size, seq_len, d_model)
 
+        if block_mask is not None:
+            # BlockMask from PackedMLMCollator; moved to device in MLMLoss.__call__.
+            attention_mask = None
+
         for block in self.encoder:
-            x = block(x, attention_mask, positions=positions)
+            x = block(x, attention_mask, positions=positions, block_mask=block_mask)
 
         vocab_logits = self.output_layer(
             x,

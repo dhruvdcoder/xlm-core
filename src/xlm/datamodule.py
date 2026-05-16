@@ -74,6 +74,7 @@ from transformers import (
     GPT2TokenizerFast as _GPT2TokenizerFast,
     PreTrainedTokenizerBase,
 )
+from transformers.models.esm.tokenization_esm import EsmTokenizer as _EsmTokenizer
 from lightning.pytorch.strategies import DDPStrategy as LDDPStrategy
 from lightning.pytorch.strategies import FSDPStrategy as LFSDPStrategy
 from lightning.pytorch.strategies import (
@@ -140,13 +141,21 @@ ranked_logger = RankedLogger(__name__, rank_zero_only=False)
 
 safe_imported = False
 try:
-    import safe as sf
+    import safe
     from safe.tokenizer import SAFETokenizer as _SAFETokenizer
 
     safe_imported = True
 except ImportError:
     safe_imported = False
     _SAFETokenizer = _BertTokenizer
+
+
+def _ensure_safe_libs_for_datamodule_tokenizer() -> None:
+    if not safe_imported:
+        raise ImportError(
+            "SAFETokenizer requires the optional SAFE molecules stack "
+            '(safe-mol, rdkit, datamol). Install with `pip install "xlm-core[safe]"`.'
+        )
 
 
 ################################################################################
@@ -393,6 +402,31 @@ class GPT2TokenizerFast(TokenizerMixin, _GPT2TokenizerFast):  # type: ignore
         return tokenizer
 
 
+class EsmTokenizer(TokenizerMixin, _EsmTokenizer):  # type: ignore[misc]
+    """ESM amino-acid tokenizer with XLM-required special tokens.
+
+    Hugging Face :class:`~transformers.EsmTokenizer` omits ``bos_token`` and
+    ``sep_token``; :meth:`TokenizerMixin.post_creation` requires them, so we
+    alias ``bos`` to ``cls`` and ``sep`` to ``eos`` after loading.
+    """
+
+    @classmethod
+    def from_pretrained(
+        cls, pretrained_model_name_or_path: str, *args, **kwargs
+    ):
+        tokenizer = super().from_pretrained(
+            pretrained_model_name_or_path, *args, **kwargs
+        )
+        if tokenizer.bos_token is None:
+            tokenizer.bos_token = tokenizer.cls_token
+            tokenizer.bos_token_id = tokenizer.cls_token_id
+        if tokenizer.sep_token is None:
+            tokenizer.sep_token = tokenizer.eos_token
+            tokenizer.sep_token_id = tokenizer.eos_token_id
+        tokenizer.post_creation()
+        return tokenizer
+
+
 def add_cyclic_pad_tokens(
     tokenizer: PreTrainedTokenizerBase,
     n: int,
@@ -501,6 +535,7 @@ class BertTokenizerFastWithCyclicPads(BertTokenizerFast):
 
 class SAFETokenizer(TokenizerMixin, _SAFETokenizer):
     def __init__(self, *args, **kwargs):
+        _ensure_safe_libs_for_datamodule_tokenizer()
         super().__init__(*args, **kwargs)
         _tok = self.get_pretrained()
         _tok.add_tokens(["<", ">"])  # for bracket_safe
@@ -509,6 +544,7 @@ class SAFETokenizer(TokenizerMixin, _SAFETokenizer):
     def from_pretrained(
         cls, pretrained_model_name_or_path: str, *args, **kwargs
     ):
+        _ensure_safe_libs_for_datamodule_tokenizer()
         tokenizer = super().from_pretrained(
             pretrained_model_name_or_path, *args, **kwargs
         )
@@ -916,10 +952,13 @@ class DatasetManager:
                 ]
             if self.columns_to_remove:
                 columns_to_remove.extend(self.columns_to_remove)
+            # HF datasets rejects num_proc=0; None means single-process map. Dump
+            # runs set num_dataset_workers=0 for RAM; that must not propagate as 0 here.
+            map_num_proc = num_proc if num_proc is not None and num_proc > 0 else None
             ds = ds.map(
                 preprocess_fn,
                 batched=False,
-                num_proc=num_proc,
+                num_proc=map_num_proc,
                 fn_kwargs=fn_kwargs,
                 remove_columns=columns_to_remove,
                 load_from_cache_file=self.preprocess_load_from_cache_file,

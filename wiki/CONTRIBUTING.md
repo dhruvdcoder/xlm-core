@@ -265,7 +265,7 @@ First start with the data section.
 
 A model can have different collators for three different batch formation tasks:
 
-1. **Base (uncoditional) Training**: The dataset sends raw lists of tokenized ids as examples. Each example is a single tokenized sentence. In this collator, this sequence is converted to a batch for the model for training. For example, for MLM, this would mean adding some masks, creating target ids and padding.
+1. **Base (unconditional) Training**: The dataset sends raw lists of tokenized ids as examples. Each example is a single tokenized sentence. In this collator, this sequence is converted to a batch for the model for training. For example, for MLM, this would mean adding some masks, creating target ids and padding.
 2. **Seq2Seq Training**: The dataset sends two lists of tokenized ids per example--one for prompt/prefix and one for target/suffix. Typically, this collator will concat the prefix and suffix put any necessary special tokens in between, etc.
 
 3. **Seq2Seq Prediction**: The collator either single list of tokenized ids per example corresponding to the prompt (true prediction scenario), or two lists of tokenized ids per example corresponding to the prompt and target (prediction eval scenario). So how is this different from the seq2seq training collator? Typically, this collator does not put the prefix and suffix together, instead it will only send out the prefix as "input_ids", the suffix, if present (prediction eval scenario) is kept separate as "target_ids", to be used by the corresponding metric.
