@@ -212,40 +212,25 @@ For sharded checkpoints, `load_checkpoint` calls `_distributed_checkpoint_load` 
 
 ### Resuming and extracting weights in `xlm-core`
 
-The auto-resume path in `lightning_train.py` is currently **not sharded-aware**:
+**Training resume** ([`lightning_train.py`](../../src/xlm/commands/lightning_train.py)) supports the same checkpoint paths Lightning’s trainer accepts:
 
-```99:117:lib/xlm-core/src/xlm/commands/lightning_train.py
-    ckpt_path = None
-    if cfg.resume_from_checkpoint:
-        # determine the checkpoint path
-        if cfg.resume_checkpoint_path is not None:
-            if os.path.isfile(cfg.resume_checkpoint_path):
-                ckpt_path = cfg.resume_checkpoint_path
-            else:
-                raise ValueError(
-                    f"The checkpoint path {cfg.resume_checkpoint_path} is not a file."
-                )
-        else:
-            # look for the "last.ckpt" or "on_exception.ckpt" checkpoint in the checkpointing_dir
-            ckpt_path = os.path.join(
-                cfg.checkpointing_dir, "on_exception.ckpt"
-            )
-            if not os.path.isfile(ckpt_path):
-                ckpt_path = os.path.join(cfg.checkpointing_dir, "last.ckpt")
-            if not os.path.isfile(ckpt_path):
-                ckpt_path = None
-```
+- A regular **`.ckpt` file**, or
+- A **sharded checkpoint directory** (e.g. `last.ckpt/` or `on_exception.ckpt/`) that contains at least one **`*.distcp`** shard (see layout above).
 
-Both branches use `os.path.isfile`, which returns `False` for the directory layout sharded checkpoints produce. So:
+Resolution and validation live in [`xlm.utils.checkpoint_paths`](../../src/xlm/utils/checkpoint_paths.py): explicit `resume_checkpoint_path` must exist and be either a file or a distcp shard directory; auto-pickup checks `checkpointing_dir/on_exception.ckpt` first, then `last.ckpt`, using the same rules.
 
-- **Auto-pickup silently misses sharded `last.ckpt` directories.** A run that crashes will *not* automatically resume from its sharded `last.ckpt` on relaunch — the script will treat it as "no checkpoint" and start from scratch. Until this is fixed in `lightning_train.py`, the workarounds are:
-  1. Pass the directory explicitly via `resume_checkpoint_path=...` *and* relax the `os.path.isfile` check (or replace it with `os.path.exists`).
-  2. Run with `state_dict_type: full` for small enough models so `last.ckpt` is a regular file (not viable at 7B+).
-- **`xlm job_type=extract_checkpoint`** uses `Harness.from_checkpoint(checkpoint_path=...)`, which expects the standard Lightning `.ckpt` *file* layout. To extract weights from a sharded checkpoint you have to **consolidate to a full checkpoint first**. Two options:
-  1. Save a final `state_dict_type: full` checkpoint from the training run (e.g. on the last step, on a smaller model, or after sharding to fewer ranks). This requires enough rank-0 memory for the full weights.
-  2. Convert offline using PyTorch's `torch.distributed.checkpoint.format_utils.dcp_to_torch_save`, which reads a `.distcp` directory and writes a single `.pt` containing the consolidated state dict.
+**Exporting model-only weights (Hub / inference):**
 
-The recommended pattern at 7B is: train with `state_dict_type: sharded` (fast saves, no rank-0 memory spike), then run a tiny single-GPU job that loads the last sharded checkpoint with `state_dict_type: full` and saves it once for export.
+Use [`xlm.utils.consolidate_model_checkpoint.consolidate_model_checkpoint`](../../src/xlm/utils/consolidate_model_checkpoint.py) on a **sharded checkpoint folder** that contains **`*.distcp`** shards and **`meta.pt`** (the same layout Lightning uses for `state_dict_type: sharded`). It loads the distributed checkpoint (PyTorch ≥ 2.3), applies Lightning’s checkpoint reformatting, strips `model.` / `_orig_mod.` prefixes, and writes **model-only** weights:
+
+- **Single file (default):** pass a target path (e.g. `…/model.safetensors`). Suitable for `model_only_checkpoint_path` and small checkpoints.
+- **HF multi-shard safetensors:** pass `max_shard_size=` (e.g. `"5GB"`) and an **output directory**; produces `model.safetensors.index.json` plus `model-….safetensors` shards compatible with [`download_model_weights` / `load_model_weights_into_model`](../../src/xlm/utils/hf_hub.py). For **local** inference, set `model_only_checkpoint_path` to the **index JSON file path**, not just the folder.
+
+`push_to_hub` still **loads** the module (e.g. via `model_only_checkpoint_path` pointing at that `.safetensors` or index file) and then **uploads** from memory via `PyTorchModelHubMixin`; it does not upload a pre-built folder verbatim unless you use the Hub API yourself.
+
+The **`xlm job_type=extract_checkpoint`** path still uses `Harness.from_checkpoint(checkpoint_path=…)` and expects a **single consolidated `.ckpt` file**; use `consolidate_model_checkpoint` (or `python -m lightning.pytorch.utilities.consolidate_checkpoint`) first if you only have a sharded directory.
+
+The recommended pattern at 7B is: train with `state_dict_type: sharded`, then consolidate offline to safetensors (single or sharded) on a machine with enough **CPU RAM** for the full checkpoint (Lightning’s loader materializes the full state in memory).
 
 ## 6. Gotchas
 
