@@ -59,7 +59,8 @@ During every training / validation / test step, `Harness._step()`:
 At epoch end, `on_validation_epoch_end` and `on_test_epoch_end` trigger
 additional aggregate computations for dataloaders whose name contains
 `"prediction"` -- specifically generative perplexity and any configured post-hoc
-metrics.
+metrics (see [Post-hoc evaluation](eval.md#post-hoc-evaluation) in the eval
+guide for JSONL layout, `eval()`, and Hydra snippets).
 
 ## Configuration
 

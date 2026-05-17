@@ -141,6 +141,8 @@ post_hoc_evaluator:
   _target_: xlm.tasks.math500.Math500Eval
 ```
 
+For the JSONL path, `eval()` contract, packaged `post_hoc_evaluator` snippets (`denovo`, `syntactic`, `mauve_text`), and MAUVE extras, see [Post-hoc evaluation](eval.md#post-hoc-evaluation) in the eval guide.
+
 Experiment reference: [`xlm-models/dream/configs/experiment/math500_dream_eval.yaml`](../../xlm-models/dream/configs/experiment/math500_dream_eval.yaml).
 
 ---

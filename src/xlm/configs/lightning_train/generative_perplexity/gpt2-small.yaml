@@ -1,4 +1,0 @@
-gpt2:
-  _target_: xlm.generative_perplexity.AutoModelForCausalLMGenerativePerplexityEvaluator
-  name: gpt2
-  batch_size: 1

@@ -80,8 +80,7 @@ lr_scheduler:
   num_training_steps: ${trainer.max_steps}
   monitor: "train/loss"
 
-generative_perplexity:
-  evaluators: null
+post_hoc_evaluator: null
 
 log_predictions:
   _target_: xlm.log_predictions.LogPredictions

@@ -1,5 +1,9 @@
-from typing import Dict, Any
-from transformers import PreTrainedTokenizerBase
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Dict
+
+if TYPE_CHECKING:
+    from transformers import PreTrainedTokenizerBase
 
 
 def preprocess_fn(

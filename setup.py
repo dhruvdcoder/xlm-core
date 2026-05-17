@@ -36,13 +36,17 @@ install_requires = load_requirements()
 _safe_reqs = load_requirements_optional("requirements/safe_extra.txt")
 _molgen_reqs = load_requirements_optional("requirements/molgen_requirements.txt")
 _llm_eval_reqs = load_requirements_optional("requirements/llm_eval.txt")
+_mauve_reqs = load_requirements_optional("requirements/mauve_text.txt")
 
 extras_require = {
     "safe": _safe_reqs,
     "molgen": _molgen_reqs,
     "llm_eval": _llm_eval_reqs,
+    "mauve": _mauve_reqs,
     "all": list(
-        dict.fromkeys(_safe_reqs + _molgen_reqs + _llm_eval_reqs),
+        dict.fromkeys(
+            _safe_reqs + _molgen_reqs + _llm_eval_reqs + _mauve_reqs
+        ),
     ),
 }
 
@@ -69,7 +73,8 @@ setup(
         pip install "xlm-core[safe]"     # optional: SAFE molecule preprocessing / evaluators
         pip install "xlm-core[molgen]"   # optional: fuller GenMol / Biomemo stack (molgen_requirements.txt)
         pip install "xlm-core[llm_eval]" # optional: ANTLR build of math-verify (LLM benchmarks)
-        pip install "xlm-core[all]"      # union of safe + molgen + llm_eval (used in CI)
+        pip install "xlm-core[mauve]"    # optional: MAUVE post-hoc text evaluation (mauve-text)
+        pip install "xlm-core[all]"      # union of safe + molgen + llm_eval + mauve (used in CI)
         xlm job_type=[JOB_TYPE] job_name=[JOB_NAME] experiment=[CONFIG_PATH]
        
         The job_type argument can be one of train ,eval and generate. The experiment argument should point to the root hydra config file.
