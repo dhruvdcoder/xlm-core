@@ -316,4 +316,4 @@ A few things that have bitten us in practice:
 
 - **Per-rank logs.** `FSDPDiagnosticsCallback`'s `on_fit_start` log line is per-rank on purpose — every rank prints its own `local_trainable_param_MiB` so you can spot uneven shards. The `setup`-time strategy dump and per-phase memory logs are rank-0 only.
 
-- **Loading large checkpoints.** Combine FSDP with `skip_init_weights: true` and `init_dtype: bfloat16` (see the [LLM eval notes](../../wiki/LLMs.md#initializing-large-models)) so the model never spends time on random init or fp32 materialization before FSDP shards it.
+- **Loading large checkpoints.** Use `skip_init_weights: true` when resuming training or loading model-only weights before `trainer.fit` so Lightning does not spend time on a full random init that is immediately overwritten. For **dtype**, rely on `Trainer` / strategy precision and FSDP `mixed_precision`; `init_dtype` is only read by `load_model_for_inference` (eval / Hub inference), not `lightning_train.py`. See the [LLM eval notes](../../wiki/LLMs.md#initializing-large-models).

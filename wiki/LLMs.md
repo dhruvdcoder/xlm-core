@@ -79,11 +79,14 @@ Extended the HF Hub weight loading pipeline to handle sharded safetensors checkp
 
 ### 6. `skip_init_weights` & `init_dtype` for Large Model Loading (`commands/lightning_train.py`, `utils/model_loading.py`)
 
-**`skip_init_weights`:** When loading pretrained weights, random initialization of the model is wasteful (and slow for large models). Setting `skip_init_weights: true` in the config wraps model instantiation in `transformers.modeling_utils.no_init_weights()`, skipping random init entirely. Only activates when a checkpoint path is provided.
+**`skip_init_weights`:** When pretrained weights are loaded right after construction, full random initialization is wasteful and slow for large models. Setting `skip_init_weights: true` wraps the applicable path in `transformers.modeling_utils.no_init_weights()`.
 
-**`init_dtype`:** A new config key that sets `torch.set_default_dtype` during model construction, allowing models to be instantiated directly in `float16` or `bfloat16` instead of `float32` (important for fitting large models in GPU memory).
+- **Training** (`lightning_train.py`): Activates when `skip_init_weights` is true **and** either a Lightning `ckpt_path` is set or a **model-only** checkpoint will be loaded before `trainer.fit`.
+- **Inference** (`load_model_for_inference`): Activates when `skip_init_weights` is true **and** there is a **model-only** weight source (local `model_only_checkpoint_path` or Hub-downloaded weights). A **full Lightning checkpoint** is loaded via `load_from_checkpoint`; that path does not wrap a fresh instantiate in `no_init_weights()`.
 
-Both are supported in both the training entrypoint (`lightning_train.py`) and the inference loader (`model_loading.py`).
+**`init_dtype`:** Optional top-level config value (`float32`, `float16`, or `bfloat16`) that temporarily sets `torch.set_default_dtype` while the `Harness` is built (and, in the inference loader, while `load_from_checkpoint` runs). Useful for large inference loads so modules are not first materialized in fp32.
+
+**Where it applies:** `init_dtype` is read only by `load_model_for_inference` (**inference**). It is **not** implemented in `lightning_train.py`; for training, use `Trainer` / strategy precision and FSDP `mixed_precision` instead.
 
 ### 7. Sampling Temperature Support (`utils/nn.py`)
 
@@ -218,7 +221,7 @@ All MLM changes are designed to be backward-compatible. The table below summariz
 
 
 # Initializing large models 
-Above we have discussed how to skip init ops to make the model creation faster. But this will not reduce the temporary CPU memory usage because the weights will first be loaded into the CPU memory and then moved to the GPU memory.
+Above we have discussed how to skip init ops (`skip_init_weights`) to make model creation faster, and how `init_dtype` lowers peak CPU memory during **inference** construction when set in configs that go through `load_model_for_inference`. Neither removes the cost of reading weights from disk into CPU RAM before they can be moved or sharded to GPUs.
 
 Following are some lightning native solutions: 
 1. https://github.com/Lightning-AI/pytorch-lightning/pull/18385
