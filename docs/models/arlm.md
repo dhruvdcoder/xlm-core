@@ -2,18 +2,18 @@
 
 ## 1. Overview
 
-`arlm` is a standard left-to-right causal Transformer language model with rotary position embeddings: at each step the model predicts the next token given the prefix. The package supports both language-modeling and seq2seq tasks (prompt + target with a `-100`-ignored prompt region). See [xlm-models/arlm/README.md](../../xlm-models/arlm/README.md) for the high-level description.
+`arlm` is a standard left-to-right causal Transformer language model with rotary position embeddings: at each step the model predicts the next token given the prefix. The package supports both language-modeling and seq2seq tasks (prompt + target with a `-100`-ignored prompt region). See {{ gh('xlm-models/arlm/README.md', 'xlm-models/arlm/README.md') }} for the high-level description.
 
 ## 2. Files at a glance
 
 | Module | Public classes / helpers |
 |---|---|
-| [model_arlm.py](../../xlm-models/arlm/model_arlm.py) | `RotaryTransformerARLMModel` |
-| [loss_arlm.py](../../xlm-models/arlm/loss_arlm.py) | `ARLMLoss` |
-| [predictor_arlm.py](../../xlm-models/arlm/predictor_arlm.py) | `ARLMPredictor` |
-| [datamodule_arlm.py](../../xlm-models/arlm/datamodule_arlm.py) | `DefaultARLMCollator`, `ARLMSeq2SeqCollator`, `ARLMSeq2SeqPredCollator`, `ARLMEmptyDataset`, `prepare_prefix_ids_arlm`, helpers |
-| [metrics_arlm.py](../../xlm-models/arlm/metrics_arlm.py) | `seq2seq_exact_match_update_fn`, `seq2seq_token_accuracy_update_fn`, `mean_metric_update_fn`, `perplexity_metric_update_fn`, `token_nll_metric_update_fn`, `sequence_length_metric_update_fn`, `valid_tokens_metric_update_fn` |
-| [types_arlm.py](../../xlm-models/arlm/types_arlm.py) | `ARLMBatch`, `ARLMSeq2SeqBatch`, `ARLMSeq2SeqPredictionBatch`, `ARLMLossDict`, `ARLMModel` (Protocol), `ARLMPredictionDict` |
+| {{ gh('xlm-models/arlm/model_arlm.py', 'model_arlm.py') }} | `RotaryTransformerARLMModel` |
+| {{ gh('xlm-models/arlm/loss_arlm.py', 'loss_arlm.py') }} | `ARLMLoss` |
+| {{ gh('xlm-models/arlm/predictor_arlm.py', 'predictor_arlm.py') }} | `ARLMPredictor` |
+| {{ gh('xlm-models/arlm/datamodule_arlm.py', 'datamodule_arlm.py') }} | `DefaultARLMCollator`, `ARLMSeq2SeqCollator`, `ARLMSeq2SeqPredCollator`, `ARLMEmptyDataset`, `prepare_prefix_ids_arlm`, helpers |
+| {{ gh('xlm-models/arlm/metrics_arlm.py', 'metrics_arlm.py') }} | `seq2seq_exact_match_update_fn`, `seq2seq_token_accuracy_update_fn`, `mean_metric_update_fn`, `perplexity_metric_update_fn`, `token_nll_metric_update_fn`, `sequence_length_metric_update_fn`, `valid_tokens_metric_update_fn` |
+| {{ gh('xlm-models/arlm/types_arlm.py', 'types_arlm.py') }} | `ARLMBatch`, `ARLMSeq2SeqBatch`, `ARLMSeq2SeqPredictionBatch`, `ARLMLossDict`, `ARLMModel` (Protocol), `ARLMPredictionDict` |
 
 ## 3. Architecture
 
@@ -34,7 +34,7 @@ forward(
 
 ## 4. Batch contract
 
-`ARLMBatch` ([types_arlm.py](../../xlm-models/arlm/types_arlm.py)):
+`ARLMBatch` ({{ gh('xlm-models/arlm/types_arlm.py', 'types_arlm.py') }}):
 
 | Field | Shape | Notes |
 |---|---|---|
@@ -82,7 +82,7 @@ The `noise_schedule` argument is accepted for interface symmetry with the other 
 
 ## 8. Metrics
 
-All `*_update_fn(batch, loss_dict, tokenizer=None)`. Worked examples: [tests/models/arlm/test_metrics_arlm.py](../../tests/models/arlm/test_metrics_arlm.py).
+All `*_update_fn(batch, loss_dict, tokenizer=None)`. Worked examples: {{ gh('tests/models/arlm/test_metrics_arlm.py', 'tests/models/arlm/test_metrics_arlm.py') }}.
 
 | Function | Returned keys | Notes |
 |---|---|---|
@@ -96,13 +96,13 @@ All `*_update_fn(batch, loss_dict, tokenizer=None)`. Worked examples: [tests/mod
 
 ## 9. Configs / experiments
 
-Hydra groups under [xlm-models/arlm/configs/](../../xlm-models/arlm/configs/). Available experiment entry points:
+Hydra groups under {{ gh_dir('xlm-models/arlm/configs', 'xlm-models/arlm/configs/') }}. Available experiment entry points:
 
 - `experiment=star_easy_arlm`
 
 ## 10. Testing
 
-Tests in [tests/models/arlm/](../../tests/models/arlm):
+Tests in {{ gh_dir('tests/models/arlm', 'tests/models/arlm/') }}:
 
 - `test_model_arlm.py` — extends `BaseModelTests`, plus a causal-mask leakage test (added in this plan).
 - `test_loss_arlm.py` — extends `BaseLossTests`, plus a `-100` ignore-index test (added in this plan).
@@ -110,7 +110,7 @@ Tests in [tests/models/arlm/](../../tests/models/arlm):
 - `test_predictor_arlm.py` — predictor smoke + vocab-range tests.
 - `test_metrics_arlm.py` — pure-function helpers.
 
-Shared fixtures (`tiny_arlm_model`, `arlm_batch`, `simple_tokenizer`) live in [tests/conftest.py](../../tests/conftest.py) and [tests/models/arlm/conftest.py](../../tests/models/arlm/conftest.py).
+Shared fixtures (`tiny_arlm_model`, `arlm_batch`, `simple_tokenizer`) live in {{ gh('tests/conftest.py', 'tests/conftest.py') }} and {{ gh('tests/models/arlm/conftest.py', 'tests/models/arlm/conftest.py') }}.
 
 ## 11. API reference
 

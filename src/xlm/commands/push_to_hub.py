@@ -32,8 +32,8 @@ from typing import Any, Dict, cast
 
 import torch
 from huggingface_hub import HfApi
-from huggingface_hub.errors import RevisionNotFoundError
 
+from xlm.utils.hf_hub import resolve_hf_hub_token
 from xlm.harness import Harness
 from xlm.utils.model_loading import load_model_for_inference
 from xlm.utils.rich_utils import print_config_tree
@@ -49,8 +49,12 @@ class PushToHubConfig:
 
     repo_id: str
     commit_message: str = "Programmatic push to hub"
-    branch: str | None = None  # If set, push to this branch (created if missing)
-    revision: str | None = None  # Hub revision (e.g. for generate when loading from hub)
+    branch: str | None = (
+        None  # If set, push to this branch (created if missing)
+    )
+    revision: str | None = (
+        None  # Hub revision when *loading* (eval/generate); not passed to push_to_hub()
+    )
 
 
 # Register the config schema
@@ -130,23 +134,36 @@ def push_to_hub(cfg: DictConfig):
         commit_message += f"\n- model_only_checkpoint_path: {cfg.get('model_only_checkpoint_path', None)}"
         hub_config["commit_message"] = commit_message
 
-    # Create branch if it doesn't exist (upload_folder requires it)
+    token = resolve_hf_hub_token()
+    if token is None:
+        logger.warning(
+            "No Hugging Face token in environment. Set one of HF_HUB_KEY, HF_TOKEN, "
+            "or HUGGINGFACE_HUB_TOKEN. Unauthenticated Hub API calls may return 404."
+        )
+
+    api = HfApi(token=token)
+    repo_id = hub_config["repo_id"]
+    # Ensure the model repo exists before create_branch / upload (first push to a new repo).
+    logger.info("Ensuring Hub model repo exists: %s", repo_id)
+    api.create_repo(repo_id=repo_id, repo_type="model", exist_ok=True)
+
+    # Non-main branches must exist before upload_folder targets them.
     branch = hub_config.get("branch")
     if branch is not None and branch != "main":
-        api = HfApi(token=os.getenv("HF_HUB_KEY"))
-        repo_id = hub_config["repo_id"]
-        try:
-            api.repo_info(repo_id=repo_id, repo_type="model", revision=branch)
-        except RevisionNotFoundError:
-            logger.info(f"Branch '{branch}' not found. Creating it...")
-            api.create_branch(
-                repo_id=repo_id,
-                repo_type="model",
-                branch=branch,
-                exist_ok=True,
-            )
+        logger.info("Ensuring Hub branch exists: %s (repo_id=%s)", branch, repo_id)
+        api.create_branch(
+            repo_id=repo_id,
+            repo_type="model",
+            branch=branch,
+            exist_ok=True,
+        )
 
-    model.push_to_hub(**hub_config, token=os.getenv("HF_HUB_KEY"))
+    # ``revision`` is for loading from the Hub (eval/generate), not for uploads;
+    # ``PyTorchModelHubMixin.push_to_hub`` uses ``branch`` only.
+    push_hub_kwargs = dict(hub_config)
+    push_hub_kwargs.pop("revision", None)
+
+    model.push_to_hub(**push_hub_kwargs, token=token)
 
 
 def replace_model(cfg: DictConfig) -> DictConfig:

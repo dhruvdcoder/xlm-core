@@ -1,0 +1,13 @@
+# Empty composite — add evaluators by name under a dataloader-name substring pattern
+# (``CompositePostHocEvaluator`` matches the first pattern contained in the dataloader name).
+#
+# From another defaults list or CLI, compose one or more evaluators, e.g. ::
+#
+#   - /post_hoc_evaluator@post_hoc_evaluator.evaluators.prediction.mauve: mauve_text
+#   - /post_hoc_evaluator@post_hoc_evaluator.evaluators.prediction.gen_ppl: gen_ppl_gpt2_large
+#
+# Or override inline under ``post_hoc_evaluator.evaluators.<pattern>.<alias>``.
+#
+# Body merges into ``cfg.post_hoc_evaluator`` (config group ``post_hoc_evaluator``).
+_target_: xlm.tasks.composite_eval.CompositePostHocEvaluator
+evaluators: {}

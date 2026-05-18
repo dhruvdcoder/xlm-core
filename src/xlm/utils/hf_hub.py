@@ -18,6 +18,20 @@ from huggingface_hub.constants import (
 from huggingface_hub.utils import validate_repo_id
 
 
+def resolve_hf_hub_token() -> str | None:
+    """Return an HF Hub token from the environment if set.
+
+    Prefers ``HF_HUB_KEY`` (xlm convention), then ``HF_TOKEN`` and
+    ``HUGGINGFACE_HUB_TOKEN`` (CLI / huggingface_hub defaults). Unauthenticated
+    Hub calls often return **404**, which is easy to mistake for a missing repo.
+    """
+    for key in ("HF_HUB_KEY", "HF_TOKEN", "HUGGINGFACE_HUB_TOKEN"):
+        val = os.getenv(key)
+        if val is not None and str(val).strip():
+            return str(val).strip()
+    return None
+
+
 def _repo_id_from_url(path: str) -> str | None:
     """Extract repo_id from HF Hub URL. Returns None if invalid."""
     try:
@@ -97,7 +111,7 @@ def download_model_weights(
     Args:
         repo_id: Hugging Face repository ID (e.g., "org/model").
         revision: Git revision (branch, tag, or commit). Defaults to "main".
-        token: HF token for private repos. Uses HF_HUB_KEY env if None.
+        token: HF token for private repos. If None, uses :func:`resolve_hf_hub_token`.
 
     Returns:
         Path to the downloaded weights file, or to ``model.safetensors.index.json`` when
@@ -107,7 +121,7 @@ def download_model_weights(
         ValueError: If no supported weight layout exists in the repo.
     """
     if token is None:
-        token = os.getenv("HF_HUB_KEY")
+        token = resolve_hf_hub_token()
     try:
         return hf_hub_download(
             repo_id=repo_id,

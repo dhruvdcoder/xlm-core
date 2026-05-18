@@ -10,6 +10,7 @@ defaults:
   - loggers: default
   - trainer_strategy: single_device
   - hub: null
+  - post_hoc_evaluator: default
   - experiment: null # inject arbitrary overrides
   - debug: null
 
@@ -79,9 +80,6 @@ lr_scheduler:
   num_warmup_steps: 1000
   num_training_steps: ${trainer.max_steps}
   monitor: "train/loss"
-
-generative_perplexity:
-  evaluators: null
 
 log_predictions:
   _target_: xlm.log_predictions.LogPredictions

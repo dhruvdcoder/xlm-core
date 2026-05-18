@@ -2,7 +2,6 @@ from collections.abc import Generator
 from itertools import chain
 import json
 from pathlib import Path
-import re
 from typing import (
     Any,
     Callable,
@@ -41,12 +40,6 @@ from xlm.utils.omegaconf_resolvers import dummy_resolvers
 from xlm.log_predictions import (
     LogPredictions,
 )
-from xlm.generative_perplexity import (
-    GenerativePerplexityEvaluator,
-    compute_entropy_and_length_for_sample,
-    compute_nll_for_sample,
-)
-
 logger = RankedLogger(__name__, rank_zero_only=True)
 ranked_logger = RankedLogger(__name__, rank_zero_only=False)
 
@@ -401,7 +394,6 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
     # ]
     key_to_remove_after_logging: List[str]
     log_predictions: Optional[LogPredictions]
-    generative_perplexity_evaluators: Dict[str, GenerativePerplexityEvaluator]
 
     def __init__(
         self,
@@ -446,9 +438,11 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
         self.instantiate_loss_function()
         self.setup_dataloader_names()
         self.setup_metrics(cfg)
-        self.setup_generative_perplexity(cfg)
         self.setup_post_hoc_evaluator(cfg)
         self.predictions_dir = Path(cfg.paths.run_dir) / "predictions"
+        self.force_predict = bool(
+            cfg.lightning_module.get("force_predict", True)
+        )
         # validate and save config at the end
         self.validate_config(self.config)
         # Save hyperparameters as a plain dict.
@@ -582,26 +576,6 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
         else:
             self.log_predictions = None
 
-    def setup_generative_perplexity(self, cfg: DictConfig):
-        self.generative_perplexity_evaluators: Dict[
-            str, GenerativePerplexityEvaluator
-        ] = {}
-        if (
-            cfg.get("generative_perplexity", {}).get("evaluators", None)
-            is not None
-        ):
-            for (
-                evaluator_name,
-                evaluator_conf,
-            ) in cfg.generative_perplexity.evaluators.items():
-                evaluator = hydra.utils.instantiate(evaluator_conf)
-                self.generative_perplexity_evaluators[evaluator_name] = (
-                    evaluator
-                )
-                logger.info(
-                    f"Instantiated generative perplexity evaluator: {evaluator_name}"
-                )
-
     def setup_post_hoc_evaluator(self, cfg: DictConfig):
         """Setup post-hoc evaluator. Can be use for tasks like molecule generation.
 
@@ -622,6 +596,13 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
             )
 
     def validate_config(self, cfg: DictConfig):
+        if OmegaConf.select(cfg, "generative_perplexity") is not None:
+            raise ValueError(
+                "The `generative_perplexity` config key was removed. Use "
+                "`post_hoc_evaluator` with "
+                "`xlm.tasks.owt.generative_perplexity_post_hoc.GenerativePerplexityPostHocEval` "
+                "(see `configs/lightning_train/post_hoc_evaluator/gen_ppl_*.yaml`)."
+            )
         return
 
     def setup(self, stage: Literal["fit", "validate", "test", "predict"]):
@@ -921,457 +902,6 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
         assert dataloader_idx is not None
         return self._step(batch, batch_idx, dataloader_idx, "predict")
 
-    def compute_generative_perplexity(
-        self,
-        split: Literal["train", "val", "test", "predict"],
-        dataloader_name: str,
-        epoch: int,
-        step: int,
-        update_logged_predictions: bool = True,
-    ) -> Optional[Dict[str, Any]]:
-        if not self.generative_perplexity_evaluators:
-            return None
-        # read predictions
-        predictions: List[Dict[str, Any]] = self.log_predictions.read(
-            step, epoch, split, dataloader_name, self
-        )
-        if not predictions:
-            logger.warning(
-                f"No predictions found for {split} {dataloader_name} {epoch} {step}"
-            )
-            return None
-
-        # Check if we have infilling data (raw_input and truth fields)
-        has_infilling_data = (
-            predictions
-            and "raw_input" in predictions[0]
-            and "truth" in predictions[0]
-        )
-
-        def compute_percentage_change(new_val: float, old_val: float) -> float:
-            """Compute percentage change: ((new - old) / old) * 100"""
-            if old_val == 0:
-                return 0.0 if new_val == 0 else float("inf")
-            return ((new_val - old_val) / old_val) * 100.0
-
-        # get lengths and entropies for text (and raw_input/truth if present)
-        for pred in predictions:
-            # Compute for main text
-            string = pred["text"]
-            entropy, length = compute_entropy_and_length_for_sample(
-                string, self.tokenizer
-            )
-            pred["entropy"] = entropy
-            pred["length"] = length
-
-            # Compute for raw_input and truth if present
-            if has_infilling_data:
-                raw_entropy, raw_length = (
-                    compute_entropy_and_length_for_sample(
-                        pred["raw_input"], self.tokenizer
-                    )
-                )
-                pred["raw_entropy"] = raw_entropy
-                pred["raw_length"] = raw_length
-
-                truth_entropy, truth_length = (
-                    compute_entropy_and_length_for_sample(
-                        pred["truth"], self.tokenizer
-                    )
-                )
-                pred["truth_entropy"] = truth_entropy
-                pred["truth_length"] = truth_length
-
-                # Compute basic percentage changes (not tied to specific evaluators)
-                pred["pct_change_raw_length"] = compute_percentage_change(
-                    length, raw_length
-                )
-                pred["pct_change_raw_entropy"] = compute_percentage_change(
-                    entropy, raw_entropy
-                )
-                pred["pct_change_truth_length"] = compute_percentage_change(
-                    length, truth_length
-                )
-                pred["pct_change_truth_entropy"] = compute_percentage_change(
-                    entropy, truth_entropy
-                )
-
-        # generate perplexities and prepare for aggregation
-        data = {
-            "length": [],
-            "entropy": [],  # models, own tokenizer
-        }
-
-        # Add raw_input and truth data keys if infilling data is present
-        if has_infilling_data:
-            data.update(
-                {
-                    "raw_length": [],
-                    "raw_entropy": [],
-                    "truth_length": [],
-                    "truth_entropy": [],
-                    "pct_change_raw_length": [],
-                    "pct_change_raw_entropy": [],
-                    "pct_change_truth_length": [],
-                    "pct_change_truth_entropy": [],
-                }
-            )
-
-        def add_keys(evaluator_name: str):
-            data[f"nll_{evaluator_name}"] = []  # per sample mean nll
-            data[f"total_nll_{evaluator_name}"] = []  # per sample sum nll
-            data[f"length_{evaluator_name}"] = []  # per sample length
-            data[f"entropy_{evaluator_name}"] = []  # per sample entropy
-            data[f"perplexity_{evaluator_name}"] = []  # per sample perplexity
-
-            # Add keys for raw_input and truth if infilling data is present
-            if has_infilling_data:
-                data[f"raw_nll_{evaluator_name}"] = []
-                data[f"raw_total_nll_{evaluator_name}"] = []
-                data[f"raw_length_{evaluator_name}"] = []
-                data[f"raw_entropy_{evaluator_name}"] = []
-                data[f"raw_perplexity_{evaluator_name}"] = []
-
-                data[f"truth_nll_{evaluator_name}"] = []
-                data[f"truth_total_nll_{evaluator_name}"] = []
-                data[f"truth_length_{evaluator_name}"] = []
-                data[f"truth_entropy_{evaluator_name}"] = []
-                data[f"truth_perplexity_{evaluator_name}"] = []
-
-                # Percentage change metrics
-                data[f"pct_change_raw_nll_{evaluator_name}"] = []
-                data[f"pct_change_raw_perplexity_{evaluator_name}"] = []
-                data[f"pct_change_raw_length_{evaluator_name}"] = []
-                data[f"pct_change_raw_entropy_{evaluator_name}"] = []
-                data[f"pct_change_truth_nll_{evaluator_name}"] = []
-                data[f"pct_change_truth_perplexity_{evaluator_name}"] = []
-                data[f"pct_change_truth_length_{evaluator_name}"] = []
-                data[f"pct_change_truth_entropy_{evaluator_name}"] = []
-
-        for evaluator_name in self.generative_perplexity_evaluators:
-            add_keys(evaluator_name)
-
-        with torch.no_grad():
-            for (
-                evaluator_name,
-                evaluator,
-            ) in self.generative_perplexity_evaluators.items():
-                with evaluator.loaded(
-                    self.tokenizer,
-                    self.device,
-                ):
-                    for pred in predictions:
-                        # Process main text
-                        string = pred["text"]
-                        temp = compute_nll_for_sample(string, evaluator)
-                        if temp is None:
-                            continue
-                        nll, _len, entropy = temp
-                        pred[f"total_nll_{evaluator_name}"] = nll
-                        pred[f"total_length_{evaluator_name}"] = _len
-                        pred[f"entropy_{evaluator_name}"] = entropy
-                        # per sample mean nll and perplexity
-                        mean_nll = nll / _len
-                        pred[f"nll_{evaluator_name}"] = mean_nll
-                        perplexity = torch.exp(torch.tensor(mean_nll)).item()
-                        pred[f"perplexity_{evaluator_name}"] = perplexity
-                        data[f"nll_{evaluator_name}"].append(mean_nll)
-                        data[f"total_nll_{evaluator_name}"].append(nll)
-                        data[f"length_{evaluator_name}"].append(_len)
-                        data[f"entropy_{evaluator_name}"].append(entropy)
-                        data[f"perplexity_{evaluator_name}"].append(perplexity)
-                        data["entropy"].append(pred["entropy"])
-                        data["length"].append(pred["length"])
-
-                        # Process raw_input and truth if present
-                        if has_infilling_data:
-                            # Process raw_input
-                            raw_temp = compute_nll_for_sample(
-                                pred["raw_input"], evaluator
-                            )
-                            if raw_temp is not None:
-                                raw_nll, raw_len, raw_entropy = raw_temp
-                                pred[f"raw_total_nll_{evaluator_name}"] = (
-                                    raw_nll
-                                )
-                                pred[f"raw_total_length_{evaluator_name}"] = (
-                                    raw_len
-                                )
-                                pred[f"raw_entropy_{evaluator_name}"] = (
-                                    raw_entropy
-                                )
-                                raw_mean_nll = raw_nll / raw_len
-                                pred[f"raw_nll_{evaluator_name}"] = (
-                                    raw_mean_nll
-                                )
-                                raw_perplexity = torch.exp(
-                                    torch.tensor(raw_mean_nll)
-                                ).item()
-                                pred[f"raw_perplexity_{evaluator_name}"] = (
-                                    raw_perplexity
-                                )
-
-                                # Compute percentage changes w.r.t raw_input
-                                pct_change_nll_raw = compute_percentage_change(
-                                    mean_nll, raw_mean_nll
-                                )
-                                pct_change_perplexity_raw = (
-                                    compute_percentage_change(
-                                        perplexity, raw_perplexity
-                                    )
-                                )
-                                pct_change_length_raw = (
-                                    compute_percentage_change(_len, raw_len)
-                                )
-                                pct_change_entropy_raw = (
-                                    compute_percentage_change(
-                                        entropy, raw_entropy
-                                    )
-                                )
-                                pred[
-                                    f"pct_change_raw_nll_{evaluator_name}"
-                                ] = pct_change_nll_raw
-                                pred[
-                                    f"pct_change_raw_perplexity_{evaluator_name}"
-                                ] = pct_change_perplexity_raw
-                                pred[
-                                    f"pct_change_raw_length_{evaluator_name}"
-                                ] = pct_change_length_raw
-                                pred[
-                                    f"pct_change_raw_entropy_{evaluator_name}"
-                                ] = pct_change_entropy_raw
-
-                                # Add to data for aggregation
-                                data[f"raw_nll_{evaluator_name}"].append(
-                                    raw_mean_nll
-                                )
-                                data[f"raw_total_nll_{evaluator_name}"].append(
-                                    raw_nll
-                                )
-                                data[f"raw_length_{evaluator_name}"].append(
-                                    raw_len
-                                )
-                                data[f"raw_entropy_{evaluator_name}"].append(
-                                    raw_entropy
-                                )
-                                data[
-                                    f"raw_perplexity_{evaluator_name}"
-                                ].append(raw_perplexity)
-                                data[
-                                    f"pct_change_raw_nll_{evaluator_name}"
-                                ].append(pct_change_nll_raw)
-                                data[
-                                    f"pct_change_raw_perplexity_{evaluator_name}"
-                                ].append(pct_change_perplexity_raw)
-                                data[
-                                    f"pct_change_raw_length_{evaluator_name}"
-                                ].append(pct_change_length_raw)
-                                data[
-                                    f"pct_change_raw_entropy_{evaluator_name}"
-                                ].append(pct_change_entropy_raw)
-
-                            # Process truth
-                            truth_temp = compute_nll_for_sample(
-                                pred["truth"], evaluator
-                            )
-                            if truth_temp is not None:
-                                truth_nll, truth_len, truth_entropy = (
-                                    truth_temp
-                                )
-                                pred[f"truth_total_nll_{evaluator_name}"] = (
-                                    truth_nll
-                                )
-                                pred[
-                                    f"truth_total_length_{evaluator_name}"
-                                ] = truth_len
-                                pred[f"truth_entropy_{evaluator_name}"] = (
-                                    truth_entropy
-                                )
-                                truth_mean_nll = truth_nll / truth_len
-                                pred[f"truth_nll_{evaluator_name}"] = (
-                                    truth_mean_nll
-                                )
-                                truth_perplexity = torch.exp(
-                                    torch.tensor(truth_mean_nll)
-                                ).item()
-                                pred[f"truth_perplexity_{evaluator_name}"] = (
-                                    truth_perplexity
-                                )
-
-                                # Compute percentage changes w.r.t truth
-                                pct_change_nll_truth = (
-                                    compute_percentage_change(
-                                        mean_nll, truth_mean_nll
-                                    )
-                                )
-                                pct_change_perplexity_truth = (
-                                    compute_percentage_change(
-                                        perplexity, truth_perplexity
-                                    )
-                                )
-                                pct_change_length_truth = (
-                                    compute_percentage_change(_len, truth_len)
-                                )
-                                pct_change_entropy_truth = (
-                                    compute_percentage_change(
-                                        entropy, truth_entropy
-                                    )
-                                )
-                                pred[
-                                    f"pct_change_truth_nll_{evaluator_name}"
-                                ] = pct_change_nll_truth
-                                pred[
-                                    f"pct_change_truth_perplexity_{evaluator_name}"
-                                ] = pct_change_perplexity_truth
-                                pred[
-                                    f"pct_change_truth_length_{evaluator_name}"
-                                ] = pct_change_length_truth
-                                pred[
-                                    f"pct_change_truth_entropy_{evaluator_name}"
-                                ] = pct_change_entropy_truth
-
-                                # Add to data for aggregation
-                                data[f"truth_nll_{evaluator_name}"].append(
-                                    truth_mean_nll
-                                )
-                                data[
-                                    f"truth_total_nll_{evaluator_name}"
-                                ].append(truth_nll)
-                                data[f"truth_length_{evaluator_name}"].append(
-                                    truth_len
-                                )
-                                data[f"truth_entropy_{evaluator_name}"].append(
-                                    truth_entropy
-                                )
-                                data[
-                                    f"truth_perplexity_{evaluator_name}"
-                                ].append(truth_perplexity)
-                                data[
-                                    f"pct_change_truth_nll_{evaluator_name}"
-                                ].append(pct_change_nll_truth)
-                                data[
-                                    f"pct_change_truth_perplexity_{evaluator_name}"
-                                ].append(pct_change_perplexity_truth)
-                                data[
-                                    f"pct_change_truth_length_{evaluator_name}"
-                                ].append(pct_change_length_truth)
-                                data[
-                                    f"pct_change_truth_entropy_{evaluator_name}"
-                                ].append(pct_change_entropy_truth)
-
-                            # Add raw_input and truth entropy/length to general data
-                            data["raw_entropy"].append(pred["raw_entropy"])
-                            data["raw_length"].append(pred["raw_length"])
-                            data["truth_entropy"].append(pred["truth_entropy"])
-                            data["truth_length"].append(pred["truth_length"])
-
-                            # Add basic percentage changes
-                            data["pct_change_raw_length"].append(
-                                pred["pct_change_raw_length"]
-                            )
-                            data["pct_change_raw_entropy"].append(
-                                pred["pct_change_raw_entropy"]
-                            )
-                            data["pct_change_truth_length"].append(
-                                pred["pct_change_truth_length"]
-                            )
-                            data["pct_change_truth_entropy"].append(
-                                pred["pct_change_truth_entropy"]
-                            )
-
-        # aggregate
-        aggregated_data = {}
-        for key in data:
-            if (
-                not key.startswith("total_nll_")
-                and not key.startswith("raw_total_nll_")
-                and not key.startswith("truth_total_nll_")
-            ):
-                aggregated_data[key] = torch.tensor(data[key]).double().mean()
-                self.log(
-                    f"{split}/{key}",
-                    aggregated_data[key],
-                    prog_bar=False,
-                    sync_dist=False,
-                    rank_zero_only=True,
-                    logger=True,
-                    add_dataloader_idx=False,
-                )
-            elif key.startswith("total_nll_"):
-                evaluator_name = re.sub(r"total_nll_", "", key)
-                total_length = (
-                    torch.tensor(data[f"length_{evaluator_name}"])
-                    .double()
-                    .sum()
-                )
-                total_nll = torch.tensor(data[key]).double().sum()
-                perplexity = torch.exp(total_nll / total_length).item()
-                aggregated_data[f"total_perplexity_{evaluator_name}"] = (
-                    perplexity
-                )
-                self.log(
-                    f"{split}/total_perplexity_{evaluator_name}",
-                    perplexity,
-                    prog_bar=False,
-                    sync_dist=False,
-                    rank_zero_only=True,
-                    logger=True,
-                    add_dataloader_idx=False,
-                )
-            elif key.startswith("raw_total_nll_"):
-                evaluator_name = re.sub(r"raw_total_nll_", "", key)
-                total_length = (
-                    torch.tensor(data[f"raw_length_{evaluator_name}"])
-                    .double()
-                    .sum()
-                )
-                total_nll = torch.tensor(data[key]).double().sum()
-                perplexity = torch.exp(total_nll / total_length).item()
-                aggregated_data[f"raw_total_perplexity_{evaluator_name}"] = (
-                    perplexity
-                )
-                self.log(
-                    f"{split}/raw_total_perplexity_{evaluator_name}",
-                    perplexity,
-                    prog_bar=False,
-                    sync_dist=False,
-                    rank_zero_only=True,
-                    logger=True,
-                    add_dataloader_idx=False,
-                )
-            elif key.startswith("truth_total_nll_"):
-                evaluator_name = re.sub(r"truth_total_nll_", "", key)
-                total_length = (
-                    torch.tensor(data[f"truth_length_{evaluator_name}"])
-                    .double()
-                    .sum()
-                )
-                total_nll = torch.tensor(data[key]).double().sum()
-                perplexity = torch.exp(total_nll / total_length).item()
-                aggregated_data[f"truth_total_perplexity_{evaluator_name}"] = (
-                    perplexity
-                )
-                self.log(
-                    f"{split}/truth_total_perplexity_{evaluator_name}",
-                    perplexity,
-                    prog_bar=False,
-                    sync_dist=False,
-                    rank_zero_only=True,
-                    logger=True,
-                    add_dataloader_idx=False,
-                )
-
-        if update_logged_predictions:
-            self.log_predictions.update_predictions(
-                predictions,
-                step,
-                epoch,
-                split,
-                dataloader_name,
-                self,
-            )
-        return aggregated_data
-
     def compute_post_hoc_metrics(
         self,
         split: Literal["train", "val", "test", "predict"],
@@ -1381,11 +911,10 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
     ) -> Optional[Dict[str, Any]]:
         """Compute post-hoc metrics on logged predictions.
 
-        Similar to compute_generative_perplexity, but for arbitrary post-hoc metrics.
         Loads predictions from jsonl, computes per-sample and global metrics,
-        and logs aggregated results.  Results (per-sample + aggregated) are
+        and logs aggregated results. Results (per-sample + aggregated) are
         written to a separate JSON file; the original predictions JSONL is
-        never modified.
+        not modified by this method.
 
         Args:
             split: train/val/test/predict
@@ -1419,6 +948,8 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
 
         # 3. Log aggregated metrics
         for metric_name, metric_value in aggregated_metrics.items():
+            if isinstance(metric_value, torch.Tensor):
+                metric_value = float(metric_value.detach().cpu().item())
             self.log(
                 f"{split}/{metric_name}",
                 metric_value,
@@ -1486,6 +1017,19 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
         self.trainer.datamodule.print_batch(batch, "val", dataloader_idx)
         self.printed_batches.add(f"val/{dataloader_idx}")
 
+    def predictions_jsonl_path(
+        self,
+        split: Literal["train", "val", "test", "predict"],
+        dataloader_name: str,
+        epoch: int,
+        step: int,
+    ) -> Path:
+        """Path to the JSONL file written by ``FilePredictionWriter`` for this step."""
+        return (
+            self.predictions_dir
+            / f"{split}/{dataloader_name}/{epoch=}_{step=}.jsonl"
+        )
+
     def _call_log_predictions(
         self,
         batch: Dict[str, Any],
@@ -1495,15 +1039,25 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
         no_trainer_mode: bool = False,
     ) -> None:
         """Helper method to call log_predictions, supporting both single loggers and lists of loggers."""
-        if self.log_predictions is not None:
-            self.log_predictions(
-                self,
-                self.trainer if not no_trainer_mode else None,
-                batch,
-                outputs,
-                split,
-                dataloader_name,
+        if self.log_predictions is None:
+            return
+        if not self.force_predict:
+            trainer = self.trainer if not no_trainer_mode else None
+            step = trainer.global_step if trainer is not None else 0
+            epoch = trainer.current_epoch if trainer is not None else 0
+            path = self.predictions_jsonl_path(
+                split, dataloader_name, epoch, step
             )
+            if path.is_file() and path.stat().st_size > 0:
+                return
+        self.log_predictions(
+            self,
+            self.trainer if not no_trainer_mode else None,
+            batch,
+            outputs,
+            split,
+            dataloader_name,
+        )
 
     def on_validation_batch_end(
         self,
@@ -1573,13 +1127,6 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
         if self.trainer.is_global_zero:
             for dataloader_name in self.dataloader_names["val"].values():
                 if "prediction" in dataloader_name:
-                    self.compute_generative_perplexity(
-                        "val",
-                        dataloader_name,
-                        self.trainer.current_epoch,
-                        self.trainer.global_step,
-                        update_logged_predictions=True,
-                    )
                     self.compute_post_hoc_metrics(
                         "val",
                         dataloader_name,
@@ -1594,13 +1141,6 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
         if self.trainer.is_global_zero:
             for dataloader_name in self.dataloader_names["test"].values():
                 if "prediction" in dataloader_name:
-                    self.compute_generative_perplexity(
-                        "test",
-                        dataloader_name,
-                        self.trainer.current_epoch,
-                        self.trainer.global_step,
-                        update_logged_predictions=True,
-                    )
                     self.compute_post_hoc_metrics(
                         "test",
                         dataloader_name,
@@ -1609,13 +1149,8 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
                     )
 
     def on_predict_end(self) -> None:
-        self.compute_generative_perplexity(
-            "predict",
-            "unconditional_prediction",
-            self.trainer.current_epoch,
-            self.trainer.global_step,
-            update_logged_predictions=True,
-        )
+        if not self.trainer.is_global_zero:
+            return
         self.compute_post_hoc_metrics(
             "predict",
             "unconditional_prediction",
@@ -1624,6 +1159,7 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
         )
 
     def on_load_checkpoint(self, checkpoint: dict) -> None:
+        self._on_load_checkpoint_to_remove(checkpoint)
         if self.manual_ema_restore:
             if "ema" not in checkpoint:
                 raise ValueError(
@@ -1650,22 +1186,39 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
     # region: other utilities
 
     def _on_load_checkpoint_to_remove(self, checkpoint: dict) -> None:
-        # CLEANUP: This method is to load old models that serialize rotary embedding buffers
-        # Get the state_dict from the checkpoint (the key might be "state_dict")
-        state_dict = checkpoint.get(
-            "state_dict", checkpoint
-        )  # entier lightning module's state_dict
-        # Identify the keys corresponding to the rotary buffers. They will be in .model as well as .predictor.model
-        ranked_logger.info(
-            "Removing rotary embedding buffers from the state_dict."
-        )
-        keys_to_remove = [
+        """Normalize Lightning checkpoints before weights load.
+
+        - Older runs registered ``predictor.model`` as an nn.Module child; checkpoints
+          then contained duplicate ``predictor.model.*`` keys. We attach the shared
+          backbone via ``object.__setattr__`` now, so those keys must be dropped.
+        - Older checkpoints may persist rotary sin/cos buffers that we strip here.
+        """
+        state_dict = checkpoint.get("state_dict", checkpoint)
+
+        predictor_dup_keys = [
+            key for key in state_dict if key.startswith("predictor.model.")
+        ]
+        for key in predictor_dup_keys:
+            state_dict.pop(key)
+        if predictor_dup_keys:
+            ranked_logger.info(
+                "Removing %s duplicate predictor.model.* keys from checkpoint "
+                "(backward compatibility).",
+                len(predictor_dup_keys),
+            )
+
+        rotary_keys = [
             key
             for key in state_dict
             if "rotary_emb.sin" in key or "rotary_emb.cos" in key
         ]
-        for key in keys_to_remove:
+        for key in rotary_keys:
             state_dict.pop(key)
+        if rotary_keys:
+            ranked_logger.info(
+                "Removing %s rotary embedding sin/cos buffer keys from checkpoint.",
+                len(rotary_keys),
+            )
 
     def top_level_named_modules(
         self,

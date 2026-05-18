@@ -18,6 +18,7 @@ from xlm.utils.hf_hub import (
     download_model_weights,
     load_model_weights_into_model,
     repo_id_from_hf_path,
+    resolve_hf_hub_token,
 )
 from xlm.utils.rank_zero import RankedLogger
 
@@ -397,7 +398,7 @@ def _get_model_only_checkpoint_path(
         return download_model_weights(
             repo_id=repo_id,
             revision=revision,
-            token=os.getenv("HF_HUB_KEY"),
+            token=resolve_hf_hub_token(),
         )
 
     # Handle local model_only_checkpoint_path

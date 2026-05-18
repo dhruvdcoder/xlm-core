@@ -83,6 +83,8 @@ def load_model_for_inference(
 | `checkpoint_fallback_dir` | `Optional[str]` | `None` | Directory to search for best.ckpt/last.ckpt if no explicit checkpoint |
 | `allow_random_init` | `bool` | `False` | Allow instantiating randomly initialized model (safety feature) |
 
+`cfg` may also include top-level keys **`init_dtype`** and **`skip_init_weights`** (see [Large models](#large-models-hf-hub-dtypes-skip-init) below). They are not parameters of this function.
+
 ### Returns
 
 Returns a tuple of `(lightning_module, checkpoint_path)`:
@@ -330,6 +332,16 @@ Different commands have different device requirements:
 - **Manual inference (generate, demo)**: Set `move_to_device="cuda"` for GPU inference
 - **Push to hub**: Set `move_to_device="cuda"` to load weights on GPU before extracting
 
+### Large models (HF Hub, dtypes, skip init)
+
+**Hugging Face Hub layouts:** When `hub.repo_id` is used (and `enable_hub_support=True`), weights are resolved in `utils/hf_hub.py`. `download_model_weights` tries, in order: single `model.safetensors`, **sharded** safetensors (`model.safetensors.index.json` and shard files), then `pytorch_model.bin`. For sharded safetensors, `load_model_weights_into_model` can load **one shard at a time** to limit peak host RAM (approximately model size plus one shard) instead of merging all shards into one state dict first.
+
+**`init_dtype` (optional, top-level config):** `float32`, `float16`, or `bfloat16`. While the Lightning module is constructed, `torch.set_default_dtype` is set so the module is built in that dtype. The same context applies when loading a **full** checkpoint via `load_from_checkpoint`. If omitted, PyTorch’s default dtype is used (typically `float32`).
+
+**`skip_init_weights` (optional, top-level config):** When **true** and weights come from a **model-only** source (local file set in `model_only_checkpoint_path` or Hub download—not a full Lightning `.ckpt`), instantiation uses `transformers.modeling_utils.no_init_weights()` so parameters are not randomly initialized before `load_model_weights_into_model` runs. When a **full Lightning checkpoint** is loaded, that path uses `load_from_checkpoint` instead; `skip_init_weights` does not apply there.
+
+For **`skip_init_weights` during training**, see `commands/lightning_train.py` (activation when a training ckpt or model-only load will follow).
+
 ### Fallback Logic
 
 Evaluation command uses `checkpoint_fallback_dir` to automatically find checkpoints:
@@ -349,6 +361,7 @@ This makes evaluation convenient - you don't need to specify the exact checkpoin
 4. **Check logs** for conflict warnings about multiple checkpoint sources
 5. **Verify EMA settings** match your checkpoint type (manual vs. callback-based)
 6. **Keep `allow_random_init=False`** unless you have a specific reason to change it
+7. **Large Hub / model-only loads:** Set `init_dtype` and `skip_init_weights` when loading big checkpoints (see [Large models](#large-models-hf-hub-dtypes-skip-init))
 
 ## Troubleshooting
 

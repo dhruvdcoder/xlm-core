@@ -52,7 +52,7 @@ env:
 # Evaluation configuration
 eval:
   experiment: ???
-  generative_perplexity: ???
+  post_hoc_evaluator: ???
   debug: null
   batch_size: 64 # both global and per device batch size, assuming single device
   compile: false

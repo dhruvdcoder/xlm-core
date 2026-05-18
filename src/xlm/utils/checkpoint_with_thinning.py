@@ -2,10 +2,27 @@ import os
 import re
 from datetime import timedelta
 from typing import Any, Dict, Literal, Optional, Union
+import torch
 from typing_extensions import override
 from lightning.pytorch.callbacks import ModelCheckpoint
 from pathlib import Path
-from .rank_zero import rank_zero_warn
+from .rank_zero import rank_zero_warn, get_rank_zero_logger
+
+logger = get_rank_zero_logger(__name__)
+
+
+def empty_cache_and_log_memory(trainer: "pl.Trainer"):
+    alloc = torch.cuda.memory_allocated() / 1e9
+    reserved = torch.cuda.memory_reserved() / 1e9
+    logger.info(
+        f"[rank {trainer.global_rank}] before empty_cache: allocated={alloc:.2f} GB, reserved={reserved:.2f} GB"
+    )
+    torch.cuda.empty_cache()
+    alloc = torch.cuda.memory_allocated() / 1e9
+    reserved = torch.cuda.memory_reserved() / 1e9
+    logger.info(
+        f"[rank {trainer.global_rank}] after empty_cache: allocated={alloc:.2f} GB, reserved={reserved:.2f} GB"
+    )
 
 
 class ThinningCheckpoint(ModelCheckpoint):
@@ -119,6 +136,11 @@ class ThinningCheckpoint(ModelCheckpoint):
     @override
     def _save_checkpoint(self, trainer: "pl.Trainer", filepath: str) -> None:
         """Save checkpoint and cleanup old ones."""
+        # check if strategy is fsdp
+        if "fsdp" in trainer.strategy.__class__.__name__.lower():
+            # log mem before and after empty cache
+            empty_cache_and_log_memory(trainer)
+
         super()._save_checkpoint(trainer, filepath)
         self._cleanup_old_checkpoints(trainer)
 

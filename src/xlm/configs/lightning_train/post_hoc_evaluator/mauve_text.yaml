@@ -1,0 +1,22 @@
+# MAUVE between human/reference text (p) and model generations (q).
+# Requires: pip install "xlm-core[mauve]" (or pip install mauve-text)
+# For OWT unconditional runs with empty ``truth``, set ``human_text_source: hf_streaming``
+# (see flexmdm_correction/configs/experiment/owt_flexmdm_correction_deletion_mauve.yaml).
+_target_: xlm.tasks.owt.mauve_text_eval.MauveTextEval
+reference_field: null
+generated_field: text
+human_text_source: null
+hf_dataset_path: dhruveshpatel/owt-gpt2-1024-split
+hf_split: validation
+hf_text_column: text
+hf_shuffle_seed: 42
+hf_shuffle_buffer_size: 10000
+hf_min_chars: 8
+featurize_model_name: gpt2-large
+device_id: 0
+max_text_length: 256
+batch_size: 8
+verbose: false
+num_buckets: "auto"
+seed: 25
+swap_p_q: false

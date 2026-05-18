@@ -6,13 +6,16 @@ The `push_to_hub` command uploads a trained XLM model to the [Hugging Face Hub](
 
 1. **Hugging Face account** — Create one at [huggingface.co](https://huggingface.co/join).
 
-2. **Authentication** — Set your Hugging Face token:
-   - Create a token at [Settings → Access Tokens](https://huggingface.co/settings/tokens) (with write access).
-   - Set the `HF_HUB_KEY` environment variable:
+2. **Authentication** — Set your Hugging Face token (write access). The CLI resolves them in this order: `HF_HUB_KEY`, then `HF_TOKEN`, then `HUGGINGFACE_HUB_TOKEN`.
+
+   - Create a token at [Settings → Access Tokens](https://huggingface.co/settings/tokens).
+   - Example:
      ```bash
      export HF_HUB_KEY="hf_..."
      ```
-   - Or place it in `.secrets.env` (loaded automatically by the command).
+     or `export HF_TOKEN=...` (same as `huggingface-cli login`).
+   - Or place `HF_HUB_KEY` / `HF_TOKEN` in `.secrets.env` (loaded automatically by the command).
+   - **Slurm / batch jobs:** export one of these variables in the job script; compute nodes often do not have `~/.cache/huggingface/token`, so pushes fail with **404** if no token is set.
 
 ## Usage
 
@@ -60,7 +63,7 @@ xlm job_type=push_to_hub job_name=my_model_hub experiment=my_experiment \
 
 ### Pushing to a specific branch
 
-Push to a named branch (e.g., to track checkpoint steps). The branch is created automatically if it does not exist:
+Push to a named branch (e.g., to track checkpoint steps). The **model repository** is created if it does not exist, then the branch is created from `main` if missing, then files are uploaded.
 
 ```bash
 xlm job_type=push_to_hub job_name=my_model_hub experiment=my_experiment \
@@ -77,7 +80,7 @@ xlm job_type=push_to_hub job_name=my_model_hub experiment=my_experiment \
 | `model_only_checkpoint_path` | One of these | Path to a model-only state dict. Loaded as-is; ensure EMA was applied when saved if needed.             |
 | `hub.repo_id`                | Yes          | Hugging Face repository ID (e.g., `username/model-name`).                                               |
 | `hub.commit_message`         | No           | Custom commit message. Defaults to a message that includes checkpoint paths.                            |
-| `hub.branch`                 | No           | Git branch to push to. Defaults to `main`. If the branch does not exist, it is created automatically.   |
+| `hub.branch`                 | No           | Git branch to push to. Defaults to `main`. If unset or `main`, only the repo is ensured to exist. If set to another name, that branch is created from `main` when missing.   |
 
 
 # Running eval or generate from a checkpoint on the hub

@@ -1,0 +1,10 @@
+# Generative perplexity with a causal LM judge (post-hoc over logged ``text`` rows).
+_target_: xlm.tasks.owt.generative_perplexity_post_hoc.GenerativePerplexityPostHocEval
+default_judge_device: cuda
+judge_devices: null
+metric_prefix: ""
+evaluators:
+  gpt2-large:
+    _target_: xlm.generative_perplexity.AutoModelForCausalLMGenerativePerplexityEvaluator
+    name: gpt2-large
+    batch_size: 64

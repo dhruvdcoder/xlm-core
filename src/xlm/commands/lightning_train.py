@@ -22,6 +22,10 @@ from xlm.utils.model_loading import (
     load_model_weights_into_model,
     _get_model_only_checkpoint_path,
 )
+from xlm.utils.checkpoint_paths import (
+    find_auto_resume_checkpoint,
+    resolve_explicit_resume_checkpoint_path,
+)
 from xlm.utils.rank_zero import RankedLogger
 
 logger = RankedLogger(__name__, rank_zero_only=True)
@@ -96,25 +100,15 @@ def train(cfg: DictConfig):
                     loggers.append(hydra.utils.instantiate(lg_conf))
 
     # Resume from checkpoint and automatic checkpoint pickup
-    ckpt_path = None
+    ckpt_path: str | None = None
     if cfg.resume_from_checkpoint:
-        # determine the checkpoint path
         if cfg.resume_checkpoint_path is not None:
-            if os.path.isfile(cfg.resume_checkpoint_path):
-                ckpt_path = cfg.resume_checkpoint_path
-            else:
-                raise ValueError(
-                    f"The checkpoint path {cfg.resume_checkpoint_path} is not a file."
-                )
-        else:
-            # look for the "last.ckpt" or "on_exception.ckpt" checkpoint in the checkpointing_dir
-            ckpt_path = os.path.join(
-                cfg.checkpointing_dir, "on_exception.ckpt"
+            ckpt_path = str(
+                resolve_explicit_resume_checkpoint_path(cfg.resume_checkpoint_path)
             )
-            if not os.path.isfile(ckpt_path):
-                ckpt_path = os.path.join(cfg.checkpointing_dir, "last.ckpt")
-            if not os.path.isfile(ckpt_path):
-                ckpt_path = None
+        else:
+            auto_ckpt = find_auto_resume_checkpoint(cfg.checkpointing_dir)
+            ckpt_path = str(auto_ckpt) if auto_ckpt is not None else None
     if ckpt_path is not None:
         has_model_only = cfg.get("model_only_checkpoint_path", None) is not None
         has_hub = OmegaConf.select(cfg, "hub.repo_id", default=None) is not None

@@ -38,10 +38,6 @@ lr_scheduler:
   num_training_steps: ${trainer.max_steps}
   fraction_warmup_steps: null 
 
-generative_perplexity:
-  evaluators: null
-  num_samples: 1
-
 tags:
   debug: true
 
