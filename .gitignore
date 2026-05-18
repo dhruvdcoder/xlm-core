@@ -56,3 +56,4 @@ evals/protein_eval/*/metrics.jsonl
 evals/protein_eval/logs/
 .pytest_cache/
 docs/**/linkedin
+.cursor
