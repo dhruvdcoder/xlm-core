@@ -55,11 +55,11 @@ Some task metrics need the **full set of generations** for a split (for example 
 
 ### When it runs
 
-On **rank 0**, at the end of **validation** or **test**, the `Harness` loops over each dataloader whose name contains the substring **`prediction`**. For each such name it calls [`compute_post_hoc_metrics`](../../src/xlm/harness.py) if `cfg.post_hoc_evaluator` is set. The **`predict`** stage does the same for the `unconditional_prediction` dataloader (see `on_predict_end` in the same file).
+On **rank 0**, at the end of **validation** or **test**, the `Harness` loops over each dataloader whose name contains the substring **`prediction`**. For each such name it calls {{ gh('src/xlm/harness.py', 'compute_post_hoc_metrics') }} if `cfg.post_hoc_evaluator` is set. The **`predict`** stage does the same for the `unconditional_prediction` dataloader (see `on_predict_end` in the same file).
 
 If `cfg.post_hoc_evaluator` is **`null`**, the call returns immediately (no file read, no `eval()`).
 
-**Generative perplexity** (judge causal LMs over logged `text`) is implemented as post-hoc only: use [`GenerativePerplexityPostHocEval`](../../src/xlm/tasks/owt/generative_perplexity_post_hoc.py) via packaged YAML under **`post_hoc_evaluator/`** (e.g. `gen_ppl_gpt2_large`). The legacy top-level `generative_perplexity` config key was **removed**; using it raises a clear `ValueError` at init.
+**Generative perplexity** (judge causal LMs over logged `text`) is implemented as post-hoc only: use {{ gh('src/xlm/tasks/owt/generative_perplexity_post_hoc.py', 'GenerativePerplexityPostHocEval') }} via packaged YAML under **`post_hoc_evaluator/`** (e.g. `gen_ppl_gpt2_large`). The legacy top-level `generative_perplexity` config key was **removed**; using it raises a clear `ValueError` at init.
 
 **`force_predict`** (on `lightning_module`, default `true`): when set to `false`, if the prediction JSONL for the current `(split, dataloader_name, epoch, step)` already exists and is non-empty, the harness skips **writing** new rows for that step (no extra forward logging) but still runs post-hoc by reading that file. Use paths consistent with `FilePredictionWriter` naming.
 
@@ -69,7 +69,7 @@ Lightning `log_text` prediction tables receive rows at **batch time** (from `pre
 
 ### Predictions on disk (`LogPredictions`)
 
-During the run, [`LogPredictions`](../../src/xlm/log_predictions.py) (via a **`FilePredictionWriter`**) appends one JSON object per line under:
+During the run, {{ gh('src/xlm/log_predictions.py', 'LogPredictions') }} (via a **`FilePredictionWriter`**) appends one JSON object per line under:
 
 `{run_dir}/predictions/{split}/{dataloader_name}/{epoch=…}_{step=…}.jsonl`
 
@@ -79,7 +79,7 @@ Your evaluator should read the keys your **collator + predictor** actually write
 
 ### Single evaluator or composite chain
 
-Hydra instantiates **one** object from the top-level `post_hoc_evaluator` config ([`setup_post_hoc_evaluator`](../../src/xlm/harness.py)). Use [`CompositePostHocEvaluator`](../../src/xlm/tasks/composite_eval/__init__.py) when you need **several** post-hoc passes on the same dataloader (e.g. MAUVE then generative perplexity). For each matching dataloader-name pattern, the value may be a **single** evaluator, an **ordered dict** of named sub-evaluators (run order = YAML / dict key order), or an **ordered list**; chain entries run sequentially, threading `predictions` through each `eval()` and merging `aggregated_metrics` (duplicate metric keys: **last wins**, with a warning).
+Hydra instantiates **one** object from the top-level `post_hoc_evaluator` config ({{ gh('src/xlm/harness.py', 'setup_post_hoc_evaluator') }}). Use {{ gh('src/xlm/tasks/composite_eval/__init__.py', 'CompositePostHocEvaluator') }} when you need **several** post-hoc passes on the same dataloader (e.g. MAUVE then generative perplexity). For each matching dataloader-name pattern, the value may be a **single** evaluator, an **ordered dict** of named sub-evaluators (run order = YAML / dict key order), or an **ordered list**; chain entries run sequentially, threading `predictions` through each `eval()` and merging `aggregated_metrics` (duplicate metric keys: **last wins**, with a warning).
 
 ### `eval()` contract
 
@@ -97,7 +97,7 @@ The original **`.jsonl` is not modified** by post-hoc (unlike older generative-p
 
 ### Hydra configuration
 
-Packaged snippets live under [`src/xlm/configs/lightning_train/post_hoc_evaluator/`](../../src/xlm/configs/lightning_train/post_hoc_evaluator/). Base training config loads **`post_hoc_evaluator/default.yaml`**: an empty [`CompositePostHocEvaluator`](../../src/xlm/tasks/composite_eval/__init__.py). Each other file in that folder defines **one** evaluator object; compose it under a dataloader-name **pattern** (substring match) and a short **alias** using a structured defaults entry (or equivalent YAML / CLI overrides).
+Packaged snippets live under {{ gh_dir('src/xlm/configs/lightning_train/post_hoc_evaluator', 'src/xlm/configs/lightning_train/post_hoc_evaluator/') }}. Base training config loads **`post_hoc_evaluator/default.yaml`**: an empty {{ gh('src/xlm/tasks/composite_eval/__init__.py', 'CompositePostHocEvaluator') }}. Each other file in that folder defines **one** evaluator object; compose it under a dataloader-name **pattern** (substring match) and a short **alias** using a structured defaults entry (or equivalent YAML / CLI overrides).
 
 | Config (file)                                                     | Role                                                             |
 |-------------------------------------------------------------------|------------------------------------------------------------------|
@@ -166,7 +166,7 @@ post_hoc_evaluator:
 
 The same chain can be written as a **list** instead of a dict; dict keys are only for composition and documentation (they are not prepended to logged metric names).
 
-**MAUVE** needs the optional dependency: `pip install "xlm-core[mauve]"` (see [`mauve_text_eval.py`](../../src/xlm/tasks/owt/mauve_text_eval.py)). For unconditional text runs with no per-row reference, override `human_text_source: hf_streaming` under `post_hoc_evaluator.evaluators.prediction.mauve` (or your chosen alias).
+**MAUVE** needs the optional dependency: `pip install "xlm-core[mauve]"` (see {{ gh('src/xlm/tasks/owt/mauve_text_eval.py', 'mauve_text_eval.py') }}). For unconditional text runs with no per-row reference, override `human_text_source: hf_streaming` under `post_hoc_evaluator.evaluators.prediction.mauve` (or your chosen alias).
 
 Example combining **reported metrics** on a prediction dataloader with **MAUVE** post-hoc:
 

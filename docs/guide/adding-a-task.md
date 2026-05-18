@@ -16,18 +16,18 @@ Cursor users may also invoke the **`xlm-create-task`** Agent Skill (`~/.cursor/s
 
 | Pattern | Use when | Typical config |
 |---------|----------|----------------|
-| **Standard LM / map dataset** | Hub dataset; preprocess once and cache via `DatasetManager` | `datasets/default_text.yaml` defaults → [`DatasetManager`](../../src/xlm/datamodule.py) |
+| **Standard LM / map dataset** | Hub dataset; preprocess once and cache via `DatasetManager` | `datasets/default_text.yaml` defaults → {{ gh('src/xlm/datamodule.py', 'DatasetManager') }} |
 | **Streaming / sequence packing** | Huge corpus; packed blocks without per-example padding | `iterable_dataset_shards`, `on_the_fly_group_processor: xlm.datamodule.pack_sequences` (see [Data Pipeline](data-pipeline.md)) |
-| **Eval-only / benchmarks** | Smaller splits; avoid manual `save_to_disk` cache semantics | `datasets/default_eval.yaml` → [`EvalDatasetManager`](../../src/xlm/datamodule.py) |
-| **Heavy optional dependencies** | Chemistry stacks, etc. | Lazy facade package that imports implementation on demand ([`safe_molgen/__init__.py`](../../src/xlm/tasks/safe_molgen/__init__.py)); document `pip install "xlm-core[...]"` |
+| **Eval-only / benchmarks** | Smaller splits; avoid manual `save_to_disk` cache semantics | `datasets/default_eval.yaml` → {{ gh('src/xlm/datamodule.py', 'EvalDatasetManager') }} |
+| **Heavy optional dependencies** | Chemistry stacks, etc. | Lazy facade package that imports implementation on demand ({{ gh('src/xlm/tasks/safe_molgen/__init__.py', 'safe_molgen/__init__.py') }}); document `pip install "xlm-core[...]"` |
 
 ---
 
 ## 2. Implement task code (`src/xlm/tasks/<your_task>/__init__.py`)
 
-Put each task in its **own directory** under [`tasks/`](../../src/xlm/tasks/) with an `__init__.py` that defines preprocess functions, filters, evaluators, etc.
+Put each task in its **own directory** under {{ gh_dir('src/xlm/tasks', 'tasks/') }} with an `__init__.py` that defines preprocess functions, filters, evaluators, etc.
 
-Hydra resolves callables by **dotted path** (for example `xlm.tasks.owt.preprocess_fn`). You do **not** need to list every symbol in the parent [`tasks/__init__.py`](../../src/xlm/tasks/__init__.py)—that file is only a **package marker**, not a barrel re-export of all tasks.
+Hydra resolves callables by **dotted path** (for example `xlm.tasks.owt.preprocess_fn`). You do **not** need to list every symbol in the parent {{ gh('src/xlm/tasks/__init__.py', 'tasks/__init__.py') }}—that file is only a **package marker**, not a barrel re-export of all tasks.
 
 ### Preprocess function
 
@@ -41,23 +41,23 @@ Return only the columns your downstream collator and model need (drop raw text v
 
 **Minimal LM-style preprocessing** — encode raw text to token IDs; combine with `on_the_fly_processor: xlm.datamodule.token_ids_to_input_ids`:
 
-- Code: [`owt/__init__.py`](../../src/xlm/tasks/owt/__init__.py)
-- Dataset YAML: [`datasets/owt_train.yaml`](../../src/xlm/configs/lightning_train/datasets/owt_train.yaml)
+- Code: {{ gh('src/xlm/tasks/owt/__init__.py', 'owt/__init__.py') }}
+- Dataset YAML: {{ gh('src/xlm/configs/lightning_train/datasets/owt_train.yaml', 'datasets/owt_train.yaml') }}
 
 **Structured fields + different processors per split** — build task-specific columns (for example `input_token_ids`, `prompt_token_ids`), then choose `on_the_fly_processor` per dataset YAML:
 
-- Code: [`sudoku_extreme/__init__.py`](../../src/xlm/tasks/sudoku_extreme/__init__.py)
-- Train: [`datasets/sudoku_extreme_train.yaml`](../../src/xlm/configs/lightning_train/datasets/sudoku_extreme_train.yaml)
-- Prediction split overrides processor via defaults chain: [`datasets/sudoku_extreme_val_pred.yaml`](../../src/xlm/configs/lightning_train/datasets/sudoku_extreme_val_pred.yaml)
+- Code: {{ gh('src/xlm/tasks/sudoku_extreme/__init__.py', 'sudoku_extreme/__init__.py') }}
+- Train: {{ gh('src/xlm/configs/lightning_train/datasets/sudoku_extreme_train.yaml', 'datasets/sudoku_extreme_train.yaml') }}
+- Prediction split overrides processor via defaults chain: {{ gh('src/xlm/configs/lightning_train/datasets/sudoku_extreme_val_pred.yaml', 'datasets/sudoku_extreme_val_pred.yaml') }}
 
-**Optional row filters** — set `filter_fn` to a dotted path and **`filter_suffix`** (required when `filter_fn` is set). Example filter implementations live beside preprocessing in [`sudoku_extreme/__init__.py`](../../src/xlm/tasks/sudoku_extreme/__init__.py).
+**Optional row filters** — set `filter_fn` to a dotted path and **`filter_suffix`** (required when `filter_fn` is set). Example filter implementations live beside preprocessing in {{ gh('src/xlm/tasks/sudoku_extreme/__init__.py', 'sudoku_extreme/__init__.py') }}.
 
 **Benchmark-style eval + post-hoc scoring** — preprocessing builds prompt/target columns and carries gold answers through the batch for logging; a **`post_hoc_evaluator`** class scores saved predictions:
 
-- Code: [`math500/__init__.py`](../../src/xlm/tasks/math500/__init__.py) (`math500_preprocess_fn`, `Math500Eval`)
-- Eval dataset: [`datasets/math500_test.yaml`](../../src/xlm/configs/lightning_train/datasets/math500_test.yaml)
+- Code: {{ gh('src/xlm/tasks/math500/__init__.py', 'math500/__init__.py') }} (`math500_preprocess_fn`, `Math500Eval`)
+- Eval dataset: {{ gh('src/xlm/configs/lightning_train/datasets/math500_test.yaml', 'datasets/math500_test.yaml') }}
 
-**Large optional imports** — keep the default import surface light and defer heavy imports (see [`safe_molgen/__init__.py`](../../src/xlm/tasks/safe_molgen/__init__.py) delegating to [`_safe_molgen_impl.py`](../../src/xlm/tasks/safe_molgen/_safe_molgen_impl.py)).
+**Large optional imports** — keep the default import surface light and defer heavy imports (see {{ gh('src/xlm/tasks/safe_molgen/__init__.py', 'safe_molgen/__init__.py') }} delegating to {{ gh('src/xlm/tasks/safe_molgen/_safe_molgen_impl.py', '_safe_molgen_impl.py') }}).
 
 For larger tasks you may instead split logic into additional modules inside `tasks/<your_task>/` and re-export public symbols from `__init__.py`; Hydra paths stay `xlm.tasks.<your_task>.<symbol>`.
 
@@ -67,28 +67,28 @@ For larger tasks you may instead split logic into additional modules inside `tas
 
 Create a new file or compose existing ones with Hydra `defaults:`.
 
-1. **Training / general `DatasetManager`** — start from [`default_text.yaml`](../../src/xlm/configs/lightning_train/datasets/default_text.yaml):
+1. **Training / general `DatasetManager`** — start from {{ gh('src/xlm/configs/lightning_train/datasets/default_text.yaml', 'default_text.yaml') }}:
 
    - `full_name`: Hub path in the form `namespace/dataset_name/split` (last segment is the split passed to `load_dataset`).
    - `full_name_debug`: optional smaller split used when `DEBUG_OVERFIT` is enabled.
    - `preprocess_function`, `preprocess_function_kwargs`.
-   - `on_the_fly_processor` / `on_the_fly_group_processor` (mutually exclusive with group processors per [`DatasetManager`](../../src/xlm/datamodule.py)).
+   - `on_the_fly_processor` / `on_the_fly_group_processor` (mutually exclusive with group processors per {{ gh('src/xlm/datamodule.py', 'DatasetManager') }}).
    - `columns_to_remove` or `columns_to_keep`.
    - `stages`: which Lightning stages use this manager (`fit`, `validate`, `test`, `predict`).
    - `collator: ???` — resolved by experiment/model package via `/collator@...` overrides.
 
-2. **Eval-only `EvalDatasetManager`** — start from [`default_eval.yaml`](../../src/xlm/configs/lightning_train/datasets/default_eval.yaml):
+2. **Eval-only `EvalDatasetManager`** — start from {{ gh('src/xlm/configs/lightning_train/datasets/default_eval.yaml', 'default_eval.yaml') }}:
 
    - No manual disk cache path; HF map cache optional via `load_from_cache_file`.
    - Typical `stages: [validate, test]`.
 
-Reuse patterns from [`math500_test.yaml`](../../src/xlm/configs/lightning_train/datasets/math500_test.yaml) for `columns_to_keep` and preprocess kwargs.
+Reuse patterns from {{ gh('src/xlm/configs/lightning_train/datasets/math500_test.yaml', 'math500_test.yaml') }} for `columns_to_keep` and preprocess kwargs.
 
 ---
 
 ## 4. Compose a datamodule config
 
-Datamodule skeleton: [`datamodule/default.yaml`](../../src/xlm/configs/lightning_train/datamodule/default.yaml).
+Datamodule skeleton: {{ gh('src/xlm/configs/lightning_train/datamodule/default.yaml', 'datamodule/default.yaml') }}.
 
 Wire each `(split, dataloader_name)` to your dataset group using Hydra defaults, for example:
 
@@ -99,11 +99,11 @@ defaults:
   - /datasets@datamodule.dataset_managers.val.lm: owt_val
 ```
 
-Full example: [`datamodule/owt.yaml`](../../src/xlm/configs/lightning_train/datamodule/owt.yaml).
+Full example: {{ gh('src/xlm/configs/lightning_train/datamodule/owt.yaml', 'datamodule/owt.yaml') }}.
 
 If you introduce a **new** logical evaluation stream (for example `math500_prediction`), pick a **new dataloader name** and use it consistently across val/test **and** metrics:
 
-- Example: [`xlm-models/dream/configs/datamodule/math500_dream.yaml`](../../xlm-models/dream/configs/datamodule/math500_dream.yaml)
+- Example: {{ gh('xlm-models/dream/configs/datamodule/math500_dream.yaml', 'xlm-models/dream/configs/datamodule/math500_dream.yaml') }}
 
 Set `tags.dataset` in the experiment/datamodule root when you want W&B or logging tags (same file).
 
@@ -143,13 +143,13 @@ post_hoc_evaluator:
 
 For the JSONL path, `eval()` contract, packaged `post_hoc_evaluator` snippets (`denovo`, `syntactic`, `mauve_text`), and MAUVE extras, see [Post-hoc evaluation](eval.md#post-hoc-evaluation) in the eval guide.
 
-Experiment reference: [`xlm-models/dream/configs/experiment/math500_dream_eval.yaml`](../../xlm-models/dream/configs/experiment/math500_dream_eval.yaml).
+Experiment reference: {{ gh('xlm-models/dream/configs/experiment/math500_dream_eval.yaml', 'xlm-models/dream/configs/experiment/math500_dream_eval.yaml') }}.
 
 ---
 
 ## 7. Dependencies and extras
 
-If your task needs packages beyond core xlm-core, document them in the task module docstring and add or reference an optional extra in project requirements (for example `"xlm-core[safe]"`, files under [`requirements/`](../../requirements/)).
+If your task needs packages beyond core xlm-core, document them in the task module docstring and add or reference an optional extra in project requirements (for example `"xlm-core[safe]"`, files under {{ gh_dir('requirements', 'requirements/') }}).
 
 ---
 
@@ -157,7 +157,7 @@ If your task needs packages beyond core xlm-core, document them in the task modu
 
 1. Run `job_type=prepare_data` (rank 0 downloads and preprocesses/caches where applicable).
 2. Smoke train or eval with the smallest experiment config you can.
-3. Use `DEBUG_OVERFIT` and `full_name_debug` to force train-shaped data into val/test during debugging ([`DatasetManager`](../../src/xlm/datamodule.py)).
+3. Use `DEBUG_OVERFIT` and `full_name_debug` to force train-shaped data into val/test during debugging ({{ gh('src/xlm/datamodule.py', 'DatasetManager') }}).
 4. Add or extend integration coverage under `tests/integration/datamodule/` when behavior is easy to regress.
 
 ---

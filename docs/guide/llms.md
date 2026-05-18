@@ -5,12 +5,14 @@ This page contains information about how to train large models using FSDP.
 xlm-core trains large models with PyTorch's [Fully Sharded Data Parallel (FSDP)](https://pytorch.org/docs/stable/fsdp.html) via Lightning's [`FSDPStrategy`](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.strategies.FSDPStrategy.html). The configuration is split across **three layers** so that the parts that change rarely (sharding strategy) are separated from the parts that depend on the model (which class to wrap, which dtypes to use):
 
 1. **Base strategy config** (`trainer_strategy/fsdp.yaml`, in xlm-core) — sharding strategy, CPU offload, `use_orig_params`, and `state_dict_type`. Model-agnostic.
-2. **Experiment config** — model-specific options: `auto_wrap_policy`, `activation_checkpointing_policy`, `mixed_precision`. Set in your project's `configs/experiment/*.yaml` (e.g. the `dream_fsdp_args.yaml` example below).
+2. **Experiment config** — model-specific options: `auto_wrap_policy`, `activation_checkpointing_policy`, `mixed_precision`. Set in your project's `configs/experiment/*.yaml` (example below).
 3. **CLI / launcher** — selects the strategy at run time with `trainer.strategy=fsdp` (and composes the experiment YAML).
 
 ## 1. The base `trainer_strategy/fsdp.yaml`
 
-```1:7:lib/xlm-core/src/xlm/configs/lightning_train/trainer_strategy/fsdp.yaml
+See {{ gh('src/xlm/configs/lightning_train/trainer_strategy/fsdp.yaml', 'trainer_strategy/fsdp.yaml') }}:
+
+```yaml
 # @package trainer.strategy
 # Model-specific options (auto_wrap_policy, mixed_precision, etc.) belong in experiment YAML.
 _target_: lightning.pytorch.strategies.FSDPStrategy
@@ -26,22 +28,22 @@ Notes:
 - `state_dict_type: sharded` writes one shard per rank instead of consolidating to a single full state dict. This is the only practical option for 7B+ models — a `full` state dict has to materialize the unsharded weights on rank 0, which is what we are trying to avoid in the first place.
 - `use_orig_params: false` is the default; flip to `true` only if you need parameter-group-aware optimizers or `torch.compile` over the wrapped model.
 
-## 2. The model-specific experiment YAML (Dream example)
+## 2. The model-specific experiment YAML
 
 Layered on top of the base strategy, the experiment YAML supplies the three knobs FSDP needs to actually shard a specific model:
 
-```1:13:learned-correctors/dream_correction/configs/experiment/dream_fsdp_args.yaml
+```yaml
 # @package _global_
 trainer:
   strategy:
     auto_wrap_policy:
       _target_: xlm.utils.fsdp_grouping.make_layer_wrap_policy
       _args_:
-        - xlm.backbones.dream.modeling_dream.DreamDecoderLayer
+        - my_package.modeling.MyDecoderLayer  # dotted path to your transformer block class
     activation_checkpointing_policy:
       _target_: xlm.utils.fsdp_grouping.make_layer_wrap_policy
       _args_:
-        - xlm.backbones.dream.modeling_dream.DreamDecoderLayer
+        - my_package.modeling.MyDecoderLayer
     mixed_precision:
       _target_: xlm.utils.fsdp_grouping.fsdp_bf16_mixed_precision
 ```
@@ -50,7 +52,7 @@ Walking through each block:
 
 ### `auto_wrap_policy`
 
-Tells FSDP **which submodule class to treat as a sharding unit**. Each instance of the class becomes its own FSDP unit — its parameters are gathered for the forward, the gradients are reduced/scattered after the backward, and its sharded shard lives on a single rank between steps. For a transformer, this should be the decoder/encoder block class (here, `DreamDecoderLayer`). Wrapping at the block level — not the whole model and not individual `nn.Linear`s — is what gives FSDP its memory savings without flooding the network with tiny collectives.
+Tells FSDP **which submodule class to treat as a sharding unit**. Each instance of the class becomes its own FSDP unit — its parameters are gathered for the forward, the gradients are reduced/scattered after the backward, and its sharded shard lives on a single rank between steps. For a transformer, this should be the decoder/encoder block class. Wrapping at the block level — not the whole model and not individual `nn.Linear`s — is what gives FSDP its memory savings without flooding the network with tiny collectives.
 
 `xlm.utils.fsdp_grouping.make_layer_wrap_policy` simply imports the dotted class paths you pass and returns the `set` of classes that Lightning's `FSDPStrategy` expects. Pass multiple classes if your model mixes block types:
 
@@ -58,22 +60,24 @@ Tells FSDP **which submodule class to treat as a sharding unit**. Each instance 
 from xlm.utils.fsdp_grouping import make_layer_wrap_policy
 
 policy = make_layer_wrap_policy(
-    "xlm.backbones.dream.modeling_dream.DreamDecoderLayer",
-    "xlm.backbones.some_other_model.SomeOtherBlock",
+    "my_package.modeling.MyDecoderLayer",
+    "my_package.modeling.SomeOtherBlock",
 )
 ```
 
 ### `activation_checkpointing_policy`
 
-Selects which submodules get **activation checkpointing** (recompute activations in the backward pass instead of storing them). For Dream-7B at `seq_len=1024`, activation memory dominates, so we re-checkpoint at the same granularity as the FSDP unit. Reusing `make_layer_wrap_policy` keeps the two policies aligned.
+Selects which submodules get **activation checkpointing** (recompute activations in the backward pass instead of storing them). For large models at long `seq_len`, activation memory dominates, so we re-checkpoint at the same granularity as the FSDP unit. Reusing `make_layer_wrap_policy` keeps the two policies aligned.
 
 If you set `auto_wrap_policy` but not `activation_checkpointing_policy`, you get sharding without recompute — fine for smaller models but typically not enough at 7B.
 
 ### `mixed_precision`
 
-```48:57:lib/xlm-core/src/xlm/utils/fsdp_grouping.py
+From {{ gh('src/xlm/utils/fsdp_grouping.py', 'fsdp_grouping.py') }}:
+
+```python
 def fsdp_bf16_mixed_precision():
-    """Default FSDP mixed precision: bf16 params, fp32 reductions (matches DreamOn reference)."""
+    """Default FSDP mixed precision: bf16 params, fp32 reductions."""
     import torch
     from torch.distributed.fsdp import MixedPrecision
 
@@ -105,13 +109,13 @@ For a different precision regime (e.g. fp16 with a loss scaler, or pure bf16 wit
 
 ## 3. CLI invocation
 
-The base `lightning_train/config.yaml` defaults to `trainer_strategy: single_device`. To switch on FSDP at launch time, add `trainer.strategy=fsdp` and compose your `dream_fsdp_args` overrides in the experiment list:
+The base `lightning_train/config.yaml` defaults to `trainer_strategy: single_device`. To switch on FSDP at launch time, add `trainer.strategy=fsdp` and compose your FSDP experiment overlay in the experiment list:
 
 ```bash
 xlm \
   job_type=train \
-  job_name=opencoder_dream_correction_deletion \
-  experiment=[opencoder_dream_correction,dream_fsdp_args] \
+  job_name=my_fsdp_run \
+  experiment=[my_experiment,fsdp_args] \
   per_device_batch_size=1 trainer.devices=8 trainer.num_nodes=1 \
   trainer.strategy=fsdp compile=false \
   ++trainer.precision=bf16-mixed
@@ -125,7 +129,7 @@ You may also need to drop callbacks that don't play well with sharded checkpoint
 
 Three things to call out about this command line:
 
-- `experiment=[opencoder_dream_correction,dream_fsdp_args]` is Hydra list-composition — the second entry **overlays** on the first, so the FSDP strategy block lands inside the existing `trainer:` config rather than replacing it.
+- `experiment=[my_experiment,fsdp_args]` is Hydra list-composition — the second entry **overlays** on the first, so the FSDP strategy block lands inside the existing `trainer:` config rather than replacing it.
 - `trainer.strategy=fsdp` is the Hydra group override for `trainer_strategy`. The base YAML uses `# @package trainer.strategy`, so its keys (`sharding_strategy`, `cpu_offload`, …) merge underneath the experiment's `_target_: FSDPStrategy` and the model-specific keys above.
 - `++trainer.precision=bf16-mixed` is intentionally on top of the strategy's explicit `mixed_precision` block. It does not change FSDP's parameter/reduction/buffer dtypes (the explicit `mixed_precision` wins; see the section above) — its only effect here is adding the `torch.autocast(bf16)` wrapper around the forward, mirroring DreamOn's reference setup. Drop it if you want a strict no-autocast forward.
 
@@ -133,7 +137,7 @@ Three things to call out about this command line:
 
 When FSDP misbehaves, three things go wrong most often: the wrap policy did not match any modules (so the model is not actually sharded), the dtype config did not propagate (so memory is double what you expect), or activation memory dominates a particular phase. The `FSDPDiagnosticsCallback` covers all three.
 
-```15:20:learned-correctors/dream_correction/configs/experiment/dream_fsdp_args.yaml
+```yaml
 callbacks:
   fsdp_diagnostics:
     _target_: xlm.utils.fsdp_diagnostics_callback.FSDPDiagnosticsCallback
@@ -212,23 +216,23 @@ For sharded checkpoints, `load_checkpoint` calls `_distributed_checkpoint_load` 
 
 ### Resuming and extracting weights in `xlm-core`
 
-**Training resume** ([`lightning_train.py`](../../src/xlm/commands/lightning_train.py)) supports the same checkpoint paths Lightning’s trainer accepts:
+**Training resume** ({{ gh('src/xlm/commands/lightning_train.py', 'lightning_train.py') }}) supports the same checkpoint paths Lightning’s trainer accepts:
 
 - A regular **`.ckpt` file**, or
 - A **sharded checkpoint directory** (e.g. `last.ckpt/` or `on_exception.ckpt/`) that contains at least one **`*.distcp`** shard (see layout above).
 
-Resolution and validation live in [`xlm.utils.checkpoint_paths`](../../src/xlm/utils/checkpoint_paths.py): explicit `resume_checkpoint_path` must exist and be either a file or a distcp shard directory; auto-pickup checks `checkpointing_dir/on_exception.ckpt` first, then `last.ckpt`, using the same rules.
+Resolution and validation live in {{ gh('src/xlm/utils/checkpoint_paths.py', 'xlm.utils.checkpoint_paths') }}: explicit `resume_checkpoint_path` must exist and be either a file or a distcp shard directory; auto-pickup checks `checkpointing_dir/on_exception.ckpt` first, then `last.ckpt`, using the same rules.
 
 **Exporting model-only weights (Hub / inference):**
 
-Use [`xlm.utils.consolidate_model_checkpoint.consolidate_model_checkpoint`](../../src/xlm/utils/consolidate_model_checkpoint.py) on a **sharded checkpoint folder** that contains **`*.distcp`** shards and **`meta.pt`** (the same layout Lightning uses for `state_dict_type: sharded`). It loads the distributed checkpoint (PyTorch ≥ 2.3), applies Lightning’s checkpoint reformatting, strips `model.` / `_orig_mod.` prefixes, and writes **model-only** weights:
+Use {{ gh('src/xlm/utils/consolidate_model_checkpoint.py', 'xlm.utils.consolidate_model_checkpoint.consolidate_model_checkpoint') }} on a **sharded checkpoint folder** that contains **`*.distcp`** shards and **`meta.pt`** (the same layout Lightning uses for `state_dict_type: sharded`). It loads the distributed checkpoint (PyTorch ≥ 2.3), applies Lightning’s checkpoint reformatting, strips `model.` / `_orig_mod.` prefixes, and writes **model-only** weights:
 
 - **Single file (default):** pass a target path (e.g. `…/model.safetensors`). Suitable for `model_only_checkpoint_path` and small checkpoints.
-- **HF multi-shard safetensors:** pass `max_shard_size=` (e.g. `"5GB"`) and an **output directory**; produces `model.safetensors.index.json` plus `model-….safetensors` shards compatible with [`download_model_weights` / `load_model_weights_into_model`](../../src/xlm/utils/hf_hub.py). For **local** inference, set `model_only_checkpoint_path` to the **index JSON file path**, not just the folder.
+- **HF multi-shard safetensors:** pass `max_shard_size=` (e.g. `"5GB"`) and an **output directory**; produces `model.safetensors.index.json` plus `model-….safetensors` shards compatible with {{ gh('src/xlm/utils/hf_hub.py', 'download_model_weights / load_model_weights_into_model') }}. For **local** inference, set `model_only_checkpoint_path` to the **index JSON file path**, not just the folder.
 
-`push_to_hub` still **loads** the module (e.g. via `model_only_checkpoint_path` pointing at that `.safetensors` or index file) and then **uploads** from memory via `PyTorchModelHubMixin` as a **single** `model.safetensors`; it does not upload a pre-built multi-shard folder. For sharded Hub uploads without loading a `Harness`, use `job_type=consolidate_checkpoint` with `consolidate_checkpoint.hub.repo_id` after exporting to a directory (see [dream_correction/README.md](../../../../dream_correction/README.md)).
+`push_to_hub` still **loads** the module (e.g. via `model_only_checkpoint_path` pointing at that `.safetensors` or index file) and then **uploads** from memory via `PyTorchModelHubMixin` as a **single** `model.safetensors`; it does not upload a pre-built multi-shard folder. Models above the Hub single-file limit need a multi-shard folder uploaded separately (for example via `HfApi.upload_folder` after consolidating with `max_shard_size`).
 
-- When `checkpoint_path` points at a **sharded directory**, `extract_checkpoint` runs [`consolidate_model_checkpoint`](../../src/xlm/utils/consolidate_model_checkpoint.py) to write **model-only** `.safetensors` (optional HF multi-shard via `post_training.max_shard_size`). You must pass **`apply_ema=false`**; EMA is not applied on this path. For a **Harness-free** consolidate (no datamodule) or to upload **sharded** safetensors + `config.json` to the Hub without instantiating the module, use `job_type=consolidate_checkpoint` in `dream_correction` (same README as above).
+- When `checkpoint_path` points at a **sharded directory**, `extract_checkpoint` runs {{ gh('src/xlm/utils/consolidate_model_checkpoint.py', 'consolidate_model_checkpoint') }} to write **model-only** `.safetensors` (optional HF multi-shard via `post_training.max_shard_size`). You must pass **`apply_ema=false`**; EMA is not applied on this path. See [extract-checkpoint.md](extract-checkpoint.md).
 
 The recommended pattern at 7B is: train with `state_dict_type: sharded`, then consolidate offline to safetensors (single or sharded) on a machine with enough **CPU RAM** for the full checkpoint (Lightning’s loader materializes the full state in memory).
 
@@ -238,9 +242,9 @@ A few things that have bitten us in practice:
 
 - **Norm clipping and grad-norm logging under FSDP.** With `FSDPStrategy`, Lightning's built-in `gradient_clip_algorithm: norm` routes through `FSDPPrecision`, which raises `MisconfigurationException` — `torch.nn.utils.clip_grad_norm_()` is wrong for sharded `FlatParameter` gradients. Separately, `Harness.on_before_optimizer_step` uses `lightning.pytorch.utilities.grad_norm(self, ...)`, which only sums gradients visible on *that* rank; under FSDP that is a **local shard norm**, not the true global L2 norm (so W&B can show huge, nearly flat curves that do not match training stability).
 
-  Fix: subclass `Harness`, detect the FSDP root on `self.trainer.strategy.model`, and override **two** hooks. A canonical implementation lives in `learned-correctors` as [`dream_correction.fsdp_harness.FSDPHarness`](../../../../dream_correction/fsdp_harness.py); compose it via `dream_fsdp_args.yaml` (sets `lightning_module._target_` and `trainer.gradient_clip_algorithm: norm`).
+  Fix: subclass `Harness`, detect the FSDP root on `self.trainer.strategy.model`, and override **two** hooks (`configure_gradient_clipping` and `on_before_optimizer_step`). Set `lightning_module._target_` to your subclass and `trainer.gradient_clip_algorithm: norm`.
 
-  Manually, the same pattern is:
+  Example pattern:
 
   ```python
   from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
@@ -301,4 +305,4 @@ A few things that have bitten us in practice:
 
 - **Per-rank logs.** `FSDPDiagnosticsCallback`'s `on_fit_start` log line is per-rank on purpose — every rank prints its own `local_trainable_param_MiB` so you can spot uneven shards. The `setup`-time strategy dump and per-phase memory logs are rank-0 only.
 
-- **Loading large checkpoints.** Use `skip_init_weights: true` when resuming training or loading model-only weights before `trainer.fit` so Lightning does not spend time on a full random init that is immediately overwritten. For **dtype**, rely on `Trainer` / strategy precision and FSDP `mixed_precision`; `init_dtype` is only read by `load_model_for_inference` (eval / Hub inference), not `lightning_train.py`. See the [LLM eval notes](../../wiki/LLMs.md#initializing-large-models).
+- **Loading large checkpoints.** Use `skip_init_weights: true` when resuming training or loading model-only weights before `trainer.fit` so Lightning does not spend time on a full random init that is immediately overwritten. For **dtype**, rely on `Trainer` / strategy precision and FSDP `mixed_precision`; `init_dtype` is only read by `load_model_for_inference` (eval / Hub inference), not `lightning_train.py`. See the {{ gh('wiki/LLMs.md', 'LLM eval notes', anchor='initializing-large-models') }}.

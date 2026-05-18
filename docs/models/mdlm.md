@@ -14,19 +14,19 @@
 }
 ```
 
-See [xlm-models/mdlm/README.md](../../xlm-models/mdlm/README.md).
+See {{ gh('xlm-models/mdlm/README.md', 'xlm-models/mdlm/README.md') }}.
 
 ## 2. Files at a glance
 
 | Module | Public classes / helpers |
 |---|---|
-| [model_mdlm.py](../../xlm-models/mdlm/model_mdlm.py) | `BaseMDLMModel`, `MDLMModel` |
-| [loss_mdlm.py](../../xlm-models/mdlm/loss_mdlm.py) | `MDLMLoss` |
-| [predictor_mdlm.py](../../xlm-models/mdlm/predictor_mdlm.py) | `MDLMPredictor` |
-| [datamodule_mdlm.py](../../xlm-models/mdlm/datamodule_mdlm.py) | `DefaultMDLMCollator`, `MDLMSeq2SeqTrainCollator`, `MDLMSeq2SeqPredCollator`, `MDLMEmptyDataset`, `mdlm_single_segment_collate_fn` |
-| [noise_mdlm.py](../../xlm-models/mdlm/noise_mdlm.py) | `ContinousTimeNoiseSchedule`, `ContinuousTimeLinearSchedule`, `ContinuousTimeLogLinearSchedule`, `_convert_to_correlated` |
-| [metrics_mdlm.py](../../xlm-models/mdlm/metrics_mdlm.py) | `seq2seq_exact_match_update_fn`, `seq2seq_token_accuracy_update_fn`, `mean_metric_update_fn` |
-| [types_mdlm.py](../../xlm-models/mdlm/types_mdlm.py) | `MDLMBatch`, `MDLMSeq2SeqPredictionBatch`, `MDLMLossDict`, `MDLMModel` (Protocol), `MDLMPredictionDict` |
+| {{ gh('xlm-models/mdlm/model_mdlm.py', 'model_mdlm.py') }} | `BaseMDLMModel`, `MDLMModel` |
+| {{ gh('xlm-models/mdlm/loss_mdlm.py', 'loss_mdlm.py') }} | `MDLMLoss` |
+| {{ gh('xlm-models/mdlm/predictor_mdlm.py', 'predictor_mdlm.py') }} | `MDLMPredictor` |
+| {{ gh('xlm-models/mdlm/datamodule_mdlm.py', 'datamodule_mdlm.py') }} | `DefaultMDLMCollator`, `MDLMSeq2SeqTrainCollator`, `MDLMSeq2SeqPredCollator`, `MDLMEmptyDataset`, `mdlm_single_segment_collate_fn` |
+| {{ gh('xlm-models/mdlm/noise_mdlm.py', 'noise_mdlm.py') }} | `ContinousTimeNoiseSchedule`, `ContinuousTimeLinearSchedule`, `ContinuousTimeLogLinearSchedule`, `_convert_to_correlated` |
+| {{ gh('xlm-models/mdlm/metrics_mdlm.py', 'metrics_mdlm.py') }} | `seq2seq_exact_match_update_fn`, `seq2seq_token_accuracy_update_fn`, `mean_metric_update_fn` |
+| {{ gh('xlm-models/mdlm/types_mdlm.py', 'types_mdlm.py') }} | `MDLMBatch`, `MDLMSeq2SeqPredictionBatch`, `MDLMLossDict`, `MDLMModel` (Protocol), `MDLMPredictionDict` |
 
 ## 3. Architecture
 
@@ -45,11 +45,11 @@ forward(
 - `positions` are derived from `attention_mask.cumsum(dim=1) - 1` when `None`.
 - `attention_mask` is cast to `bool` internally.
 
-The Protocol [`MDLMModel`](../../xlm-models/mdlm/types_mdlm.py) in `types_mdlm.py` uses `total_noise: Float[TT, " batch"]` as the second argument; `MDLMLoss` and `MDLMPredictor` both pass `total_noise` here.
+The Protocol {{ gh('xlm-models/mdlm/types_mdlm.py', 'MDLMModel') }} in `types_mdlm.py` uses `total_noise: Float[TT, " batch"]` as the second argument; `MDLMLoss` and `MDLMPredictor` both pass `total_noise` here.
 
 ## 4. Batch contract
 
-`MDLMBatch` ([types_mdlm.py](../../xlm-models/mdlm/types_mdlm.py)):
+`MDLMBatch` ({{ gh('xlm-models/mdlm/types_mdlm.py', 'types_mdlm.py') }}):
 
 | Field | Shape | Notes |
 |---|---|---|
@@ -85,7 +85,7 @@ The internal helper `mdlm_single_segment_collate_fn(examples, noise_schedule, pa
 | `MDLMSeq2SeqTrainCollator` | `Seq2SeqCollatorInput` | `MDLMBatch` | Concatenates `[prompt][BOS][target][EOS]` with right padding; masks only suffix positions. |
 | `MDLMSeq2SeqPredCollator` | `Seq2SeqCollatorInput` | `MDLMBatch` | `input_ids = left-padded prompt only`; `target_ids = right-padded target` (used for seq2seq prediction). |
 
-Noise schedules live in [noise_mdlm.py](../../xlm-models/mdlm/noise_mdlm.py):
+Noise schedules live in {{ gh('xlm-models/mdlm/noise_mdlm.py', 'noise_mdlm.py') }}:
 
 - `ContinuousTimeLinearSchedule(sigma_min, sigma_max)` — affine \(\bar\sigma(t)\) (with the exponential `total_noise`); `t_from_noise_rate` raises `RuntimeError`.
 - `ContinuousTimeLogLinearSchedule(sigma_min, sigma_max)` — log-linear total-noise; both `t_from_noise_rate` and `t_from_total_noise` are exact inverses. Requires `sigma_min == 0.0` (raises `NotImplementedError` otherwise).
@@ -110,7 +110,7 @@ Noise schedules live in [noise_mdlm.py](../../xlm-models/mdlm/noise_mdlm.py):
 
 ## 8. Metrics
 
-See [tests/models/mdlm/test_metrics_mdlm.py](../../tests/models/mdlm/test_metrics_mdlm.py).
+See {{ gh('tests/models/mdlm/test_metrics_mdlm.py', 'tests/models/mdlm/test_metrics_mdlm.py') }}.
 
 | Function | Returned keys |
 |---|---|
@@ -120,14 +120,14 @@ See [tests/models/mdlm/test_metrics_mdlm.py](../../tests/models/mdlm/test_metric
 
 ## 9. Configs / experiments
 
-Hydra groups under [xlm-models/mdlm/configs/](../../xlm-models/mdlm/configs/). Available experiment entry points:
+Hydra groups under {{ gh_dir('xlm-models/mdlm/configs', 'xlm-models/mdlm/configs/') }}. Available experiment entry points:
 
 - `experiment=owt_mdlm` (OpenWebText)
 - `experiment=text_mdlm`
 
 ## 10. Testing
 
-Tests in [tests/models/mdlm/](../../tests/models/mdlm):
+Tests in {{ gh_dir('tests/models/mdlm', 'tests/models/mdlm/') }}:
 
 - `test_model_mdlm.py` — extends `BaseModelTests`, plus a positions-from-mask check (added in this plan).
 - `test_loss_mdlm.py` — extends `BaseLossTests`.
@@ -135,7 +135,7 @@ Tests in [tests/models/mdlm/](../../tests/models/mdlm):
 - `test_predictor_mdlm.py` — now uses `real_loglinear_schedule` to exercise `MDLMPredictor.predict()`.
 - `test_noise_mdlm.py`, `test_metrics_mdlm.py` — pure-function helpers.
 
-Shared fixtures (`tiny_mdlm_model`, `mdlm_batch`, `simple_tokenizer`, `real_loglinear_schedule`) live in [tests/conftest.py](../../tests/conftest.py) and [tests/models/mdlm/conftest.py](../../tests/models/mdlm/conftest.py).
+Shared fixtures (`tiny_mdlm_model`, `mdlm_batch`, `simple_tokenizer`, `real_loglinear_schedule`) live in {{ gh('tests/conftest.py', 'tests/conftest.py') }} and {{ gh('tests/models/mdlm/conftest.py', 'tests/models/mdlm/conftest.py') }}.
 
 ## 11. API reference
 

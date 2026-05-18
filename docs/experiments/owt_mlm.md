@@ -4,7 +4,7 @@
 
 ## Dataset
 
-Experiment config: [`experiment=owt_mlm`](../../xlm-models/mlm/configs/experiment/owt_mlm.yaml) (datamodule: [`owt_mlm`](../../xlm-models/mlm/configs/datamodule/owt_mlm.yaml)).
+Experiment config: {{ gh('xlm-models/mlm/configs/experiment/owt_mlm.yaml', 'experiment=owt_mlm') }} (datamodule: {{ gh('xlm-models/mlm/configs/datamodule/owt_mlm.yaml', 'owt_mlm') }}).
 
 Training and validation use [OpenWebText](https://huggingface.co/datasets/Skylion007/openwebtext), pre-tokenized with GPT-2 and filtered to sequences of at most 1,024 tokens. The processed split is hosted on Hugging Face as [`dhruveshpatel/owt-gpt2-1024-split`](https://huggingface.co/datasets/dhruveshpatel/owt-gpt2-1024-split): a 10k-example validation holdout (seed 2357) and the remainder for training.
 
@@ -97,4 +97,4 @@ Unconditional generation metrics for MLM (masked diffusion) checkpoints. Gen. PP
 |                |              128 |   256 |   512 |  1024 |             128 |  256 |  512 | 1024 |           128 |  256 |  512 | 1024 |
 | 800k           |            78.34 | 63.27 | 55.82 | 54.25 |            4.09 | 4.48 | 4.70 | 4.86 |          0.39 | 0.68 | 0.76 | 0.86 |
 
-Source: [`notebooks/owt_mlm_step800k_runs.json`](../../../notebooks/owt_mlm_step800k_runs.json) (`rl-discrete-diffusion/correctors`, `tags.checkpoint=step-800000`, `top_p=0.95`).
+Source: W&B project `rl-discrete-diffusion/correctors` (`tags.checkpoint=step-800000`, `top_p=0.95`).

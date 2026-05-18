@@ -10,7 +10,7 @@ out of the box** versus what is **broken / missing** today. The
 existing per-feature docs (
 [`extract-checkpoint.md`](extract-checkpoint.md),
 [`push-to-hub.md`](push-to-hub.md),
-[`../../wiki/model-loading-for-inference.md`](../../wiki/model-loading-for-inference.md),
+{{ gh('wiki/model-loading-for-inference.md', 'model-loading-for-inference.md') }},
 [`llms.md`](llms.md))
 are partially outdated; the cross-cutting view here is what they
 should converge to.
@@ -23,7 +23,7 @@ There are three on-disk artifacts in this system:
 |---|---|---|---|
 | **Full checkpoint, single-file** | All Lightning state (model + optimizer + EMA + callbacks + trainer/global_step + hyperparameters) in one pickle. | DDP / single-device training. FSDP with `state_dict_type: full` (rank 0 gathers). | `last.ckpt` is a **file**. |
 | **Full checkpoint, sharded** | One `*.distcp` shard per rank + a single `meta.pt` written by rank 0 (trainer state, callbacks, EMA, …). | FSDP with `state_dict_type: sharded` (the xlm-core default in `trainer_strategy/fsdp.yaml`). | `last.ckpt/` is a **directory**. |
-| **Model-only checkpoint** | Just `model.state_dict()`. Either a single `.safetensors` / `.pt` file, or the HF sharded layout `model.safetensors.index.json` + `model-*-of-*.safetensors`. | `extract_checkpoint` (single-file), `consolidate_checkpoint` (single or HF-sharded), `Harness.save_model_weights`, `Harness.push_to_hub`. | File, or directory containing the HF index file. |
+| **Model-only checkpoint** | Just `model.state_dict()`. Either a single `.safetensors` / `.pt` file, or the HF sharded layout `model.safetensors.index.json` + `model-*-of-*.safetensors`. | `extract_checkpoint`, `consolidate_model_checkpoint`, `Harness.save_model_weights`, `Harness.push_to_hub`. | File, or directory containing the HF index file. |
 
 The two **full** layouts are how training itself writes state; both contain enough
 information to resume training. The **model-only** layout is what we publish to
@@ -32,15 +32,15 @@ for inference.
 
 Source-of-truth code:
 
-- Training entry: [`xlm/commands/lightning_train.py`](../../src/xlm/commands/lightning_train.py)
-- Eval / generate: [`xlm/commands/lightning_eval.py`](../../src/xlm/commands/lightning_eval.py), [`xlm/commands/lightning_generate.py`](../../src/xlm/commands/lightning_generate.py)
-- Inference loader (used by eval / generate / push_to_hub): [`xlm/utils/model_loading.py`](../../src/xlm/utils/model_loading.py) — `load_model_for_inference`
-- Extract full → model-only (single-file source): [`xlm/commands/extract_checkpoint.py`](../../src/xlm/commands/extract_checkpoint.py)
-- Consolidate FSDP sharded → model-only safetensors: [`xlm/utils/consolidate_model_checkpoint.py`](../../src/xlm/utils/consolidate_model_checkpoint.py) (called by the project-side `dream_correction.commands.consolidate_checkpoint` entry).
-- Resume helpers (file or distcp directory): [`xlm/utils/checkpoint_paths.py`](../../src/xlm/utils/checkpoint_paths.py)
-- Hub download + safetensors I/O: [`xlm/utils/hf_hub.py`](../../src/xlm/utils/hf_hub.py)
-- Hub push: [`xlm/commands/push_to_hub.py`](../../src/xlm/commands/push_to_hub.py) → `Model.push_to_hub` (`PyTorchModelHubMixin`)
-- EMA-aware Harness checkpoint helpers: `Harness.from_checkpoint` / `Harness.save_model_weights` / `Harness.push_to_hub` in [`xlm/harness.py`](../../src/xlm/harness.py)
+- Training entry: {{ gh('src/xlm/commands/lightning_train.py', 'xlm/commands/lightning_train.py') }}
+- Eval / generate: {{ gh('src/xlm/commands/lightning_eval.py', 'xlm/commands/lightning_eval.py') }}, {{ gh('src/xlm/commands/lightning_generate.py', 'xlm/commands/lightning_generate.py') }}
+- Inference loader (used by eval / generate / push_to_hub): {{ gh('src/xlm/utils/model_loading.py', 'xlm/utils/model_loading.py') }} — `load_model_for_inference`
+- Extract full → model-only (single-file source): {{ gh('src/xlm/commands/extract_checkpoint.py', 'xlm/commands/extract_checkpoint.py') }}
+- Consolidate FSDP sharded → model-only safetensors: {{ gh('src/xlm/utils/consolidate_model_checkpoint.py', 'xlm/utils/consolidate_model_checkpoint.py') }}.
+- Resume helpers (file or distcp directory): {{ gh('src/xlm/utils/checkpoint_paths.py', 'xlm/utils/checkpoint_paths.py') }}
+- Hub download + safetensors I/O: {{ gh('src/xlm/utils/hf_hub.py', 'xlm/utils/hf_hub.py') }}
+- Hub push: {{ gh('src/xlm/commands/push_to_hub.py', 'xlm/commands/push_to_hub.py') }} → `Model.push_to_hub` (`PyTorchModelHubMixin`)
+- EMA-aware Harness checkpoint helpers: `Harness.from_checkpoint` / `Harness.save_model_weights` / `Harness.push_to_hub` in {{ gh('src/xlm/harness.py', 'xlm/harness.py') }}
 
 ## Status matrix
 
@@ -103,8 +103,9 @@ auto-resume hit (`on_exception.ckpt` / `last.ckpt`) is found under
   *before* FSDP wrap, so every rank loads the full weights into its bare
   module. Peak CPU RAM per rank is roughly *model size* (single-file
   source) or *model + one shard* (HF sharded index). At 7B+, prefer the
-  HF-sharded source layout — both `consolidate_checkpoint` (with
-  `max_shard_size`) and standard Hub-published models use it.
+  HF-sharded source layout — `extract_checkpoint` with `post_training.max_shard_size`
+  or a direct call to `consolidate_model_checkpoint` with `max_shard_size` — and
+  standard Hub-published models use it.
 - **Seeding loads before the wrap; full-checkpoint resume loads after.**
   This is intentional and is the opposite of workflow #2: FSDP sets
   `restore_checkpoint_after_setup = True`, so a *resume* materializes
@@ -133,9 +134,9 @@ auto-resume hit (`on_exception.ckpt` / `last.ckpt`) is found under
 
 | Source layout | Tool | Output | Status | Notes |
 |---|---|---|---|---|
-| Single-file `.ckpt` (DDP or FSDP-full) | `xlm job_type=extract_checkpoint` ([`extract_checkpoint.py`](../../src/xlm/commands/extract_checkpoint.py)) | `.pth` (`torch.save`) and/or hub push | ✅ | Uses `Harness.from_checkpoint(..., apply_ema=True)` → `Harness.save_model_weights` / `Harness.push_to_hub`. Supports EMA application. |
+| Single-file `.ckpt` (DDP or FSDP-full) | `xlm job_type=extract_checkpoint` ({{ gh('src/xlm/commands/extract_checkpoint.py', 'extract_checkpoint.py') }}) | `.pth` (`torch.save`) and/or hub push | ✅ | Uses `Harness.from_checkpoint(..., apply_ema=True)` → `Harness.save_model_weights` / `Harness.push_to_hub`. Supports EMA application. |
 | FSDP sharded directory | `xlm job_type=extract_checkpoint` | `.safetensors` (and/or Hub as single `model.safetensors`) | ✅ | Dispatches to `consolidate_model_checkpoint`; **`apply_ema` must be false** (raises if true). Hub path uses `load_model_for_inference` → `Harness.push_to_hub`. Optional `post_training.max_shard_size` for HF-sharded local output. |
-| FSDP sharded directory | `xlm job_type=consolidate_checkpoint` ([`dream_correction.commands.consolidate_checkpoint`](../../../../dream_correction/commands.py) → [`consolidate_model_checkpoint`](../../src/xlm/utils/consolidate_model_checkpoint.py)) | single `.safetensors` file, **or** HF sharded layout when `max_shard_size` is set (e.g. `"5GB"`) | ✅ | No Harness. Optional `consolidate_checkpoint.hub.*` uploads via `HfApi.upload_folder` + `config.json`. Requires enough **CPU RAM** for the full model. |
+| FSDP sharded directory | `xlm job_type=extract_checkpoint` ({{ gh('src/xlm/utils/consolidate_model_checkpoint.py', 'consolidate_model_checkpoint') }} via {{ gh('src/xlm/commands/extract_checkpoint.py', 'extract_checkpoint') }}) | single `.safetensors` file, **or** HF sharded layout when `max_shard_size` is set (e.g. `"5GB"`) | ✅ | No EMA on this path (`apply_ema=false`). Optional `post_training.max_shard_size` for HF-sharded local output. Requires enough **CPU RAM** for the full model. |
 | FSDP sharded directory **with EMA application** | (none) | — | ❌ | By policy: no EMA on FSDP/sharded extract. Use a single-file full `.ckpt` and `extract_checkpoint` with `apply_ema=true`, or export non-EMA weights from sharded checkpoints. |
 
 The recommended FSDP path at 7B is: **train sharded → consolidate to safetensors
@@ -188,13 +189,13 @@ then uploads the folder.
 | Weight source | Status | Notes |
 |---|---|---|
 | Local single-file `.ckpt` via `hub_checkpoint_path` | ✅ | `load_model_for_inference(config_prefix="")` with `manual_ema_restore=True` → EMA is applied via `Harness.from_checkpoint`. |
-| Local FSDP **sharded directory** via `hub_checkpoint_path` | ❌ | Same `_get_full_checkpoint_path` / `os.path.isfile` issue as workflow #5. You must `consolidate_checkpoint` first and pass the result via `model_only_checkpoint_path`. |
+| Local FSDP **sharded directory** via `hub_checkpoint_path` | ❌ | Same `_get_full_checkpoint_path` / `os.path.isfile` issue as workflow #5. Consolidate to model-only safetensors first and pass the result via `model_only_checkpoint_path`. |
 | Local model-only single file via `model_only_checkpoint_path` (`.safetensors` / `.pt`) | ✅ | Module is instantiated and weights loaded; the upload re-serializes a single `model.safetensors`. EMA is **not** re-applied — make sure the file already has EMA weights. |
 | Local model-only HF-sharded layout via `model_only_checkpoint_path=…/model.safetensors.index.json` | ⚠️ | Loading works (per-shard). On upload, `PyTorchModelHubMixin._save_pretrained` only writes a **single** `model.safetensors`, so the multi-shard layout is *flattened*. For ≤ ~50 GB (Hub single-file limit) and enough host RAM that is fine; for larger models the push is unsupported. |
 | Push a pre-built multi-shard safetensors folder verbatim | ❌ | No command does this. `push_to_hub` always re-serializes through `_save_pretrained`. You'd have to use `HfApi.upload_folder` yourself. |
 | `hub.branch=<name>` | ✅ | Branch is created via `HfApi.create_branch` if missing. |
 | `hub.commit_message` defaulting | ✅ | Falls back to a generated message mentioning the source paths. |
-| Optional `hub_checkpoint_path` + `model_only_checkpoint_path` both set | ⚠️ | Full ckpt wins; conflict is logged as an error but not fatal. See [`model-loading-for-inference.md`](../../wiki/model-loading-for-inference.md#conflict-detection). |
+| Optional `hub_checkpoint_path` + `model_only_checkpoint_path` both set | ⚠️ | Full ckpt wins; conflict is logged as an error but not fatal. See {{ gh('wiki/model-loading-for-inference.md', 'model-loading-for-inference.md', anchor='conflict-detection') }}. |
 
 ## Cross-cutting issues and gaps
 
@@ -211,7 +212,7 @@ Pulling the broken cells out of the matrix gives this concrete TODO list:
    in `xlm/utils/checkpoint_paths.py`; the inference-side check should be
    refactored on top of the same helpers.
 
-2. **`extract_checkpoint` FSDP UX.** The `extract_checkpoint` command now dispatches on sharded dirs; [`extract-checkpoint.md`](extract-checkpoint.md) documents `apply_ema=false` and optional `max_shard_size`. Use `consolidate_checkpoint` when you want zero Harness instantiation or sharded Hub upload via `consolidate_checkpoint.hub`.
+2. **`extract_checkpoint` FSDP UX.** The `extract_checkpoint` command now dispatches on sharded dirs; [`extract-checkpoint.md`](extract-checkpoint.md) documents `apply_ema=false` and optional `max_shard_size`. Call {{ gh('src/xlm/utils/consolidate_model_checkpoint.py', 'consolidate_model_checkpoint') }} directly when you need a Harness-free export.
 
 3. **No EMA on FSDP / sharded extract (by design).** `consolidate_model_checkpoint`
    only exports `state_dict` weights. For EMA-averaged publication, use a
@@ -220,20 +221,19 @@ Pulling the broken cells out of the matrix gives this concrete TODO list:
 
 4. **Hub upload paths differ.** `push_to_hub` / `Harness.push_to_hub` still
    serialize a **single** `model.safetensors` via `PyTorchModelHubMixin`.
-   **`consolidate_checkpoint` with `hub.repo_id`** uploads a folder (including
-   HF-sharded safetensors when `max_shard_size` was used) via `HfApi.upload_folder`.
-   Models above the single-file Hub limit still need a sharded upload path such
-   as this, not `job_type=push_to_hub` alone.
+   For multi-shard Hub uploads, consolidate locally with `max_shard_size` and
+   upload the output folder via `HfApi.upload_folder`. Models above the
+   single-file Hub limit need this path, not `job_type=push_to_hub` alone.
 
 5. **Documentation drift.** Right now the relevant material is spread across
    four files and they don't agree:
    - [`docs/guide/extract-checkpoint.md`](extract-checkpoint.md) — covers both
      single-file and FSDP-sharded `extract_checkpoint`; see also
-     `consolidate_checkpoint` for Harness-free export.
+     {{ gh('src/xlm/utils/consolidate_model_checkpoint.py', 'consolidate_model_checkpoint') }} for Harness-free export.
    - [`docs/guide/push-to-hub.md`](push-to-hub.md) — single-file only;
      `model_only_checkpoint_path` is described but the sharded safetensors
      index variant is not.
-   - [`wiki/model-loading-for-inference.md`](../../wiki/model-loading-for-inference.md)
+   - {{ gh('wiki/model-loading-for-inference.md', 'wiki/model-loading-for-inference.md') }}
      — accurate for inference loading but does not enumerate which sources
      are accepted as **full** ckpts (and so does not flag the `os.path.isfile`
      gap).
@@ -251,9 +251,9 @@ If you are on this page to figure out what is safe to rely on **right now**:
 - **FSDP sharded training and resume**: train, save, resume — supported,
   including auto-pickup of `last.ckpt/` and `on_exception.ckpt/` directories.
 - **FSDP → model-only / Hub**: `xlm job_type=extract_checkpoint` (with
-  `apply_ema=false`) or `xlm job_type=consolidate_checkpoint` (Harness-free;
-  optional `consolidate_checkpoint.hub` for sharded folder upload). Then use
-  `model_only_checkpoint_path` pointing at `.safetensors` or
+  `apply_ema=false`) on a sharded directory, or call
+  {{ gh('src/xlm/utils/consolidate_model_checkpoint.py', 'consolidate_model_checkpoint') }}
+  directly. Then use `model_only_checkpoint_path` pointing at `.safetensors` or
   `model.safetensors.index.json` for eval / generate / `push_to_hub` as needed.
 - **HF Hub for inference (eval / generate)**: works for single-file,
   sharded safetensors, and legacy `pytorch_model.bin`, on both branches and
@@ -269,6 +269,5 @@ What is **not** safe to assume today, even though the configs and docs imply it:
   sharded — use `state_dict_type: full` for a single-file export, or a separate
   EMA artifact; we do not merge EMA from sharded dirs in `extract_checkpoint`.
 - Publishing a model **larger than the Hub single-file limit** via
-  `job_type=push_to_hub` alone — `_save_pretrained` writes one file; use
-  `consolidate_checkpoint` with `max_shard_size` and `hub.repo_id` for a
-  sharded folder upload.
+  `job_type=push_to_hub` alone — `_save_pretrained` writes one file; consolidate
+  with `max_shard_size` and upload the folder via `HfApi.upload_folder`.

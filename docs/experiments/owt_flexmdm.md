@@ -1,10 +1,10 @@
 # OWT FlexMDM
 
-**See also:** [FlexMDM package](../../xlm-models/flexmdm/README.md) · [Task docs](../tasks/owt.md)
+**See also:** {{ gh('xlm-models/flexmdm/README.md', 'FlexMDM package') }} · [Task docs](../tasks/owt.md)
 
 ## Dataset
 
-Experiment config: [`experiment=owt_flexmdm`](../../xlm-models/flexmdm/configs/experiment/owt_flexmdm.yaml) (datamodule: [`owt_flexmdm`](../../xlm-models/flexmdm/configs/datamodule/owt_flexmdm.yaml)).
+Experiment config: {{ gh('xlm-models/flexmdm/configs/experiment/owt_flexmdm.yaml', 'experiment=owt_flexmdm') }} (datamodule: {{ gh('xlm-models/flexmdm/configs/datamodule/owt_flexmdm.yaml', 'owt_flexmdm') }}).
 
 Training and validation use [OpenWebText](https://huggingface.co/datasets/Skylion007/openwebtext), pre-tokenized with GPT-2 and filtered to sequences of at most 1,024 tokens. The processed split is hosted on Hugging Face as [`dhruveshpatel/owt-gpt2-1024-split`](https://huggingface.co/datasets/dhruveshpatel/owt-gpt2-1024-split): a 10k-example validation holdout (seed 2357) and the remainder for training.
 
@@ -89,4 +89,4 @@ Unconditional generation metrics for FlexMDM (variable-length masked diffusion) 
 |                |              128 |   256 |   512 |  1024 |             128 |  256 |  512 | 1024 |           128 | 256 | 512 | 1024 |
 | 800k           |            64.68 | 62.08 | 59.61 | 59.27 |            4.93 | 4.88 | 4.88 | 4.92 |             — |   — |   — |    — |
 
-Source: [`notebooks/owt_flexmdm_external_step800k_runs.json`](../../../notebooks/owt_flexmdm_external_step800k_runs.json) (`ilm-extensions/flexmdm`, `tags.checkpoint=800000`, `top_p=0.95`).
+Source: W&B project `ilm-extensions/flexmdm` (`tags.checkpoint=800000`, `top_p=0.95`).

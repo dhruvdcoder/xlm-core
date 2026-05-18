@@ -16,16 +16,16 @@ xlm "job_type=extract_checkpoint" \
 
 ## FSDP sharded directory (`*.distcp` + `meta.pt`)
 
-When `post_training.checkpoint_path` points at a **directory** (Lightning `state_dict_type: sharded` layout), `extract_checkpoint` consolidates to **model-only safetensors** using [`consolidate_model_checkpoint`](../../src/xlm/utils/consolidate_model_checkpoint.py) instead of `Harness.from_checkpoint`.
+When `post_training.checkpoint_path` points at a **directory** (Lightning `state_dict_type: sharded` layout), `extract_checkpoint` consolidates to **model-only safetensors** using {{ gh('src/xlm/utils/consolidate_model_checkpoint.py', 'consolidate_model_checkpoint') }} instead of `Harness.from_checkpoint`.
 
 - Set **`apply_ema=false`**. EMA from sharded checkpoints is **not** supported on this path (use a single-file full checkpoint and the branch above if you need `apply_ema`).
 - Optional **`post_training.max_shard_size`** (e.g. `5GB`): HF-style multi-file `.safetensors`; then `model_state_dict_path` must be a **directory** (see consolidate helper).
-- Hub push: loads weights via `load_model_for_inference` and publishes a **single** `model.safetensors` through the Harness mixin. For **sharded safetensors uploads** to the Hub, use `job_type=consolidate_checkpoint` with `consolidate_checkpoint.hub.repo_id` instead.
+- Hub push: loads weights via `load_model_for_inference` and publishes a **single** `model.safetensors` through the Harness mixin. For **sharded safetensors uploads** to the Hub, consolidate locally with `post_training.max_shard_size` and upload the output folder via `HfApi.upload_folder`.
 
 !!! example "Sharded checkpoint to local safetensors"
 ```bash
 xlm job_type=extract_checkpoint \
-  experiment=[opencoder_dream_correction,dream_fsdp_args] \
+  experiment=[my_experiment,fsdp_args] \
   +post_training=default \
   +post_training.checkpoint_path=/path/to/last.ckpt \
   +post_training.apply_ema=false \

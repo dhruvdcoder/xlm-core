@@ -4,7 +4,7 @@ This page describes how dependencies are laid out for **xlm-core** and how to in
 
 ## How packages are wired
 
-[`setup.py`](https://github.com/dhruvdcoder/xlm-core/blob/main/setup.py) loads **`requirements.txt`** at the repo root via `install_requires`:
+{{ gh('setup.py', 'setup.py') }} loads **`requirements.txt`** at the repo root via `install_requires`:
 
 - `pip install xlm-core` installs those runtime dependencies.
 - **`requirements/core_requirements.txt`** is a complementary file with stricter pins, extra comments (e.g. Lightning / Torch / datasets), and tooling lines used for local/full dev installs—not every line is mirrored in `requirements.txt`.
@@ -15,14 +15,14 @@ Run commands below from the **repository root** (where `setup.py` and `requireme
 
 | File | Purpose |
 |------|---------|
-| [`requirements.txt`](https://github.com/dhruvdcoder/xlm-core/blob/main/requirements.txt) (root) | Runtime dependencies used when publishing / `pip install xlm-core` |
-| [`requirements/core_requirements.txt`](https://github.com/dhruvdcoder/xlm-core/blob/main/requirements/core_requirements.txt) | Full core stack with version pins and inline notes |
-| [`requirements/test_requirements.txt`](https://github.com/dhruvdcoder/xlm-core/blob/main/requirements/test_requirements.txt) | pytest, hypothesis, coverage |
-| [`requirements/dev_requirements.txt`](https://github.com/dhruvdcoder/xlm-core/blob/main/requirements/dev_requirements.txt) | Notebooks / experiment tracking helpers |
-| [`requirements/docs_requirements.txt`](https://github.com/dhruvdcoder/xlm-core/blob/main/requirements/docs_requirements.txt) | MkDocs site build |
-| [`requirements/lint_requirements.txt`](https://github.com/dhruvdcoder/xlm-core/blob/main/requirements/lint_requirements.txt) | Typecheck, formatting, flake8 ecosystem |
-| [`requirements/extra_requirements.txt`](https://github.com/dhruvdcoder/xlm-core/blob/main/requirements/extra_requirements.txt) | Optional analysis / plotting (lighter set) |
-| [`requirements/plotting_requirements.txt`](https://github.com/dhruvdcoder/xlm-core/blob/main/requirements/plotting_requirements.txt) | Heavier plotting / stats stack |
+| {{ gh('requirements.txt', 'requirements.txt') }} (root) | Runtime dependencies used when publishing / `pip install xlm-core` |
+| {{ gh('requirements/core_requirements.txt', 'requirements/core_requirements.txt') }} | Full core stack with version pins and inline notes |
+| {{ gh('requirements/test_requirements.txt', 'requirements/test_requirements.txt') }} | pytest, hypothesis, coverage |
+| {{ gh('requirements/dev_requirements.txt', 'requirements/dev_requirements.txt') }} | Notebooks / experiment tracking helpers |
+| {{ gh('requirements/docs_requirements.txt', 'requirements/docs_requirements.txt') }} | MkDocs site build |
+| {{ gh('requirements/lint_requirements.txt', 'requirements/lint_requirements.txt') }} | Typecheck, formatting, flake8 ecosystem |
+| {{ gh('requirements/extra_requirements.txt', 'requirements/extra_requirements.txt') }} | Optional analysis / plotting (lighter set) |
+| {{ gh('requirements/plotting_requirements.txt', 'requirements/plotting_requirements.txt') }} | Heavier plotting / stats stack |
 
 ---
 
@@ -92,7 +92,7 @@ Includes `jupytext` and `wandb`.
 pip install -r requirements/docs_requirements.txt
 ```
 
-Includes `mkdocs`, `mkdocs-material`, `mkdocstrings` (Python handler), `mike`, and `mkdocs-api-autonav`. Used when building this site locally or in CI.
+Includes `mkdocs`, `mkdocs-material`, `mkdocstrings` (Python handler), `mike`, `mkdocs-api-autonav`, and `mkdocs-macros-plugin`. Used when building this site locally or in CI. Source links in docs use the `gh()` / `gh_dir()` macros defined in {{ gh('main.py', 'main.py') }} at the repo root.
 
 ---
 

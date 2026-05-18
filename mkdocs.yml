@@ -24,6 +24,7 @@ theme:
 
 plugins:
   - search
+  - macros
   - mike:
       alias_type: redirect
   - mkdocstrings:

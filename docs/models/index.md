@@ -8,11 +8,11 @@ Every family wires the same five interfaces from `xlm-core`:
 
 | Abstraction | Module | Key methods | Family-specific subclass |
 |---|---|---|---|
-| `Model` | [src/xlm/model.py](../../src/xlm/model.py) | `get_named_params_for_weight_decay`, `get_named_params_for_no_weight_decay` | `RotaryTransformer<X>Model`, `MDLMModel` |
-| `LossFunction[T_in, T_out]` | [src/xlm/harness.py](../../src/xlm/harness.py) | `configure`, `loss_fn`, `__call__` | `<X>Loss` |
-| `Predictor[T_in, T_out_pred]` | [src/xlm/harness.py](../../src/xlm/harness.py) | `predict`, `to_dict`, `generate` | `<X>Predictor` |
-| `Collator` | [src/xlm/datamodule.py](../../src/xlm/datamodule.py) | `__call__(examples) -> Batch` | `Default<X>Collator`, seq2seq variants |
-| `MetricWrapper` updates | [src/xlm/metrics.py](../../src/xlm/metrics.py) | `*_update_fn(batch, loss_dict, tokenizer=None)` | `<X>/metrics_<X>.py` |
+| `Model` | {{ gh('src/xlm/model.py', 'src/xlm/model.py') }} | `get_named_params_for_weight_decay`, `get_named_params_for_no_weight_decay` | `RotaryTransformer<X>Model`, `MDLMModel` |
+| `LossFunction[T_in, T_out]` | {{ gh('src/xlm/harness.py', 'src/xlm/harness.py') }} | `configure`, `loss_fn`, `__call__` | `<X>Loss` |
+| `Predictor[T_in, T_out_pred]` | {{ gh('src/xlm/harness.py', 'src/xlm/harness.py') }} | `predict`, `to_dict`, `generate` | `<X>Predictor` |
+| `Collator` | {{ gh('src/xlm/datamodule.py', 'src/xlm/datamodule.py') }} | `__call__(examples) -> Batch` | `Default<X>Collator`, seq2seq variants |
+| `MetricWrapper` updates | {{ gh('src/xlm/metrics.py', 'src/xlm/metrics.py') }} | `*_update_fn(batch, loss_dict, tokenizer=None)` | `<X>/metrics_<X>.py` |
 
 What differs across families is the **forward signature** and the **batch contract**:
 
@@ -36,7 +36,7 @@ flowchart LR
 | **Default collator** | `DefaultARLMCollator` | `DefaultILMCollator` (token-drop noising) | `DefaultMDLMCollator` (needs real noise schedule) | `DefaultMLMCollator` |
 | **Seq2seq collators** | `ARLMSeq2SeqCollator`, `ARLMSeq2SeqPredCollator` | `ILMSeq2SeqCollator`, `ILMSeq2SeqPredCollator` | `MDLMSeq2SeqTrainCollator`, `MDLMSeq2SeqPredCollator` | `MLMSeq2SeqCollator`, `MLMSeq2SeqTrainCollator`, `MLMSeq2SeqPredCollator`, `_MLMSeq2SeqPredCollator`, `MLMInfillWithExactTargetPredCollator`, `DefaultInfillMLMCollator`, `PackedMLMCollator` |
 | **Decoding loop** | Greedy / top-k / top-p sampled tokens, one per step, up to `max_length` | Insertion at a chosen position per step; optional length-head stopping | `max_steps` unmasking steps with diffusion sampling and `dt` time decrement | `max_steps` unmasking steps; uniform or confidence-based position selection (`prob_diff` / `top_prob`) |
-| **Source package** | [xlm-models/arlm/](../../xlm-models/arlm) | [xlm-models/ilm/](../../xlm-models/ilm) | [xlm-models/mdlm/](../../xlm-models/mdlm) | [xlm-models/mlm/](../../xlm-models/mlm) |
+| **Source package** | {{ gh_dir('xlm-models/arlm', 'xlm-models/arlm/') }} | {{ gh_dir('xlm-models/ilm', 'xlm-models/ilm/') }} | {{ gh_dir('xlm-models/mdlm', 'xlm-models/mdlm/') }} | {{ gh_dir('xlm-models/mlm', 'xlm-models/mlm/') }} |
 | **Per-family doc** | [arlm.md](arlm.md) | [ilm.md](ilm.md) | [mdlm.md](mdlm.md) | [mlm.md](mlm.md) |
 
 ## Page layout

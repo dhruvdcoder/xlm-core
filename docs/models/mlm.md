@@ -2,19 +2,19 @@
 
 ## 1. Overview
 
-`mlm` implements a from-scratch rotary-Transformer masked language model in the BERT family: the model receives an input sequence with a fraction of positions replaced by `[MASK]` and is trained to recover the original tokens at those positions. The package ships standard padded-truncated training and prediction collators plus a packed-FlexAttention variant for protein and text training. See [xlm-models/mlm/README.md](../../xlm-models/mlm/README.md) for end-to-end recipes (UniRef50 standard / packed and OpenWebText packed).
+`mlm` implements a from-scratch rotary-Transformer masked language model in the BERT family: the model receives an input sequence with a fraction of positions replaced by `[MASK]` and is trained to recover the original tokens at those positions. The package ships standard padded-truncated training and prediction collators plus a packed-FlexAttention variant for protein and text training. See {{ gh('xlm-models/mlm/README.md', 'xlm-models/mlm/README.md') }} for end-to-end recipes (UniRef50 standard / packed and OpenWebText packed).
 
 ## 2. Files at a glance
 
 | Module | Public classes / helpers |
 |---|---|
-| [model_mlm.py](../../xlm-models/mlm/model_mlm.py) | `RotaryTransformerMLMModel` |
-| [loss_mlm.py](../../xlm-models/mlm/loss_mlm.py) | `MLMLoss` |
-| [predictor_mlm.py](../../xlm-models/mlm/predictor_mlm.py) | `MLMPredictor` |
-| [datamodule_mlm.py](../../xlm-models/mlm/datamodule_mlm.py) | `DefaultMLMCollator`, `MLMSeq2SeqCollator`, `MLMSeq2SeqTrainCollator`, `MLMSeq2SeqPredCollator`, `_MLMSeq2SeqPredCollator`, `MLMInfillWithExactTargetPredCollator`, `DefaultInfillMLMCollator`, `PackedMLMCollator`, `MLMEmptyDataset`, `mlm_single_segment_collate_fn`, `prepare_prefix_ids`, `prepare_prefix_suffix_ids`, `print_batch_mlm` |
-| [metrics_mlm.py](../../xlm-models/mlm/metrics_mlm.py) | `exact_match_update_fn`, `infill_token_accuracy_update_fn`, `seq2seq_exact_match_update_fn`, `seq2seq_token_accuracy_update_fn`, `mean_metric_update_fn` |
-| [types_mlm.py](../../xlm-models/mlm/types_mlm.py) | `MLMBatch`, `PackedFlexMLMBatch`, `MLMSeq2SeqPredictionBatch`, `MLMLossDict`, `MLMModel` (Protocol), `MLMPredictionDict` |
-| Family-private helpers | [history_mlm.py](../../xlm-models/mlm/history_mlm.py), [papl_unconditional.py](../../xlm-models/mlm/papl_unconditional.py), [unbatch.py](../../xlm-models/mlm/unbatch.py) |
+| {{ gh('xlm-models/mlm/model_mlm.py', 'model_mlm.py') }} | `RotaryTransformerMLMModel` |
+| {{ gh('xlm-models/mlm/loss_mlm.py', 'loss_mlm.py') }} | `MLMLoss` |
+| {{ gh('xlm-models/mlm/predictor_mlm.py', 'predictor_mlm.py') }} | `MLMPredictor` |
+| {{ gh('xlm-models/mlm/datamodule_mlm.py', 'datamodule_mlm.py') }} | `DefaultMLMCollator`, `MLMSeq2SeqCollator`, `MLMSeq2SeqTrainCollator`, `MLMSeq2SeqPredCollator`, `_MLMSeq2SeqPredCollator`, `MLMInfillWithExactTargetPredCollator`, `DefaultInfillMLMCollator`, `PackedMLMCollator`, `MLMEmptyDataset`, `mlm_single_segment_collate_fn`, `prepare_prefix_ids`, `prepare_prefix_suffix_ids`, `print_batch_mlm` |
+| {{ gh('xlm-models/mlm/metrics_mlm.py', 'metrics_mlm.py') }} | `exact_match_update_fn`, `infill_token_accuracy_update_fn`, `seq2seq_exact_match_update_fn`, `seq2seq_token_accuracy_update_fn`, `mean_metric_update_fn` |
+| {{ gh('xlm-models/mlm/types_mlm.py', 'types_mlm.py') }} | `MLMBatch`, `PackedFlexMLMBatch`, `MLMSeq2SeqPredictionBatch`, `MLMLossDict`, `MLMModel` (Protocol), `MLMPredictionDict` |
+| Family-private helpers | {{ gh('xlm-models/mlm/history_mlm.py', 'history_mlm.py') }}, {{ gh('xlm-models/mlm/papl_unconditional.py', 'papl_unconditional.py') }}, {{ gh('xlm-models/mlm/unbatch.py', 'unbatch.py') }} |
 
 ## 3. Architecture
 
@@ -35,7 +35,7 @@ forward(
 
 ## 4. Batch contract
 
-`MLMBatch` ([types_mlm.py](../../xlm-models/mlm/types_mlm.py)):
+`MLMBatch` ({{ gh('xlm-models/mlm/types_mlm.py', 'types_mlm.py') }}):
 
 | Field | Shape | When present |
 |---|---|---|
@@ -98,7 +98,7 @@ The packed FlexAttention variant uses `PackedFlexMLMBatch` (subset of the above)
 
 ## 8. Metrics
 
-`*_update_fn(batch, loss_dict, tokenizer=None)` callables fed to `MetricWrapper`. See [tests/models/mlm/test_metrics_mlm.py](../../tests/models/mlm/test_metrics_mlm.py) for worked examples.
+`*_update_fn(batch, loss_dict, tokenizer=None)` callables fed to `MetricWrapper`. See {{ gh('tests/models/mlm/test_metrics_mlm.py', 'tests/models/mlm/test_metrics_mlm.py') }} for worked examples.
 
 | Function | Returned keys | Notes |
 |---|---|---|
@@ -110,7 +110,7 @@ The packed FlexAttention variant uses `PackedFlexMLMBatch` (subset of the above)
 
 ## 9. Configs / experiments
 
-Hydra groups under [xlm-models/mlm/configs/](../../xlm-models/mlm/configs/) (`collator/`, `datamodule/`, `experiment/`, `model/`, `model_type/`). Available experiment entry points:
+Hydra groups under {{ gh_dir('xlm-models/mlm/configs', 'xlm-models/mlm/configs/') }} (`collator/`, `datamodule/`, `experiment/`, `model/`, `model_type/`). Available experiment entry points:
 
 - `experiment=star_easy_mlm`
 - `experiment=sudoku_mlm`
@@ -120,11 +120,11 @@ Hydra groups under [xlm-models/mlm/configs/](../../xlm-models/mlm/configs/) (`co
 - `experiment=owt_packed_mlm` (FlexAttention)
 - `experiment=uniref50_packed_mlm` (FlexAttention, protein)
 
-Recipes including packed-collator inspection (`debug=overfit`, `print_batch_fn=print_batch_mlm`) live in the package [README](../../xlm-models/mlm/README.md).
+Recipes including packed-collator inspection (`debug=overfit`, `print_batch_fn=print_batch_mlm`) live in the package {{ gh('xlm-models/mlm/README.md', 'README') }}.
 
 ## 10. Testing
 
-Tests live in [tests/models/mlm/](../../tests/models/mlm) and follow the 4-file mixin layout:
+Tests live in {{ gh_dir('tests/models/mlm', 'tests/models/mlm/') }} and follow the 4-file mixin layout:
 
 - `test_model_mlm.py` — extends `BaseModelTests`.
 - `test_loss_mlm.py` — extends `BaseLossTests`.
@@ -132,7 +132,7 @@ Tests live in [tests/models/mlm/](../../tests/models/mlm) and follow the 4-file 
 - `test_predictor_mlm.py` — predictor smoke + vocab-range tests, plus confidence-sampling coverage (added in this plan).
 - `test_metrics_mlm.py`, `test_unbatch.py`, `test_papl_unconditional.py` — pure-function helpers.
 
-Shared fixtures (`tiny_mlm_model`, `mlm_batch`, `simple_tokenizer`, `dummy_noise_schedule`) live in [tests/conftest.py](../../tests/conftest.py) and [tests/models/conftest.py](../../tests/models/conftest.py).
+Shared fixtures (`tiny_mlm_model`, `mlm_batch`, `simple_tokenizer`, `dummy_noise_schedule`) live in {{ gh('tests/conftest.py', 'tests/conftest.py') }} and {{ gh('tests/models/conftest.py', 'tests/models/conftest.py') }}.
 
 ## 11. API reference
 

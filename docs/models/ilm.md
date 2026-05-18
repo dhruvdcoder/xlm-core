@@ -14,19 +14,19 @@
 }
 ```
 
-See [xlm-models/ilm/README.md](../../xlm-models/ilm/README.md).
+See {{ gh('xlm-models/ilm/README.md', 'xlm-models/ilm/README.md') }}.
 
 ## 2. Files at a glance
 
 | Module | Public classes / helpers |
 |---|---|
-| [model_ilm.py](../../xlm-models/ilm/model_ilm.py) | `BaseRotaryTransformerILMModel`, `RotaryTransformerILMModel`, `RotaryTransformerITModel`, `RotaryTransformerILMModelWithClassification`, `RotaryTransformerILMModelWithStoppingClassification`, `RotaryTransformerILMModelWithLengthClassification`, GPT-2 variants (`BaseGPT2ILMModel`, `GPT2ILMModel`, `GPT2ILMModelWithClassification`, `GPT2ILMModelWithStoppingClassification`, `GPT2ILMModelWithLengthClassification`) |
-| [loss_ilm.py](../../xlm-models/ilm/loss_ilm.py) | `ILMLossWithMaskedCE` |
-| [predictor_ilm.py](../../xlm-models/ilm/predictor_ilm.py) | `ILMPredictorUtilitiesMixin`, `ILMPredictor`, `ILMPredictorWithLengthClassification`, `ILMPredictorWithStoppingClassification` |
-| [datamodule_ilm.py](../../xlm-models/ilm/datamodule_ilm.py) | `DefaultILMCollator`, `ILMSeq2SeqCollator`, `ILMSeq2SeqPredCollator`, `ilm_drop_fn`, `ilm_single_segment_collate_target_fn`, `prepare_prefix_ids`, `prepare_target_ids_for_test`, `print_batch_ilm` |
-| [nn.py](../../xlm-models/ilm/nn.py) | `remove_tokens`, `log_softmax_last_two_dims`, `masked_ce_last_two_dims`, `topk_over_last_two_dims`, `max_over_last_two_dims`, `sample_over_last_two_dims`, `general_sample_over_last_two_dims` |
-| [metrics_ilm.py](../../xlm-models/ilm/metrics_ilm.py) | `mean_metric_update_fn`, `length_loss_metric_update_fn`, `token_ce_metric_update_fn` |
-| [types_ilm.py](../../xlm-models/ilm/types_ilm.py) | `ILMBatch`, `ILMSeq2SeqPredictionBatch`, `ILMUncondtionalPredictionBatch`, `ILMInfillPredictionBatch`, `ILMLossDict`, `ILMModel` (Protocol), `ILMPredictionDict` |
+| {{ gh('xlm-models/ilm/model_ilm.py', 'model_ilm.py') }} | `BaseRotaryTransformerILMModel`, `RotaryTransformerILMModel`, `RotaryTransformerITModel`, `RotaryTransformerILMModelWithClassification`, `RotaryTransformerILMModelWithStoppingClassification`, `RotaryTransformerILMModelWithLengthClassification`, GPT-2 variants (`BaseGPT2ILMModel`, `GPT2ILMModel`, `GPT2ILMModelWithClassification`, `GPT2ILMModelWithStoppingClassification`, `GPT2ILMModelWithLengthClassification`) |
+| {{ gh('xlm-models/ilm/loss_ilm.py', 'loss_ilm.py') }} | `ILMLossWithMaskedCE` |
+| {{ gh('xlm-models/ilm/predictor_ilm.py', 'predictor_ilm.py') }} | `ILMPredictorUtilitiesMixin`, `ILMPredictor`, `ILMPredictorWithLengthClassification`, `ILMPredictorWithStoppingClassification` |
+| {{ gh('xlm-models/ilm/datamodule_ilm.py', 'datamodule_ilm.py') }} | `DefaultILMCollator`, `ILMSeq2SeqCollator`, `ILMSeq2SeqPredCollator`, `ilm_drop_fn`, `ilm_single_segment_collate_target_fn`, `prepare_prefix_ids`, `prepare_target_ids_for_test`, `print_batch_ilm` |
+| {{ gh('xlm-models/ilm/nn.py', 'nn.py') }} | `remove_tokens`, `log_softmax_last_two_dims`, `masked_ce_last_two_dims`, `topk_over_last_two_dims`, `max_over_last_two_dims`, `sample_over_last_two_dims`, `general_sample_over_last_two_dims` |
+| {{ gh('xlm-models/ilm/metrics_ilm.py', 'metrics_ilm.py') }} | `mean_metric_update_fn`, `length_loss_metric_update_fn`, `token_ce_metric_update_fn` |
+| {{ gh('xlm-models/ilm/types_ilm.py', 'types_ilm.py') }} | `ILMBatch`, `ILMSeq2SeqPredictionBatch`, `ILMUncondtionalPredictionBatch`, `ILMInfillPredictionBatch`, `ILMLossDict`, `ILMModel` (Protocol), `ILMPredictionDict` |
 
 ## 3. Architecture
 
@@ -58,7 +58,7 @@ forward(
 
 ## 4. Batch contract
 
-`ILMBatch` ([types_ilm.py](../../xlm-models/ilm/types_ilm.py)) — `post_seq_len` is the length **after** the random token drop:
+`ILMBatch` ({{ gh('xlm-models/ilm/types_ilm.py', 'types_ilm.py') }}) — `post_seq_len` is the length **after** the random token drop:
 
 | Field | Shape | Notes |
 |---|---|---|
@@ -80,7 +80,7 @@ forward(
   - `loss_on_padding=True` raises `ValueError`.
   - `input_constraint=True` and `use_constraint=True` raise `NotImplementedError`.
 - `configure(pl_module)` caches `mask_token_id_tensor`, validates `stopping_class_weight ∈ [0, 1]` and `length_loss_weight ∈ [0, 1]`, and converts both to tensors on the right device.
-- The CE branch uses `masked_ce_last_two_dims` from [`ilm.nn`](../../xlm-models/ilm/nn.py): the model outputs `(B, post_seq_len, V)` logits and we compute CE against the sparse target counts at non-drop, non-pad positions.
+- The CE branch uses `masked_ce_last_two_dims` from {{ gh('xlm-models/ilm/nn.py', 'ilm.nn') }}: the model outputs `(B, post_seq_len, V)` logits and we compute CE against the sparse target counts at non-drop, non-pad positions.
 - Optional length head:
   - `length_loss="ce"` -> standard CE on `length_logits`.
   - `length_loss="binary_ce"` -> per-class binary CE with `stopping_class_weight` weighting the two classes.
@@ -98,7 +98,7 @@ The token-drop noising is implemented in `ilm_drop_fn` + `ilm_single_segment_col
 
 ## 7. Predictor
 
-Three classes in [predictor_ilm.py](../../xlm-models/ilm/predictor_ilm.py):
+Three classes in {{ gh('xlm-models/ilm/predictor_ilm.py', 'predictor_ilm.py') }}:
 
 - **`ILMPredictor`** — base predictor, no length head. Iteratively selects an insertion position from the model's distribution over `(position, token)` pairs (using `topk_over_last_two_dims` / `sample_over_last_two_dims` from `ilm.nn`) and inserts one token per step.
 - **`ILMPredictorWithLengthClassification`** — uses `length_logits` to decide when to stop (length head predicts remaining insertions).
@@ -109,7 +109,7 @@ Output `ILMPredictionDict`: `{text, text_with_spl_tokens, ids, attention_mask, p
 
 ## 8. Metrics
 
-See [tests/models/ilm/test_metrics_ilm.py](../../tests/models/ilm/test_metrics_ilm.py).
+See {{ gh('tests/models/ilm/test_metrics_ilm.py', 'tests/models/ilm/test_metrics_ilm.py') }}.
 
 | Function | Returned keys | Notes |
 |---|---|---|
@@ -119,7 +119,7 @@ See [tests/models/ilm/test_metrics_ilm.py](../../tests/models/ilm/test_metrics_i
 
 ## 9. Configs / experiments
 
-Hydra groups under [xlm-models/ilm/configs/](../../xlm-models/ilm/configs/). Available experiment entry points:
+Hydra groups under {{ gh_dir('xlm-models/ilm/configs', 'xlm-models/ilm/configs/') }}. Available experiment entry points:
 
 - `experiment=star_easy_ilm`, `experiment=star_medium_ilm`, `experiment=star_hard_ilm`
 - `experiment=text_ilm`
@@ -128,7 +128,7 @@ Hydra groups under [xlm-models/ilm/configs/](../../xlm-models/ilm/configs/). Ava
 
 ## 10. Testing
 
-Tests in [tests/models/ilm/](../../tests/models/ilm):
+Tests in {{ gh_dir('tests/models/ilm', 'tests/models/ilm/') }}:
 
 - `test_model_ilm.py` — extends `BaseModelTests` and verifies that the base `RotaryTransformerILMModel` returns `(vocab_logits, None)`.
 - `test_loss_ilm.py` — construction-time validation (`stopping_class_weight` requires `length_loss="binary_ce"`, `loss_on_padding=True` raises). A minimal-batch CE test is added by this plan once a sparse `ILMBatch` fixture is available.
@@ -136,7 +136,7 @@ Tests in [tests/models/ilm/](../../tests/models/ilm):
 - `test_predictor_ilm.py` — construction smoke (added in this plan).
 - `test_metrics_ilm.py`, `test_nn_ilm.py` — pure-function helpers.
 
-Shared fixtures (`tiny_ilm_model`, `ilm_batch`, `simple_tokenizer`, `real_loglinear_schedule`) live in [tests/conftest.py](../../tests/conftest.py) and [tests/models/ilm/conftest.py](../../tests/models/ilm/conftest.py).
+Shared fixtures (`tiny_ilm_model`, `ilm_batch`, `simple_tokenizer`, `real_loglinear_schedule`) live in {{ gh('tests/conftest.py', 'tests/conftest.py') }} and {{ gh('tests/models/ilm/conftest.py', 'tests/models/ilm/conftest.py') }}.
 
 ## 11. API reference
 
