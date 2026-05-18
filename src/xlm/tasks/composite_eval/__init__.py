@@ -11,13 +11,25 @@ Usage in Hydra config::
           _target_: xlm.tasks.safe_molgen.DeNovoEval
           use_bracket_safe: true
 
-Each pattern may map to a **single** evaluator or an **ordered list** of evaluators.
-When a list is used, evaluators run in order on the same predictions; returned
-``aggregated_metrics`` dicts are merged (later keys overwrite duplicates, with a
-warning).
+For one dataloader pattern you may use a **dict of named sub-evaluators** (compose in YAML;
+run order is **key order**)::
+
+    evaluators:
+      prediction:
+        mauve:
+          _target_: xlm.tasks.owt.mauve_text_eval.MauveTextEval
+        gen_ppl:
+          _target_: xlm.tasks.owt.generative_perplexity_post_hoc.GenerativePerplexityPostHocEval
+          ...
+
+A **list** of evaluators is still supported for the same pattern. A **single** evaluator
+instance is unchanged. Returned ``aggregated_metrics`` dicts are merged (duplicate keys:
+later sub-evaluator wins, with a warning).
 """
 
 from typing import Any, Dict, List, Optional, Tuple
+
+from omegaconf import DictConfig, ListConfig
 
 from xlm.utils.rank_zero import RankedLogger
 
@@ -25,27 +37,34 @@ logger = RankedLogger(__name__, rank_zero_only=True)
 
 
 def _normalize_to_chain(spec: Any) -> List[Any]:
-    if isinstance(spec, (list, tuple)):
+    """Turn a pattern value into an ordered list of evaluator instances."""
+    if isinstance(spec, (list, tuple, ListConfig)):
         return list(spec)
+    if isinstance(spec, (dict, DictConfig)):
+        if not spec:
+            return []
+        return [spec[k] for k in spec.keys()]
     return [spec]
 
 
 class CompositePostHocEvaluator:
     """Routes ``eval()`` calls to task-specific evaluator(s) chosen by dataloader name.
 
-    The ``evaluators`` dict maps a *pattern* (substring) to an evaluator instance
-    or an **ordered list** of instances. When ``eval()`` is called with a
-    ``dataloader_name``, the first pattern that is a substring of the name is
-    selected. If nothing matches, the predictions are returned unchanged with
-    empty metrics.
+    The ``evaluators`` dict maps a *pattern* (substring) to one evaluator instance, a
+    **list** of instances, or a **dict** of name → instance (names are for structure and
+    ordering only; run order follows dict / YAML key order).
+
+    When ``eval()`` is called with a ``dataloader_name``, the first pattern that is a
+    substring of the name is selected. If nothing matches, the predictions are returned
+    unchanged with empty metrics.
 
     This is a drop-in replacement for a single evaluator: the existing
     ``Harness.compute_post_hoc_metrics`` passes ``dataloader_name`` through,
     and evaluators that don't use it simply ignore the kwarg.
 
     Args:
-        evaluators: Mapping from dataloader-name substring to one evaluator or a
-            list of evaluators. Each must implement
+        evaluators: Mapping from dataloader-name substring to one evaluator, a list of
+            evaluators, or a dict of evaluators. Each must implement
             ``eval(predictions, tokenizer=..., **kwargs)``.
     """
 

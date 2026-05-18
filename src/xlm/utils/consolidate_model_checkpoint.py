@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import json
+import logging
+import os
 from pathlib import Path
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
-from huggingface_hub import save_torch_state_dict
+from huggingface_hub import HfApi, save_torch_state_dict
 from huggingface_hub.constants import SAFETENSORS_INDEX_FILE, SAFETENSORS_SINGLE_FILE
 from safetensors.torch import save_file
 
@@ -73,6 +76,109 @@ def export_model_only_safetensors_from_consolidated_checkpoint(
     raise RuntimeError(
         f"Expected {SAFETENSORS_INDEX_FILE} or {SAFETENSORS_SINGLE_FILE} under {output}"
     )
+
+
+logger = logging.getLogger(__name__)
+
+_DEFAULT_HUB_ALLOW_PATTERNS = (
+    "*.safetensors",
+    "*.safetensors.index.json",
+    "config.json",
+    "full_config.yaml",
+    "README.md",
+)
+
+
+def write_model_only_hub_artifacts(cfg: Any, out_dir: Path) -> Path:
+    """Write ``config.json`` and ``full_config.yaml`` for a PyTorchModelHubMixin-style upload.
+
+    Mirrors :meth:`xlm.harness.Harness._save_pretrained` config serialization (not weights).
+
+    Args:
+        cfg: Hydra ``DictConfig`` with at least a ``model`` subtree.
+        out_dir: Directory to write into (created if missing).
+
+    Returns:
+        Path to the written ``config.json``.
+    """
+    from omegaconf import DictConfig, OmegaConf
+
+    if not isinstance(cfg, DictConfig):
+        raise TypeError(f"cfg must be a DictConfig, got {type(cfg)}")
+    out_dir = out_dir.expanduser().resolve()
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    full_config = OmegaConf.to_yaml(cfg, resolve=False)
+    full_path = out_dir / "full_config.yaml"
+    with open(full_path, "w", encoding="utf-8") as f:
+        f.write(full_config)
+    logger.info("Saved full config to %s", full_path)
+
+    model_config = OmegaConf.to_container(cfg.model, resolve=True)
+    config_path = out_dir / "config.json"
+    with open(config_path, "w", encoding="utf-8") as f:
+        json.dump(model_config, f, indent=2)
+    logger.info("Saved model config to %s", config_path)
+    return config_path.resolve()
+
+
+def push_model_only_folder_to_hub(
+    folder: str | Path,
+    *,
+    repo_id: str,
+    commit_message: str,
+    branch: str | None = None,
+    private: bool = False,
+    create_pr: bool = False,
+    token: str | None = None,
+    allow_patterns: list[str] | None = None,
+) -> None:
+    """Upload a folder of model-only artifacts (safetensors + configs) to the Hub.
+
+    Uses :meth:`huggingface_hub.HfApi.create_repo`, optional branch creation, and
+    :meth:`huggingface_hub.HfApi.upload_folder`. Does not instantiate a :class:`~xlm.harness.Harness`.
+    """
+    from huggingface_hub.errors import RevisionNotFoundError
+
+    if token is None:
+        token = os.getenv("HF_HUB_KEY")
+
+    api = HfApi(token=token)
+    api.create_repo(
+        repo_id=repo_id,
+        repo_type="model",
+        private=private,
+        exist_ok=True,
+    )
+
+    if branch is not None and branch != "main":
+        try:
+            api.repo_info(repo_id=repo_id, repo_type="model", revision=branch)
+        except RevisionNotFoundError:
+            logger.info("Branch '%s' not found; creating it.", branch)
+            api.create_branch(
+                repo_id=repo_id,
+                repo_type="model",
+                branch=branch,
+                exist_ok=True,
+            )
+
+    patterns = (
+        list(allow_patterns)
+        if allow_patterns is not None
+        else list(_DEFAULT_HUB_ALLOW_PATTERNS)
+    )
+
+    api.upload_folder(
+        repo_id=repo_id,
+        folder_path=str(folder),
+        repo_type="model",
+        revision=branch,
+        commit_message=commit_message,
+        create_pr=create_pr,
+        allow_patterns=patterns,
+    )
+    logger.info("Uploaded model folder to %s", repo_id)
 
 
 def consolidate_model_checkpoint(

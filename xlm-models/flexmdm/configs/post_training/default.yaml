@@ -3,3 +3,4 @@ apply_ema: true
 model_state_dict_path: ???
 repo_id: null
 commit_message: null
+max_shard_size: null

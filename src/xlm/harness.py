@@ -1159,6 +1159,7 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
         )
 
     def on_load_checkpoint(self, checkpoint: dict) -> None:
+        self._on_load_checkpoint_to_remove(checkpoint)
         if self.manual_ema_restore:
             if "ema" not in checkpoint:
                 raise ValueError(
@@ -1185,22 +1186,39 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
     # region: other utilities
 
     def _on_load_checkpoint_to_remove(self, checkpoint: dict) -> None:
-        # CLEANUP: This method is to load old models that serialize rotary embedding buffers
-        # Get the state_dict from the checkpoint (the key might be "state_dict")
-        state_dict = checkpoint.get(
-            "state_dict", checkpoint
-        )  # entier lightning module's state_dict
-        # Identify the keys corresponding to the rotary buffers. They will be in .model as well as .predictor.model
-        ranked_logger.info(
-            "Removing rotary embedding buffers from the state_dict."
-        )
-        keys_to_remove = [
+        """Normalize Lightning checkpoints before weights load.
+
+        - Older runs registered ``predictor.model`` as an nn.Module child; checkpoints
+          then contained duplicate ``predictor.model.*`` keys. We attach the shared
+          backbone via ``object.__setattr__`` now, so those keys must be dropped.
+        - Older checkpoints may persist rotary sin/cos buffers that we strip here.
+        """
+        state_dict = checkpoint.get("state_dict", checkpoint)
+
+        predictor_dup_keys = [
+            key for key in state_dict if key.startswith("predictor.model.")
+        ]
+        for key in predictor_dup_keys:
+            state_dict.pop(key)
+        if predictor_dup_keys:
+            ranked_logger.info(
+                "Removing %s duplicate predictor.model.* keys from checkpoint "
+                "(backward compatibility).",
+                len(predictor_dup_keys),
+            )
+
+        rotary_keys = [
             key
             for key in state_dict
             if "rotary_emb.sin" in key or "rotary_emb.cos" in key
         ]
-        for key in keys_to_remove:
+        for key in rotary_keys:
             state_dict.pop(key)
+        if rotary_keys:
+            ranked_logger.info(
+                "Removing %s rotary embedding sin/cos buffer keys from checkpoint.",
+                len(rotary_keys),
+            )
 
     def top_level_named_modules(
         self,

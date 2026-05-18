@@ -11,6 +11,8 @@ from xlm.utils.checkpoint_paths import is_consolidatable_lightning_sharded_dir
 from xlm.utils.consolidate_model_checkpoint import (
     consolidate_model_checkpoint,
     export_model_only_safetensors_from_consolidated_checkpoint,
+    push_model_only_folder_to_hub,
+    write_model_only_hub_artifacts,
 )
 from xlm.utils.hf_hub import _is_safetensors_sharded_index
 from xlm.utils.model_state_dict import (
@@ -134,3 +136,60 @@ class TestConsolidateModelCheckpointValidation:
 
         with pytest.raises(ValueError, match="Lightning FSDP"):
             consolidate_model_checkpoint(d, tmp_path / "out.safetensors")
+
+
+class TestWriteModelOnlyHubArtifacts:
+    def test_writes_config_json_and_full_config_yaml(self, tmp_path: Path):
+        from omegaconf import OmegaConf
+
+        cfg = OmegaConf.create({"model": {"n_layer": 2, "d_model": 64}})
+        d = tmp_path / "hub"
+        out_p = write_model_only_hub_artifacts(cfg, d)
+        assert out_p.name == "config.json"
+
+        import json
+
+        with open(out_p, encoding="utf-8") as f:
+            data = json.load(f)
+        assert data == {"n_layer": 2, "d_model": 64}
+        assert (d / "full_config.yaml").is_file()
+
+
+class TestPushModelOnlyFolderToHub:
+    def test_upload_folder_receive_allow_patterns_and_branch(
+        self, tmp_path: Path, monkeypatch
+    ):
+        from unittest.mock import MagicMock
+
+        mock_api = MagicMock()
+        monkeypatch.setattr(
+            "xlm.utils.consolidate_model_checkpoint.HfApi",
+            lambda **kwargs: mock_api,
+        )
+
+        monkeypatch.setenv("HF_HUB_KEY", "hf_fake")
+
+        from huggingface_hub.errors import RevisionNotFoundError
+
+        mock_api.repo_info.side_effect = RevisionNotFoundError("missing")
+
+        (tmp_path / "model.safetensors").write_bytes(b"x")
+        (tmp_path / "config.json").write_text("{}")
+
+        push_model_only_folder_to_hub(
+            tmp_path,
+            repo_id="org/model",
+            commit_message="cmsg",
+            branch="step-1",
+            token="tok",
+        )
+
+        mock_api.create_repo.assert_called_once()
+        mock_api.create_branch.assert_called_once()
+        mock_api.upload_folder.assert_called_once()
+        call_kw = mock_api.upload_folder.call_args[1]
+        assert call_kw["repo_id"] == "org/model"
+        assert call_kw["revision"] == "step-1"
+        assert call_kw["commit_message"] == "cmsg"
+        assert call_kw["allow_patterns"] is not None
+        assert "*.safetensors" in call_kw["allow_patterns"]

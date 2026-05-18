@@ -21,13 +21,13 @@ and `experiment=uniref50_mlm`.
 Trains the same model but packs multiple protein sequences per block instead of padding.
 Key differences from the standard variant:
 
-| | Standard | Packed |
-|---|---|---|
-| Packing | one protein per slot, padded | multiple proteins per block, no padding |
-| Cropping | first `block_size` tokens | random window of `block_size` (DPLM-style) |
-| Attention | full 2-D mask | **FlexAttention** — `BlockMask` only (`model.use_flex_attn=true`); no dense mask tensor |
-| Positions | monotonic 0…`block_size-1` | **reset to 0** at the start of each protein |
-| Collator | `DefaultMLMCollator` | `PackedMLMCollator` |
+|           | Standard                     | Packed                                                                                  |
+|-----------|------------------------------|-----------------------------------------------------------------------------------------|
+| Packing   | one protein per slot, padded | multiple proteins per block, no padding                                                 |
+| Cropping  | first `block_size` tokens    | random window of `block_size` (DPLM-style)                                              |
+| Attention | full 2-D mask                | **FlexAttention** — `BlockMask` only (`model.use_flex_attn=true`); no dense mask tensor |
+| Positions | monotonic 0…`block_size-1`   | **reset to 0** at the start of each protein                                             |
+| Collator  | `DefaultMLMCollator`         | `PackedMLMCollator`                                                                     |
 
 ### How it works
 
@@ -94,3 +94,20 @@ xlm job_type=train job_name=owt_packed_mlm_run experiment=owt_packed_mlm
 
 Uses naive packing (full cross-block attention, monotonic positions) — appropriate for
 text where cross-document leakage is tolerable.
+
+
+## OpenWebText (padded with sequences of length 1024 or less)
+### Debug Eval
+```bash
+xlm job_name=owt_mlm_73_800k_debug_eval \
+    job_type=eval \
+    experiment=owt_mlm \
+    +hub.repo_id=dhruveshpatel/mlm-owt \
+    +hub.revision=step-800000 \
+    ++trainer.precision=32-true \
+    compile=false \
+    +post_hoc_evaluator@post_hoc_evaluator.evaluators.prediction.gen_ppl=gen_ppl_gpt2_large \
+    +post_hoc_evaluator@post_hoc_evaluator.evaluators.prediction.mauve=mauve_text \
+    post_hoc_evaluator.evaluators.prediction.mauve.human_text_source=hf_streaming \
+    ~datamodule.dataset_managers.val.lm
+```

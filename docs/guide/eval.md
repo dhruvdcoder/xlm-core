@@ -79,7 +79,7 @@ Your evaluator should read the keys your **collator + predictor** actually write
 
 ### Single evaluator or composite chain
 
-Hydra instantiates **one** object from the top-level `post_hoc_evaluator` config ([`setup_post_hoc_evaluator`](../../src/xlm/harness.py)). Use [`CompositePostHocEvaluator`](../../src/xlm/tasks/composite_eval/__init__.py) when you need **several** post-hoc passes on the same dataloader (e.g. MAUVE then generative perplexity). For each matching dataloader-name pattern, the value may be a **single** evaluator or an **ordered list**; list entries run sequentially, threading `predictions` through each `eval()` and merging `aggregated_metrics` (duplicate metric keys: **last wins**, with a warning).
+Hydra instantiates **one** object from the top-level `post_hoc_evaluator` config ([`setup_post_hoc_evaluator`](../../src/xlm/harness.py)). Use [`CompositePostHocEvaluator`](../../src/xlm/tasks/composite_eval/__init__.py) when you need **several** post-hoc passes on the same dataloader (e.g. MAUVE then generative perplexity). For each matching dataloader-name pattern, the value may be a **single** evaluator, an **ordered dict** of named sub-evaluators (run order = YAML / dict key order), or an **ordered list**; chain entries run sequentially, threading `predictions` through each `eval()` and merging `aggregated_metrics` (duplicate metric keys: **last wins**, with a warning).
 
 ### `eval()` contract
 
@@ -97,21 +97,45 @@ The original **`.jsonl` is not modified** by post-hoc (unlike older generative-p
 
 ### Hydra configuration
 
-Packaged snippets live under [`src/xlm/configs/lightning_train/post_hoc_evaluator/`](../../src/xlm/configs/lightning_train/post_hoc_evaluator/):
+Packaged snippets live under [`src/xlm/configs/lightning_train/post_hoc_evaluator/`](../../src/xlm/configs/lightning_train/post_hoc_evaluator/). Base training config loads **`post_hoc_evaluator/default.yaml`**: an empty [`CompositePostHocEvaluator`](../../src/xlm/tasks/composite_eval/__init__.py). Each other file in that folder defines **one** evaluator object; compose it under a dataloader-name **pattern** (substring match) and a short **alias** using a structured defaults entry (or equivalent YAML / CLI overrides).
 
-| Config group | Role |
-|--------------|------|
-| `denovo` | Small-molecule de novo metrics (`DeNovoEval`) |
-| `syntactic` | Syntactic validity-style metrics |
-| `mauve_text` | Text MAUVE (`xlm.tasks.owt.mauve_text_eval.MauveTextEval`) |
+| Config (file)                                                     | Role                                                             |
+|-------------------------------------------------------------------|------------------------------------------------------------------|
+| `default`                                                         | Empty composite (`evaluators: {}`)                               |
+| `denovo`                                                          | Small-molecule de novo metrics (`DeNovoEval`)                    |
+| `syntactic`                                                       | Syntactic validity (`SyntacticMetricsEvaluator`)                 |
+| `mauve_text`                                                      | Text MAUVE (`MauveTextEval`)                                     |
 | `gen_ppl_gpt2_large` / `gen_ppl_gpt2_small` / `gen_ppl_llama3_3b` | Generative perplexity judges (`GenerativePerplexityPostHocEval`) |
 
-Typical patterns:
+**Compose from `defaults`** (pattern `prediction` matches typical `*_prediction` dataloaders):
 
 ```yaml
-# Use a packaged snippet (recommended)
 defaults:
-  - /post_hoc_evaluator: mauve_text
+  - /post_hoc_evaluator@post_hoc_evaluator.evaluators.prediction.mauve: mauve_text
+```
+
+Add a second evaluator on the same loader:
+
+```yaml
+defaults:
+  - /post_hoc_evaluator@post_hoc_evaluator.evaluators.prediction.mauve: mauve_text
+  - /post_hoc_evaluator@post_hoc_evaluator.evaluators.prediction.gen_ppl: gen_ppl_gpt2_large
+```
+
+**CLI** (same idea; quote if your shell splits on dots):
+
+```text
++/post_hoc_evaluator@post_hoc_evaluator.evaluators.prediction.mauve=mauve_text
+```
+
+**Override** packaged fields after composition::
+
+```yaml
+post_hoc_evaluator:
+  evaluators:
+    prediction:
+      mauve:
+        human_text_source: hf_streaming
 ```
 
 ```yaml
@@ -120,16 +144,18 @@ post_hoc_evaluator:
   _target_: xlm.tasks.math500.Math500Eval
 ```
 
-Example **chaining** MAUVE and generative perplexity on the same prediction loader (list value under the pattern key):
+Example **chaining** MAUVE and generative perplexity on the same prediction loader (recommended: **dict** of sub-evaluators under the pattern key; run order follows key order):
 
 ```yaml
 post_hoc_evaluator:
   _target_: xlm.tasks.composite_eval.CompositePostHocEvaluator
   evaluators:
     prediction:
-      - _target_: xlm.tasks.owt.mauve_text_eval.MauveTextEval
+      mauve:
+        _target_: xlm.tasks.owt.mauve_text_eval.MauveTextEval
         generated_field: text
-      - _target_: xlm.tasks.owt.generative_perplexity_post_hoc.GenerativePerplexityPostHocEval
+      gen_ppl:
+        _target_: xlm.tasks.owt.generative_perplexity_post_hoc.GenerativePerplexityPostHocEval
         default_judge_device: cuda
         evaluators:
           gpt2-large:
@@ -138,7 +164,9 @@ post_hoc_evaluator:
             batch_size: 64
 ```
 
-**MAUVE** needs the optional dependency: `pip install "xlm-core[mauve]"` (see [`mauve_text_eval.py`](../../src/xlm/tasks/owt/mauve_text_eval.py)). For unconditional text runs with no per-row reference, override `human_text_source: hf_streaming` under `post_hoc_evaluator:` as in the `mauve_text` YAML defaults.
+The same chain can be written as a **list** instead of a dict; dict keys are only for composition and documentation (they are not prepended to logged metric names).
+
+**MAUVE** needs the optional dependency: `pip install "xlm-core[mauve]"` (see [`mauve_text_eval.py`](../../src/xlm/tasks/owt/mauve_text_eval.py)). For unconditional text runs with no per-row reference, override `human_text_source: hf_streaming` under `post_hoc_evaluator.evaluators.prediction.mauve` (or your chosen alias).
 
 Example combining **reported metrics** on a prediction dataloader with **MAUVE** post-hoc:
 
@@ -146,14 +174,15 @@ Example combining **reported metrics** on a prediction dataloader with **MAUVE**
 defaults:
   - your_eval_experiment
   - /metrics@reported_metrics.val.math500_prediction.exact_match: seq2seq_exact_match
-  - /post_hoc_evaluator: mauve_text
+  - /post_hoc_evaluator@post_hoc_evaluator.evaluators.prediction.mauve: mauve_text
 
 post_hoc_evaluator:
-  human_text_source: null   # default: use per-row reference / truth; set hf_streaming when needed
+  evaluators:
+    prediction:
+      mauve:
+        human_text_source: null   # default: use per-row reference / truth; set hf_streaming when needed
 ```
 
 Task authors: wiring a new prediction stream and collator is covered in [Adding a task](adding-a-task.md) (“Wire metrics and optional post-hoc evaluation”).
 
-### Wiki note
 
-The long-form [`wiki/eval.md`](../../wiki/eval.md) document describes an older lm-eval-oriented pipeline. For Lightning `Harness` post-hoc behavior, prefer this guide and [Metrics](metrics.md) rather than duplicating that design doc.

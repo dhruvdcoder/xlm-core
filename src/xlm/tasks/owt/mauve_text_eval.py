@@ -15,9 +15,9 @@ Example Hydra defaults::
 
     defaults:
       - your_experiment
-      - /post_hoc_evaluator: mauve_text
+      - /post_hoc_evaluator@post_hoc_evaluator.evaluators.prediction.mauve: mauve_text
 
-Or instantiate explicitly::
+Or instantiate explicitly (no composite)::
 
     post_hoc_evaluator:
       _target_: xlm.tasks.owt.mauve_text_eval.MauveTextEval
