@@ -40,7 +40,13 @@ python .github/release.py --publish-only --yes
 
 **Actions → Release xlm-core → Run workflow**, enter the version (and optionally enable dry run).
 
-Requires `contents: write` (configured in [`.github/workflows/release.yml`](https://github.com/dhruvdcoder/xlm-core/blob/main/.github/workflows/release.yml)).
+Requires `contents: write` and `actions: write` (configured in [`.github/workflows/release.yml`](https://github.com/dhruvdcoder/xlm-core/blob/main/.github/workflows/release.yml)).
+
+After the release is created, that workflow **explicitly triggers** [publish.yml](https://github.com/dhruvdcoder/xlm-core/blob/main/.github/workflows/publish.yml) and [docs-release.yml](https://github.com/dhruvdcoder/xlm-core/blob/main/.github/workflows/docs-release.yml) via `workflow_dispatch`. GitHub does not run those workflows automatically when the release is created with `GITHUB_TOKEN` (only when you publish from the UI or use `gh` with a personal token locally).
+
+To publish a release that was already created but missed PyPI/docs:
+
+**Actions → Upload Python Package → Run workflow** with `tag_name` = e.g. `v0.1.4` (same for **Deploy Release Docs to GitHub Pages**).
 
 ## What happens after the release
 

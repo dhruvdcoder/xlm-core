@@ -3,12 +3,20 @@ name: Upload Python Package
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Release tag (e.g. v0.1.4 or v0.1.4-alpha)"
+        required: true
+        type: string
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.inputs.tag_name || github.event.release.tag_name }}
     - name: Set up Python
       uses: actions/setup-python@v1
       with:
@@ -21,7 +29,7 @@ jobs:
       id: get_version
       run: |
         # Get the tag name (e.g., v1.2.3 or 1.2.3-alpha)
-        TAG_NAME="${{ github.event.release.tag_name }}"
+        TAG_NAME="${{ github.event.inputs.tag_name || github.event.release.tag_name }}"
         # Remove 'v' prefix if present
         VERSION=${TAG_NAME#v}
         # Split version into components

@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   release:
@@ -43,3 +44,16 @@ jobs:
             ARGS+=(--dry-run)
           fi
           python .github/release.py "${ARGS[@]}"
+
+      # Releases created with GITHUB_TOKEN do not emit release:published to other
+      # workflows. Chain PyPI + docs explicitly (local gh release still uses the event).
+      - name: Trigger PyPI and docs deploy
+        if: ${{ inputs.dry_run != true }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ inputs.version }}"
+          VERSION="${VERSION#v}"
+          TAG="v${VERSION}"
+          gh workflow run "Upload Python Package" --ref main -f "tag_name=${TAG}"
+          gh workflow run "Deploy Release Docs to GitHub Pages" --ref main -f "tag_name=${TAG}"
