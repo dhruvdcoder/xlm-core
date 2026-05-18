@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: "Release tag (e.g. v0.1.4 or v0.1.4-alpha)"
+        description: "Release tag (e.g. v0.1.4 or v0.1.4-alpha, here we need v prefix)"
         required: true
         type: string
 
