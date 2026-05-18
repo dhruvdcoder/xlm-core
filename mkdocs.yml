@@ -48,7 +48,13 @@ plugins:
           # Respect __all__ in source files; omit objects not in __all__
           filters: "public"
 
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
 markdown_extensions:
+  - pymdownx.arithmatex:
+      generic: true
   - toc:
       toc_depth: 4
   - pymdownx.superfences:
@@ -78,6 +84,13 @@ nav:
       - ILM: models/ilm.md
       - MDLM: models/mdlm.md
       - MLM: models/mlm.md
+
+  - Tasks:
+      - OpenWebText: tasks/owt.md
+
+  - Experiments:
+      - OWT FlexMDM: experiments/owt_flexmdm.md
+      - OWT MLM: experiments/owt_mlm.md
 
   - Developers:
       - CONTRIBUTING: guide/CONTRIBUTING.md
