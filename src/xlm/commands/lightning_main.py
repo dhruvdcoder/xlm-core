@@ -9,7 +9,6 @@
 
 # fmt: off
 import dotenv
-from xlm.commands.extract_checkpoint import extract_checkpoint
 # read env variables before anything else is imported
 dotenv.load_dotenv(
     dotenv_path=".env", # we need to point to .env in current dir when xlm console script is run
@@ -20,6 +19,7 @@ if not found_secrets:
     print("Warning: .secrets.env not found")
 # fmt: on
 
+from xlm.commands.extract_checkpoint import extract_checkpoint
 import os
 import json
 
