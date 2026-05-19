@@ -7,3 +7,4 @@ evaluators:
     _target_: xlm.generative_perplexity.AutoModelForCausalLMGenerativePerplexityEvaluator
     name: gpt2
     batch_size: 64
+    max_length: 1024
