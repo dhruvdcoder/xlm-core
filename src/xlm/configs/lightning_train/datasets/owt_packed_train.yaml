@@ -31,3 +31,4 @@ dataloader_kwargs:
     prefetch_factor: ${dataloader_prefetch_factor}
     drop_last: True
 model_name: null
+make_infinite: true
