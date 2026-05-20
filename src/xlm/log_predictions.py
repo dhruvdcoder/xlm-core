@@ -422,13 +422,8 @@ class LogPredictions:
                 raise ValueError(f"Invalid writer type: {writer}")
         elif isinstance(writer, _PredictionWriter):
             self.writers.append(writer)
-        elif isinstance(writer, (dict, ListConfig)):
-            self.writers.append(hydra.utils.instantiate(writer))
         else:
-            raise ValueError(
-                "Each writer must be 'file' | 'logger' | 'console', a config "
-                f"dict with _target_, or a _PredictionWriter instance. Got: {type(writer)}"
-            )
+            self.writers.append(hydra.utils.instantiate(writer))
 
     def __init__(
         self,
