@@ -2,7 +2,7 @@
 defaults:
   - override /datamodule: tinygsm_arlm
   - override /noise_schedule: dummy
-  - override /model_type: arlm_seq2seq
+  - override /model_type: arlm_tinygsm_seq2seq
   - override /model: rotary_transformer_small_arlm
 
 per_device_batch_size: 32
@@ -50,8 +50,16 @@ log_predictions:
   _target_: xlm.log_predictions.LogPredictions
   fields_to_keep_in_output:
     - text
-    - truth
-  inject_target: target_ids
+    - generated_text
+    - answer
+  additional_fields_from_batch:
+    - answer
   writers:
     - file
     - logger
+
+post_hoc_evaluator:
+  _target_: xlm.tasks.composite_eval.CompositePostHocEvaluator
+  evaluators:
+    prediction:
+      _target_: xlm.tasks.tinygsm.Gsm8kCodeEval

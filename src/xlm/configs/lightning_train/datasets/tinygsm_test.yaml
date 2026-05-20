@@ -1,0 +1,5 @@
+defaults:
+  - tinygsm_val
+
+stages:
+  - test

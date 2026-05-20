@@ -44,6 +44,7 @@ global_components:
     pretrained_model_name_or_path: Qwen/Qwen2-0.5B
     special_tokens:
       mask_token: "<|mask|>"
+      pad_token: "<|pad|>"
 
 datamodule:
   print_batch_fn: flexmdm.datamodule_flexmdm.print_batch_flexmdm

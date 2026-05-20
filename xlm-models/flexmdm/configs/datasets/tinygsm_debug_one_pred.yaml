@@ -1,18 +1,15 @@
 defaults:
-  - tinygsm_val
+  - tinygsm_debug_one
 
-filter_suffix: pred_preprocess
+filter_suffix: debug_one_pred
 preprocess_function: xlm.tasks.tinygsm.tinygsm_pred_preprocess_fn
 preprocess_function_kwargs:
   sep: "\n"
 columns_to_remove:
   - question
   - code
+on_the_fly_load_from_cache_file: false
 stages:
   - fit
   - validate
   - predict
-iterable_dataset_shards: null
-shuffle_buffer_size: null
-dataloader_kwargs:
-  drop_last: false

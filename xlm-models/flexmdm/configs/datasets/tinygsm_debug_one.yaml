@@ -1,0 +1,13 @@
+defaults:
+  - tinygsm
+
+filter_fn: xlm.tasks.tinygsm.tinygsm_debug_first_example_filter_fn
+filter_suffix: debug_one
+iterable_dataset_shards: null
+shuffle_buffer_size: null
+on_the_fly_load_from_cache_file: false
+stages:
+  - fit
+  - validate
+dataloader_kwargs:
+  drop_last: false

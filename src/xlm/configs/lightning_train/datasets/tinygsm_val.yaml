@@ -1,10 +1,16 @@
 defaults:
   - tinygsm
 
+filter_suffix: val_holdout
 train_test_split:
   size: 0.05
   seed: 2025
   split: test
+# ``fit`` required so ``setup('fit')`` loads the dataset before in-training validation.
 stages:
+  - fit
   - validate
+iterable_dataset_shards: null
 shuffle_buffer_size: null
+dataloader_kwargs:
+  drop_last: false

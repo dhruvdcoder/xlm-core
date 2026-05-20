@@ -1,0 +1,6 @@
+defaults:
+  - tinygsm_val_pred
+
+stages:
+  - test
+  - predict

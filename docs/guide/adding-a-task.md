@@ -57,6 +57,11 @@ Return only the columns your downstream collator and model need (drop raw text v
 - Code: {{ gh('src/xlm/tasks/math500/__init__.py', 'math500/__init__.py') }} (`math500_preprocess_fn`, `Math500Eval`)
 - Eval dataset: {{ gh('src/xlm/configs/lightning_train/datasets/math500_test.yaml', 'datasets/math500_test.yaml') }}
 
+**Code-execution eval (TinyGSM → GSM8K)** — same post-hoc pipeline, but scoring runs generated Python:
+
+- Code: {{ gh('src/xlm/tasks/tinygsm/gsm8k.py', 'tinygsm/gsm8k.py') }} (`gsm8k_preprocess_fn`, `Gsm8kCodeEval`)
+- Runbook: [TinyGSM / GSM8K](../tasks/tinygsm_gsm8k.md)
+
 **Large optional imports** — keep the default import surface light and defer heavy imports (see {{ gh('src/xlm/tasks/safe_molgen/__init__.py', 'safe_molgen/__init__.py') }} delegating to {{ gh('src/xlm/tasks/safe_molgen/_safe_molgen_impl.py', '_safe_molgen_impl.py') }}).
 
 For larger tasks you may instead split logic into additional modules inside `tasks/<your_task>/` and re-export public symbols from `__init__.py`; Hydra paths stay `xlm.tasks.<your_task>.<symbol>`.
@@ -164,7 +169,7 @@ If your task needs packages beyond core xlm-core, document them in the task modu
 
 ## Examples
 
-- [TinyGSM](../tasks/tinygsm.md) — large HF seq2seq task (question + code), Qwen tokenizer, FlexMDM / MLM / ARLM experiments.
+- [TinyGSM](../tasks/tinygsm.md) — large HF seq2seq task (question + code); model runbooks: [FlexMDM](../models/flexmdm.md#tinygsm), [MLM](../models/mlm.md#tinygsm), [ARLM](../models/arlm.md#tinygsm).
 
 ## Quick reference table
 

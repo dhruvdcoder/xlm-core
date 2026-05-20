@@ -1,6 +1,6 @@
 _target_: xlm.datamodule.DatasetManager
 collator: ???
-full_name: ??? # like billion-word-benchmark/lm1b/train # <repo>/<ds_name>/<split_to_download> . 
+full_name: ??? # like billion-word-benchmark/lm1b/train # <repo>/<ds_name>/<split> or <repo>/<ds_name>/<config>/<split> 
 full_name_debug: ??? # like billion-word-benchmark/lm1b/train
 preprocess_function: ??? # likexlm.tasks.lm1b.preprocess_fn
 on_the_fly_processor: ??? # like xlm.datamodule.ids_to_example_fn or null

@@ -845,9 +845,10 @@ class DatasetManager:
             use_manual_cache: If True, use manual cache dir created using save_to_disk(), else let HF Datasets do automatic caching.
             train_test_split: If set, split the loaded split into train/test via
                 ``Dataset.train_test_split``. Keys: ``size`` (float, passed as
-                ``test_size``) and optional ``seed`` (int, default 42). Skipped
-                when ``DEBUG_OVERFIT`` is true so train and val managers share
-                the same examples during debug overfit runs.
+                ``test_size``) and optional ``seed`` (int, default 42). Applied
+                when building manual caches. Holdout managers (``split: test``)
+                load the train-partition cache at runtime when ``DEBUG_OVERFIT``
+                is set (see :meth:`_get_load_cache_dir`).
         """
         self.collator = collator
         self._full_name = full_name
@@ -950,7 +951,7 @@ class DatasetManager:
             ds = datasets.load_dataset(hub_path, **load_kwargs)
         else:
             ds = datasets.load_dataset(hub_path, config_name, **load_kwargs)
-        if self.train_test_split is not None and not flags.DEBUG_OVERFIT:
+        if self.train_test_split is not None:
             ds = ds.train_test_split(
                 test_size=self.train_test_split["size"],
                 seed=self.train_test_split["seed"],
@@ -1017,6 +1018,22 @@ class DatasetManager:
             )
             return Path(manual_cache_dir) / full_name_with_filter
 
+    def _get_load_cache_dir(self, manual_cache_dir: str) -> Path:
+        """Manual cache path used when loading data in :meth:`setup`.
+
+        When ``DEBUG_OVERFIT`` is set, holdout managers (``train_test_split`` with
+        ``split: test``) read the train-partition cache (no ``filter_suffix``),
+        mirroring ``full_name_debug`` for datasets without ``train_test_split``.
+        Cache creation via :meth:`prepare_data` always uses :meth:`_get_cache_dir`.
+        """
+        if (
+            flags.DEBUG_OVERFIT
+            and self.train_test_split is not None
+            and self.train_test_split["split"] == "test"
+        ):
+            return Path(manual_cache_dir) / self.full_name
+        return self._get_cache_dir(manual_cache_dir)
+
     def _clean_manual_cache(self, manual_cache_dir: str) -> None:
         cache_dir = self._get_cache_dir(manual_cache_dir)
         logger.info(
@@ -1033,7 +1050,13 @@ class DatasetManager:
         ds.save_to_disk(cache_dir, num_shards=self.iterable_dataset_shards)
 
     def _load_from_cache(self, manual_cache_dir: str) -> datasets.Dataset:
-        cache_dir = self._get_cache_dir(manual_cache_dir)
+        cache_dir = self._get_load_cache_dir(manual_cache_dir)
+        write_dir = self._get_cache_dir(manual_cache_dir)
+        if cache_dir != write_dir:
+            logger.info(
+                f"DEBUG_OVERFIT: loading holdout manager from train-partition "
+                f"manual cache at {cache_dir} (write path remains {write_dir})"
+            )
         return datasets.load_from_disk(cache_dir)
 
     def _check_cache(self, manual_cache_dir: str) -> bool:

@@ -767,7 +767,11 @@ def flexmdm_pred_collate_fn(
         target_ids = torch.tensor(target_ids)
     # --
 
-    ret: Dict[str, Any] = {"input_ids": ids, "fixed": fixed_gaps, "target_ids": target_ids}
+    ret: Dict[str, Any] = {
+        "input_ids": ids,
+        "fixed": fixed_gaps,
+        "target_ids": target_ids,
+    }
     if examples is not None:
         _merge_pass_through_fields(examples, ret, pass_through_fields)
     return ret

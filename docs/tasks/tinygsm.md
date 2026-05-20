@@ -22,69 +22,18 @@ See also: [Adding a task or dataset](../guide/adding-a-task.md).
 | Base dataset | {{ gh('src/xlm/configs/lightning_train/datasets/tinygsm.yaml', 'datasets/tinygsm.yaml') }} |
 | Train | {{ gh('src/xlm/configs/lightning_train/datasets/tinygsm_train.yaml', 'datasets/tinygsm_train.yaml') }} |
 | Val (loss) | {{ gh('src/xlm/configs/lightning_train/datasets/tinygsm_val.yaml', 'datasets/tinygsm_val.yaml') }} |
-| Val (prediction) | {{ gh('src/xlm/configs/lightning_train/datasets/tinygsm_val_pred.yaml', 'datasets/tinygsm_val_pred.yaml') }} |
+| Val (prediction) | {{ gh('src/xlm/configs/lightning_train/datasets/tinygsm_val_pred.yaml', 'datasets/tinygsm_val_pred.yaml') }} — `tinygsm_pred_preprocess_fn`, code-exec post-hoc |
+| GSM8K test | {{ gh('src/xlm/configs/lightning_train/datasets/gsm8k_test_pred.yaml', 'datasets/gsm8k_test_pred.yaml') }} |
 | Datamodule skeleton | {{ gh('src/xlm/configs/lightning_train/datamodule/tinygsm.yaml', 'datamodule/tinygsm.yaml') }} |
+
+GSM8K and code-execution eval: [tinygsm_gsm8k.md](tinygsm_gsm8k.md).
 
 ## Model experiments
 
-| Model | Experiment | Datamodule |
-|-------|------------|------------|
-| FlexMDM | `experiment=tinygsm_flexmdm` | {{ gh('xlm-models/flexmdm/configs/datamodule/tinygsm_flexmdm.yaml', 'tinygsm_flexmdm') }} |
-| MLM | `experiment=tinygsm_mlm` | {{ gh('xlm-models/mlm/configs/datamodule/tinygsm_mlm.yaml', 'tinygsm_mlm') }} |
-| ARLM | `experiment=tinygsm_arlm` | {{ gh('xlm-models/arlm/configs/datamodule/tinygsm_arlm.yaml', 'tinygsm_arlm') }} |
+Training settings, prepare/train commands, and experiment YAMLs live in the per-model docs:
 
-Experiment YAMLs: {{ gh('xlm-models/flexmdm/configs/experiment/tinygsm_flexmdm.yaml', 'tinygsm_flexmdm') }}, {{ gh('xlm-models/mlm/configs/experiment/tinygsm_mlm.yaml', 'tinygsm_mlm') }}, {{ gh('xlm-models/arlm/configs/experiment/tinygsm_arlm.yaml', 'tinygsm_arlm') }}.
-
-### Shared training settings
-
-| Setting | Value |
-|---------|--------|
-| Tokenizer | Qwen2-0.5B (`Qwen/Qwen2-0.5B`) with added `<|mask|>` |
-| `block_size` | 512 |
-| `input_block_size` | 0 |
-| Batching | Per-device 32; global 512 |
-| Collators | STAR seq2seq (`seq2seq_*` / `seq2seq_pred_*`); no BOS between question and code |
-| Val prediction metrics | `exact_match`, `token_accuracy` (seq2seq model types) |
-| Training schedule | Up to 1M steps; validation every 50k steps; checkpoint every 2.5k steps (keep every 100k) |
-
-Collators are reused from existing STAR seq2seq configs; no TinyGSM-specific collator YAMLs.
-
-## Commands
-
-### Prepare cache
-
-Run on rank 0 before multi-GPU training (tokenizes and writes manual cache):
-
-```bash
-xlm job_type=prepare_data experiment=tinygsm_flexmdm num_dataset_workers=8
-# or: experiment=tinygsm_mlm / experiment=tinygsm_arlm
-```
-
-On SLURM, see {{ gh('lib/slurm_scripts/submit_prepare_data.py', 'submit_prepare_data.py') }}.
-
-### Train (OWT-scale DDP)
-
-```bash
-# FlexMDM
-xlm job_name=tinygsm_flexmdm job_type=train experiment=tinygsm_flexmdm \
-  per_device_batch_size=32 trainer_strategy=ddp trainer.devices=8 trainer.num_nodes=1 \
-  ++trainer.precision=bf16-mixed compile=False
-
-# MLM
-xlm job_name=tinygsm_mlm job_type=train experiment=tinygsm_mlm \
-  per_device_batch_size=32 trainer_strategy=ddp trainer.devices=8 trainer.num_nodes=1 \
-  ++trainer.precision=bf16-mixed compile=False
-
-# ARLM
-xlm job_name=tinygsm_arlm job_type=train experiment=tinygsm_arlm \
-  per_device_batch_size=32 trainer_strategy=ddp trainer.devices=8 trainer.num_nodes=1 \
-  ++trainer.precision=bf16-mixed compile=False
-```
-
-### Debug
-
-Set `DEBUG_OVERFIT=1` to use `full_name_debug` (same HF split; useful for short smoke runs).
-
-## Experiment result pages
-
-Full W&B training/eval write-ups under `docs/experiments/` are deferred until runs exist. Use the experiment names above with the [document experiment](../guide/eval.md) workflow when ready.
+| Model | Experiment | Doc |
+|-------|------------|-----|
+| FlexMDM | `experiment=tinygsm_flexmdm` | [FlexMDM — TinyGSM](../models/flexmdm.md#tinygsm) (debug: `debug=overfit_tinygsm_flexmdm`) |
+| MLM | `experiment=tinygsm_mlm` | [MLM — TinyGSM](../models/mlm.md#tinygsm) |
+| ARLM | `experiment=tinygsm_arlm` | [ARLM — TinyGSM](../models/arlm.md#tinygsm) |

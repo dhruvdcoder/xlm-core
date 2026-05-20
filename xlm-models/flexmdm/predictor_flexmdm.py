@@ -13,6 +13,7 @@ import torch
 from jaxtyping import Bool, Integer, Float
 from xlm.datamodule import Tokenizer
 from torch import Tensor as TT
+from .tokenizer_guards import require_distinct_pad_and_eos
 from .types_flexmdm import (
     FlexMDMBatch,
     FlexMDMPredictionDict,
@@ -147,6 +148,7 @@ class FlexMDMPredictor(
         self.confidence = confidence
         self.tokens_hook = None
         self.skip_special_tokens_in_history = skip_special_tokens_in_history
+        require_distinct_pad_and_eos(self.tokenizer)
 
     def reset(self):
         # simple predictor has no state
