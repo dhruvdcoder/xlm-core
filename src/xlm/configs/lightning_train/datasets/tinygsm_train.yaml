@@ -1,0 +1,9 @@
+defaults:
+  - tinygsm
+
+train_test_split:
+  size: 0.05
+  seed: 2025
+  split: train
+stages:
+  - fit

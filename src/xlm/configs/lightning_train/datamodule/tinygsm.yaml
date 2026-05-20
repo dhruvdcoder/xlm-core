@@ -1,0 +1,8 @@
+# @package _global_
+defaults:
+  - default
+  - /datasets@datamodule.dataset_managers.train.lm: tinygsm_train
+  - /datasets@datamodule.dataset_managers.val.lm: tinygsm_val
+
+tags:
+  dataset: tinygsm
