@@ -393,6 +393,43 @@ class ConsolePredictionWriter(_PredictionWriter):
 class LogPredictions:
     """Main logging class that handles the shared pipeline and delegates to writers."""
 
+    def _append_writer(
+        self,
+        writer: Any,
+        fields_to_keep_in_output: Optional[List[str]],
+    ) -> None:
+        """Resolve one writers-list entry (shorthand, config dict, or instance)."""
+        if isinstance(writer, str):
+            if writer == "file":
+                self.writers.append(
+                    FilePredictionWriter(
+                        fields_to_keep_in_output=fields_to_keep_in_output
+                    )
+                )
+            elif writer == "logger":
+                self.writers.append(
+                    LoggerPredictionWriter(
+                        fields_to_keep_in_output=fields_to_keep_in_output
+                    )
+                )
+            elif writer == "console":
+                self.writers.append(
+                    ConsolePredictionWriter(
+                        fields_to_keep_in_output=fields_to_keep_in_output
+                    )
+                )
+            else:
+                raise ValueError(f"Invalid writer type: {writer}")
+        elif isinstance(writer, _PredictionWriter):
+            self.writers.append(writer)
+        elif isinstance(writer, (dict, ListConfig)):
+            self.writers.append(hydra.utils.instantiate(writer))
+        else:
+            raise ValueError(
+                "Each writer must be 'file' | 'logger' | 'console', a config "
+                f"dict with _target_, or a _PredictionWriter instance. Got: {type(writer)}"
+            )
+
     def __init__(
         self,
         writers: Optional[
@@ -413,31 +450,8 @@ class LogPredictions:
         """
         self.writers: List[_PredictionWriter] = []
         if isinstance(writers, (list, ListConfig)):
-            if isinstance(writers[0], str):
-                for writer_type in writers:
-                    if writer_type == "file":
-                        self.writers.append(
-                            FilePredictionWriter(
-                                fields_to_keep_in_output=fields_to_keep_in_output
-                            )
-                        )
-                    elif writer_type == "logger":
-                        self.writers.append(
-                            LoggerPredictionWriter(
-                                fields_to_keep_in_output=fields_to_keep_in_output
-                            )
-                        )
-                    elif writer_type == "console":
-                        self.writers.append(
-                            ConsolePredictionWriter(
-                                fields_to_keep_in_output=fields_to_keep_in_output
-                            )
-                        )
-                    else:
-                        raise ValueError(f"Invalid writer type: {writer_type}")
-            else:
-                for writer_config in writers:
-                    self.writers.append(hydra.utils.instantiate(writer_config))
+            for writer in writers:
+                self._append_writer(writer, fields_to_keep_in_output)
         elif writers is None:
             self.writers = []
             logger.warning(
@@ -445,8 +459,8 @@ class LogPredictions:
             )
         else:
             raise ValueError(
-                "writers must be a list of _PredictionWriter instances or string literals"
-                f"Got: {[type(w) for w in writers]}"
+                "writers must be a list of 'file' | 'logger' | 'console', Hydra "
+                f"config dicts, or _PredictionWriter instances. Got: {type(writers)}"
             )
         self.inject_target = inject_target
         self.additional_fields_from_batch = additional_fields_from_batch
