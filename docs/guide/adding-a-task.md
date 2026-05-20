@@ -162,6 +162,10 @@ If your task needs packages beyond core xlm-core, document them in the task modu
 
 ---
 
+## Examples
+
+- [TinyGSM](../tasks/tinygsm.md) — large HF seq2seq task (question + code), Qwen tokenizer, FlexMDM / MLM / ARLM experiments.
+
 ## Quick reference table
 
 | Artifact | Location |

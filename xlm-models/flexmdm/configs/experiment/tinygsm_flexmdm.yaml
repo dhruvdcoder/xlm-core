@@ -1,0 +1,65 @@
+# @package _global_
+defaults:
+  - text_flexmdm
+  - override /datamodule: tinygsm_flexmdm
+  - override /noise_schedule: flexmdm_linear
+  - override /model_type: flexmdm_seq2seq
+  - override /model: ddit_flexmdm
+
+per_device_batch_size: 32
+global_batch_size: 512
+num_dataloader_workers: 5
+block_size: 512
+input_block_size: 0
+len_predict_type: expectation
+monitored_metric: val/lm/accumulated_loss
+
+model:
+  force_flash_attn: false
+  len_head_type: mlp
+
+trainer:
+  max_steps: 1000_000
+  val_check_interval: 50000
+  check_val_every_n_epoch: null
+  num_sanity_val_steps: 3
+
+optimizer:
+  lr: 0.0001
+
+lr_scheduler:
+  name: constant_with_warmup
+  num_warmup_steps: 2000
+  num_training_steps: ${trainer.max_steps}
+  monitor: train/loss
+
+callbacks:
+  checkpoint_every_n_steps:
+    every_n_train_steps: 2500
+    keep_multiple: 40
+
+global_components:
+  tokenizer:
+    _target_: xlm.datamodule.load_auto_tokenizer
+    pretrained_model_name_or_path: Qwen/Qwen2-0.5B
+    special_tokens:
+      mask_token: "<|mask|>"
+
+datamodule:
+  print_batch_fn: flexmdm.datamodule_flexmdm.print_batch_flexmdm
+
+predictor:
+  confidence: null
+  top_k: null
+  top_p: null
+  max_steps: ${block_size}
+
+log_predictions:
+  _target_: xlm.log_predictions.LogPredictions
+  fields_to_keep_in_output:
+    - text
+    - truth
+  inject_target: target_ids
+  writers:
+    - file
+    - logger

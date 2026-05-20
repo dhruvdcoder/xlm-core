@@ -117,6 +117,7 @@ Hydra groups under {{ gh_dir('xlm-models/mlm/configs', 'xlm-models/mlm/configs/'
 - `experiment=sudoku_extreme_mlm`
 - `experiment=lm1b_mlm`
 - `experiment=owt_mlm`
+- `experiment=tinygsm_mlm` (seq2seq; [TinyGSM task](../tasks/tinygsm.md))
 - `experiment=owt_packed_mlm` (FlexAttention)
 - `experiment=uniref50_packed_mlm` (FlexAttention, protein)
 

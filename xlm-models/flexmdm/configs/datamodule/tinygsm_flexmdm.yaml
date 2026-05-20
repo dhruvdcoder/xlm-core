@@ -1,0 +1,24 @@
+# @package _global_
+defaults:
+  - star_flexmdm
+  - /datasets@datamodule.dataset_managers.train.lm: tinygsm_train
+  - /datasets@datamodule.dataset_managers.val.lm: tinygsm_val
+  - /datasets@datamodule.dataset_managers.val.prediction: tinygsm_val_pred
+
+datamodule:
+  print_batch_fn: flexmdm.datamodule_flexmdm.print_batch_flexmdm
+  dataset_managers:
+    train:
+      lm:
+        collator:
+          add_bos: false
+    val:
+      lm:
+        collator:
+          add_bos: false
+      prediction:
+        collator:
+          add_bos: false
+
+tags:
+  dataset: tinygsm

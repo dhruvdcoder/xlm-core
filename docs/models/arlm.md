@@ -99,6 +99,7 @@ All `*_update_fn(batch, loss_dict, tokenizer=None)`. Worked examples: {{ gh('tes
 Hydra groups under {{ gh_dir('xlm-models/arlm/configs', 'xlm-models/arlm/configs/') }}. Available experiment entry points:
 
 - `experiment=star_easy_arlm`
+- `experiment=tinygsm_arlm` (seq2seq; [TinyGSM task](../tasks/tinygsm.md))
 
 ## 10. Testing
 

@@ -1,0 +1,7 @@
+defaults:
+  - tinygsm_val
+
+stages:
+  - validate
+  - predict
+shuffle_buffer_size: null
