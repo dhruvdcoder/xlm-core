@@ -28,6 +28,8 @@ import datasets
 import pytest
 import torch
 from torch.utils.data import DataLoader
+
+import xlm.flags as flags
 from torchdata.stateful_dataloader import StatefulDataLoader
 
 from tests.datamodule_helpers import EXAMPLE_TOKEN_LEN
@@ -267,6 +269,37 @@ class TestPrepareData:
         )
         assert 0 < len(ds) < TRAIN_SIZE
         assert len(ds) + len(other) == TRAIN_SIZE
+
+    def test_train_test_split_skipped_under_debug_overfit(
+        self,
+        dataset_manager_factory,
+        simple_tokenizer,
+        manual_cache_dir,
+    ):
+        original = flags.DEBUG_OVERFIT
+        flags.DEBUG_OVERFIT = True
+        try:
+            dsm_train = dataset_manager_factory(
+                use_manual_cache=False,
+                train_test_split={"size": 0.4, "seed": 0, "split": "train"},
+            )
+            dsm_val = dataset_manager_factory(
+                use_manual_cache=False,
+                train_test_split={"size": 0.4, "seed": 0, "split": "test"},
+            )
+            train_ds = dsm_train.prepare_data(
+                manual_cache_dir=str(manual_cache_dir),
+                tokenizer=simple_tokenizer,
+            )
+            val_ds = dsm_val.prepare_data(
+                manual_cache_dir=str(manual_cache_dir),
+                tokenizer=simple_tokenizer,
+            )
+            assert train_ds is not None and val_ds is not None
+            assert len(train_ds) == TRAIN_SIZE
+            assert len(val_ds) == TRAIN_SIZE
+        finally:
+            flags.DEBUG_OVERFIT = original
 
 
 # ---------------------------------------------------------------------------

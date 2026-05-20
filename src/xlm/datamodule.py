@@ -301,10 +301,21 @@ def load_auto_tokenizer(
         pretrained_model_name_or_path, trust_remote_code=True
     )
     if special_tokens is not None:
-        tokenizer.add_special_tokens(
-            {"additional_special_tokens": list(special_tokens.values())}
-        )
+        reserved: dict = {}
+        additional: list = []
         for token_name, token in special_tokens.items():
+            if token_name == "pad_token":
+                reserved["pad_token"] = token
+            else:
+                additional.append(token)
+        if additional:
+            tokenizer.add_special_tokens(
+                {"additional_special_tokens": additional}
+            )
+        if reserved:
+            tokenizer.add_special_tokens(reserved)
+        for token_name, token in special_tokens.items():
+            setattr(tokenizer, token_name, token)
             setattr(
                 tokenizer,
                 f"{token_name}_id",
@@ -735,6 +746,30 @@ def tokenizing_preprocess_fn(
 # region: Base DataModule
 
 
+def parse_hf_dataset_full_name(full_name: str) -> tuple[str, Optional[str], str]:
+    """Parse a Hugging Face dataset locator from ``full_name``.
+
+    Supported forms:
+
+    - ``repo/dataset/split`` → ``load_dataset(repo/dataset, split=split)``
+    - ``repo/dataset/config/split`` →
+      ``load_dataset(repo/dataset, config, split=split)`` (e.g. GSM8K ``main``)
+
+    Returns:
+        ``(hub_path, config_name, split)`` where ``config_name`` is ``None`` when
+        omitted.
+    """
+    parts = full_name.split("/")
+    if len(parts) == 3:
+        return "/".join(parts[:2]), None, parts[2]
+    if len(parts) == 4:
+        return "/".join(parts[:2]), parts[2], parts[3]
+    raise ValueError(
+        "full_name must be repo/dataset/split or repo/dataset/config/split; "
+        f"got {full_name!r} ({len(parts)} path segments)"
+    )
+
+
 class DatasetManager:
     """Manages a single dataset through its lifecycle: download, preprocess, cache, setup, and dataloader creation.
 
@@ -779,7 +814,8 @@ class DatasetManager:
 
         Args:
             collator: Collates examples into batches; model-specific.
-            full_name: Full dataset path (e.g., "repo/ds_name/split").
+            full_name: Hugging Face locator: ``repo/ds_name/split`` or
+                ``repo/ds_name/config/split`` (e.g. ``openai/gsm8k/main/test``).
             full_name_debug: Used when DEBUG_OVERFIT is True; typically the train
                 split path so val/test managers overfit on train data.
             dataloader_kwargs: batch_size, num_workers, shuffle, pin_memory.
@@ -809,7 +845,9 @@ class DatasetManager:
             use_manual_cache: If True, use manual cache dir created using save_to_disk(), else let HF Datasets do automatic caching.
             train_test_split: If set, split the loaded split into train/test via
                 ``Dataset.train_test_split``. Keys: ``size`` (float, passed as
-                ``test_size``) and optional ``seed`` (int, default 42).
+                ``test_size``) and optional ``seed`` (int, default 42). Skipped
+                when ``DEBUG_OVERFIT`` is true so train and val managers share
+                the same examples during debug overfit runs.
         """
         self.collator = collator
         self._full_name = full_name
@@ -824,14 +862,13 @@ class DatasetManager:
         # self.split_to_download = split_to_download
         self.dataloader_kwargs = dataloader_kwargs
         self.filter_fn = filter_fn
-        if filter_fn is not None:
-            if filter_suffix is None:
-                raise ValueError(
-                    "filter_suffix is required when filter_fn is provided"
-                )
-            self.filter_suffix = filter_suffix
-        else:
-            self.filter_suffix = None
+        if filter_fn is not None and filter_suffix is None:
+            raise ValueError(
+                "filter_suffix is required when filter_fn is provided"
+            )
+        # filter_suffix may be set without filter_fn to disambiguate manual cache
+        # paths (e.g. different preprocess_function on the same full_name).
+        self.filter_suffix = filter_suffix
         self.preprocess_function = preprocess_function
         self.preprocess_function_kwargs = preprocess_function_kwargs or {}
         self.preprocess_load_from_cache_file = preprocess_load_from_cache_file
@@ -886,11 +923,11 @@ class DatasetManager:
 
     @property
     def _split_to_download(self) -> str:
-        return self.full_name.split("/")[-1]
+        return parse_hf_dataset_full_name(self.full_name)[2]
 
     @property
     def name(self) -> str:
-        return "/".join(self.full_name.split("/")[:2])
+        return parse_hf_dataset_full_name(self.full_name)[0]
 
     # endregion: Properties
     ##################################################
@@ -899,20 +936,21 @@ class DatasetManager:
     # region: Private methods
 
     def _download(self, num_proc: Optional[int] = None) -> datasets.Dataset:
-        name = self.name
-        if name[0] == "/":
-            name = name[1:]
+        hub_path, config_name, split = parse_hf_dataset_full_name(self.full_name)
+        if hub_path[0] == "/":
+            hub_path = hub_path[1:]
         logger.info(f"Downloading {self.full_name}")
-        split_to_download = (
-            self._split_to_download if not self.train_test_split else "train"
-        )
-        ds = datasets.load_dataset(
-            name,
-            split=split_to_download,
-            num_proc=num_proc,
-            token=os.environ.get("HF_HUB_KEY"),
-        )
-        if self.train_test_split is not None:
+        split_to_download = split if not self.train_test_split else "train"
+        load_kwargs: Dict[str, Any] = {
+            "split": split_to_download,
+            "num_proc": num_proc,
+            "token": os.environ.get("HF_HUB_KEY"),
+        }
+        if config_name is None:
+            ds = datasets.load_dataset(hub_path, **load_kwargs)
+        else:
+            ds = datasets.load_dataset(hub_path, config_name, **load_kwargs)
+        if self.train_test_split is not None and not flags.DEBUG_OVERFIT:
             ds = ds.train_test_split(
                 test_size=self.train_test_split["size"],
                 seed=self.train_test_split["seed"],
@@ -969,9 +1007,13 @@ class DatasetManager:
         if self.filter_suffix is None:
             return Path(manual_cache_dir) / self.full_name
         else:
-            repo, ds_name, split = self.full_name.split("/")
+            hub_path, config_name, split = parse_hf_dataset_full_name(
+                self.full_name
+            )
+            repo, ds_name = hub_path.split("/", 1)
+            config_part = f"_{config_name}" if config_name else ""
             full_name_with_filter = (
-                f"{repo}/{ds_name}_{self.filter_suffix}/{split}"
+                f"{repo}/{ds_name}{config_part}_{self.filter_suffix}/{split}"
             )
             return Path(manual_cache_dir) / full_name_with_filter
 
@@ -1409,23 +1451,25 @@ class EvalDatasetManager:
 
     @property
     def _split_to_download(self) -> str:
-        return self.full_name.split("/")[-1]
+        return parse_hf_dataset_full_name(self.full_name)[2]
 
     @property
     def name(self) -> str:
-        return "/".join(self.full_name.split("/")[:2])
+        return parse_hf_dataset_full_name(self.full_name)[0]
 
     def _download(self, num_proc: Optional[int] = None) -> datasets.Dataset:
-        name = self.name
-        if name[0] == "/":
-            name = name[1:]
+        hub_path, config_name, split = parse_hf_dataset_full_name(self.full_name)
+        if hub_path[0] == "/":
+            hub_path = hub_path[1:]
         logger.info(f"Downloading {self.full_name}")
-        return datasets.load_dataset(
-            name,
-            split=self._split_to_download,
-            num_proc=num_proc,
-            token=os.environ.get("HF_HUB_KEY"),
-        )
+        load_kwargs: Dict[str, Any] = {
+            "split": self._split_to_download,
+            "num_proc": num_proc,
+            "token": os.environ.get("HF_HUB_KEY"),
+        }
+        if config_name is None:
+            return datasets.load_dataset(hub_path, **load_kwargs)
+        return datasets.load_dataset(hub_path, config_name, **load_kwargs)
 
     def _preprocess(
         self,

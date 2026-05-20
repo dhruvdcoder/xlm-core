@@ -43,6 +43,8 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence
 import datasets
 import torch
 
+import xlm.flags as flags
+
 
 # ---------------------------------------------------------------------------
 # In-memory datasets registry
@@ -204,7 +206,7 @@ def make_patched_download(
                 f"Available: {sorted(registry)}"
             )
 
-        if self.train_test_split is not None:
+        if self.train_test_split is not None and not flags.DEBUG_OVERFIT:
             ds = ds.train_test_split(
                 test_size=self.train_test_split["size"],
                 seed=self.train_test_split["seed"],
