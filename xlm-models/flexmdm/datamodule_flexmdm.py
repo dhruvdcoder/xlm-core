@@ -9,7 +9,7 @@ from jaxtyping import Float, Integer
 from torch.utils.data import IterableDataset
 from torch import Tensor as TT
 from .types_flexmdm import FlexMDMBatch
-from typing import Callable, Dict, List, Literal, Optional, Any, Union
+from typing import Callable, Dict, List, Literal, Mapping, Optional, Any, Union
 from .types_flexmdm import FlexMDMBatch
 from .noise_flexmdm import FlexMDMNoiseSchedule
 from xlm.utils.nn import pad_truncate_list
@@ -697,6 +697,19 @@ class FlexMDMTrainCollator(Collator):
         )
 
 
+def _merge_pass_through_fields(
+    examples: List[Mapping[str, Any]],
+    batch: Dict[str, Any],
+    pass_through_fields: Optional[List[str]],
+) -> Dict[str, Any]:
+    if not examples or not pass_through_fields:
+        return batch
+    for key in pass_through_fields:
+        if key in examples[0]:
+            batch[key] = [ex[key] for ex in examples]
+    return batch
+
+
 def flexmdm_pred_collate_fn(
     num_examples: int,
     prompt_ids: Optional[List[List[int]]],
@@ -705,6 +718,8 @@ def flexmdm_pred_collate_fn(
     bos_token_id: Optional[int],
     eos_token_id: int,
     max_seq_len: Optional[int] = None,
+    pass_through_fields: Optional[List[str]] = None,
+    examples: Optional[List[Mapping[str, Any]]] = None,
 ) -> Dict[str, Optional[TT]]:
 
     if prompt_ids is not None:  # conditional case: start with [prefix] [bos]
@@ -752,7 +767,9 @@ def flexmdm_pred_collate_fn(
         target_ids = torch.tensor(target_ids)
     # --
 
-    ret = {"input_ids": ids, "fixed": fixed_gaps, "target_ids": target_ids}
+    ret: Dict[str, Any] = {"input_ids": ids, "fixed": fixed_gaps, "target_ids": target_ids}
+    if examples is not None:
+        _merge_pass_through_fields(examples, ret, pass_through_fields)
     return ret
 
 
@@ -780,11 +797,17 @@ class FlexMDMPredCollator(Collator):
         block_size: int,
         input_block_size: Optional[int] = 0,
         add_bos: bool = True,
+        pass_through_fields: Optional[List[str]] = None,
     ):
         self.block_size = block_size
         self.input_block_size = input_block_size
         self.tokenizer = tokenizer
         self.add_bos = add_bos
+        self.pass_through_fields = (
+            list(pass_through_fields)
+            if pass_through_fields is not None
+            else ["answer"]
+        )
         try:
             self._vocab_size = len(self.tokenizer)
         except TypeError:
@@ -809,6 +832,8 @@ class FlexMDMPredCollator(Collator):
                 if has_prefix
                 else self.block_size
             ),
+            pass_through_fields=self.pass_through_fields,
+            examples=examples,
         )
 
 

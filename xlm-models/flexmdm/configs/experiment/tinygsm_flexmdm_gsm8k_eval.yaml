@@ -1,42 +1,23 @@
 # @package _global_
+# Standalone GSM8K test eval for a trained TinyGSM FlexMDM checkpoint.
 defaults:
   - text_flexmdm
-  - override /datamodule: tinygsm_flexmdm
+  - override /datamodule: gsm8k_flexmdm
   - override /noise_schedule: flexmdm_linear
-  - override /model_type: flexmdm_tinygsm_seq2seq
+  - override /model_type: flexmdm_seq2seq
   - override /model: ddit_flexmdm
 
 per_device_batch_size: 32
-global_batch_size: 512
+global_batch_size: 32
 num_dataloader_workers: 5
 block_size: 512
 input_block_size: 0
 len_predict_type: expectation
-monitored_metric: val/lm/accumulated_loss
+monitored_metric: null
 
 model:
   force_flash_attn: false
   len_head_type: mlp
-
-trainer:
-  max_steps: 1000_000
-  val_check_interval: 50000
-  check_val_every_n_epoch: null
-  num_sanity_val_steps: 3
-
-optimizer:
-  lr: 0.0001
-
-lr_scheduler:
-  name: constant_with_warmup
-  num_warmup_steps: 2000
-  num_training_steps: ${trainer.max_steps}
-  monitor: train/loss
-
-callbacks:
-  checkpoint_every_n_steps:
-    every_n_train_steps: 2500
-    keep_multiple: 40
 
 global_components:
   tokenizer:
@@ -64,10 +45,17 @@ log_predictions:
     - answer
   writers:
     - file
-    - logger
 
 post_hoc_evaluator:
-  _target_: xlm.tasks.composite_eval.CompositePostHocEvaluator
-  evaluators:
-    prediction:
-      _target_: xlm.tasks.tinygsm.Gsm8kCodeEval
+  _target_: xlm.tasks.tinygsm.Gsm8kCodeEval
+
+eval:
+  split: test
+
+trainer:
+  max_steps: 0
+  num_sanity_val_steps: 0
+  limit_test_batches: null
+
+tags:
+  dataset: gsm8k

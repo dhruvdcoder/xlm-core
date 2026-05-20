@@ -34,6 +34,33 @@ import time
 FlexMDMStepResults = Dict[str, Any]
 
 
+def decode_generation_suffix(
+    token_ids: Integer[TT, " batch seq_len"],
+    fixed: Integer[TT, " batch seq_len"],
+    tokenizer: Tokenizer,
+    *,
+    skip_special_tokens: bool = True,
+) -> List[str]:
+    """Decode only the generated (non-fixed, non-pad) region for seq2seq prediction.
+
+    FlexMDM pred batches set ``fixed=1`` on the question prefix and ``fixed=0`` on
+    the suffix where the model generates code. Full-sequence ``batch_decode`` is
+    kept in ``text`` for debugging; this helper is for downstream code-exec eval.
+    """
+    pad = tokenizer.pad_token_id
+    decoded: List[str] = []
+    for row_ids, row_fixed in zip(
+        token_ids.detach().cpu().tolist(), fixed.detach().cpu().tolist()
+    ):
+        gen_ids = [
+            tid for tid, f in zip(row_ids, row_fixed) if f == 0 and tid != pad
+        ]
+        decoded.append(
+            tokenizer.decode(gen_ids, skip_special_tokens=skip_special_tokens)
+        )
+    return decoded
+
+
 class FlexMDMTokensHook(TokensHook):
     def __call__(
         self,
@@ -171,8 +198,21 @@ class FlexMDMPredictor(
         formatted_history = self.format_history_for_output(
             history_data, round_precision=4
         )
+        if "generated_text" in preds:
+            generated_text = preds["generated_text"]
+        elif "fixed" in batch:
+            generated_text = decode_generation_suffix(
+                preds["ids"],
+                batch["fixed"],
+                self.tokenizer,
+                skip_special_tokens=self.skip_special_tokens_in_history,
+            )
+        else:
+            generated_text = preds["text"]
+
         to_zip = [
             preds["text"],
+            generated_text,
             preds["ids"].tolist(),
             formatted_history,
             preds.get("time_taken", cycle([-1])),
@@ -183,18 +223,17 @@ class FlexMDMPredictor(
                 metric_keys.append(n)
                 to_zip.append(preds[n])
 
-        preds_list: List[Tuple[str, List[int], List[List[Any]], float]] = list(
-            zip(*to_zip)
-        )
+        preds_list = list(zip(*to_zip))
         dicts: List[Dict[str, Any]] = []
         for preds_ in preds_list:
             dicts.append(
                 {
                     "text": preds_[0],
-                    "ids": preds_[1],
-                    "history": preds_[2],
-                    "time_taken": preds_[3],
-                    **{k: preds_[4 + i] for i, k in enumerate(metric_keys)},
+                    "generated_text": preds_[1],
+                    "ids": preds_[2],
+                    "history": preds_[3],
+                    "time_taken": preds_[4],
+                    **{k: preds_[5 + i] for i, k in enumerate(metric_keys)},
                 }
             )
         return dicts
@@ -506,14 +545,19 @@ class FlexMDMPredictor(
         out = self.tokenizer.batch_decode(
             xt, skip_special_tokens=self.skip_special_tokens_in_history
         )
-        # print("out")
-        # print(out)
+        generated_text = decode_generation_suffix(
+            xt,
+            fixed_gaps,
+            self.tokenizer,
+            skip_special_tokens=self.skip_special_tokens_in_history,
+        )
 
         _end_time = time.time()
         _time_taken = _end_time - _start_time
         self.reset()
         return {
             "text": out,
+            "generated_text": generated_text,
             "ids": xt,
             "loss": None,
             "time_taken": [_time_taken]
