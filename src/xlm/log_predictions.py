@@ -111,7 +111,7 @@ class FilePredictionWriter(_PredictionWriter):
         self,
         fields_to_keep_in_output: Optional[List[str]] = None,
         file_path_: Union[
-            Path, Literal["none", "from_pl_module"]
+            Path, str, Literal["none", "from_pl_module"]
         ] = "from_pl_module",
     ) -> None:
         """Initialize FilePredictionWriter.
@@ -121,10 +121,18 @@ class FilePredictionWriter(_PredictionWriter):
             file_path_: Path to the file or special values.
                 if "from_pl_module", query the pl_module for the predictions_file for the step and epoch
                 set to "none" to disable file writing
+                a str or Path is used as a fixed output file (appended across batches)
         """
         super().__init__(deepcopy(fields_to_keep_in_output))
 
-        self.file_path_ = file_path_
+        if file_path_ in ("from_pl_module", "none"):
+            self.file_path_: Union[Path, Literal["none", "from_pl_module"]] = (
+                file_path_
+            )
+        elif isinstance(file_path_, Path):
+            self.file_path_ = file_path_
+        else:
+            self.file_path_ = Path(str(file_path_))
         self.supports_reading = True
 
     def _get_file_path(
@@ -144,7 +152,7 @@ class FilePredictionWriter(_PredictionWriter):
         elif self.file_path_ == "none":
             return None
         elif isinstance(self.file_path_, Path):
-            file_path = Path(self.file_path_)
+            file_path = self.file_path_
         else:
             raise ValueError(f"Invalid file_path_: {self.file_path_}")
 
