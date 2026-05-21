@@ -34,15 +34,16 @@ from datasets.distributed import split_dataset_by_node
 
 
 class _CycleDataset(IterableDataset):
-    """Thin PyTorch IterableDataset that cycles an HF IterableDataset forever.
+    """Fallback PyTorch IterableDataset that cycles an HF IterableDataset forever.
 
-    Used instead of HF's dataset.repeat(None) because that method wraps the
-    underlying iterable in RepeatExamplesIterable, which does not implement
-    num_shards. Both split_dataset_by_node and IterableDataset.__init__ call
-    _prepare_ex_iterable_for_iteration → num_shards, so neither split-then-
-    repeat nor repeat-then-split works with this version of the datasets
-    library. This wrapper operates at the Python/PyTorch level and bypasses
-    HF internals entirely.
+    Used on datasets < 4.0.0 instead of HF's IterableDataset.repeat(None),
+    which wraps the underlying iterable in RepeatExamplesIterable with a broken
+    shard_data_sources / num_shards protocol when combined with
+    split_dataset_by_node. On datasets >= 4.0.0, _make_dataset_infinite uses
+    repeat(None) instead. See https://github.com/dhruvdcoder/xlm-core/issues/39
+
+    Unlike HF's RepeatExamplesIterable, state_dict() deliberately returns {}
+    (no mid-cycle resume); epoch boundaries are encoded in max_steps instead.
     """
 
     def __init__(self, ds):
@@ -91,6 +92,14 @@ from xlm.utils.rank_zero import rank_zero_only
 from xlm.noise import NoiseSchedule
 from xlm.utils.rank_zero import RankedLogger
 import datasets
+from packaging.version import Version
+
+# RepeatExamplesIterable in datasets < 4.0.0 breaks split_dataset_by_node;
+# see https://github.com/dhruvdcoder/xlm-core/issues/39
+_DATASETS_SUPPORTS_NATIVE_REPEAT: bool = (
+    Version(datasets.__version__) >= Version("4.0.0")
+)
+
 from transformers import (
     PreTrainedTokenizer,
     PreTrainedTokenizerBase,
@@ -138,6 +147,25 @@ __all__ = [
 
 logger = RankedLogger(__name__, rank_zero_only=True)
 ranked_logger = RankedLogger(__name__, rank_zero_only=False)
+
+
+def _make_dataset_infinite(dataset):
+    """Wrap a per-rank iterable so training never hits StopIteration.
+
+    Uses HF IterableDataset.repeat(None) on datasets >= 4.0.0; falls back to
+    _CycleDataset on older pins. See https://github.com/dhruvdcoder/xlm-core/issues/39
+    """
+    if _DATASETS_SUPPORTS_NATIVE_REPEAT:
+        logger.info(
+            "make_infinite: using IterableDataset.repeat(None) "
+            f"(datasets {datasets.__version__})"
+        )
+        return dataset.repeat(None)
+    logger.info(
+        "make_infinite: using _CycleDataset fallback "
+        f"(datasets {datasets.__version__} < 4.0.0)"
+    )
+    return _CycleDataset(dataset)
 
 safe_imported = False
 try:
@@ -1270,7 +1298,7 @@ class DatasetManager:
                     self.dataset, rank=rank, world_size=world_size
                 )
                 if self.make_infinite:
-                    self.dataset = _CycleDataset(self.dataset)
+                    self.dataset = _make_dataset_infinite(self.dataset)
 
     def get_dataloader(
         self,
