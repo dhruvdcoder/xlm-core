@@ -19,6 +19,11 @@ global_components:
     _target_: xlm.datamodule.SimpleSpaceTokenizer.for_numbers
     vocab_size: 20 # 20 (easy,medium), 56 (hard)
 
+predictor:
+  top_k: 1
+  top_p: null
+  confidence: "top_prob"
+
 trainer:
   max_steps: 80000
   val_check_interval: null

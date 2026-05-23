@@ -1,0 +1,21 @@
+# @package _global_
+defaults:
+  - star_easy_mlm
+  - override /datamodule: star_medium_mlm
+
+input_block_size: 36
+block_size: 16
+monitored_metric: val/lm/accumulated_loss
+
+datamodule:
+  print_batch_fn: mlm.datamodule_mlm.print_batch_mlm
+
+global_components:
+  tokenizer:
+    _target_: xlm.datamodule.SimpleSpaceTokenizer.for_numbers
+    vocab_size: 20 # 20 (easy,medium), 56 (hard)
+
+predictor:
+  top_k: 1
+  top_p: null
+  confidence: "top_prob"
