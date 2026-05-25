@@ -7,3 +7,4 @@ train_test_split:
   split: train
 stages:
   - fit
+make_infinite: true
