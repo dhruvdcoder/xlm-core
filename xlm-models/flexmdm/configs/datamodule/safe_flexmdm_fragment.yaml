@@ -15,14 +15,23 @@ datamodule:
       infill_prediction:
         collator:
           add_bos: false
+          pass_through_fields:
+            - fragment_smiles
+            - original_smiles
     predict:
       infill_prediction:
         collator:
           add_bos: false
+          pass_through_fields:
+            - fragment_smiles
+            - original_smiles
     test:
       infill_prediction:
         collator:
           add_bos: false
+          pass_through_fields:
+            - fragment_smiles
+            - original_smiles
 
 
 tags:

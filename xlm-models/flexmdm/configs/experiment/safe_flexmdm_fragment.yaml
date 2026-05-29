@@ -7,6 +7,7 @@ defaults:
   - override /noise_schedule: flexmdm_linear
   - override /model_type: flexmdm
   - override /model: ddit_flexmdm
+  - override /post_hoc_evaluator: fragment
 
 per_device_batch_size: 128
 global_batch_size: 2048
@@ -18,14 +19,6 @@ num_unconditional_prediction_examples: 1000
 num_conditional_prediction_samples: 10
 len_predict_type: expectation
 molgen_task_name: motif_extension
-
-# post-hoc evaluation
-post_hoc_evaluator:
-  _target_: xlm.tasks.safe_molgen.FragmentEval
-  task_name: ${molgen_task_name}
-  num_samples: ${num_conditional_prediction_samples}
-  use_bracket_safe: ${oc.select:use_bracket_safe,true}
-  compute_distance: true
 
 predictor:
   _target_: flexmdm.predictor_flexmdm.FlexMDMPredictor

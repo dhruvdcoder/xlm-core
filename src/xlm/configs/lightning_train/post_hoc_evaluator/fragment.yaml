@@ -1,0 +1,5 @@
+_target_: xlm.tasks.safe_molgen.FragmentEval
+task_name: ${molgen_task_name}
+num_samples: ${num_conditional_prediction_samples}
+use_bracket_safe: ${oc.select:use_bracket_safe,true}
+compute_distance: true

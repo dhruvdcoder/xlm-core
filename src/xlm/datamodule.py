@@ -2152,7 +2152,7 @@ class DefaultEmptyDataset(IterableDataset):
 
 
 def replicate_examples(
-    examples: Dict[str, List[List[int]]], tokenizer, num_samples: int
+    examples: Dict[str, List[List[int]]], tokenizer, num_samples: int, **kwargs
 ):
     """Repeat each example in the dictionary `num_samples` times such that the repeated examples are contiguous in the list."""
     examples_replicated = {}
