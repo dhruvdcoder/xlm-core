@@ -102,6 +102,26 @@ class TimestepEmbedder(nn.Module):
         t_rep = self.mlp(embedding)  # shape (bsz, hidden_size)
         return t_rep
 
+class PhaseEmbedder(nn.Module):
+    """Maps scalar phase to AdaLN conditioning (same role as time in ``sigma_map``).
+
+    Expects ``phase`` of shape ``(batch, 1)`` with ``0`` = predict / generation and
+    ``1`` = correction.
+    """
+
+    def __init__(self, hidden_size: int, phase_embedding_size: int = 1):
+        super().__init__()
+        self.mlp = nn.Sequential(
+            nn.Linear(phase_embedding_size, hidden_size, bias=True),
+            nn.SiLU(),
+            nn.Linear(hidden_size, hidden_size, bias=True),
+        )
+
+    def forward(self, phase: torch.Tensor) -> torch.Tensor:
+        """Embeds phase into vector representations.
+        """
+        embedding = self.mlp(phase)
+        return embedding
 
 class LabelEmbedder(nn.Module):
     """
@@ -680,6 +700,7 @@ class FlexMDMModel(torch.nn.Module, Model):
         self.d_cond = d_cond or d_model // 2
         self.dim_feedforward = dim_feedforward or 4 * d_model
         self.sigma_map = TimestepEmbedder(self.d_cond, 256)
+        self.phase_map = PhaseEmbedder(self.d_cond)
         encoder_layer = DDiTLayer(
             d_model,
             nhead,
@@ -747,6 +768,7 @@ class FlexMDMModel(torch.nn.Module, Model):
         x: Integer[TT, "batch seq_len"],
         t: Float[TT, "batch"],
         attention_mask: Bool[TT, "batch seq_len"] = None,
+        phase: Float[TT, "batch 1"] = None,
     ) -> Tuple[
         Float[TT, "batch seq_len vocab_size"],
         Float[TT, "batch seq_len max_length"] | Float[TT, "batch max_length"],
@@ -783,7 +805,7 @@ class FlexMDMModel(torch.nn.Module, Model):
         # )
 
         x = self.embed_tokens(x)  # (B, L, D)
-        c = F.silu(self.sigma_map(t))
+        c = F.silu(self.sigma_map(t) + self.phase_map(phase))
         positions = (attention_mask.cumsum(dim=1) - 1).clamp(min=0)
         if self.inner_autocast:
             with torch.autocast(
