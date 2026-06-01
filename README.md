@@ -159,8 +159,8 @@ The companion package [`xlm-models`](https://github.com/dhruvdcoder/xlm-core/tre
 | Tag       | Name                                                                 | Documented                                              | State | Notes                                                                                                                                                                                        |
 |-----------|----------------------------------------------------------------------|---------------------------------------------------------|-------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `arlm`    | Autoregressive LM (baseline)                                         | [Full](https://dhruveshp.com/xlm-core/dev/models/arlm/) | Beta  | —                                                                                                                                                                                            |
-| `ilm`     | Insertion language model                                             | [Full](https://dhruveshp.com/xlm-core/dev/models/ilm/)  | Beta  | —                                                                                                                                                                                            |
-| `mdlm`    | Masked diffusion LM                                                  | [Full](https://dhruveshp.com/xlm-core/dev/models/mdlm/) | Beta  | —                                                                                                                                                                                            |
+| `ilm`     | Insertion language model                                             | [Full](https://dhruveshp.com/xlm-core/dev/models/ilm/)  | Beta  | Based on [arXiv:2505.05755](https://arxiv.org/abs/2505.05755)                                                                                                                                                                                            |
+| `mdlm`    | Masked diffusion LM                                                  | [Full](https://dhruveshp.com/xlm-core/dev/models/mdlm/) | Beta  | Based on [arXiv:2406.07524](https://arxiv.org/abs/2406.07524)                                                                                                                                                                                            |
 | `mlm`     | Masked language model (BERT-style)                                   | [Full](https://dhruveshp.com/xlm-core/dev/models/mlm/)  | Beta  | —                                                                                                                                                                                            |
 | `flexmdm` | Flexible masked diffusion                                            | Partial                                                 | Alpha | Variable-length / fragment-style masking; [arXiv:2509.01025](https://arxiv.org/abs/2509.01025); [source](https://github.com/dhruvdcoder/xlm-core/tree/main/xlm-models/flexmdm)               |
 | `dream`   | Dream-style decoder LM in XLM (`DreamXLMModel`, `DreamPredictor`, …) | Partial                                                 | Alpha | [Source](https://github.com/dhruvdcoder/xlm-core/tree/main/xlm-models/dream); backbone helpers in [`xlm.backbones.dream`](https://dhruveshp.com/xlm-core/dev/reference/xlm/backbones/dream/) |
@@ -237,6 +237,7 @@ XLM is developed and maintained by [IESL](https://iesl.cs.umass.edu/) students a
 | Contributor    | Model                                            | Paper                                                                                                              |
 |----------------|--------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
 | Dhruvesh Patel | [DILM](https://github.com/dhruvdcoder/ctmc_dilm) | [A Continuous Time Markov Chain Framework for Insertion Language Models](https://openreview.net/pdf?id=nCyV21FmUI) |
+| Benjamin Rozonoyer, Jacopo Minniti  | [Relay](https://github.com/jacopo-minniti/relay) | [Learned Relay Representations for Forward-Thinking Discrete Diffusion Models](https://arxiv.org/pdf/2605.22967) |
 
 We welcome external model contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for more details.
 
@@ -256,5 +257,5 @@ If you found this repository useful, please consider citing:
 ---
 
 <p align="center">
-  <sub>Built with care for the NLP research community</sub>
+  <sub>We appreciate feedback and external contributions. </sub>
 </p>
