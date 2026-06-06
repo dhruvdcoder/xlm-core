@@ -99,6 +99,62 @@ All `*_update_fn(batch, loss_dict, tokenizer=None)`. Worked examples: {{ gh('tes
 Hydra groups under {{ gh_dir('xlm-models/arlm/configs', 'xlm-models/arlm/configs/') }}. Available experiment entry points:
 
 - `experiment=star_easy_arlm`
+- `experiment=tinygsm_arlm` (seq2seq; [TinyGSM](#tinygsm))
+
+### TinyGSM
+
+Task dataset and preprocessing: [TinyGSM](../tasks/tinygsm.md). GSM8K and code-execution eval: [tinygsm_gsm8k.md](../tasks/tinygsm_gsm8k.md).
+
+| | |
+|---|---|
+| Experiment | `experiment=tinygsm_arlm` |
+| Datamodule | {{ gh('xlm-models/arlm/configs/datamodule/tinygsm_arlm.yaml', 'tinygsm_arlm') }} |
+| Experiment YAML | {{ gh('xlm-models/arlm/configs/experiment/tinygsm_arlm.yaml', 'tinygsm_arlm') }} |
+
+#### Training settings
+
+| Setting | Value |
+|---------|--------|
+| Tokenizer | Qwen2-0.5B (`Qwen/Qwen2-0.5B`) with added `<|mask|>` |
+| `block_size` | 512 |
+| `input_block_size` | 0 |
+| Batching | Per-device 32; global 512 |
+| Collators | STAR seq2seq (`seq2seq_*` / `seq2seq_pred_*`); no BOS between question and code |
+| Val / test prediction | Post-hoc `code_exec_accuracy` (`Gsm8kCodeEval`); token EM disabled |
+| Monitored metric | `val/lm/accumulated_loss` |
+| Training schedule | Up to 1M steps; validation every 50k steps; checkpoint every 2.5k steps (keep every 100k) |
+
+Collators are reused from existing STAR seq2seq configs; no TinyGSM-specific collator YAMLs.
+
+#### Commands
+
+**Prepare cache** (rank 0 before multi-GPU training):
+
+```bash
+xlm job_type=prepare_data experiment=tinygsm_arlm num_dataset_workers=8
+```
+
+Managers that share `full_name: TinyGSM/TinyGSM/train` use distinct manual cache
+directories via `filter_suffix` (e.g. `val_holdout`, `pred_preprocess`). After
+changing prediction preprocess, rebuild with
+`datamodule.rewrite_manual_cache=true` or delete the stale
+`.../TinyGSM/TinyGSM_pred_preprocess/train` tree if needed.
+
+On SLURM, see {{ gh('lib/slurm_scripts/submit_prepare_data.py', 'submit_prepare_data.py') }}.
+
+**Train** (DDP):
+
+```bash
+xlm job_name=tinygsm_arlm job_type=train experiment=tinygsm_arlm \
+  per_device_batch_size=32 trainer_strategy=ddp trainer.devices=8 trainer.num_nodes=1 \
+  ++trainer.precision=bf16-mixed compile=False
+```
+
+**Debug:** set `DEBUG_OVERFIT=1` to use `full_name_debug` (same HF split; short smoke runs).
+
+#### Experiment results
+
+Full W&B write-ups under `docs/experiments/` are deferred until runs exist. Use `experiment=tinygsm_arlm` with the [document experiment](../guide/eval.md) workflow when ready.
 
 ## 10. Testing
 

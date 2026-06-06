@@ -27,11 +27,19 @@ from pathlib import Path
 import datasets
 import pytest
 import torch
+from datasets.distributed import split_dataset_by_node
+from packaging.version import Version
 from torch.utils.data import DataLoader
+
+import xlm.flags as flags
 from torchdata.stateful_dataloader import StatefulDataLoader
 
 from tests.datamodule_helpers import EXAMPLE_TOKEN_LEN
-from xlm.datamodule import DatasetManager
+from xlm.datamodule import (
+    DatasetManager,
+    _CycleDataset,
+    _make_dataset_infinite,
+)
 
 
 # Convenience constants that reflect the in-memory registry contents in
@@ -268,6 +276,32 @@ class TestPrepareData:
         assert 0 < len(ds) < TRAIN_SIZE
         assert len(ds) + len(other) == TRAIN_SIZE
 
+    def test_debug_overfit_holdout_loads_train_cache_path(
+        self,
+        dataset_manager_factory,
+        manual_cache_dir,
+    ):
+        original = flags.DEBUG_OVERFIT
+        flags.DEBUG_OVERFIT = True
+        try:
+            dsm_train = dataset_manager_factory(
+                train_test_split={"size": 0.4, "seed": 0, "split": "train"},
+            )
+            dsm_val = dataset_manager_factory(
+                train_test_split={"size": 0.4, "seed": 0, "split": "test"},
+                filter_suffix="val_holdout",
+            )
+            cache_root = str(manual_cache_dir)
+            assert dsm_train._get_load_cache_dir(
+                cache_root
+            ) == dsm_val._get_load_cache_dir(cache_root)
+            assert dsm_train._get_cache_dir(cache_root) == dsm_val._get_load_cache_dir(
+                cache_root
+            )
+            assert "val_holdout" in str(dsm_val._get_cache_dir(cache_root))
+        finally:
+            flags.DEBUG_OVERFIT = original
+
 
 # ---------------------------------------------------------------------------
 # setup branches
@@ -482,6 +516,110 @@ class TestSetup:
             world_size=1,
         )
         assert dsm.dataset is first
+
+
+# ---------------------------------------------------------------------------
+# make_infinite version gate
+# ---------------------------------------------------------------------------
+
+
+def _setup_make_infinite_ddp(
+    dataset_manager_factory,
+    simple_tokenizer,
+    manual_cache_dir: Path,
+) -> DatasetManager:
+    dsm = dataset_manager_factory(
+        use_manual_cache=False,
+        iterable_dataset_shards=4,
+        make_infinite=True,
+    )
+    dsm.setup(
+        stage="fit",
+        manual_cache_dir=str(manual_cache_dir),
+        tokenizer=simple_tokenizer,
+        block_size=EXAMPLE_TOKEN_LEN,
+        is_ddp=True,
+        rank=0,
+        world_size=2,
+    )
+    return dsm
+
+
+class TestMakeInfiniteVersionGate:
+    """Version-gated native repeat vs _CycleDataset fallback."""
+
+    def test_make_infinite_applies_cycle_dataset_on_lt_4(
+        self, dataset_manager_factory, simple_tokenizer, manual_cache_dir
+    ):
+        if Version(datasets.__version__) >= Version("4.0.0"):
+            pytest.skip("requires datasets < 4.0.0")
+        dsm = _setup_make_infinite_ddp(
+            dataset_manager_factory, simple_tokenizer, manual_cache_dir
+        )
+        assert isinstance(dsm.dataset, _CycleDataset)
+
+    def test_make_infinite_applies_native_repeat_on_gte_4(
+        self, dataset_manager_factory, simple_tokenizer, manual_cache_dir
+    ):
+        if Version(datasets.__version__) < Version("4.0.0"):
+            pytest.skip("requires datasets >= 4.0.0")
+        dsm = _setup_make_infinite_ddp(
+            dataset_manager_factory, simple_tokenizer, manual_cache_dir
+        )
+        assert not isinstance(dsm.dataset, _CycleDataset)
+        it = iter(dsm.dataset)
+        for _ in range(3):
+            next(it)
+
+    def test_make_infinite_helper_respects_monkeypatch(self, monkeypatch):
+        class FakeDataset:
+            def __init__(self):
+                self.repeat_called = False
+
+            def repeat(self, n):
+                self.repeat_called = True
+                assert n is None
+                return self
+
+        fake = FakeDataset()
+        monkeypatch.setattr(
+            "xlm.datamodule._DATASETS_SUPPORTS_NATIVE_REPEAT", True
+        )
+        result = _make_dataset_infinite(fake)
+        assert fake.repeat_called
+        assert result is fake
+
+        class PlainDataset:
+            pass
+
+        plain = PlainDataset()
+        monkeypatch.setattr(
+            "xlm.datamodule._DATASETS_SUPPORTS_NATIVE_REPEAT", False
+        )
+        wrapped = _make_dataset_infinite(plain)
+        assert isinstance(wrapped, _CycleDataset)
+        assert wrapped._ds is plain
+
+
+class TestRepeatAfterSplitDatasetByNode:
+    """Regression for https://github.com/dhruvdcoder/xlm-core/issues/39."""
+
+    def test_repeat_none_after_split_does_not_raise_on_gte_4(self):
+        if Version(datasets.__version__) < Version("4.0.0"):
+            pytest.skip(
+                "RepeatExamplesIterable shard_data_sources bug; "
+                "see https://github.com/dhruvdcoder/xlm-core/issues/39"
+            )
+
+        def gen():
+            for i in range(8):
+                yield {"x": i}
+
+        ds = datasets.Dataset.from_generator(gen).to_iterable_dataset(
+            num_shards=4
+        )
+        ds = split_dataset_by_node(ds.repeat(None), rank=0, world_size=2)
+        next(iter(ds))
 
 
 # ---------------------------------------------------------------------------

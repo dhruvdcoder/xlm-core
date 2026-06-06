@@ -3,6 +3,7 @@ from typing import Optional, cast
 import torch
 import torch.nn.functional as F
 from .noise_flexmdm import FlexMDMNoiseSchedule
+from .tokenizer_guards import require_distinct_pad_and_eos
 from .types_flexmdm import FlexMDMBatch, FlexMDMLossDict, FlexMDMModel
 from xlm.harness import LossFunction, Harness
 from xlm.datamodule import Tokenizer
@@ -48,11 +49,13 @@ def get_noised_sequence(
     eos_token_id = tokenizer.eos_token_id
     
     clean_tokens = x1.ne(pad_token_id)
-    deleted_tokens = clean_tokens & (t[:, None] < insertion_time)
+    not_eos = x1.ne(eos_token_id)
+    deleted_tokens = clean_tokens & (t[:, None] < insertion_time) & not_eos
     masked_tokens = (
         clean_tokens
         & (t[:, None] >= insertion_time)
         & (t[:, None] < unmasking_time)
+        & not_eos
     )
 
     xt = torch.where(
@@ -117,6 +120,8 @@ class FlexMDMLoss(LossFunction[FlexMDMBatch, FlexMDMLossDict]):
         self.tokenizer = tokenizer
         self.insert_loss_fn = insert_loss_fn
         self.mask_token_id_tensor = None
+        if tokenizer is not None:
+            require_distinct_pad_and_eos(tokenizer)
 
     def configure(self, pl_module: Harness):
         self.mask_token_id_tensor = torch.tensor(  # type: ignore

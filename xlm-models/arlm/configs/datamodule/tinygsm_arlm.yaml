@@ -1,0 +1,30 @@
+# @package _global_
+defaults:
+  - star_arlm
+  - /datasets@datamodule.dataset_managers.train.lm: tinygsm_train
+  - /datasets@datamodule.dataset_managers.val.lm: tinygsm_val
+  - /datasets@datamodule.dataset_managers.val.prediction: tinygsm_val_pred
+  - /datasets@datamodule.dataset_managers.test.gsm8k_prediction: gsm8k_test_pred
+  - /collator@datamodule.dataset_managers.test.gsm8k_prediction.collator: seq2seq_pred_arlm
+
+datamodule:
+  print_batch_fn: arlm.datamodule_arlm.print_batch_arlm
+  dataset_managers:
+    train:
+      lm:
+        collator:
+          add_bos: null
+    val:
+      lm:
+        collator:
+          add_bos: null
+      prediction:
+        collator:
+          add_bos: null
+    test:
+      gsm8k_prediction:
+        collator:
+          add_bos: null
+
+tags:
+  dataset: tinygsm

@@ -1,0 +1,16 @@
+# @package _global_
+defaults:
+  - default
+  - /collator@datamodule.dataset_managers.test.gsm8k_prediction.collator: seq2seq_pred_flexmdm
+  - /datasets@datamodule.dataset_managers.test.gsm8k_prediction: gsm8k_test_pred
+
+datamodule:
+  print_batch_fn: flexmdm.datamodule_flexmdm.print_batch_flexmdm
+  dataset_managers:
+    test:
+      gsm8k_prediction:
+        collator:
+          add_bos: false
+
+tags:
+  dataset: gsm8k

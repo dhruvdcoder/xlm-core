@@ -1,0 +1,7 @@
+defaults:
+  - gsm8k_test
+
+stages:
+  - validate
+  - predict
+shuffle_buffer_size: null

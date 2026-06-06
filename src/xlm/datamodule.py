@@ -34,15 +34,16 @@ from datasets.distributed import split_dataset_by_node
 
 
 class _CycleDataset(IterableDataset):
-    """Thin PyTorch IterableDataset that cycles an HF IterableDataset forever.
+    """Fallback PyTorch IterableDataset that cycles an HF IterableDataset forever.
 
-    Used instead of HF's dataset.repeat(None) because that method wraps the
-    underlying iterable in RepeatExamplesIterable, which does not implement
-    num_shards. Both split_dataset_by_node and IterableDataset.__init__ call
-    _prepare_ex_iterable_for_iteration → num_shards, so neither split-then-
-    repeat nor repeat-then-split works with this version of the datasets
-    library. This wrapper operates at the Python/PyTorch level and bypasses
-    HF internals entirely.
+    Used on datasets < 4.0.0 instead of HF's IterableDataset.repeat(None),
+    which wraps the underlying iterable in RepeatExamplesIterable with a broken
+    shard_data_sources / num_shards protocol when combined with
+    split_dataset_by_node. On datasets >= 4.0.0, _make_dataset_infinite uses
+    repeat(None) instead. See https://github.com/dhruvdcoder/xlm-core/issues/39
+
+    Unlike HF's RepeatExamplesIterable, state_dict() deliberately returns {}
+    (no mid-cycle resume); epoch boundaries are encoded in max_steps instead.
     """
 
     def __init__(self, ds):
@@ -91,6 +92,14 @@ from xlm.utils.rank_zero import rank_zero_only
 from xlm.noise import NoiseSchedule
 from xlm.utils.rank_zero import RankedLogger
 import datasets
+from packaging.version import Version
+
+# RepeatExamplesIterable in datasets < 4.0.0 breaks split_dataset_by_node;
+# see https://github.com/dhruvdcoder/xlm-core/issues/39
+_DATASETS_SUPPORTS_NATIVE_REPEAT: bool = (
+    Version(datasets.__version__) >= Version("4.0.0")
+)
+
 from transformers import (
     PreTrainedTokenizer,
     PreTrainedTokenizerBase,
@@ -138,6 +147,25 @@ __all__ = [
 
 logger = RankedLogger(__name__, rank_zero_only=True)
 ranked_logger = RankedLogger(__name__, rank_zero_only=False)
+
+
+def _make_dataset_infinite(dataset):
+    """Wrap a per-rank iterable so training never hits StopIteration.
+
+    Uses HF IterableDataset.repeat(None) on datasets >= 4.0.0; falls back to
+    _CycleDataset on older pins. See https://github.com/dhruvdcoder/xlm-core/issues/39
+    """
+    if _DATASETS_SUPPORTS_NATIVE_REPEAT:
+        logger.info(
+            "make_infinite: using IterableDataset.repeat(None) "
+            f"(datasets {datasets.__version__})"
+        )
+        return dataset.repeat(None)
+    logger.info(
+        "make_infinite: using _CycleDataset fallback "
+        f"(datasets {datasets.__version__} < 4.0.0)"
+    )
+    return _CycleDataset(dataset)
 
 safe_imported = False
 try:
@@ -301,10 +329,21 @@ def load_auto_tokenizer(
         pretrained_model_name_or_path, trust_remote_code=True
     )
     if special_tokens is not None:
-        tokenizer.add_special_tokens(
-            {"additional_special_tokens": list(special_tokens.values())}
-        )
+        reserved: dict = {}
+        additional: list = []
         for token_name, token in special_tokens.items():
+            if token_name == "pad_token":
+                reserved["pad_token"] = token
+            else:
+                additional.append(token)
+        if additional:
+            tokenizer.add_special_tokens(
+                {"additional_special_tokens": additional}
+            )
+        if reserved:
+            tokenizer.add_special_tokens(reserved)
+        for token_name, token in special_tokens.items():
+            setattr(tokenizer, token_name, token)
             setattr(
                 tokenizer,
                 f"{token_name}_id",
@@ -735,6 +774,30 @@ def tokenizing_preprocess_fn(
 # region: Base DataModule
 
 
+def parse_hf_dataset_full_name(full_name: str) -> tuple[str, Optional[str], str]:
+    """Parse a Hugging Face dataset locator from ``full_name``.
+
+    Supported forms:
+
+    - ``repo/dataset/split`` → ``load_dataset(repo/dataset, split=split)``
+    - ``repo/dataset/config/split`` →
+      ``load_dataset(repo/dataset, config, split=split)`` (e.g. GSM8K ``main``)
+
+    Returns:
+        ``(hub_path, config_name, split)`` where ``config_name`` is ``None`` when
+        omitted.
+    """
+    parts = full_name.split("/")
+    if len(parts) == 3:
+        return "/".join(parts[:2]), None, parts[2]
+    if len(parts) == 4:
+        return "/".join(parts[:2]), parts[2], parts[3]
+    raise ValueError(
+        "full_name must be repo/dataset/split or repo/dataset/config/split; "
+        f"got {full_name!r} ({len(parts)} path segments)"
+    )
+
+
 class DatasetManager:
     """Manages a single dataset through its lifecycle: download, preprocess, cache, setup, and dataloader creation.
 
@@ -779,7 +842,8 @@ class DatasetManager:
 
         Args:
             collator: Collates examples into batches; model-specific.
-            full_name: Full dataset path (e.g., "repo/ds_name/split").
+            full_name: Hugging Face locator: ``repo/ds_name/split`` or
+                ``repo/ds_name/config/split`` (e.g. ``openai/gsm8k/main/test``).
             full_name_debug: Used when DEBUG_OVERFIT is True; typically the train
                 split path so val/test managers overfit on train data.
             dataloader_kwargs: batch_size, num_workers, shuffle, pin_memory.
@@ -809,7 +873,10 @@ class DatasetManager:
             use_manual_cache: If True, use manual cache dir created using save_to_disk(), else let HF Datasets do automatic caching.
             train_test_split: If set, split the loaded split into train/test via
                 ``Dataset.train_test_split``. Keys: ``size`` (float, passed as
-                ``test_size``) and optional ``seed`` (int, default 42).
+                ``test_size``) and optional ``seed`` (int, default 42). Applied
+                when building manual caches. Holdout managers (``split: test``)
+                load the train-partition cache at runtime when ``DEBUG_OVERFIT``
+                is set (see :meth:`_get_load_cache_dir`).
         """
         self.collator = collator
         self._full_name = full_name
@@ -824,14 +891,13 @@ class DatasetManager:
         # self.split_to_download = split_to_download
         self.dataloader_kwargs = dataloader_kwargs
         self.filter_fn = filter_fn
-        if filter_fn is not None:
-            if filter_suffix is None:
-                raise ValueError(
-                    "filter_suffix is required when filter_fn is provided"
-                )
-            self.filter_suffix = filter_suffix
-        else:
-            self.filter_suffix = None
+        if filter_fn is not None and filter_suffix is None:
+            raise ValueError(
+                "filter_suffix is required when filter_fn is provided"
+            )
+        # filter_suffix may be set without filter_fn to disambiguate manual cache
+        # paths (e.g. different preprocess_function on the same full_name).
+        self.filter_suffix = filter_suffix
         self.preprocess_function = preprocess_function
         self.preprocess_function_kwargs = preprocess_function_kwargs or {}
         self.preprocess_load_from_cache_file = preprocess_load_from_cache_file
@@ -886,11 +952,11 @@ class DatasetManager:
 
     @property
     def _split_to_download(self) -> str:
-        return self.full_name.split("/")[-1]
+        return parse_hf_dataset_full_name(self.full_name)[2]
 
     @property
     def name(self) -> str:
-        return "/".join(self.full_name.split("/")[:2])
+        return parse_hf_dataset_full_name(self.full_name)[0]
 
     # endregion: Properties
     ##################################################
@@ -899,19 +965,20 @@ class DatasetManager:
     # region: Private methods
 
     def _download(self, num_proc: Optional[int] = None) -> datasets.Dataset:
-        name = self.name
-        if name[0] == "/":
-            name = name[1:]
+        hub_path, config_name, split = parse_hf_dataset_full_name(self.full_name)
+        if hub_path[0] == "/":
+            hub_path = hub_path[1:]
         logger.info(f"Downloading {self.full_name}")
-        split_to_download = (
-            self._split_to_download if not self.train_test_split else "train"
-        )
-        ds = datasets.load_dataset(
-            name,
-            split=split_to_download,
-            num_proc=num_proc,
-            token=os.environ.get("HF_HUB_KEY"),
-        )
+        split_to_download = split if not self.train_test_split else "train"
+        load_kwargs: Dict[str, Any] = {
+            "split": split_to_download,
+            "num_proc": num_proc,
+            "token": os.environ.get("HF_HUB_KEY"),
+        }
+        if config_name is None:
+            ds = datasets.load_dataset(hub_path, **load_kwargs)
+        else:
+            ds = datasets.load_dataset(hub_path, config_name, **load_kwargs)
         if self.train_test_split is not None:
             ds = ds.train_test_split(
                 test_size=self.train_test_split["size"],
@@ -969,11 +1036,31 @@ class DatasetManager:
         if self.filter_suffix is None:
             return Path(manual_cache_dir) / self.full_name
         else:
-            repo, ds_name, split = self.full_name.split("/")
+            hub_path, config_name, split = parse_hf_dataset_full_name(
+                self.full_name
+            )
+            repo, ds_name = hub_path.split("/", 1)
+            config_part = f"_{config_name}" if config_name else ""
             full_name_with_filter = (
-                f"{repo}/{ds_name}_{self.filter_suffix}/{split}"
+                f"{repo}/{ds_name}{config_part}_{self.filter_suffix}/{split}"
             )
             return Path(manual_cache_dir) / full_name_with_filter
+
+    def _get_load_cache_dir(self, manual_cache_dir: str) -> Path:
+        """Manual cache path used when loading data in :meth:`setup`.
+
+        When ``DEBUG_OVERFIT`` is set, holdout managers (``train_test_split`` with
+        ``split: test``) read the train-partition cache (no ``filter_suffix``),
+        mirroring ``full_name_debug`` for datasets without ``train_test_split``.
+        Cache creation via :meth:`prepare_data` always uses :meth:`_get_cache_dir`.
+        """
+        if (
+            flags.DEBUG_OVERFIT
+            and self.train_test_split is not None
+            and self.train_test_split["split"] == "test"
+        ):
+            return Path(manual_cache_dir) / self.full_name
+        return self._get_cache_dir(manual_cache_dir)
 
     def _clean_manual_cache(self, manual_cache_dir: str) -> None:
         cache_dir = self._get_cache_dir(manual_cache_dir)
@@ -991,7 +1078,13 @@ class DatasetManager:
         ds.save_to_disk(cache_dir, num_shards=self.iterable_dataset_shards)
 
     def _load_from_cache(self, manual_cache_dir: str) -> datasets.Dataset:
-        cache_dir = self._get_cache_dir(manual_cache_dir)
+        cache_dir = self._get_load_cache_dir(manual_cache_dir)
+        write_dir = self._get_cache_dir(manual_cache_dir)
+        if cache_dir != write_dir:
+            logger.info(
+                f"DEBUG_OVERFIT: loading holdout manager from train-partition "
+                f"manual cache at {cache_dir} (write path remains {write_dir})"
+            )
         return datasets.load_from_disk(cache_dir)
 
     def _check_cache(self, manual_cache_dir: str) -> bool:
@@ -1205,7 +1298,7 @@ class DatasetManager:
                     self.dataset, rank=rank, world_size=world_size
                 )
                 if self.make_infinite:
-                    self.dataset = _CycleDataset(self.dataset)
+                    self.dataset = _make_dataset_infinite(self.dataset)
 
     def get_dataloader(
         self,
@@ -1409,23 +1502,25 @@ class EvalDatasetManager:
 
     @property
     def _split_to_download(self) -> str:
-        return self.full_name.split("/")[-1]
+        return parse_hf_dataset_full_name(self.full_name)[2]
 
     @property
     def name(self) -> str:
-        return "/".join(self.full_name.split("/")[:2])
+        return parse_hf_dataset_full_name(self.full_name)[0]
 
     def _download(self, num_proc: Optional[int] = None) -> datasets.Dataset:
-        name = self.name
-        if name[0] == "/":
-            name = name[1:]
+        hub_path, config_name, split = parse_hf_dataset_full_name(self.full_name)
+        if hub_path[0] == "/":
+            hub_path = hub_path[1:]
         logger.info(f"Downloading {self.full_name}")
-        return datasets.load_dataset(
-            name,
-            split=self._split_to_download,
-            num_proc=num_proc,
-            token=os.environ.get("HF_HUB_KEY"),
-        )
+        load_kwargs: Dict[str, Any] = {
+            "split": self._split_to_download,
+            "num_proc": num_proc,
+            "token": os.environ.get("HF_HUB_KEY"),
+        }
+        if config_name is None:
+            return datasets.load_dataset(hub_path, **load_kwargs)
+        return datasets.load_dataset(hub_path, config_name, **load_kwargs)
 
     def _preprocess(
         self,
@@ -2057,7 +2152,7 @@ class DefaultEmptyDataset(IterableDataset):
 
 
 def replicate_examples(
-    examples: Dict[str, List[List[int]]], tokenizer, num_samples: int
+    examples: Dict[str, List[List[int]]], tokenizer, num_samples: int, **kwargs
 ):
     """Repeat each example in the dictionary `num_samples` times such that the repeated examples are contiguous in the list."""
     examples_replicated = {}

@@ -1,0 +1,43 @@
+# @package _global_
+defaults:
+  - star_flexmdm
+  - /datasets@datamodule.dataset_managers.train.lm: tinygsm_train
+  - /datasets@datamodule.dataset_managers.val.lm: tinygsm_val
+  - /datasets@datamodule.dataset_managers.val.prediction: tinygsm_val_pred
+  - /datasets@datamodule.dataset_managers.test.lm: tinygsm_test
+  - /datasets@datamodule.dataset_managers.test.prediction: tinygsm_test_pred
+  - /datasets@datamodule.dataset_managers.predict.prediction: tinygsm_test_pred
+  - /datasets@datamodule.dataset_managers.test.gsm8k_prediction: gsm8k_test_pred
+  - /collator@datamodule.dataset_managers.test.gsm8k_prediction.collator: seq2seq_pred_flexmdm
+
+datamodule:
+  print_batch_fn: flexmdm.datamodule_flexmdm.print_batch_flexmdm
+  dataset_managers:
+    train:
+      lm:
+        collator:
+          add_bos: false
+    val:
+      lm:
+        collator:
+          add_bos: false
+      prediction:
+        collator:
+          add_bos: false
+    test:
+      lm:
+        collator:
+          add_bos: false
+      prediction:
+        collator:
+          add_bos: false
+      gsm8k_prediction:
+        collator:
+          add_bos: false
+    predict:
+      prediction:
+        collator:
+          add_bos: false
+
+tags:
+  dataset: tinygsm

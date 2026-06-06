@@ -782,6 +782,8 @@ def genmol_fragment_preprocess_fn(
 
     example["prompt_token_ids"] = fragment_token_ids
     example["input_token_ids"] = target_token_ids
+    example["prompt_ids"] = fragment_token_ids
+    example["input_ids"] = target_token_ids
 
     return example
 

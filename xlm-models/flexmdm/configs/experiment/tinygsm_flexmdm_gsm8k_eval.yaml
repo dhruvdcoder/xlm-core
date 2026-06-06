@@ -1,0 +1,62 @@
+# @package _global_
+# Standalone GSM8K test eval for a trained TinyGSM FlexMDM checkpoint.
+defaults:
+  - text_flexmdm
+  - override /datamodule: gsm8k_flexmdm
+  - override /noise_schedule: flexmdm_linear
+  - override /model_type: flexmdm_seq2seq
+  - override /model: ddit_flexmdm
+
+per_device_batch_size: 32
+global_batch_size: 32
+num_dataloader_workers: 5
+block_size: 512
+input_block_size: 0
+len_predict_type: expectation
+monitored_metric: null
+
+model:
+  force_flash_attn: false
+  len_head_type: mlp
+
+global_components:
+  tokenizer:
+    _target_: xlm.datamodule.load_auto_tokenizer
+    pretrained_model_name_or_path: Qwen/Qwen2-0.5B
+    special_tokens:
+      mask_token: "<|mask|>"
+      pad_token: "<|pad|>"
+
+datamodule:
+  print_batch_fn: flexmdm.datamodule_flexmdm.print_batch_flexmdm
+
+predictor:
+  confidence: null
+  top_k: null
+  top_p: null
+  max_steps: ${block_size}
+
+log_predictions:
+  _target_: xlm.log_predictions.LogPredictions
+  fields_to_keep_in_output:
+    - text
+    - generated_text
+    - answer
+  additional_fields_from_batch:
+    - answer
+  writers:
+    - file
+
+post_hoc_evaluator:
+  _target_: xlm.tasks.tinygsm.Gsm8kCodeEval
+
+eval:
+  split: test
+
+trainer:
+  max_steps: 0
+  num_sanity_val_steps: 0
+  limit_test_batches: null
+
+tags:
+  dataset: gsm8k

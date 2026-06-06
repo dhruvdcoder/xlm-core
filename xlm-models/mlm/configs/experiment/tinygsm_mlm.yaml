@@ -1,0 +1,63 @@
+# @package _global_
+defaults:
+  - override /datamodule: tinygsm_mlm
+  - override /noise_schedule: dummy
+  - override /model_type: mlm_tinygsm_seq2seq
+  - override /model: rotary_transformer_mlm
+
+add_bos: false
+add_eos: true
+per_device_batch_size: 32
+global_batch_size: 512
+num_dataloader_workers: 5
+block_size: 512
+input_block_size: 0
+monitored_metric: val/lm/accumulated_loss
+
+global_components:
+  tokenizer:
+    _target_: xlm.datamodule.load_auto_tokenizer
+    pretrained_model_name_or_path: Qwen/Qwen2-0.5B
+    special_tokens:
+      mask_token: "<|mask|>"
+
+datamodule:
+  print_batch_fn: mlm.datamodule_mlm.print_batch_mlm
+
+trainer:
+  max_steps: 1000_000
+  val_check_interval: 50000
+  check_val_every_n_epoch: null
+  num_sanity_val_steps: 3
+
+optimizer:
+  lr: 0.0001
+
+lr_scheduler:
+  name: constant_with_warmup
+  num_warmup_steps: 2000
+  num_training_steps: ${trainer.max_steps}
+  monitor: train/loss
+
+callbacks:
+  checkpoint_every_n_steps:
+    every_n_train_steps: 2500
+    keep_multiple: 40
+
+log_predictions:
+  _target_: xlm.log_predictions.LogPredictions
+  fields_to_keep_in_output:
+    - text
+    - generated_text
+    - answer
+  additional_fields_from_batch:
+    - answer
+  writers:
+    - file
+    - logger
+
+post_hoc_evaluator:
+  _target_: xlm.tasks.composite_eval.CompositePostHocEvaluator
+  evaluators:
+    prediction:
+      _target_: xlm.tasks.tinygsm.Gsm8kCodeEval

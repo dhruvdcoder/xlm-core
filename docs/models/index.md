@@ -39,6 +39,8 @@ flowchart LR
 | **Source package** | {{ gh_dir('xlm-models/arlm', 'xlm-models/arlm/') }} | {{ gh_dir('xlm-models/ilm', 'xlm-models/ilm/') }} | {{ gh_dir('xlm-models/mdlm', 'xlm-models/mdlm/') }} | {{ gh_dir('xlm-models/mlm', 'xlm-models/mlm/') }} |
 | **Per-family doc** | [arlm.md](arlm.md) | [ilm.md](ilm.md) | [mdlm.md](mdlm.md) | [mlm.md](mlm.md) |
 
+**FlexMDM** (variable-length masked diffusion; package {{ gh_dir('xlm-models/flexmdm', 'xlm-models/flexmdm/') }}) is documented separately in [flexmdm.md](flexmdm.md), including the [TinyGSM](flexmdm.md#tinygsm) seq2seq experiment.
+
 ## Page layout
 
 Every per-family page follows the same template:

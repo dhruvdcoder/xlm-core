@@ -1,0 +1,29 @@
+# @package _global_
+defaults:
+  - /debug/overfit
+  - override /datasets@datamodule.dataset_managers.train.lm: tinygsm_debug_one
+  - override /datasets@datamodule.dataset_managers.val.lm: tinygsm_debug_one
+  - override /datasets@datamodule.dataset_managers.val.prediction: tinygsm_debug_one_pred
+
+tags:
+  debug: overfit_tinygsm_flexmdm
+
+datamodule:
+  dataset_managers:
+    train:
+      lm:
+        collator:
+          add_bos: false
+    val:
+      lm:
+        collator:
+          add_bos: false
+      prediction:
+        collator:
+          add_bos: false
+
+predictor:
+  confidence: null
+  top_k: 1
+  top_p: null
+  max_steps: 1024

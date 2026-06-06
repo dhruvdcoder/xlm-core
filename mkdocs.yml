@@ -82,12 +82,14 @@ nav:
   - Models:
       - Overview: models/index.md
       - ARLM: models/arlm.md
+      - FlexMDM: models/flexmdm.md
       - ILM: models/ilm.md
       - MDLM: models/mdlm.md
       - MLM: models/mlm.md
 
   - Tasks:
       - OpenWebText: tasks/owt.md
+      - TinyGSM: tasks/tinygsm.md
 
   - Experiments:
       - OWT FlexMDM: experiments/owt_flexmdm.md
