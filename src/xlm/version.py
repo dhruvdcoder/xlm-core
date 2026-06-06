@@ -1,7 +1,7 @@
 import os
 
 _MAJOR = os.environ.get("XLM_CORE_VERSION_MAJOR", "0")
-_MINOR = os.environ.get("XLM_CORE_VERSION_MINOR", "2")
+_MINOR = os.environ.get("XLM_CORE_VERSION_MINOR", "3")
 # On main and in a nightly release the patch should be one ahead of the last
 # released build.
 _PATCH = os.environ.get("XLM_CORE_VERSION_PATCH", "0")
