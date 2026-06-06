@@ -101,6 +101,10 @@
          <lastmod>2026-06-06</lastmod>
     </url>
     <url>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/models/flexmdm/</loc>
+         <lastmod>2026-06-06</lastmod>
+    </url>
+    <url>
          <loc>https://dhruvdcoder.github.io/xlm-core/dev/models/ilm/</loc>
          <lastmod>2026-06-06</lastmod>
     </url>
@@ -114,6 +118,14 @@
     </url>
     <url>
          <loc>https://dhruvdcoder.github.io/xlm-core/dev/tasks/owt/</loc>
+         <lastmod>2026-06-06</lastmod>
+    </url>
+    <url>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/tasks/tinygsm/</loc>
+         <lastmod>2026-06-06</lastmod>
+    </url>
+    <url>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/tasks/tinygsm_gsm8k/</loc>
          <lastmod>2026-06-06</lastmod>
     </url>
     <url>
@@ -326,6 +338,14 @@
     </url>
     <url>
          <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/tasks/sudoku_extreme/</loc>
+         <lastmod>2026-06-06</lastmod>
+    </url>
+    <url>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/tasks/tinygsm/</loc>
+         <lastmod>2026-06-06</lastmod>
+    </url>
+    <url>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/tasks/tinygsm/gsm8k/</loc>
          <lastmod>2026-06-06</lastmod>
     </url>
     <url>

@@ -957,6 +957,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../models/flexmdm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FlexMDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../models/ilm/" class="md-nav__link">
         
   
@@ -1108,6 +1136,34 @@
     
   
     OpenWebText
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tasks/tinygsm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TinyGSM
   
 
     
@@ -3836,6 +3892,122 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14_14" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_1_14_14" id="__nav_8_1_14_14_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>tinygsm
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_14_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_14_14">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>tinygsm
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tasks/tinygsm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    tinygsm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tasks/tinygsm/gsm8k/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>gsm8k
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -6645,7 +6817,8 @@ multiple DatasetManager instances.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Full dataset path (e.g., "repo/ds_name/split").</p>
+                <p>Hugging Face locator: <code>repo/ds_name/split</code> or
+<code>repo/ds_name/config/split</code> (e.g. <code>openai/gsm8k/main/test</code>).</p>
               </div>
             </td>
             <td>
@@ -6960,7 +7133,10 @@ with outputs and column lengths disagree (<code>IndexError</code> in
               <div class="doc-md-description">
                 <p>If set, split the loaded split into train/test via
 <code>Dataset.train_test_split</code>. Keys: <code>size</code> (float, passed as
-<code>test_size</code>) and optional <code>seed</code> (int, default 42).</p>
+<code>test_size</code>) and optional <code>seed</code> (int, default 42). Applied
+when building manual caches. Holdout managers (<code>split: test</code>)
+load the train-partition cache at runtime when <code>DEBUG_OVERFIT</code>
+is set (see :meth:<code>_get_load_cache_dir</code>).</p>
               </div>
             </td>
             <td>

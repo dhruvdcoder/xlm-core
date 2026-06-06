@@ -698,6 +698,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#quick-reference-table" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1126,6 +1137,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../models/flexmdm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FlexMDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../models/ilm/" class="md-nav__link">
         
   
@@ -1277,6 +1316,34 @@
     
   
     OpenWebText
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tasks/tinygsm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TinyGSM
   
 
     
@@ -3644,6 +3711,122 @@
   
   
   
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14_14" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_1_14_14" id="__nav_8_1_14_14_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>tinygsm
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_14_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_14_14">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>tinygsm
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/xlm/tasks/tinygsm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    tinygsm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/xlm/tasks/tinygsm/gsm8k/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>gsm8k
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
       <a href="../../reference/xlm/tasks/uniref50/" class="md-nav__link">
         
@@ -5925,6 +6108,11 @@
 <li>Code: <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/math500/__init__.py">math500/<strong>init</strong>.py</a> (<code>math500_preprocess_fn</code>, <code>Math500Eval</code>)</li>
 <li>Eval dataset: <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/configs/lightning_train/datasets/math500_test.yaml">datasets/math500_test.yaml</a></li>
 </ul>
+<p><strong>Code-execution eval (TinyGSM → GSM8K)</strong> — same post-hoc pipeline, but scoring runs generated Python:</p>
+<ul>
+<li>Code: <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/tinygsm/gsm8k.py">tinygsm/gsm8k.py</a> (<code>gsm8k_preprocess_fn</code>, <code>Gsm8kCodeEval</code>)</li>
+<li>Runbook: <a href="../../tasks/tinygsm_gsm8k/">TinyGSM / GSM8K</a></li>
+</ul>
 <p><strong>Large optional imports</strong> — keep the default import surface light and defer heavy imports (see <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/safe_molgen/__init__.py">safe_molgen/<strong>init</strong>.py</a> delegating to <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/safe_molgen/_safe_molgen_impl.py">_safe_molgen_impl.py</a>).</p>
 <p>For larger tasks you may instead split logic into additional modules inside <code>tasks/&lt;your_task&gt;/</code> and re-export public symbols from <code>__init__.py</code>; Hydra paths stay <code>xlm.tasks.&lt;your_task&gt;.&lt;symbol&gt;</code>.</p>
 <hr />
@@ -6001,6 +6189,10 @@
 <li>Add or extend integration coverage under <code>tests/integration/datamodule/</code> when behavior is easy to regress.</li>
 </ol>
 <hr />
+<h2 id="examples">Examples</h2>
+<ul>
+<li><a href="../../tasks/tinygsm/">TinyGSM</a> — large HF seq2seq task (question + code); model runbooks: <a href="../../models/flexmdm/#tinygsm">FlexMDM</a>, <a href="../../models/mlm/#tinygsm">MLM</a>, <a href="../../models/arlm/#tinygsm">ARLM</a>.</li>
+</ul>
 <h2 id="quick-reference-table">Quick reference table</h2>
 <table>
 <thead>

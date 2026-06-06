@@ -16,7 +16,7 @@
         <link rel="prev" href="../">
       
       
-        <link rel="next" href="../ilm/">
+        <link rel="next" href="../flexmdm/">
       
       
         
@@ -1088,6 +1088,62 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="9. Configs / experiments">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tinygsm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TinyGSM
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="TinyGSM">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#training-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Training settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#experiment-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Experiment results
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1116,6 +1172,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../flexmdm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FlexMDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1279,6 +1363,34 @@
     
   
     OpenWebText
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tasks/tinygsm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TinyGSM
   
 
     
@@ -3635,6 +3747,122 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14_14" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_1_14_14" id="__nav_8_1_14_14_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>tinygsm
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_14_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_14_14">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>tinygsm
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/xlm/tasks/tinygsm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    tinygsm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/xlm/tasks/tinygsm/gsm8k/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>gsm8k
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -6046,7 +6274,94 @@
 <p>Hydra groups under <a href="https://github.com/dhruvdcoder/xlm-core/tree/main/xlm-models/arlm/configs">xlm-models/arlm/configs/</a>. Available experiment entry points:</p>
 <ul>
 <li><code>experiment=star_easy_arlm</code></li>
+<li><code>experiment=tinygsm_arlm</code> (seq2seq; <a href="#tinygsm">TinyGSM</a>)</li>
 </ul>
+<h3 id="tinygsm">TinyGSM</h3>
+<p>Task dataset and preprocessing: <a href="../../tasks/tinygsm/">TinyGSM</a>. GSM8K and code-execution eval: <a href="../../tasks/tinygsm_gsm8k/">tinygsm_gsm8k.md</a>.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Experiment</td>
+<td><code>experiment=tinygsm_arlm</code></td>
+</tr>
+<tr>
+<td>Datamodule</td>
+<td><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/xlm-models/arlm/configs/datamodule/tinygsm_arlm.yaml">tinygsm_arlm</a></td>
+</tr>
+<tr>
+<td>Experiment YAML</td>
+<td><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/xlm-models/arlm/configs/experiment/tinygsm_arlm.yaml">tinygsm_arlm</a></td>
+</tr>
+</tbody>
+</table>
+<h4 id="training-settings">Training settings</h4>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tokenizer</td>
+<td>Qwen2-0.5B (<code>Qwen/Qwen2-0.5B</code>) with added <code>&lt;|mask|&gt;</code></td>
+</tr>
+<tr>
+<td><code>block_size</code></td>
+<td>512</td>
+</tr>
+<tr>
+<td><code>input_block_size</code></td>
+<td>0</td>
+</tr>
+<tr>
+<td>Batching</td>
+<td>Per-device 32; global 512</td>
+</tr>
+<tr>
+<td>Collators</td>
+<td>STAR seq2seq (<code>seq2seq_*</code> / <code>seq2seq_pred_*</code>); no BOS between question and code</td>
+</tr>
+<tr>
+<td>Val / test prediction</td>
+<td>Post-hoc <code>code_exec_accuracy</code> (<code>Gsm8kCodeEval</code>); token EM disabled</td>
+</tr>
+<tr>
+<td>Monitored metric</td>
+<td><code>val/lm/accumulated_loss</code></td>
+</tr>
+<tr>
+<td>Training schedule</td>
+<td>Up to 1M steps; validation every 50k steps; checkpoint every 2.5k steps (keep every 100k)</td>
+</tr>
+</tbody>
+</table>
+<p>Collators are reused from existing STAR seq2seq configs; no TinyGSM-specific collator YAMLs.</p>
+<h4 id="commands">Commands</h4>
+<p><strong>Prepare cache</strong> (rank 0 before multi-GPU training):</p>
+<div class="highlight"><pre><span></span><code>xlm<span class="w"> </span><span class="nv">job_type</span><span class="o">=</span>prepare_data<span class="w"> </span><span class="nv">experiment</span><span class="o">=</span>tinygsm_arlm<span class="w"> </span><span class="nv">num_dataset_workers</span><span class="o">=</span><span class="m">8</span>
+</code></pre></div>
+<p>Managers that share <code>full_name: TinyGSM/TinyGSM/train</code> use distinct manual cache
+directories via <code>filter_suffix</code> (e.g. <code>val_holdout</code>, <code>pred_preprocess</code>). After
+changing prediction preprocess, rebuild with
+<code>datamodule.rewrite_manual_cache=true</code> or delete the stale
+<code>.../TinyGSM/TinyGSM_pred_preprocess/train</code> tree if needed.</p>
+<p>On SLURM, see <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/lib/slurm_scripts/submit_prepare_data.py">submit_prepare_data.py</a>.</p>
+<p><strong>Train</strong> (DDP):</p>
+<div class="highlight"><pre><span></span><code>xlm<span class="w"> </span><span class="nv">job_name</span><span class="o">=</span>tinygsm_arlm<span class="w"> </span><span class="nv">job_type</span><span class="o">=</span>train<span class="w"> </span><span class="nv">experiment</span><span class="o">=</span>tinygsm_arlm<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="nv">per_device_batch_size</span><span class="o">=</span><span class="m">32</span><span class="w"> </span><span class="nv">trainer_strategy</span><span class="o">=</span>ddp<span class="w"> </span>trainer.devices<span class="o">=</span><span class="m">8</span><span class="w"> </span>trainer.num_nodes<span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>++trainer.precision<span class="o">=</span>bf16-mixed<span class="w"> </span><span class="nv">compile</span><span class="o">=</span>False
+</code></pre></div>
+<p><strong>Debug:</strong> set <code>DEBUG_OVERFIT=1</code> to use <code>full_name_debug</code> (same HF split; short smoke runs).</p>
+<h4 id="experiment-results">Experiment results</h4>
+<p>Full W&amp;B write-ups under <code>docs/experiments/</code> are deferred until runs exist. Use <code>experiment=tinygsm_arlm</code> with the <a href="../../guide/eval/">document experiment</a> workflow when ready.</p>
 <h2 id="10-testing">10. Testing</h2>
 <p>Tests in <a href="https://github.com/dhruvdcoder/xlm-core/tree/main/tests/models/arlm">tests/models/arlm/</a>:</p>
 <ul>
