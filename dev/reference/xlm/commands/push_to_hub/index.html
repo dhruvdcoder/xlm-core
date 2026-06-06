@@ -5883,6 +5883,12 @@
     <div class="doc doc-contents ">
 
         <p>Instantiate a model from checkpoint for pushing to Hub.</p>
+<p>Uses Harness.from_checkpoint(apply_ema=True) when a full Lightning
+checkpoint is available.  This applies EMA weights AFTER load_state_dict
+completes, avoiding a Lightning quirk where on_load_checkpoint modifications
+to the state_dict are overwritten by the subsequent load_state_dict call.</p>
+<p>Falls back to load_model_for_inference for model-only checkpoints (which
+have no EMA state to apply).</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
