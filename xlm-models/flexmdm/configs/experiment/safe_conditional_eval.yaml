@@ -1,0 +1,29 @@
+# @package _global_
+# Fragment eval overlay — compose on top of a de novo experiment, e.g.
+#   experiment='[safe_flexmdm,safe_conditional_eval]'
+defaults:
+  - override /datamodule: safe_flexmdm_fragment
+  - override /post_hoc_evaluator: fragment
+
+num_conditional_prediction_samples: 10
+molgen_task_name: motif_extension
+
+log_predictions:
+  inject_target: target_ids
+  additional_fields_from_batch:
+    - fragment_smiles
+    - original_smiles
+  fields_to_keep_in_output:
+    - text
+    - smiles
+    - truth
+    - truth_smiles
+    - diversity
+    - validity
+    - uniqueness
+    - qed
+    - sa
+    - quality
+    - distance
+    - fragment_smiles
+    - original_smiles

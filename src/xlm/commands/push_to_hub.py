@@ -69,6 +69,14 @@ def instantiate_model(
 ) -> Harness:
     """Instantiate a model from checkpoint for pushing to Hub.
 
+    Uses Harness.from_checkpoint(apply_ema=True) when a full Lightning
+    checkpoint is available.  This applies EMA weights AFTER load_state_dict
+    completes, avoiding a Lightning quirk where on_load_checkpoint modifications
+    to the state_dict are overwritten by the subsequent load_state_dict call.
+
+    Falls back to load_model_for_inference for model-only checkpoints (which
+    have no EMA state to apply).
+
     Args:
         cfg: Hydra config
         datamodule: Datamodule instance
@@ -77,12 +85,28 @@ def instantiate_model(
     Returns:
         Harness: The instantiated model ready to push to Hub
     """
+    hub_ckpt_path = cfg.get("hub_checkpoint_path", None)
+
+    if hub_ckpt_path is not None:
+        harness_cls = hydra.utils.get_class(cfg.lightning_module._target_)
+        module = harness_cls.from_checkpoint(
+            checkpoint_path=hub_ckpt_path,
+            cfg=cfg,
+            tokenizer=tokenizer,
+            datamodule=datamodule,
+            apply_ema=True,
+            map_location="cuda",
+        )
+        module.eval()
+        return module
+
+    # model-only checkpoint path: no EMA state available
     module, _ = load_model_for_inference(
         cfg,
         datamodule,
         tokenizer,
         config_prefix="",
-        manual_ema_restore=True,
+        manual_ema_restore=False,
         move_to_device="cuda",
         set_eval_mode=True,
         enable_hub_support=False,
