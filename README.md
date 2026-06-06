@@ -238,6 +238,7 @@ XLM is developed and maintained by [IESL](https://iesl.cs.umass.edu/) students a
 |----------------|--------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
 | Dhruvesh Patel | [DILM](https://github.com/dhruvdcoder/ctmc_dilm) | [A Continuous Time Markov Chain Framework for Insertion Language Models](https://openreview.net/pdf?id=nCyV21FmUI) |
 | Benjamin Rozonoyer, Jacopo Minniti  | [Relay](https://github.com/jacopo-minniti/relay) | [Learned Relay Representations for Forward-Thinking Discrete Diffusion Models](https://arxiv.org/pdf/2605.22967) |
+| Dhruvesh Patel, Benjamin Rozonoyer | [LoFlexMDM](https://github.com/dhruvdcoder/LoFlexMDM) | [[2602.18695] Insertion Based Sequence Generation with Learnable Order Dynamics](https://arxiv.org/abs/2602.18695)
 
 We welcome external model contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for more details.
 
