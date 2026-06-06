@@ -98,6 +98,7 @@ nav:
   - Developers:
       - CONTRIBUTING: guide/CONTRIBUTING.md
       - Dependencies: developers/dependencies.md
+      - Releasing: developers/releasing.md
       - Testing:
           - Running Tests: developers/testing/running-tests.md
           - Unit Tests: developers/testing/unit-tests.md
