@@ -305,8 +305,17 @@
   
     
     
+      
+  
+  
+  
+    
+  
+  
+    
+    
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../../guide/CONTRIBUTING/" class="md-tabs__link">
+        <a href="../../guide/contributing/overview/" class="md-tabs__link">
           
   
   
@@ -314,6 +323,9 @@
 
         </a>
       </li>
+    
+  
+
     
   
 
@@ -1360,15 +1372,70 @@
   
   
   
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_1" id="__nav_6_1_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
-      <a href="../../guide/CONTRIBUTING/" class="md-nav__link">
+      <a href="../../guide/contributing/overview/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    CONTRIBUTING
+    Overview
   
 
     
@@ -1377,6 +1444,182 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/contributing/adding-a-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/external-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    External Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/adding-a-task/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a task or dataset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/contributing/adding-a-task-external/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running Your Model on Your Task
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/contributing/core-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/contributing/docs-and-issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docs and Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -6108,7 +6351,7 @@
 
 
 <h1 id="releasing-to-pypi">Releasing to PyPI</h1>
-<p>This page covers how to publish <strong>xlm-core</strong> to PyPI and refresh release docs.</p>
+<p>This page covers how to publish <strong>xlm-core</strong> and <strong>xlm-models</strong> to PyPI and refresh release docs.</p>
 <p><strong>How to release</strong> is the step-by-step procedure. <strong>How it works</strong> explains the workflows, version sources, and GitHub Actions behavior for maintainers.</p>
 <h2 id="how-to-release">How to release</h2>
 <p>Use this section when you want to ship a new version. For pipeline details, see <a href="#how-it-works">How it works</a> below.</p>
@@ -6160,11 +6403,15 @@ python<span class="w"> </span>.github/release.py<span class="w"> </span><span cl
 <td>Release exists but docs missing</td>
 <td><strong>Actions → Deploy Release Docs to GitHub Pages → Run workflow</strong>, same tag</td>
 </tr>
+<tr>
+<td>xlm-core uploaded but xlm-models failed</td>
+<td>Re-run <strong>Upload Python Package</strong> with the same tag (twine may skip the existing xlm-core upload)</td>
+</tr>
 </tbody>
 </table>
 <h3 id="manual-release-legacy">Manual release (legacy)</h3>
 <ol>
-<li>Update defaults in <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/version.py">version.py</a> (e.g. <code>0.1.2</code>).</li>
+<li>Update defaults in <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/version.py">version.py</a> and <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/xlm-models/version.py">xlm-models/version.py</a> (e.g. <code>0.1.2</code>).</li>
 <li>Commit and push to <code>main</code>.</li>
 <li>Create a GitHub release with tag <code>v0.1.2</code> on that commit and publish it.</li>
 </ol>
@@ -6174,22 +6421,26 @@ python<span class="w"> </span>.github/release.py<span class="w"> </span><span cl
 <h2 id="how-it-works">How it works</h2>
 <p>This section is for maintainers debugging releases or changing workflows.</p>
 <h3 id="pipeline-overview">Pipeline overview</h3>
-<p>A release bumps the version on <code>main</code>, creates a GitHub release tag, then triggers PyPI upload and docs deployment.</p>
+<p>A release bumps the version on <code>main</code>, creates a GitHub release tag, then triggers PyPI upload (both packages) and docs deployment.</p>
 <pre class="mermaid"><code>flowchart LR
   subgraph procedure [HowToRelease]
     A[Run release.py or Actions workflow]
     B[GitHub release tag vX.Y.Z]
   end
   subgraph downstream [DownstreamWorkflows]
-    C[publish.yml builds and uploads PyPI]
+    C[publish.yml builds and uploads xlm-core]
+    C2[publish.yml builds and uploads xlm-models]
     D[docs-release.yml deploys mike docs]
   end
   A --&gt; B
   B --&gt; C
+  B --&gt; C2
   B --&gt; D
   releaseYml[release.yml] --&gt;|"chains via workflow_dispatch when using GITHUB_TOKEN"| C
+  releaseYml --&gt; C2
   releaseYml --&gt; D
   localGh[local gh release] --&gt;|"release published event"| C
+  localGh --&gt; C2
   localGh --&gt; D</code></pre>
 <table>
 <thead>
@@ -6211,7 +6462,7 @@ python<span class="w"> </span>.github/release.py<span class="w"> </span><span cl
 <td>Upload Python Package</td>
 <td><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/.github/workflows/publish.yml">publish.yml</a></td>
 <td><code>release: published</code> or manual</td>
-<td>Build wheel/sdist; upload to PyPI</td>
+<td>Build wheel/sdist for <strong>xlm-core</strong> and <strong>xlm-models</strong>; upload both to PyPI</td>
 </tr>
 <tr>
 <td>Deploy Release Docs</td>
@@ -6224,12 +6475,12 @@ python<span class="w"> </span>.github/release.py<span class="w"> </span><span cl
 <h3 id="what-releasepy-does">What <code>release.py</code> does</h3>
 <p><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/.github/release.py">release.py</a> is used locally and from <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/.github/workflows/release.yml">release.yml</a>. It:</p>
 <ol>
-<li>Patches default values in <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/version.py">version.py</a></li>
-<li>Verifies parsed <code>VERSION</code> matches the requested release</li>
+<li>Patches default values in <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/version.py">version.py</a> and <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/xlm-models/version.py">xlm-models/version.py</a></li>
+<li>Verifies parsed <code>VERSION</code> matches the requested release in both files</li>
 <li>Commits and pushes to <code>main</code></li>
 <li>Runs <code>gh release create v&lt;version&gt;</code></li>
 </ol>
-<p>The GitHub release tag is always <code>v</code> plus the version in <code>version.py</code> after the bump, so the tag and file stay aligned.</p>
+<p>The GitHub release tag is always <code>v</code> plus the version in <code>version.py</code> after the bump, so the tag and files stay aligned.</p>
 <h3 id="local-vs-github-actions-release-paths">Local vs GitHub Actions release paths</h3>
 <p>How PyPI and docs workflows start depends on where the GitHub release is created.</p>
 <p><strong>Local <code>gh release create</code></strong> (your OAuth/PAT): GitHub emits <code>release: published</code>. <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/.github/workflows/publish.yml">publish.yml</a> and <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/.github/workflows/docs-release.yml">docs-release.yml</a> start automatically.</p>
@@ -6238,10 +6489,10 @@ python<span class="w"> </span>.github/release.py<span class="w"> </span><span cl
 <h3 id="version-sources">Version sources</h3>
 <p>Two layers matter:</p>
 <ul>
-<li><strong><code>version.py</code> defaults</strong> — source of truth on <code>main</code> after the bump. <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/setup.py">setup.py</a> reads <code>VERSION</code> from <code>version.py</code> via <code>exec()</code>.</li>
-<li><strong>Release tag + env vars</strong> — <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/.github/workflows/publish.yml">publish.yml</a> extracts <code>XLM_CORE_VERSION_*</code> from the tag at build time. These override defaults during the PyPI build only.</li>
+<li><strong><code>version.py</code> defaults</strong> — source of truth on <code>main</code> after the bump. <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/setup.py">setup.py</a> reads <code>VERSION</code> from <code>src/xlm/version.py</code> via <code>exec()</code>. <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/xlm-models/setup.py">xlm-models/setup.py</a> reads from <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/xlm-models/version.py">xlm-models/version.py</a> and pins <code>install_requires</code> to <code>xlm-core==VERSION</code>.</li>
+<li><strong>Release tag + env vars</strong> — <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/.github/workflows/publish.yml">publish.yml</a> extracts <code>XLM_CORE_VERSION_*</code> from the tag at build time. These override defaults during the PyPI build for both packages.</li>
 </ul>
-<p>Keeping <code>version.py</code> in sync avoids confusion when installing from <code>main</code>.</p>
+<p>Keeping both <code>version.py</code> files in sync avoids confusion when installing from <code>main</code>.</p>
 <h3 id="required-secrets">Required secrets</h3>
 <p>One-time repo setup under <strong>Settings → Secrets and variables → Actions</strong>:</p>
 <ul>
@@ -6249,7 +6500,7 @@ python<span class="w"> </span>.github/release.py<span class="w"> </span><span cl
 <li><code>PYPI_TOKEN</code> — PyPI API token</li>
 </ul>
 <h3 id="xlm-models">xlm-models</h3>
-<p><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/xlm-models/setup.py">xlm-models/setup.py</a> is a <strong>separate</strong> package with its own hardcoded version. It is <strong>not</strong> published by <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/.github/workflows/publish.yml">publish.yml</a>. Bump it manually if you publish <code>xlm-models</code> separately.</p>
+<p><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/xlm-models/setup.py">xlm-models/setup.py</a> is published alongside <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/setup.py">setup.py</a> by <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/.github/workflows/publish.yml">publish.yml</a>. Both packages share the same version number. <code>xlm-models</code> declares <code>install_requires=[f"xlm-core=={VERSION}"]</code>, so <code>pip install xlm-models==X.Y.Z</code> always pulls the matching <code>xlm-core</code> release. <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/.github/workflows/publish.yml">publish.yml</a> uploads <code>xlm-core</code> first, then <code>xlm-models</code>.</p>
 
 
 

@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://dhruvdcoder.github.io/xlm-core/dev/developers/dependencies/">
       
       
-        <link rel="prev" href="../../guide/CONTRIBUTING/">
+        <link rel="prev" href="../../guide/contributing/docs-and-issues/">
       
       
         <link rel="next" href="../releasing/">
@@ -305,8 +305,17 @@
   
     
     
+      
+  
+  
+  
+    
+  
+  
+    
+    
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../../guide/CONTRIBUTING/" class="md-tabs__link">
+        <a href="../../guide/contributing/overview/" class="md-tabs__link">
           
   
   
@@ -314,6 +323,9 @@
 
         </a>
       </li>
+    
+  
+
     
   
 
@@ -1360,15 +1372,70 @@
   
   
   
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_1" id="__nav_6_1_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
-      <a href="../../guide/CONTRIBUTING/" class="md-nav__link">
+      <a href="../../guide/contributing/overview/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    CONTRIBUTING
+    Overview
   
 
     
@@ -1377,6 +1444,182 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/contributing/adding-a-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/external-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    External Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/adding-a-task/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a task or dataset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/contributing/adding-a-task-external/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running Your Model on Your Task
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/contributing/core-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/contributing/docs-and-issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docs and Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -1447,6 +1690,17 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#contributor-install-from-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contributor install from source
+      
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#how-packages-are-wired" class="md-nav__link">
@@ -6053,6 +6307,9 @@
 
 <h1 id="dependencies">Dependencies</h1>
 <p>This page describes how dependencies are laid out for <strong>xlm-core</strong> and how to install subsets for runtime, testing, docs, linting, and extras.</p>
+<h2 id="contributor-install-from-source">Contributor install from source</h2>
+<p>For a full contributor setup from a git checkout, follow <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/CONTRIBUTING.md#install-from-source">Install from source</a> in <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>. That page has the canonical conda + pip recipe (aligned with CI).</p>
+<p>Use the sections below to understand what each requirements file contains, or to install a subset if you only need part of the stack (for example docs-only).</p>
 <h2 id="how-packages-are-wired">How packages are wired</h2>
 <p><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/setup.py">setup.py</a> loads <strong><code>requirements.txt</code></strong> at the repo root via <code>install_requires</code>:</p>
 <ul>
