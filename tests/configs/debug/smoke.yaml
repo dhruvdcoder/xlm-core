@@ -29,6 +29,7 @@ trainer:
   val_check_interval: 3
   check_val_every_n_epoch: null
   limit_val_batches: 2
+  limit_test_batches: 1
   log_every_n_steps: 1
   gradient_clip_val: 1.0
   num_sanity_val_steps: 0

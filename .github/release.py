@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Bump xlm-core version, push to main, and create a GitHub release.
+"""Bump xlm-core and xlm-models versions, push to main, and create a GitHub release.
 
 Used locally and from .github/workflows/release.yml. The release tag is always
 ``v`` + the version read from ``src/xlm/version.py`` after the bump, matching
-publish.yml / docs-release.yml.
+publish.yml / docs-release.yml. Both ``src/xlm/version.py`` and
+``xlm-models/version.py`` are updated to the same version.
 
 Examples:
     python .github/release.py 0.1.4
@@ -23,6 +24,8 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 VERSION_PY = REPO_ROOT / "src" / "xlm" / "version.py"
+MODELS_VERSION_PY = REPO_ROOT / "xlm-models" / "version.py"
+VERSION_PY_PATHS = (VERSION_PY, MODELS_VERSION_PY)
 TAG_PREFIX = "v"
 
 _VERSION_ENV_KEYS = (
@@ -173,7 +176,10 @@ def require_clean_tree(dry_run: bool) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Bump version.py, push to main, and publish a GitHub release.",
+        description=(
+            "Bump version.py files for xlm-core and xlm-models, push to main, "
+            "and publish a GitHub release."
+        ),
     )
     parser.add_argument(
         "version",
@@ -246,16 +252,20 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.publish_only:
         require_clean_tree(args.dry_run)
-        write_version(target)
-        written = read_version()
-        if written != target.version:
-            raise RuntimeError(
-                f"version.py mismatch after write: expected {target.version}, got {written}"
-            )
-        print(f"Updated {VERSION_PY.relative_to(REPO_ROOT)}")
+        for path in VERSION_PY_PATHS:
+            write_version(target, path=path)
+            written = read_version(path)
+            if written != target.version:
+                raise RuntimeError(
+                    f"{path} mismatch after write: expected {target.version}, got {written}"
+                )
+            print(f"Updated {path.relative_to(REPO_ROOT)}")
 
         commit_msg = f"Release version {target.version}"
-        run(["git", "add", str(VERSION_PY.relative_to(REPO_ROOT))], dry_run=args.dry_run)
+        run(
+            ["git", "add", *[str(p.relative_to(REPO_ROOT)) for p in VERSION_PY_PATHS]],
+            dry_run=args.dry_run,
+        )
         run(["git", "commit", "-m", commit_msg], dry_run=args.dry_run)
 
         if not args.skip_push:
@@ -278,7 +288,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.dry_run:
         print("Dry run complete; no changes were pushed and no release was created.")
     else:
-        print(f"Done. Published {target.tag} — PyPI/docs workflows run on release publish.")
+        print(
+            f"Done. Published {target.tag} — PyPI (xlm-core + xlm-models) and docs "
+            "workflows run on release publish."
+        )
     return 0
 
 

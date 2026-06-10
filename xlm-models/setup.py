@@ -1,8 +1,14 @@
-from setuptools import setup, find_packages
+import os
+
+from setuptools import setup
+
+VERSION = {}  # type: ignore
+with open(os.path.join(os.path.dirname(__file__), "version.py"), "r") as version_file:
+    exec(version_file.read(), VERSION)
 
 setup(
     name="xlm-models",
-    version="0.1.0",
+    version=VERSION["VERSION"],
     description="Collection of Language Models for XLM Framework",
     long_description="""
     Collection of language models for the XLM framework.
@@ -39,7 +45,7 @@ setup(
         "dream": ["configs/**/*.yaml", "configs/**/*.yml"],
     },
     install_requires=[
-        "xlm-core",  # Core XLM framework dependency
+        f"xlm-core=={VERSION['VERSION']}",
     ],
     project_urls={
         "Source Code": "https://github.com/dhruvdcoder/xlm-core/tree/main/xlm-models"

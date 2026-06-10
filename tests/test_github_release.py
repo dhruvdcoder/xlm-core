@@ -49,6 +49,21 @@ def test_write_and_read_roundtrip():
         assert release_mod.read_version(path) == "1.2.3-rc1"
 
 
+def test_models_version_py_exists():
+    assert release_mod.MODELS_VERSION_PY.is_file()
+
+
+def test_write_and_read_roundtrip_models_version_py():
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "version.py"
+        path.write_text(
+            release_mod.MODELS_VERSION_PY.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        target = release_mod.VersionParts("1", "2", "3", "-rc1")
+        release_mod.write_version(target, path=path)
+        assert release_mod.read_version(path) == "1.2.3-rc1"
+
+
 def test_read_version_ignores_env_override():
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "version.py"

@@ -2,41 +2,42 @@
 
 We value community contributions of all kinds, including code, documentation, bug reports, feature ideas, and helping others in [Discussions](https://github.com/dhruvdcoder/xlm-core/discussions).
 
-This guide was informed by the [scikit-learn](https://github.com/scikit-learn/scikit-learn/blob/main/CONTRIBUTING.md) and [Hugging Face Transformers](https://huggingface.co/docs/transformers/en/contributing) contributing guides.
 
-**Docs site (dev):** [https://dhruveshp.com/xlm-core/dev/](https://dhruveshp.com/xlm-core/dev/)
 
-## Quick links
+## Ways to contribute
 
-| Topic | Where |
-|-------|--------|
-| Dependencies and requirement files | [Dependencies](https://dhruveshp.com/xlm-core/dev/developers/dependencies/) |
-| Running tests | [Running tests](https://dhruveshp.com/xlm-core/dev/developers/testing/running-tests/) |
-| Unit / integration testing | [Unit tests](https://dhruveshp.com/xlm-core/dev/developers/testing/unit-tests/), [Integration tests](https://dhruveshp.com/xlm-core/dev/developers/testing/integration-tests/) |
-| Model families (shared abstractions) | [Models overview](https://dhruveshp.com/xlm-core/dev/models/) |
-| External / fork models | [External models](https://dhruveshp.com/xlm-core/dev/guide/external-models/) |
-| New task or dataset | [Adding a task or dataset](https://dhruveshp.com/xlm-core/dev/guide/adding-a-task/) |
+Pick the guide that matches your change:
 
-## Contributing code or documentation
+| Type | Guide |
+|------|--------|
+| Add a maintained model (`xlm-models/`) | [Adding a model](https://dhruveshp.com/xlm-core/dev/guide/contributing/adding-a-model/) |
+| Add an external model (separate repo) | [External models](https://dhruveshp.com/xlm-core/dev/guide/external-models/) |
+| Add a task or dataset (`src/xlm/tasks/`, dataset YAMLs) | [Adding a task or dataset](https://dhruveshp.com/xlm-core/dev/guide/adding-a-task/) |
+| Run your model on your task (external) | [Running your model on your task](https://dhruveshp.com/xlm-core/dev/guide/contributing/adding-a-task-external/) |
+| Core framework (`src/xlm/`) | [Core development](https://dhruveshp.com/xlm-core/dev/guide/contributing/core-development/) |
+| Docs, bugs, issues | [Docs and issues](https://dhruveshp.com/xlm-core/dev/guide/contributing/docs-and-issues/) |
 
-The usual path is to **open an issue** (bug, feature, or design question) and then **open a pull request** that references it.
+Overview and links: [Ways to contribute](https://dhruveshp.com/xlm-core/dev/guide/contributing/overview/).
+
+## Getting started
+
+The usual path is to **open an issue** (bug, feature, or design question) and then **open a pull request** that references it. Use the [pull request template](.github/PULL_REQUEST_TEMPLATE.md) when opening a PR.
 
 ### Good first issues
 
-If you want a small starter task, see [Good first issue](https://github.com/dhruvdcoder/xlm-core/issues?q=state%3Aopen+label%3A%22good+first+issue%22).
+See [Good first issue](https://github.com/dhruvdcoder/xlm-core/issues?q=state%3Aopen+label%3A%22good+first+issue%22).
 
-### Reporting bugs
+### Reporting bugs and features
 
 - Search existing [Issues](https://github.com/dhruvdcoder/xlm-core/issues) first.
-- If you are not sure whether something is a library bug or your setup, ask in [Q&A Discussions](https://github.com/dhruvdcoder/xlm-core/discussions/categories/q-a).
-
-### Feature requests
-
-Open an issue and use the feature request template when available.
+- Unsure if it is a bug or your setup? Ask in [Q&A Discussions](https://github.com/dhruvdcoder/xlm-core/discussions/categories/q-a).
+- Use the issue templates: [bug report](.github/ISSUE_TEMPLATE/bug_report.md), [feature request](.github/ISSUE_TEMPLATE/feature_request.md), [new model](.github/ISSUE_TEMPLATE/new_model.md), [new task](.github/ISSUE_TEMPLATE/new_task.md).
 
 ## Environment setup
 
-You need **Python 3.11+** (see [`setup.py`](https://github.com/dhruvdcoder/xlm-core/blob/main/setup.py)).
+### Install from source
+
+**Prerequisites:** Python 3.11+ (see [`setup.py`](setup.py)) and [conda](https://docs.conda.io/en/latest/).
 
 1. **Fork** the [repository](https://github.com/dhruvdcoder/xlm-core) and **clone your fork**:
 
@@ -52,29 +53,37 @@ You need **Python 3.11+** (see [`setup.py`](https://github.com/dhruvdcoder/xlm-c
    git checkout -b short-description-of-change
    ```
 
-3. Create a virtual environment and install **xlm-core** in editable mode, plus dev / test / docs / lint stacks:
+3. Create and activate a **virtual environment**:
 
    ```bash
-   pip install -e .
-   pip install -r requirements/dev_requirements.txt
-   pip install -r requirements/test_requirements.txt
-   pip install -r requirements/docs_requirements.txt
-   pip install -r requirements/lint_requirements.txt
+   conda create -p .venv_xlm_core python=3.11.10 pip ipykernel -y
+   conda activate ./.venv_xlm_core
    ```
 
-   Optional: install the same extras as CI when you need optional task stacks:
+4. Install **xlm-core** and **xlm-models** in editable mode (same optional extras as CI):
 
    ```bash
    pip install -e ".[all]"
-   ```
-
-4. If you change **model code** under `xlm-models/`, install that package in editable mode as well (it is a separate setuptools package in the same repo):
-
-   ```bash
    pip install -e ./xlm-models
    ```
 
-   `pip install -e .` alone does not install `xlm-models` unless you already installed it from PyPI.
+5. Install **development tooling** (test, dev, docs, lint):
+
+   ```bash
+   pip install -r requirements/test_requirements.txt \
+               -r requirements/dev_requirements.txt \
+               -r requirements/docs_requirements.txt \
+               -r requirements/lint_requirements.txt
+   ```
+
+6. **Verify** the installation:
+
+   ```bash
+   xlm --help
+   pytest -m "not slow and not cli"
+   ```
+
+If you only need a subset of tooling (for example docs-only), see [Dependencies](https://dhruveshp.com/xlm-core/dev/developers/dependencies/) for what each requirements file contains.
 
 ## Running tests
 
@@ -92,14 +101,6 @@ pytest -m "not slow and not cli"
 pytest
 ```
 
-**Focused runs:**
-
-```bash
-pytest tests/core/
-pytest tests/models/mlm/
-pytest tests/cli/test_smoke.py -m "cli and slow" -v
-```
-
 **Coverage** (configuration in `pyproject.toml`):
 
 ```bash
@@ -107,72 +108,33 @@ coverage run -m pytest -m "not slow and not cli"
 coverage report
 ```
 
+CI runs `pytest -m "not gpu and not cli and not integration"` on pull requests (see [`.github/workflows/tests.yml`](.github/workflows/tests.yml)).
+
 ## Style and static checks
 
 There is no repo-wide Makefile; run tools from the activated environment.
 
-- **Format:** `black` is configured in `pyproject.toml` (line length 79). Example:
+- **Format:** `black` is configured in `pyproject.toml` (line length 79):
 
   ```bash
   black src xlm-models tests
   ```
 
-- **Lint / types:** the lint requirements bundle includes `flake8`, `mypy`, and related plugins. Run them the same way you would in other Python projects (e.g. `flake8 src xlm-models tests`, `mypy` with your usual targets). Align with what CI enforces for the paths you touch.
-
-Fix new warnings in code you change; avoid drive-by mass reformatting of unrelated files.
+- **Lint / types:** the lint requirements bundle includes `flake8`, `mypy`, and related plugins. Fix new warnings in code you change; avoid drive-by mass reformatting of unrelated files.
 
 ## Documentation
 
-- Sources live under [`docs/`](https://github.com/dhruvdcoder/xlm-core/tree/main/docs). The published site is built with MkDocs (see [`mkdocs.yml`](https://github.com/dhruvdcoder/xlm-core/blob/main/mkdocs.yml)).
-- **Local build:**
-
-  ```bash
-  mkdocs build
-  ```
-
-- Add new pages to the `nav:` in `mkdocs.yml` when they should appear in the sidebar.
-
-## Contributing a new model
-
-We ship reference implementations in the **`xlm-models`** package in this repository (sibling of `src/xlm/`).
-
-### External model (separate repo)
-
-For maximum flexibility (e.g. reproducing a paper with its own layout), use the **external models** mechanism. See the [External models guide](https://dhruveshp.com/xlm-core/dev/guide/external-models/).
-
-### Model inside `xlm-models`
-
-To add a **first-party** family under `xlm-models/<name>/`, follow the same component pattern as existing families:
-
-| Component | Role |
-|-----------|------|
-| **Model** | Architecture and forward pass |
-| **Loss** | Training objective |
-| **Predictor** | Inference / generation |
-| **Collator** | Batching |
-
-Conceptual comparison and batch contracts: [Models overview](https://dhruveshp.com/xlm-core/dev/models/). Per-family pages (ARLM, ILM, MDLM, MLM) show the expected module layout.
-
-**Checklist:**
-
-1. Implement the family under `xlm-models/<family>/` (mirror `model_*`, `loss_*`, `predictor_*`, `datamodule_*`, `types_*`, `metrics_*`, etc., as appropriate).
-2. Add Hydra configs under `xlm-models/<family>/configs/` (datamodule, collator, experiment, …).
-3. Register the family in [`xlm-models/xlm_models.json`](https://github.com/dhruvdcoder/xlm-core/blob/main/xlm-models/xlm_models.json) if it should be discovered like existing tags.
-4. Add tests under `tests/models/<family>/` using the shared mixins in [`tests/models/_base.py`](https://github.com/dhruvdcoder/xlm-core/blob/main/tests/models/_base.py). See [Unit tests](https://dhruveshp.com/xlm-core/dev/developers/testing/unit-tests/).
-5. Extend **MkDocs** if you want a narrative family page: add `docs/models/<family>.md` and a nav entry in `mkdocs.yml`, and add the module path to `api-autonav` in `mkdocs.yml` if you want it in the API Reference section.
-6. Consider a CLI smoke entry in `tests/cli/test_smoke.py` once a minimal experiment config exists.
-
-## Contributing a new task or dataset
-
-Wire preprocessing in `src/xlm/tasks/<your_task>/`, add dataset YAMLs under `src/xlm/configs/lightning_train/datasets/`, and align dataloader names with metrics and evaluators. Step-by-step: [Adding a task or dataset](https://dhruveshp.com/xlm-core/dev/guide/adding-a-task/), with background in the [Data pipeline](https://dhruveshp.com/xlm-core/dev/guide/data-pipeline/) and [Metrics](https://dhruveshp.com/xlm-core/dev/guide/metrics/) guides.
+- Sources live under [`docs/`](docs/). Build locally with `mkdocs build` (see [Docs and issues](https://dhruveshp.com/xlm-core/dev/guide/contributing/docs-and-issues/)).
+- Add new pages to the `nav:` in [`mkdocs.yml`](mkdocs.yml) when they should appear in the sidebar.
 
 ## Opening a pull request
 
 1. Push your branch to **your fork** and open a PR against **`main`** on [dhruvdcoder/xlm-core](https://github.com/dhruvdcoder/xlm-core).
-2. Describe the change, link related issues, and note any new dependencies or optional extras.
-3. Ensure **tests** and **docs** you touched still build.
-4. Request review from maintainers (e.g. `dhruvdcoder`, `brozonoyer`, `sensai99`, `Durga-Prasad1`) when ready.
+2. Fill out the [pull request template](.github/PULL_REQUEST_TEMPLATE.md): contribution type, summary, testing, docs.
+3. Link related issues and note any new dependencies or optional extras.
+4. Ensure **tests** and **docs** you touched still build.
+5. Request review from maintainers when ready.
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the same terms as the project ([MIT](https://github.com/dhruvdcoder/xlm-core/blob/main/LICENSE)).
+By contributing, you agree that your contributions will be licensed under the same terms as the project ([MIT](LICENSE)).

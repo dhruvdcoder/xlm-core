@@ -26,7 +26,7 @@ Example -- adding tests for a new model called ``foo``::
                 return model(x, attention_mask=mask, positions=positions)
             return _run
 
-See ``wiki/running_tests.md`` for the full guide.
+See ``docs/developers/testing/unit-tests.md`` for the full guide.
 """
 
 import pytest

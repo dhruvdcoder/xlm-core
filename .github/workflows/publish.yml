@@ -14,11 +14,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         ref: ${{ github.event.inputs.tag_name || github.event.release.tag_name }}
     - name: Set up Python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v5
       with:
         python-version: '3.x'
     - name: Install dependencies
@@ -47,7 +47,7 @@ jobs:
         echo "patch=$PATCH_NUM" >> $GITHUB_OUTPUT
         echo "suffix=$SUFFIX" >> $GITHUB_OUTPUT
         echo "Version extracted: $MAJOR.$MINOR.$PATCH_NUM$SUFFIX"
-    - name: Build and publish
+    - name: Build and publish xlm-core
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
@@ -56,5 +56,17 @@ jobs:
         XLM_CORE_VERSION_PATCH: ${{ steps.get_version.outputs.patch }}
         XLM_CORE_VERSION_SUFFIX: ${{ steps.get_version.outputs.suffix }}
       run: |
+        python setup.py sdist bdist_wheel
+        twine upload dist/*
+    - name: Build and publish xlm-models
+      env:
+        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        XLM_CORE_VERSION_MAJOR: ${{ steps.get_version.outputs.major }}
+        XLM_CORE_VERSION_MINOR: ${{ steps.get_version.outputs.minor }}
+        XLM_CORE_VERSION_PATCH: ${{ steps.get_version.outputs.patch }}
+        XLM_CORE_VERSION_SUFFIX: ${{ steps.get_version.outputs.suffix }}
+      run: |
+        cd xlm-models
         python setup.py sdist bdist_wheel
         twine upload dist/*

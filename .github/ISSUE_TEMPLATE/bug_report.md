@@ -11,23 +11,44 @@ assignees: ''
 A clear and concise description of what the bug is.
 
 **To Reproduce**
-Here is the minimal python script that reproduces the issue...
+Minimal repro: an `xlm` command or Python script.
 
+```bash
+# Example
+xlm job_type=train job_name=repro experiment=... debug=overfit
+```
+
+```python
+# Or minimal Python
+```
 
 **Expected behavior**
-A clear and concise description of what you expected to happen.
+What you expected to happen.
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+**Actual behavior**
+What happened instead (traceback, wrong metrics, etc.).
+
+**Relevant config**
+Hydra experiment and overrides (paste or link):
+
+```yaml
+experiment=...
+# +overrides
+```
 
 **Environment**
- - OS: 
- - Pytorch version
- - Lightning version
- - Transformers version
- - Hydra version
 
+- OS:
+- Python:
+- xlm-core: <!-- python -c "import xlm; print(xlm.__version__)" -->
+- xlm-models (if applicable):
+- PyTorch:
+- Lightning:
+- Transformers:
+- Hydra:
 
+**Screenshots**
+If applicable.
 
 **Additional context**
-Add any other context about the problem here.
+Logs, checkpoint paths, or links to related issues.
