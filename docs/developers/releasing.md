@@ -1,6 +1,6 @@
 # Releasing to PyPI
 
-This page covers how to publish **xlm-core** to PyPI and refresh release docs.
+This page covers how to publish **xlm-core** and **xlm-models** to PyPI and refresh release docs.
 
 **How to release** is the step-by-step procedure. **How it works** explains the workflows, version sources, and GitHub Actions behavior for maintainers.
 
@@ -48,10 +48,11 @@ Both downstream workflows should appear in Actions after a successful non-dry-ru
 | Version already on `main`, no GitHub release | `python .github/release.py --publish-only --yes` |
 | Release exists but PyPI upload missing | **Actions → Upload Python Package → Run workflow**, `tag_name=vX.Y.Z` |
 | Release exists but docs missing | **Actions → Deploy Release Docs to GitHub Pages → Run workflow**, same tag |
+| xlm-core uploaded but xlm-models failed | Re-run **Upload Python Package** with the same tag (twine may skip the existing xlm-core upload) |
 
 ### Manual release (legacy)
 
-1. Update defaults in {{ gh('src/xlm/version.py', 'version.py') }} (e.g. `0.1.2`).
+1. Update defaults in {{ gh('src/xlm/version.py', 'version.py') }} and {{ gh('xlm-models/version.py', 'xlm-models/version.py') }} (e.g. `0.1.2`).
 2. Commit and push to `main`.
 3. Create a GitHub release with tag `v0.1.2` on that commit and publish it.
 
@@ -67,7 +68,7 @@ This section is for maintainers debugging releases or changing workflows.
 
 ### Pipeline overview
 
-A release bumps the version on `main`, creates a GitHub release tag, then triggers PyPI upload and docs deployment.
+A release bumps the version on `main`, creates a GitHub release tag, then triggers PyPI upload (both packages) and docs deployment.
 
 ```mermaid
 flowchart LR
@@ -76,34 +77,38 @@ flowchart LR
     B[GitHub release tag vX.Y.Z]
   end
   subgraph downstream [DownstreamWorkflows]
-    C[publish.yml builds and uploads PyPI]
+    C[publish.yml builds and uploads xlm-core]
+    C2[publish.yml builds and uploads xlm-models]
     D[docs-release.yml deploys mike docs]
   end
   A --> B
   B --> C
+  B --> C2
   B --> D
   releaseYml[release.yml] -->|"chains via workflow_dispatch when using GITHUB_TOKEN"| C
+  releaseYml --> C2
   releaseYml --> D
   localGh[local gh release] -->|"release published event"| C
+  localGh --> C2
   localGh --> D
 ```
 
 | Workflow | File | Normal trigger | Effect |
 |----------|------|----------------|--------|
 | Release xlm-core | {{ gh('.github/workflows/release.yml', 'release.yml') }} | `workflow_dispatch` | Runs {{ gh('.github/release.py', 'release.py') }} |
-| Upload Python Package | {{ gh('.github/workflows/publish.yml', 'publish.yml') }} | `release: published` or manual | Build wheel/sdist; upload to PyPI |
+| Upload Python Package | {{ gh('.github/workflows/publish.yml', 'publish.yml') }} | `release: published` or manual | Build wheel/sdist for **xlm-core** and **xlm-models**; upload both to PyPI |
 | Deploy Release Docs | {{ gh('.github/workflows/docs-release.yml', 'docs-release.yml') }} | `release: published` or manual | Deploy versioned docs via mike |
 
 ### What `release.py` does
 
 {{ gh('.github/release.py', 'release.py') }} is used locally and from {{ gh('.github/workflows/release.yml', 'release.yml') }}. It:
 
-1. Patches default values in {{ gh('src/xlm/version.py', 'version.py') }}
-2. Verifies parsed `VERSION` matches the requested release
+1. Patches default values in {{ gh('src/xlm/version.py', 'version.py') }} and {{ gh('xlm-models/version.py', 'xlm-models/version.py') }}
+2. Verifies parsed `VERSION` matches the requested release in both files
 3. Commits and pushes to `main`
 4. Runs `gh release create v<version>`
 
-The GitHub release tag is always `v` plus the version in `version.py` after the bump, so the tag and file stay aligned.
+The GitHub release tag is always `v` plus the version in `version.py` after the bump, so the tag and files stay aligned.
 
 ### Local vs GitHub Actions release paths
 
@@ -119,10 +124,10 @@ This is why a release run from Actions still triggers upload and docs deploy, ev
 
 Two layers matter:
 
-- **`version.py` defaults** — source of truth on `main` after the bump. {{ gh('setup.py', 'setup.py') }} reads `VERSION` from `version.py` via `exec()`.
-- **Release tag + env vars** — {{ gh('.github/workflows/publish.yml', 'publish.yml') }} extracts `XLM_CORE_VERSION_*` from the tag at build time. These override defaults during the PyPI build only.
+- **`version.py` defaults** — source of truth on `main` after the bump. {{ gh('setup.py', 'setup.py') }} reads `VERSION` from `src/xlm/version.py` via `exec()`. {{ gh('xlm-models/setup.py', 'xlm-models/setup.py') }} reads from {{ gh('xlm-models/version.py', 'xlm-models/version.py') }} and pins `install_requires` to `xlm-core==VERSION`.
+- **Release tag + env vars** — {{ gh('.github/workflows/publish.yml', 'publish.yml') }} extracts `XLM_CORE_VERSION_*` from the tag at build time. These override defaults during the PyPI build for both packages.
 
-Keeping `version.py` in sync avoids confusion when installing from `main`.
+Keeping both `version.py` files in sync avoids confusion when installing from `main`.
 
 ### Required secrets
 
@@ -133,4 +138,4 @@ One-time repo setup under **Settings → Secrets and variables → Actions**:
 
 ### xlm-models
 
-{{ gh('xlm-models/setup.py', 'xlm-models/setup.py') }} is a **separate** package with its own hardcoded version. It is **not** published by {{ gh('.github/workflows/publish.yml', 'publish.yml') }}. Bump it manually if you publish `xlm-models` separately.
+{{ gh('xlm-models/setup.py', 'xlm-models/setup.py') }} is published alongside {{ gh('setup.py', 'setup.py') }} by {{ gh('.github/workflows/publish.yml', 'publish.yml') }}. Both packages share the same version number. `xlm-models` declares `install_requires=[f"xlm-core=={VERSION}"]`, so `pip install xlm-models==X.Y.Z` always pulls the matching `xlm-core` release. {{ gh('.github/workflows/publish.yml', 'publish.yml') }} uploads `xlm-core` first, then `xlm-models`.
