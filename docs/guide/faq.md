@@ -19,4 +19,4 @@ Add `debug=overfit` to overfit on a single batch, or use other debug configs fro
 ## Contributing
 
 **How do I add a new model?**  
-See the [Contributing Guide](contributing.md) for a complete walkthrough of the four components: Model, Loss, Predictor, and Collator.
+See [Adding a model](contributing/adding-a-model.md) for maintained families in `xlm-models/`, or [External models](external-models.md) for separate repos. All four components apply: Model, Loss, Predictor, and Collator.

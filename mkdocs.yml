@@ -96,7 +96,13 @@ nav:
       - OWT MLM: experiments/owt_mlm.md
 
   - Developers:
-      - CONTRIBUTING: guide/CONTRIBUTING.md
+      - Contributing:
+          - Overview: guide/contributing/overview.md
+          - Adding a Model: guide/contributing/adding-a-model.md
+          - External Models: guide/external-models.md
+          - Adding a Task: guide/adding-a-task.md
+          - Core Development: guide/contributing/core-development.md
+          - Docs and Issues: guide/contributing/docs-and-issues.md
       - Dependencies: developers/dependencies.md
       - Releasing: developers/releasing.md
       - Testing:
