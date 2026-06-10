@@ -16,7 +16,7 @@ Start with the [Contributing hub](https://github.com/dhruvdcoder/xlm-core/blob/m
 
 1. **Search existing [Issues](https://github.com/dhruvdcoder/xlm-core/issues)** — someone may already be working on it.
 2. **Open an issue** for non-trivial work (use the matching issue template when available).
-3. **Set up your environment** — see [Dependencies](../../developers/dependencies.md) and the [Contributing hub](https://github.com/dhruvdcoder/xlm-core/blob/main/CONTRIBUTING.md#environment-setup).
+3. **Set up your environment** — follow [Install from source](https://github.com/dhruvdcoder/xlm-core/blob/main/CONTRIBUTING.md#install-from-source) in the Contributing hub. For what each requirements file contains, see [Dependencies](../../developers/dependencies.md).
 
 ## Good first issues
 

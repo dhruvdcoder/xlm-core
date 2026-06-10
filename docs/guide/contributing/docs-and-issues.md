@@ -6,12 +6,11 @@ You can contribute without touching model or task code: improve documentation, f
 
 ### Build the site locally
 
-From the repository root, with docs dependencies installed (see [Dependencies](../../developers/dependencies.md#documentation-build-requirementsdocs_requirementstxt)):
+**Prerequisite:** complete [Install from source](https://github.com/dhruvdcoder/xlm-core/blob/main/CONTRIBUTING.md#install-from-source) in the Contributing hub (includes docs dependencies).
+
+From the repository root:
 
 ```bash
-pip install -e .
-pip install -e ./xlm-models
-pip install -r requirements/docs_requirements.txt
 mkdocs build
 ```
 

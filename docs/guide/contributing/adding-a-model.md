@@ -12,12 +12,7 @@ xlm-scaffold my_family
 
 This scaffolds Python modules, Hydra configs, and registers the family in {{ gh('xlm-models/xlm_models.json', 'xlm_models.json') }}. See [External models](../external-models.md#quick-start) for scaffold details (the same tool applies to in-repo families).
 
-Install both packages in editable mode:
-
-```bash
-pip install -e .
-pip install -e ./xlm-models
-```
+Set up your environment first: [Install from source](https://github.com/dhruvdcoder/xlm-core/blob/main/CONTRIBUTING.md#install-from-source) in the Contributing hub.
 
 ## Four components
 

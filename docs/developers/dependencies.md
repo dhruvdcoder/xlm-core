@@ -2,6 +2,12 @@
 
 This page describes how dependencies are laid out for **xlm-core** and how to install subsets for runtime, testing, docs, linting, and extras.
 
+## Contributor install from source
+
+For a full contributor setup from a git checkout, follow [Install from source](https://github.com/dhruvdcoder/xlm-core/blob/main/CONTRIBUTING.md#install-from-source) in {{ gh('CONTRIBUTING.md', 'CONTRIBUTING.md') }}. That page has the canonical conda + pip recipe (aligned with CI).
+
+Use the sections below to understand what each requirements file contains, or to install a subset if you only need part of the stack (for example docs-only).
+
 ## How packages are wired
 
 {{ gh('setup.py', 'setup.py') }} loads **`requirements.txt`** at the repo root via `install_requires`:
