@@ -34,7 +34,9 @@ See [Good first issue](https://github.com/dhruvdcoder/xlm-core/issues?q=state%3A
 
 ## Environment setup
 
-You need **Python 3.11+** (see [`setup.py`](setup.py)).
+### Install from source
+
+**Prerequisites:** Python 3.11+ (see [`setup.py`](setup.py)) and [conda](https://docs.conda.io/en/latest/).
 
 1. **Fork** the [repository](https://github.com/dhruvdcoder/xlm-core) and **clone your fork**:
 
@@ -50,31 +52,37 @@ You need **Python 3.11+** (see [`setup.py`](setup.py)).
    git checkout -b short-description-of-change
    ```
 
-3. Create a virtual environment and install **xlm-core** in editable mode, plus dev / test / docs / lint stacks:
+3. Create and activate a **virtual environment**:
 
    ```bash
-   pip install -e .
-   pip install -r requirements/dev_requirements.txt
-   pip install -r requirements/test_requirements.txt
-   pip install -r requirements/docs_requirements.txt
-   pip install -r requirements/lint_requirements.txt
+   conda create -p .venv_xlm_core python=3.11.10 pip ipykernel -y
+   conda activate ./.venv_xlm_core
    ```
 
-   Optional: install the same extras as CI when you need optional task stacks:
+4. Install **xlm-core** and **xlm-models** in editable mode (same optional extras as CI):
 
    ```bash
    pip install -e ".[all]"
-   ```
-
-4. If you change **model code** under `xlm-models/`, install that package in editable mode as well:
-
-   ```bash
    pip install -e ./xlm-models
    ```
 
-   `pip install -e .` alone does not install `xlm-models` unless you already installed it from PyPI.
+5. Install **development tooling** (test, dev, docs, lint):
 
-Details: [Dependencies](https://dhruveshp.com/xlm-core/dev/developers/dependencies/).
+   ```bash
+   pip install -r requirements/test_requirements.txt \
+               -r requirements/dev_requirements.txt \
+               -r requirements/docs_requirements.txt \
+               -r requirements/lint_requirements.txt
+   ```
+
+6. **Verify** the installation:
+
+   ```bash
+   xlm --help
+   pytest -m "not slow and not cli"
+   ```
+
+If you only need a subset of tooling (for example docs-only), see [Dependencies](https://dhruveshp.com/xlm-core/dev/developers/dependencies/) for what each requirements file contains.
 
 ## Running tests
 
