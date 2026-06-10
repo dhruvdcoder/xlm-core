@@ -13,10 +13,10 @@
         <link rel="canonical" href="https://dhruvdcoder.github.io/xlm-core/0.3/guide/adding-a-task/">
       
       
-        <link rel="prev" href="../quickstart/">
+        <link rel="prev" href="../external-models/">
       
       
-        <link rel="next" href="../push-to-hub/">
+        <link rel="next" href="../contributing/adding-a-task-external/">
       
       
         
@@ -220,12 +220,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href="../quickstart/" class="md-tabs__link">
           
   
@@ -302,11 +300,22 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../CONTRIBUTING/" class="md-tabs__link">
+      
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../contributing/overview/" class="md-tabs__link">
           
   
   
@@ -314,6 +323,9 @@
 
         </a>
       </li>
+    
+  
+
     
   
 
@@ -445,31 +457,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
             
   
   
@@ -487,7 +494,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -604,15 +611,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-implement-task-code-srcxlmtasksyour_task__init__py" class="md-nav__link">
+  <a href="#2-task-code" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Implement task code (src/xlm/tasks/&lt;your_task&gt;/__init__.py)
+        2. Task code
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="2. Implement task code (src/xlm/tasks/&lt;your_task&gt;/__init__.py)">
+    <nav class="md-nav" aria-label="2. Task code">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -632,10 +639,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-add-dataset-yaml-srcxlmconfigslightning_traindatasets" class="md-nav__link">
+  <a href="#3-dataset-yamls-srcxlmconfigslightning_traindatasets" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Add dataset YAML (src/xlm/configs/lightning_train/datasets/)
+        3. Dataset YAMLs (src/xlm/configs/lightning_train/datasets/)
       
     </span>
   </a>
@@ -643,10 +650,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-compose-a-datamodule-config" class="md-nav__link">
+  <a href="#4-wire-to-a-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. Compose a datamodule config
+        4. Wire to a model
       
     </span>
   </a>
@@ -654,10 +661,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-wire-collators" class="md-nav__link">
+  <a href="#5-metrics-and-post-hoc-evaluation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        5. Wire collators
+        5. Metrics and post-hoc evaluation
       
     </span>
   </a>
@@ -665,10 +672,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#6-wire-metrics-and-optional-post-hoc-evaluation" class="md-nav__link">
+  <a href="#6-dependencies" class="md-nav__link">
     <span class="md-ellipsis">
       
-        6. Wire metrics and optional post-hoc evaluation
+        6. Dependencies
       
     </span>
   </a>
@@ -676,10 +683,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#7-dependencies-and-extras" class="md-nav__link">
+  <a href="#7-verify" class="md-nav__link">
     <span class="md-ellipsis">
       
-        7. Dependencies and extras
+        7. Verify
       
     </span>
   </a>
@@ -687,32 +694,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#8-verify" class="md-nav__link">
+  <a href="#quick-reference" class="md-nav__link">
     <span class="md-ellipsis">
       
-        8. Verify
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#examples" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Examples
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#quick-reference-table" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Quick reference table
+        Quick reference
       
     </span>
   </a>
@@ -769,20 +754,17 @@
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
         
           
-          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
             
   
   
@@ -1483,26 +1465,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
             
   
   
@@ -1520,7 +1507,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1535,17 +1522,74 @@
                 
   
   
+    
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6_1" id="__nav_6_1_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
   
   
     <li class="md-nav__item">
-      <a href="../CONTRIBUTING/" class="md-nav__link">
+      <a href="../contributing/overview/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    CONTRIBUTING
+    Overview
   
 
     
@@ -1554,6 +1598,334 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/adding-a-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../external-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    External Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a task or dataset
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a task or dataset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-pick-a-wiring-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Pick a wiring pattern
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-task-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Task code
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Task code">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#preprocess-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Preprocess function
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-dataset-yamls-srcxlmconfigslightning_traindatasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dataset YAMLs (src/xlm/configs/lightning_train/datasets/)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-wire-to-a-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Wire to a model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-metrics-and-post-hoc-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Metrics and post-hoc evaluation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-verify" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Verify
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/adding-a-task-external/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running Your Model on Your Task
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/core-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/docs-and-issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docs and Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -1628,17 +2000,20 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_4" >
         
           
-          <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="">
             
   
   
@@ -6069,159 +6444,181 @@
 
 
 <h1 id="adding-a-new-task-or-dataset">Adding a new task or dataset</h1>
-<p>This guide walks through wiring a Hugging Face dataset (or similar source) into xlm-core: Python preprocessing in <code>xlm.tasks</code>, Hydra configs under <code>configs/lightning_train/</code>, and alignment between <strong>dataloader names</strong> and <strong>metrics</strong>.</p>
-<p>Read these guides first if you have not worked with the pipeline before:</p>
-<ul>
-<li><a href="../data-pipeline/">Data Pipeline</a> — how <code>TextDataModule</code>, <code>DatasetManager</code>, and dataloader names connect to the <code>Harness</code>.</li>
-<li><a href="../metrics/">Metrics</a> — <code>MetricWrapper</code>, <code>reported_metrics</code>, and prediction/post-hoc behavior.</li>
-<li><a href="../eval/">Evaluate a model</a> — loading checkpoints for evaluation jobs.</li>
-</ul>
-<p>Cursor users may also invoke the <strong><code>xlm-create-task</code></strong> Agent Skill (<code>~/.cursor/skills/xlm-create-task/</code>) for a condensed checklist and copied excerpts.</p>
+<p>Adding a task has two phases:</p>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>What</th>
+<th>Where (maintained tasks)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A</strong></td>
+<td>Preprocess function + dataset YAMLs</td>
+<td><code>src/xlm/tasks/&lt;task&gt;/</code>, <code>src/xlm/configs/lightning_train/datasets/</code></td>
+</tr>
+<tr>
+<td><strong>B</strong></td>
+<td>Datamodule + experiment configs</td>
+<td><code>xlm-models/&lt;family&gt;/configs/</code> (see <a href="../contributing/adding-a-task-external.md">Running your model on your task</a>)</td>
+</tr>
+</tbody>
+</table>
+<p>For tasks shipped with xlm-core, preprocessing lives in <code>src/xlm/tasks/</code>. For external tasks, Hydra resolves any importable dotted path (e.g. <code>my_package.my_task.preprocess_fn</code>) — your code does not need to live inside this repo.</p>
+<p><strong>Reference example:</strong> STAR-easy + ARLM — <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/star/__init__.py">task code</a>, <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/configs/lightning_train/datasets/star.yaml">base YAML</a>, split YAMLs <code>star_easy_{train,val,val_pred,test,test_pred}.yaml</code>, <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/xlm-models/arlm/configs/datamodule/star_easy_arlm.yaml">datamodule</a>, <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/xlm-models/arlm/configs/experiment/star_easy_arlm.yaml">experiment</a>.</p>
+<p><strong>Prerequisites:</strong> <a href="../data-pipeline/">Data Pipeline</a>, <a href="../metrics/">Metrics</a>, <a href="../eval/">Evaluate</a>.</p>
 <hr />
 <h2 id="1-pick-a-wiring-pattern">1. Pick a wiring pattern</h2>
 <table>
 <thead>
 <tr>
 <th>Pattern</th>
-<th>Use when</th>
-<th>Typical config</th>
+<th>When</th>
+<th>Start from</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>Standard LM / map dataset</strong></td>
-<td>Hub dataset; preprocess once and cache via <code>DatasetManager</code></td>
-<td><code>datasets/default_text.yaml</code> defaults → <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/datamodule.py">DatasetManager</a></td>
+<td>Standard LM / map dataset</td>
+<td>Hub dataset, preprocess + cache</td>
+<td><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/configs/lightning_train/datasets/default_text.yaml">default_text.yaml</a></td>
 </tr>
 <tr>
-<td><strong>Streaming / sequence packing</strong></td>
-<td>Huge corpus; packed blocks without per-example padding</td>
-<td><code>iterable_dataset_shards</code>, <code>on_the_fly_group_processor: xlm.datamodule.pack_sequences</code> (see <a href="../data-pipeline/">Data Pipeline</a>)</td>
+<td>Streaming / sequence packing</td>
+<td>Huge corpus, packed blocks</td>
+<td><code>on_the_fly_group_processor: xlm.datamodule.pack_sequences</code></td>
 </tr>
 <tr>
-<td><strong>Eval-only / benchmarks</strong></td>
-<td>Smaller splits; avoid manual <code>save_to_disk</code> cache semantics</td>
-<td><code>datasets/default_eval.yaml</code> → <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/datamodule.py">EvalDatasetManager</a></td>
+<td>Eval-only / benchmarks</td>
+<td>Small splits, no disk cache</td>
+<td><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/configs/lightning_train/datasets/default_eval.yaml">default_eval.yaml</a></td>
 </tr>
 <tr>
-<td><strong>Heavy optional dependencies</strong></td>
+<td>Heavy optional deps</td>
 <td>Chemistry stacks, etc.</td>
-<td>Lazy facade package that imports implementation on demand (<a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/safe_molgen/__init__.py">safe_molgen/<strong>init</strong>.py</a>); document <code>pip install "xlm-core[...]"</code></td>
+<td>Lazy facade (<a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/safe_molgen/__init__.py">safe_molgen</a>), <code>pip install "xlm-core[...]"</code></td>
 </tr>
 </tbody>
 </table>
 <hr />
-<h2 id="2-implement-task-code-srcxlmtasksyour_task__init__py">2. Implement task code (<code>src/xlm/tasks/&lt;your_task&gt;/__init__.py</code>)</h2>
-<p>Put each task in its <strong>own directory</strong> under <a href="https://github.com/dhruvdcoder/xlm-core/tree/main/src/xlm/tasks">tasks/</a> with an <code>__init__.py</code> that defines preprocess functions, filters, evaluators, etc.</p>
-<p>Hydra resolves callables by <strong>dotted path</strong> (for example <code>xlm.tasks.owt.preprocess_fn</code>). You do <strong>not</strong> need to list every symbol in the parent <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/__init__.py">tasks/<strong>init</strong>.py</a>—that file is only a <strong>package marker</strong>, not a barrel re-export of all tasks.</p>
+<h2 id="2-task-code">2. Task code</h2>
+<p><strong>Maintained tasks:</strong> one directory per task under <a href="https://github.com/dhruvdcoder/xlm-core/tree/main/src/xlm/tasks">tasks/</a> with an <code>__init__.py</code>.</p>
+<p><strong>External tasks:</strong> same pattern in your own package — set <code>preprocess_function: my_package.my_task.preprocess_fn</code> in your dataset YAML.</p>
+<p>Hydra resolves callables by dotted path; no need to re-export from a parent <code>__init__.py</code>.</p>
 <h3 id="preprocess-function">Preprocess function</h3>
-<p>Configured as <code>preprocess_function</code> on the dataset manager. At runtime it is loaded with <code>get_function</code> and passed to <code>datasets.Dataset.map</code>. The effective signature is:</p>
-<div class="highlight"><pre><span></span><code>(example: dict, tokenizer, **preprocess_function_kwargs) -&gt; dict
-</code></pre></div>
-<p>Return only the columns your downstream collator and model need (drop raw text via <code>columns_to_remove</code>, or restrict with <code>columns_to_keep</code> on eval configs).</p>
-<p><strong>Minimal LM-style preprocessing</strong> — encode raw text to token IDs; combine with <code>on_the_fly_processor: xlm.datamodule.token_ids_to_input_ids</code>:</p>
-<ul>
-<li>Code: <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/owt/__init__.py">owt/<strong>init</strong>.py</a></li>
-<li>Dataset YAML: <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/configs/lightning_train/datasets/owt_train.yaml">datasets/owt_train.yaml</a></li>
-</ul>
-<p><strong>Structured fields + different processors per split</strong> — build task-specific columns (for example <code>input_token_ids</code>, <code>prompt_token_ids</code>), then choose <code>on_the_fly_processor</code> per dataset YAML:</p>
-<ul>
-<li>Code: <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/sudoku_extreme/__init__.py">sudoku_extreme/<strong>init</strong>.py</a></li>
-<li>Train: <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/configs/lightning_train/datasets/sudoku_extreme_train.yaml">datasets/sudoku_extreme_train.yaml</a></li>
-<li>Prediction split overrides processor via defaults chain: <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/configs/lightning_train/datasets/sudoku_extreme_val_pred.yaml">datasets/sudoku_extreme_val_pred.yaml</a></li>
-</ul>
-<p><strong>Optional row filters</strong> — set <code>filter_fn</code> to a dotted path and <strong><code>filter_suffix</code></strong> (required when <code>filter_fn</code> is set). Example filter implementations live beside preprocessing in <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/sudoku_extreme/__init__.py">sudoku_extreme/<strong>init</strong>.py</a>.</p>
-<p><strong>Benchmark-style eval + post-hoc scoring</strong> — preprocessing builds prompt/target columns and carries gold answers through the batch for logging; a <strong><code>post_hoc_evaluator</code></strong> class scores saved predictions:</p>
-<ul>
-<li>Code: <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/math500/__init__.py">math500/<strong>init</strong>.py</a> (<code>math500_preprocess_fn</code>, <code>Math500Eval</code>)</li>
-<li>Eval dataset: <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/configs/lightning_train/datasets/math500_test.yaml">datasets/math500_test.yaml</a></li>
-</ul>
-<p><strong>Code-execution eval (TinyGSM → GSM8K)</strong> — same post-hoc pipeline, but scoring runs generated Python:</p>
-<ul>
-<li>Code: <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/tinygsm/gsm8k.py">tinygsm/gsm8k.py</a> (<code>gsm8k_preprocess_fn</code>, <code>Gsm8kCodeEval</code>)</li>
-<li>Runbook: <a href="../../tasks/tinygsm_gsm8k/">TinyGSM / GSM8K</a></li>
-</ul>
-<p><strong>Large optional imports</strong> — keep the default import surface light and defer heavy imports (see <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/safe_molgen/__init__.py">safe_molgen/<strong>init</strong>.py</a> delegating to <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/safe_molgen/_safe_molgen_impl.py">_safe_molgen_impl.py</a>).</p>
-<p>For larger tasks you may instead split logic into additional modules inside <code>tasks/&lt;your_task&gt;/</code> and re-export public symbols from <code>__init__.py</code>; Hydra paths stay <code>xlm.tasks.&lt;your_task&gt;.&lt;symbol&gt;</code>.</p>
+<p>Signature: <code>(example: dict, tokenizer, **kwargs) -&gt; dict</code>. Set as <code>preprocess_function</code> on the dataset manager; passed to <code>datasets.Dataset.map</code> at runtime.</p>
+<p>Drop unneeded columns via <code>columns_to_remove</code> or <code>columns_to_keep</code>.</p>
+<p><strong>By example:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Code</th>
+<th>Config</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Minimal LM (text → token IDs)</td>
+<td><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/owt/__init__.py">owt</a></td>
+<td><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/configs/lightning_train/datasets/owt_train.yaml">owt_train.yaml</a></td>
+</tr>
+<tr>
+<td>Structured seq2seq (STAR)</td>
+<td><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/star/__init__.py">star</a></td>
+<td><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/configs/lightning_train/datasets/star_easy_train.yaml">star_easy_train.yaml</a></td>
+</tr>
+<tr>
+<td>Row filters</td>
+<td><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/sudoku_extreme/__init__.py">sudoku_extreme</a></td>
+<td>set <code>filter_fn</code> + <code>filter_suffix</code></td>
+</tr>
+<tr>
+<td>Post-hoc eval (Math500)</td>
+<td><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/math500/__init__.py">math500</a></td>
+<td><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/configs/lightning_train/datasets/math500_test.yaml">math500_test.yaml</a></td>
+</tr>
+<tr>
+<td>Code-execution eval (GSM8K)</td>
+<td><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/tinygsm/gsm8k.py">gsm8k</a></td>
+<td><a href="../../tasks/tinygsm_gsm8k/">TinyGSM runbook</a></td>
+</tr>
+<tr>
+<td>Heavy optional imports</td>
+<td><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/safe_molgen/__init__.py">safe_molgen</a> → <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/safe_molgen/_safe_molgen_impl.py">_impl</a></td>
+<td>defer imports</td>
+</tr>
+</tbody>
+</table>
 <hr />
-<h2 id="3-add-dataset-yaml-srcxlmconfigslightning_traindatasets">3. Add dataset YAML (<code>src/xlm/configs/lightning_train/datasets/</code>)</h2>
-<p>Create a new file or compose existing ones with Hydra <code>defaults:</code>.</p>
-<ol>
-<li>
-<p><strong>Training / general <code>DatasetManager</code></strong> — start from <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/configs/lightning_train/datasets/default_text.yaml">default_text.yaml</a>:</p>
-</li>
-<li>
-<p><code>full_name</code>: Hub path in the form <code>namespace/dataset_name/split</code> (last segment is the split passed to <code>load_dataset</code>).</p>
-</li>
-<li><code>full_name_debug</code>: optional smaller split used when <code>DEBUG_OVERFIT</code> is enabled.</li>
-<li><code>preprocess_function</code>, <code>preprocess_function_kwargs</code>.</li>
-<li><code>on_the_fly_processor</code> / <code>on_the_fly_group_processor</code> (mutually exclusive with group processors per <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/datamodule.py">DatasetManager</a>).</li>
-<li><code>columns_to_remove</code> or <code>columns_to_keep</code>.</li>
-<li><code>stages</code>: which Lightning stages use this manager (<code>fit</code>, <code>validate</code>, <code>test</code>, <code>predict</code>).</li>
-<li>
-<p><code>collator: ???</code> — resolved by experiment/model package via <code>/collator@...</code> overrides.</p>
-</li>
-<li>
-<p><strong>Eval-only <code>EvalDatasetManager</code></strong> — start from <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/configs/lightning_train/datasets/default_eval.yaml">default_eval.yaml</a>:</p>
-</li>
-<li>
-<p>No manual disk cache path; HF map cache optional via <code>load_from_cache_file</code>.</p>
-</li>
-<li>Typical <code>stages: [validate, test]</code>.</li>
-</ol>
-<p>Reuse patterns from <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/configs/lightning_train/datasets/math500_test.yaml">math500_test.yaml</a> for <code>columns_to_keep</code> and preprocess kwargs.</p>
-<hr />
-<h2 id="4-compose-a-datamodule-config">4. Compose a datamodule config</h2>
-<p>Datamodule skeleton: <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/configs/lightning_train/datamodule/default.yaml">datamodule/default.yaml</a>.</p>
-<p>Wire each <code>(split, dataloader_name)</code> to your dataset group using Hydra defaults, for example:</p>
-<div class="highlight"><pre><span></span><code><span class="nt">defaults</span><span class="p">:</span>
-<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">default</span>
-<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">/datasets@datamodule.dataset_managers.train.lm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">owt_train</span>
-<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">/datasets@datamodule.dataset_managers.val.lm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">owt_val</span>
-</code></pre></div>
-<p>Full example: <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/configs/lightning_train/datamodule/owt.yaml">datamodule/owt.yaml</a>.</p>
-<p>If you introduce a <strong>new</strong> logical evaluation stream (for example <code>math500_prediction</code>), pick a <strong>new dataloader name</strong> and use it consistently across val/test <strong>and</strong> metrics:</p>
+<h2 id="3-dataset-yamls-srcxlmconfigslightning_traindatasets">3. Dataset YAMLs (<code>src/xlm/configs/lightning_train/datasets/</code>)</h2>
+<p>Compose from existing base configs with Hydra <code>defaults:</code>.</p>
+<p><strong>For training</strong> (<a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/configs/lightning_train/datasets/default_text.yaml">default_text.yaml</a>):</p>
 <ul>
-<li>Example: <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/xlm-models/dream/configs/datamodule/math500_dream.yaml">xlm-models/dream/configs/datamodule/math500_dream.yaml</a></li>
+<li><code>full_name</code> — Hub path: <code>namespace/dataset_name/split</code></li>
+<li><code>full_name_debug</code> — smaller split for <code>DEBUG_OVERFIT</code></li>
+<li><code>preprocess_function</code>, <code>preprocess_function_kwargs</code></li>
+<li><code>on_the_fly_processor</code> / <code>on_the_fly_group_processor</code> (mutually exclusive)</li>
+<li><code>columns_to_remove</code> or <code>columns_to_keep</code></li>
+<li><code>stages</code> — which Lightning stages use this manager (<code>fit</code>, <code>validate</code>, <code>test</code>, <code>predict</code>)</li>
+<li><code>collator: ???</code> — resolved by the model datamodule</li>
 </ul>
-<p>Set <code>tags.dataset</code> in the experiment/datamodule root when you want W&amp;B or logging tags (same file).</p>
+<p><strong>For eval-only</strong> (<a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/configs/lightning_train/datasets/default_eval.yaml">default_eval.yaml</a>): no disk cache, typical <code>stages: [validate, test]</code>.</p>
 <hr />
-<h2 id="5-wire-collators">5. Wire collators</h2>
-<p>Dataset YAMLs leave <code>collator: ???</code>. Resolve it from the model/experiment package:</p>
-<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">/collator@datamodule.dataset_managers.val.math500_prediction.collator</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">math500_pred_dream</span>
+<h2 id="4-wire-to-a-model">4. Wire to a model</h2>
+<p>See <a href="../contributing/adding-a-task-external.md">Running your model on your task</a>. In short: extend a family skeleton, swap <code>/datasets@…</code> pointers, add an experiment config.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># xlm-models/arlm/configs/datamodule/star_easy_arlm.yaml</span>
+<span class="nt">defaults</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">star_arlm</span><span class="w">                                        </span><span class="c1"># inherits collators</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">/datasets@datamodule.dataset_managers.train.lm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">star_easy_train</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">/datasets@datamodule.dataset_managers.val.lm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">star_easy_val</span>
+<span class="w">  </span><span class="c1"># … remaining splits</span>
+<span class="nt">tags</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">dataset</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">star_easy</span>
 </code></pre></div>
-<p>The collator must produce batch tensors your <strong>model</strong> and <strong>metric update functions</strong> expect.</p>
 <hr />
-<h2 id="6-wire-metrics-and-optional-post-hoc-evaluation">6. Wire metrics and optional post-hoc evaluation</h2>
-<p>Under <code>reported_metrics.&lt;train|val|test&gt;.&lt;dataloader_name&gt;</code>, each nested dict entry is a configured metric (typically <code>MetricWrapper</code>). <strong>The <code>&lt;dataloader_name&gt;</code> keys must match</strong> the keys under <code>datamodule.dataset_managers</code> for that stage — see <a href="../metrics/">Metrics</a>.</p>
-<p>Hydra composition often looks like:</p>
-<div class="highlight"><pre><span></span><code><span class="nt">defaults</span><span class="p">:</span>
-<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">/metrics@reported_metrics.val.lm.accumulated_loss</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">accumulated_loss</span>
-</code></pre></div>
-<p>For dataloaders whose name contains <strong><code>prediction</code></strong>, epoch-end hooks run extra aggregates (generative perplexity and configured post-hoc evaluators); see <a href="../metrics/">Metrics</a>.</p>
-<p>Post-hoc evaluator <code>_target_</code> example:</p>
+<h2 id="5-metrics-and-post-hoc-evaluation">5. Metrics and post-hoc evaluation</h2>
+<p><code>reported_metrics.&lt;stage&gt;.&lt;dataloader_name&gt;</code> keys <strong>must match</strong> <code>datamodule.dataset_managers</code> keys. See <a href="../metrics/">Metrics</a>.</p>
+<p>Dataloaders named <code>*prediction*</code> trigger generative-perplexity and post-hoc evaluator hooks at epoch end.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">post_hoc_evaluator</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">_target_</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">xlm.tasks.math500.Math500Eval</span>
 </code></pre></div>
-<p>For the JSONL path, <code>eval()</code> contract, packaged <code>post_hoc_evaluator</code> snippets (<code>denovo</code>, <code>syntactic</code>, <code>mauve_text</code>), and MAUVE extras, see <a href="../eval/#post-hoc-evaluation">Post-hoc evaluation</a> in the eval guide.</p>
-<p>Experiment reference: <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/xlm-models/dream/configs/experiment/math500_dream_eval.yaml">xlm-models/dream/configs/experiment/math500_dream_eval.yaml</a>.</p>
+<p>See <a href="../eval/#post-hoc-evaluation">Post-hoc evaluation</a> for details.</p>
 <hr />
-<h2 id="7-dependencies-and-extras">7. Dependencies and extras</h2>
-<p>If your task needs packages beyond core xlm-core, document them in the task module docstring and add or reference an optional extra in project requirements (for example <code>"xlm-core[safe]"</code>, files under <a href="https://github.com/dhruvdcoder/xlm-core/tree/main/requirements">requirements/</a>).</p>
+<h2 id="6-dependencies">6. Dependencies</h2>
+<p>If your task needs extra packages, document them in the module docstring and add an optional extra (e.g. <code>"xlm-core[safe]"</code>) under <a href="https://github.com/dhruvdcoder/xlm-core/tree/main/requirements">requirements/</a>.</p>
 <hr />
-<h2 id="8-verify">8. Verify</h2>
-<ol>
-<li>Run <code>job_type=prepare_data</code> (rank 0 downloads and preprocesses/caches where applicable).</li>
-<li>Smoke train or eval with the smallest experiment config you can.</li>
-<li>Use <code>DEBUG_OVERFIT</code> and <code>full_name_debug</code> to force train-shaped data into val/test during debugging (<a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/datamodule.py">DatasetManager</a>).</li>
-<li>Add or extend integration coverage under <code>tests/integration/datamodule/</code> when behavior is easy to regress.</li>
-</ol>
+<h2 id="7-verify">7. Verify</h2>
+<div class="highlight"><pre><span></span><code>xlm<span class="w"> </span><span class="nv">job_type</span><span class="o">=</span>prepare_data<span class="w"> </span><span class="nv">job_name</span><span class="o">=</span>prepare_star_easy_arlm<span class="w"> </span><span class="nv">experiment</span><span class="o">=</span>star_easy_arlm<span class="w"> </span><span class="nv">debug</span><span class="o">=</span>overfit
+xlm<span class="w"> </span><span class="nv">job_type</span><span class="o">=</span>train<span class="w"> </span><span class="nv">job_name</span><span class="o">=</span>star_easy_arlm_debug<span class="w"> </span><span class="nv">experiment</span><span class="o">=</span>star_easy_arlm<span class="w"> </span><span class="nv">debug</span><span class="o">=</span>overfit
+</code></pre></div>
+<p>Both should exit 0. Stop the train once you see loss decreasing and val batches loading.</p>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cannot import name 'no_init_weights'</code></td>
+<td>Pin <code>transformers&lt;5</code></td>
+</tr>
+<tr>
+<td><code>collator: ???</code> unresolved</td>
+<td>Wire collators in model datamodule, not dataset YAMLs</td>
+</tr>
+<tr>
+<td>Duplicate model warnings</td>
+<td>Harmless when <code>xlm-models/</code> is both on disk and editable-installed</td>
+</tr>
+</tbody>
+</table>
 <hr />
-<h2 id="examples">Examples</h2>
-<ul>
-<li><a href="../../tasks/tinygsm/">TinyGSM</a> — large HF seq2seq task (question + code); model runbooks: <a href="../../models/flexmdm/#tinygsm">FlexMDM</a>, <a href="../../models/mlm/#tinygsm">MLM</a>, <a href="../../models/arlm/#tinygsm">ARLM</a>.</li>
-</ul>
-<h2 id="quick-reference-table">Quick reference table</h2>
+<h2 id="quick-reference">Quick reference</h2>
 <table>
 <thead>
 <tr>
@@ -6231,16 +6628,16 @@
 </thead>
 <tbody>
 <tr>
-<td>Task preprocessing / filters / evaluators</td>
-<td><code>src/xlm/tasks/&lt;task&gt;/</code> (one directory per task)</td>
+<td>Task code</td>
+<td><code>src/xlm/tasks/&lt;task&gt;/</code> (maintained) or your own package</td>
 </tr>
 <tr>
-<td>Dataset group YAML</td>
+<td>Dataset YAMLs</td>
 <td><code>src/xlm/configs/lightning_train/datasets/</code></td>
 </tr>
 <tr>
 <td>Datamodule composition</td>
-<td><code>src/xlm/configs/lightning_train/datamodule/</code> (+ model repos under <code>xlm-models/</code>)</td>
+<td><code>src/xlm/configs/lightning_train/datamodule/</code> + <code>xlm-models/</code></td>
 </tr>
 <tr>
 <td>Metric snippets</td>
@@ -6252,6 +6649,7 @@
 </tr>
 </tbody>
 </table>
+<p><strong>More examples:</strong> <a href="../../models/arlm.md">ARLM</a>, <a href="../../tasks/tinygsm/">TinyGSM</a> (<a href="../../models/flexmdm/#tinygsm">FlexMDM</a>, <a href="../../models/mlm/#tinygsm">MLM</a>, <a href="../../models/arlm/#tinygsm">ARLM</a>).</p>
 
 
 
