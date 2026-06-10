@@ -8,7 +8,8 @@ Start with the [Contributing hub](https://github.com/dhruvdcoder/xlm-core/blob/m
 |-------------------|----------------|-------|
 | **Add a maintained model** | Ship a new model family inside this repo under `xlm-models/` | [Adding a model](adding-a-model.md) |
 | **Add an external model** | Develop and publish a model in a separate repo | [External models](../external-models.md) |
-| **Add a task or dataset** | Wire a Hugging Face dataset or benchmark into the harness | [Adding a task or dataset](../adding-a-task.md) |
+| **Add a task or dataset** | Preprocess function + dataset YAMLs in `src/xlm/` | [Adding a task or dataset](../adding-a-task.md) |
+| **Run your model on your task** | External task + model wiring via Hydra YAML | [Running your model on your task](adding-a-task-external.md) |
 | **Core framework development** | Change training infra in `src/xlm/` (harness, datamodule, metrics, CLI) | [Core development](core-development.md) |
 | **Docs, bugs, and issues** | Fix docs, report bugs, or propose features without code changes | [Docs and issues](docs-and-issues.md) |
 

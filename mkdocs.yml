@@ -101,6 +101,7 @@ nav:
           - Adding a Model: guide/contributing/adding-a-model.md
           - External Models: guide/external-models.md
           - Adding a Task: guide/adding-a-task.md
+          - Running Your Model on Your Task: guide/contributing/adding-a-task-external.md
           - Core Development: guide/contributing/core-development.md
           - Docs and Issues: guide/contributing/docs-and-issues.md
       - Dependencies: developers/dependencies.md

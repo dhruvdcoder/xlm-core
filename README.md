@@ -19,6 +19,16 @@
 
 XLM is a modular framework for developing and comparing non-autoregressive language models. It is built on [PyTorch Lightning](https://github.com/Lightning-AI/pytorch-lightning) and [Hydra](https://hydra.cc/).
 
+## Design
+
+<p align="center">
+  <img src="./assets/architecture_overview.png" width="700" alt="XLM architecture overview"/>
+</p>
+
+- **Composition over inheritance** — core components (Harness, DataModule) delegate model-specific logic to swappable instances (Model, Loss, Predictor, Collator).
+- **Copy over branching** — each model family is a self-contained package; `xlm-scaffold` copies a working template instead of branching shared code.
+- **Arbitrary code injection** — Hydra resolves any importable Python callable by dotted path. Your preprocessing, loss, predictor, collator, and metrics can live in any package — XLM wires them at runtime via YAML.
+
 ## Models, datasets, and metrics
 
 **Models:** [ARLM](https://dhruveshp.com/xlm-core/dev/models/arlm/) · [MLM](https://dhruveshp.com/xlm-core/dev/models/mlm/) · [ILM](https://dhruveshp.com/xlm-core/dev/models/ilm/) · [MDLM](https://dhruveshp.com/xlm-core/dev/models/mdlm/) · [FlexMDM](https://dhruveshp.com/xlm-core/dev/models/flexmdm/) · Dream
@@ -75,9 +85,9 @@ xlm-scaffold my_model
 
 ## Adding a task
 
-To wire a new dataset or benchmark, add preprocessing under `src/xlm/tasks/<task>/`, dataset YAMLs under `src/xlm/configs/lightning_train/datasets/`, and align dataloader names with metrics and evaluators.
+Wire a dataset by pointing Hydra at any importable preprocess function (e.g. `my_package.my_task.preprocess_fn`) and adding dataset + datamodule YAMLs. For tasks shipped with xlm-core, use `src/xlm/tasks/<task>/`.
 
-→ [Adding a task or dataset](https://dhruveshp.com/xlm-core/dev/guide/adding-a-task/)
+→ [Adding a task or dataset](https://dhruveshp.com/xlm-core/dev/guide/adding-a-task/) · [Your model on your task](https://dhruveshp.com/xlm-core/dev/guide/contributing/adding-a-task-external/)
 
 ## Community models
 

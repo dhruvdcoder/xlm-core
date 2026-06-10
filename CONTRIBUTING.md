@@ -12,7 +12,8 @@ Pick the guide that matches your change:
 |------|--------|
 | Add a maintained model (`xlm-models/`) | [Adding a model](https://dhruveshp.com/xlm-core/dev/guide/contributing/adding-a-model/) |
 | Add an external model (separate repo) | [External models](https://dhruveshp.com/xlm-core/dev/guide/external-models/) |
-| Add a task or dataset | [Adding a task or dataset](https://dhruveshp.com/xlm-core/dev/guide/adding-a-task/) |
+| Add a task or dataset (`src/xlm/tasks/`, dataset YAMLs) | [Adding a task or dataset](https://dhruveshp.com/xlm-core/dev/guide/adding-a-task/) |
+| Run your model on your task (external) | [Running your model on your task](https://dhruveshp.com/xlm-core/dev/guide/contributing/adding-a-task-external/) |
 | Core framework (`src/xlm/`) | [Core development](https://dhruveshp.com/xlm-core/dev/guide/contributing/core-development/) |
 | Docs, bugs, issues | [Docs and issues](https://dhruveshp.com/xlm-core/dev/guide/contributing/docs-and-issues/) |
 
