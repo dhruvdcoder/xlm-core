@@ -6915,8 +6915,12 @@
 <div class="highlight"><pre><span></span><code><span class="c1"># Project structure</span>
 .
 ├──<span class="w"> </span>xlm_models.json<span class="w">          </span><span class="c1"># {&quot;my_model&quot;: &quot;my_model&quot;}</span>
-├──<span class="w"> </span>my_model/
-│<span class="w">   </span>├──<span class="w"> </span>my_model/<span class="w">            </span><span class="c1"># Python package</span>
+├──<span class="w"> </span>setup.py
+├──<span class="w"> </span>README.md
+├──<span class="w"> </span>my_model/<span class="w">                </span><span class="c1"># Model root = Python package</span>
+│<span class="w">   </span>├──<span class="w"> </span>__init__.py
+│<span class="w">   </span>├──<span class="w"> </span>model_my_model.py
+│<span class="w">   </span>├──<span class="w"> </span>...
 │<span class="w">   </span>└──<span class="w"> </span>configs/
 └──<span class="w"> </span>...
 </code></pre></div>
