@@ -201,8 +201,12 @@ The paths are relative to the directory containing `xlm_models.json`.
 # Project structure
 .
 ├── xlm_models.json          # {"my_model": "my_model"}
-├── my_model/
-│   ├── my_model/            # Python package
+├── setup.py
+├── README.md
+├── my_model/                # Model root = Python package
+│   ├── __init__.py
+│   ├── model_my_model.py
+│   ├── ...
 │   └── configs/
 └── ...
 ```
