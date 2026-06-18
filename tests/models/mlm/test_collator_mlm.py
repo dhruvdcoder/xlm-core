@@ -177,18 +177,18 @@ class TestPreparePrefixSuffixIds:
         assert batch["attention_mask"][0, :visible_len].all()
         assert not batch["attention_mask"][0, visible_len:].any()
         assert (batch["target_ids"][0, visible_len:] == -100).all()
-        # Prefix + BOS unmasked
+        # Prefix + BOS never MLM-masked
         assert batch["input_ids"][0, 0] == 10
         assert batch["input_ids"][0, 3] == bos
-        # Suffix slot: [20, 21, EOS, pad, ...]
-        assert batch["input_ids"][0, 4] == 20
-        assert batch["input_ids"][0, 5] == 21
-        assert batch["input_ids"][0, 6] == eos
-        assert batch["input_ids"][0, 7] == pad
+        assert (batch["input_ids"][0, :4] != mask).all()
+        # Suffix slot layout in targets (input_ids may replace some with [MASK])
+        assert batch["target_ids"][0, 4] == 20
+        assert batch["target_ids"][0, 5] == 21
+        assert batch["target_ids"][0, 6] == eos
+        assert batch["target_ids"][0, 7] == pad
         # MLM masks only in suffix slot
         suffix_region = batch["input_ids"][0, 4:visible_len]
         assert (suffix_region == mask).any()
-        assert (batch["input_ids"][0, :4] != mask).all()
 
     def test_tinygsm_variable_prefix_no_shared_block(self, simple_tokenizer):
         torch.manual_seed(0)
@@ -218,7 +218,9 @@ class TestPreparePrefixSuffixIds:
         assert batch["attention_mask"][1, :visible_len_1].all()
         assert not batch["attention_mask"][1, visible_len_1:].any()
         assert (batch["target_ids"][1, visible_len_1:] == -100).all()
-        # Suffix slot starts right after prompt (no BOS)
-        assert batch["input_ids"][0, 5] == 30
-        assert batch["input_ids"][0, 6] == 31
-        assert batch["input_ids"][0, 7] == eos
+        # Suffix slot starts right after prompt (no BOS); check targets for layout
+        assert batch["target_ids"][0, 5] == 30
+        assert batch["target_ids"][0, 6] == 31
+        assert batch["target_ids"][0, 7] == eos
+        assert (batch["input_ids"][0, 5:visible_len_0] == mask).any()
+        assert (batch["input_ids"][0, :5] != mask).all()
