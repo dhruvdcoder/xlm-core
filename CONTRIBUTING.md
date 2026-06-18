@@ -132,8 +132,9 @@ There is no repo-wide Makefile; run tools from the activated environment.
 1. Push your branch to **your fork** and open a PR against **`main`** on [dhruvdcoder/xlm-core](https://github.com/dhruvdcoder/xlm-core).
 2. Fill out the [pull request template](.github/PULL_REQUEST_TEMPLATE.md): contribution type, summary, testing, docs.
 3. Link related issues and note any new dependencies or optional extras.
-4. Ensure **tests** and **docs** you touched still build.
-5. Request review from maintainers when ready.
+4. Apply **GitHub labels on the PR** (not just the issue) so [release notes](https://github.com/dhruvdcoder/xlm-core/releases) categorize correctly: use the same label as the issue template when applicable (`bug`, `enhancement`, `documentation`, `model`, `external-model`, `new-task`). Add `breaking-change` when the PR changes APIs, configs, or behavior in a incompatible way.
+5. Ensure **tests** and **docs** you touched still build.
+6. Request review from maintainers when ready.
 
 ## License
 

@@ -1,0 +1,37 @@
+# Config for GitHub auto-generated release notes (gh release create --generate-notes).
+# Categories use labels on merged pull requests, not linked issues.
+changelog:
+  exclude:
+    labels:
+      - duplicate
+      - invalid
+      - wontfix
+      - good first issue
+      - good second issue
+      - help wanted
+      - question-basic
+      - question-intermediate
+      - question-advanced
+  categories:
+    - title: Breaking changes
+      labels:
+        - breaking-change
+    - title: Models
+      labels:
+        - model
+        - external-model
+    - title: Tasks and datasets
+      labels:
+        - new-task
+    - title: Bug fixes
+      labels:
+        - bug
+    - title: Documentation
+      labels:
+        - documentation
+    - title: Enhancements
+      labels:
+        - enhancement
+    - title: Other changes
+      labels:
+        - "*"

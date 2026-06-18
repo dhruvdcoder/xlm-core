@@ -12,7 +12,15 @@
 - [ ] Core framework (`src/xlm/`)
 - [ ] Documentation
 - [ ] Bug fix
+- [ ] Breaking change (apply the `breaking-change` label and include migration notes below)
 - [ ] Other (describe below)
+
+## Labels
+
+Apply GitHub labels on this PR so release notes categorize correctly (same labels as the linked issue when applicable):
+
+- `bug`, `enhancement`, `documentation`, `model`, `external-model`, `new-task`, or `breaking-change`
+- Do not use triage-only labels (`good first issue`, `help wanted`, `question-*`) for shipped changes
 
 ## Changes
 

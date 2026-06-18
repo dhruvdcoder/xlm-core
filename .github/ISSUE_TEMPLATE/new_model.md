@@ -2,7 +2,7 @@
 name: New model
 about: Propose a new language model family for XLM
 title: "[Model] ..."
-labels: new-model
+labels: model
 assignees: ''
 
 ---

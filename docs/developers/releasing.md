@@ -106,9 +106,11 @@ flowchart LR
 1. Patches default values in {{ gh('src/xlm/version.py', 'version.py') }} and {{ gh('xlm-models/version.py', 'xlm-models/version.py') }}
 2. Verifies parsed `VERSION` matches the requested release in both files
 3. Commits and pushes to `main`
-4. Runs `gh release create v<version>`
+4. Runs `gh release create v<version> --generate-notes`
 
 The GitHub release tag is always `v` plus the version in `version.py` after the bump, so the tag and files stay aligned.
+
+Release notes are generated from merged PRs since the previous tag. Categories and exclusions are configured in {{ gh('.github/release.yml', 'release.yml') }} using **labels on pull requests** (see {{ gh('CONTRIBUTING.md', 'CONTRIBUTING.md') }}). Maintainers should label PRs at merge time so notes land under Breaking changes, Models, Tasks and datasets, Bug fixes, Documentation, or Enhancements.
 
 ### Local vs GitHub Actions release paths
 

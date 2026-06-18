@@ -2,7 +2,7 @@
 name: Question
 about: Question
 title: "[Question]"
-labels: question
+labels: question-basic
 assignees: ''
 
 ---
