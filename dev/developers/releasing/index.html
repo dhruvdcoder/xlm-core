@@ -6478,9 +6478,10 @@ python<span class="w"> </span>.github/release.py<span class="w"> </span><span cl
 <li>Patches default values in <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/version.py">version.py</a> and <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/xlm-models/version.py">xlm-models/version.py</a></li>
 <li>Verifies parsed <code>VERSION</code> matches the requested release in both files</li>
 <li>Commits and pushes to <code>main</code></li>
-<li>Runs <code>gh release create v&lt;version&gt;</code></li>
+<li>Runs <code>gh release create v&lt;version&gt; --generate-notes</code></li>
 </ol>
 <p>The GitHub release tag is always <code>v</code> plus the version in <code>version.py</code> after the bump, so the tag and files stay aligned.</p>
+<p>Release notes are generated from merged PRs since the previous tag. Categories and exclusions are configured in <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/.github/release.yml">release.yml</a> using <strong>labels on pull requests</strong> (see <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>). Maintainers should label PRs at merge time so notes land under Breaking changes, Models, Tasks and datasets, Bug fixes, Documentation, or Enhancements.</p>
 <h3 id="local-vs-github-actions-release-paths">Local vs GitHub Actions release paths</h3>
 <p>How PyPI and docs workflows start depends on where the GitHub release is created.</p>
 <p><strong>Local <code>gh release create</code></strong> (your OAuth/PAT): GitHub emits <code>release: published</code>. <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/.github/workflows/publish.yml">publish.yml</a> and <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/.github/workflows/docs-release.yml">docs-release.yml</a> start automatically.</p>
