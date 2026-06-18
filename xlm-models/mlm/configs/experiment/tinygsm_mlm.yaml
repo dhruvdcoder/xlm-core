@@ -14,6 +14,10 @@ block_size: 512
 input_block_size: 0
 monitored_metric: val/lm/accumulated_loss
 
+# prompt + block_size suffix can exceed default rotary max_length (516)
+model:
+  max_length: 2048
+
 global_components:
   tokenizer:
     _target_: xlm.datamodule.load_auto_tokenizer

@@ -14,10 +14,12 @@ datamodule:
       lm:
         collator:
           add_bos: false
+          truncate: null
     val:
       lm:
         collator:
           add_bos: false
+          truncate: null
       prediction:
         collator:
           add_bos: false
