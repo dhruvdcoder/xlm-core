@@ -229,7 +229,10 @@ def prepare_prefix_ids(
         if truncate == "max" and max_seq_len is not None:
             max_len = max(max_len, max_seq_len)
     elif truncate == "block" and max_seq_len is not None:
-        max_len = max_seq_len
+        if max_seq_len <= 0:
+            max_len = max(len(_prefix_ids) for _prefix_ids in prefix_ids)
+        else:
+            max_len = max_seq_len
     else:
         raise ValueError(f"Invalid truncate, max_seq_len: {max_seq_len}")
     assert max_len is not None
@@ -596,15 +599,27 @@ class MLMSeq2SeqCollator(Collator):
                 batch[key] = [ex[key] for ex in examples]
         return batch
 
+    def _prepare_prefix_ids(
+        self, prefix_ids_list: List[List[int]]
+    ) -> Dict[str, TT]:
+        if not self.input_block_size:
+            return prepare_prefix_ids(
+                prefix_ids_list,
+                self.tokenizer.pad_token_id,
+                max_seq_len=None,
+                truncate=None,
+            )
+        return prepare_prefix_ids(
+            prefix_ids_list,
+            self.tokenizer.pad_token_id,
+            max_seq_len=self.input_block_size,
+        )
+
     def __call__(
         self,
         examples: List[Seq2SeqCollatorInput],
     ) -> MLMBatch:
-        prefix = prepare_prefix_ids(
-            self._prompt_ids(examples),
-            self.tokenizer.pad_token_id,
-            max_seq_len=self.input_block_size,
-        )
+        prefix = self._prepare_prefix_ids(self._prompt_ids(examples))
         suffix = mlm_single_segment_collate_fn(
             self._suffix_lists(examples),
             self.tokenizer.pad_token_id,
@@ -638,11 +653,7 @@ class _MLMSeq2SeqPredCollator(MLMSeq2SeqCollator):
         self,
         examples: List[Seq2SeqCollatorInput],
     ) -> MLMBatch:
-        prefix = prepare_prefix_ids(
-            self._prompt_ids(examples),
-            self.tokenizer.pad_token_id,
-            max_seq_len=self.input_block_size,
-        )
+        prefix = self._prepare_prefix_ids(self._prompt_ids(examples))
         suffix = mlm_single_segment_collate_fn(
             self._suffix_lists(examples),
             self.tokenizer.pad_token_id,
@@ -677,15 +688,12 @@ class MLMSeq2SeqPredCollator(MLMSeq2SeqCollator):
         examples: List[Seq2SeqCollatorInput],
     ) -> MLMBatch:
         pf = self.prompt_field
-        prefix = prepare_prefix_ids(
-            [
-                e[pf]  # type: ignore[misc]
-                + [self.tokenizer.bos_token_id] * int(self.add_bos)
-                for e in examples
-            ],
-            self.tokenizer.pad_token_id,
-            max_seq_len=self.input_block_size,
-        )
+        prefix_ids_list = [e[pf] for e in examples]  # type: ignore[misc]
+        if self.add_bos:
+            prefix_ids_list = [
+                p + [self.tokenizer.bos_token_id] for p in prefix_ids_list
+            ]
+        prefix = self._prepare_prefix_ids(prefix_ids_list)
         suffix_lists = self._suffix_lists(examples)
         if all(len(s) == 0 for s in suffix_lists):
             batch = {
