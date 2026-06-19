@@ -10,13 +10,9 @@ add_eos: true
 per_device_batch_size: 32
 global_batch_size: 512
 num_dataloader_workers: 5
-block_size: 512
-input_block_size: 0
+block_size: 256
+input_block_size: 256
 monitored_metric: val/lm/accumulated_loss
-
-# prompt + block_size suffix can exceed default rotary max_length (516)
-model:
-  max_length: 2048
 
 global_components:
   tokenizer:

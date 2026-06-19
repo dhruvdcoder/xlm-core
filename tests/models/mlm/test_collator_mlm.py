@@ -189,38 +189,3 @@ class TestPreparePrefixSuffixIds:
         # MLM masks only in suffix slot
         suffix_region = batch["input_ids"][0, 4:visible_len]
         assert (suffix_region == mask).any()
-
-    def test_tinygsm_variable_prefix_no_shared_block(self, simple_tokenizer):
-        torch.manual_seed(0)
-        pad = simple_tokenizer.pad_token_id
-        eos = simple_tokenizer.eos_token_id
-        mask = simple_tokenizer.mask_token_id
-        block_size = 8
-
-        batch = prepare_prefix_suffix_ids(
-            prefix_ids=[[10, 11, 12, 13, 14], [20, 21]],
-            suffix_ids=[[30, 31], [40, 41, 42]],
-            pad_token_id=pad,
-            mask_token_id=mask,
-            eos_token_id=eos,
-            bos_token_id=None,
-            max_seq_len=None,
-            truncate=None,
-            suffix_block_size=block_size,
-        )
-
-        # Batch padded to max visible: 5 + 8 = 13 vs 2 + 8 = 10
-        assert batch["input_ids"].shape == (2, 13)
-        visible_len_0 = 5 + block_size
-        visible_len_1 = 2 + block_size
-        assert batch["attention_mask"][0, :visible_len_0].all()
-        assert not batch["attention_mask"][0, visible_len_0:].any()
-        assert batch["attention_mask"][1, :visible_len_1].all()
-        assert not batch["attention_mask"][1, visible_len_1:].any()
-        assert (batch["target_ids"][1, visible_len_1:] == -100).all()
-        # Suffix slot starts right after prompt (no BOS); check targets for layout
-        assert batch["target_ids"][0, 5] == 30
-        assert batch["target_ids"][0, 6] == 31
-        assert batch["target_ids"][0, 7] == eos
-        assert (batch["input_ids"][0, 5:visible_len_0] == mask).any()
-        assert (batch["input_ids"][0, :5] != mask).all()

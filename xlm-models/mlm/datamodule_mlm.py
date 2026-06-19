@@ -504,12 +504,6 @@ class MLMSeq2SeqTrainCollator(Collator):
         suffix_lists = [
             seq2seq_suffix_ids(e, self.target_field) for e in examples
         ]
-        if self.input_block_size == 0:
-            max_seq_len = None
-            truncate = None
-        else:
-            max_seq_len = self.input_block_size + self.block_size
-            truncate = self.truncate
         prefix_suffix = prepare_prefix_suffix_ids(
             [e["prompt_ids"] for e in examples],
             suffix_lists,
@@ -517,8 +511,8 @@ class MLMSeq2SeqTrainCollator(Collator):
             self.tokenizer.mask_token_id,
             eos_token_id=self.tokenizer.eos_token_id if self.add_eos else None,
             bos_token_id=self.tokenizer.bos_token_id if self.add_bos else None,
-            max_seq_len=max_seq_len,
-            truncate=truncate,
+            max_seq_len=(self.input_block_size + self.block_size),
+            truncate=self.truncate,
             loss_on_padding=self.loss_on_padding,
             suffix_block_size=self.block_size,
         )
@@ -677,12 +671,13 @@ class MLMSeq2SeqPredCollator(MLMSeq2SeqCollator):
         examples: List[Seq2SeqCollatorInput],
     ) -> MLMBatch:
         pf = self.prompt_field
+        prefix_ids_list = [e[pf] for e in examples]  # type: ignore[misc]
+        if self.add_bos:
+            prefix_ids_list = [
+                p + [self.tokenizer.bos_token_id] for p in prefix_ids_list
+            ]
         prefix = prepare_prefix_ids(
-            [
-                e[pf]  # type: ignore[misc]
-                + [self.tokenizer.bos_token_id] * int(self.add_bos)
-                for e in examples
-            ],
+            prefix_ids_list,
             self.tokenizer.pad_token_id,
             max_seq_len=self.input_block_size,
         )

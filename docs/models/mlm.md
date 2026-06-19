@@ -138,11 +138,10 @@ Task dataset and preprocessing: [TinyGSM](../tasks/tinygsm.md). GSM8K and code-e
 | Setting | Value |
 |---------|--------|
 | Tokenizer | Qwen2-0.5B (`Qwen/Qwen2-0.5B`) with added `<|mask|>` |
-| `block_size` | 512 |
-| `input_block_size` | 0 |
-| `model.max_length` | 2048 (prompt + `block_size` suffix; overrides default 516) |
+| `block_size` | 256 |
+| `input_block_size` | 256 |
 | Batching | Per-device 32; global 512 |
-| Collators | STAR seq2seq (`seq2seq_*` / `seq2seq_pred_*`); no BOS; train/val `truncate: null` |
+| Collators | STAR seq2seq (`seq2seq_*` / `seq2seq_pred_*`); no BOS |
 | Val / test prediction | Post-hoc `code_exec_accuracy` (`Gsm8kCodeEval`); token EM disabled |
 | Monitored metric | `val/lm/accumulated_loss` |
 | Training schedule | Up to 1M steps; validation every 50k steps; checkpoint every 2.5k steps (keep every 100k) |
