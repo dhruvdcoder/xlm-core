@@ -6932,7 +6932,7 @@ Returns:
 
 
 <h2 id="mlm.datamodule_mlm.prepare_prefix_suffix_ids" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">prepare_prefix_suffix_ids</span><span class="p">(</span><span class="n">prefix_ids</span><span class="p">,</span> <span class="n">suffix_ids</span><span class="p">,</span> <span class="n">pad_token_id</span><span class="p">,</span> <span class="n">mask_token_id</span><span class="p">,</span> <span class="n">eos_token_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bos_token_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_seq_len</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">truncate</span><span class="o">=</span><span class="s1">&#39;block&#39;</span><span class="p">,</span> <span class="n">loss_on_padding</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">prepare_prefix_suffix_ids</span><span class="p">(</span><span class="n">prefix_ids</span><span class="p">,</span> <span class="n">suffix_ids</span><span class="p">,</span> <span class="n">pad_token_id</span><span class="p">,</span> <span class="n">mask_token_id</span><span class="p">,</span> <span class="n">eos_token_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bos_token_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_seq_len</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">truncate</span><span class="o">=</span><span class="s1">&#39;block&#39;</span><span class="p">,</span> <span class="n">loss_on_padding</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">suffix_block_size</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 </h2>
 
@@ -6969,6 +6969,25 @@ Returns:
             </td>
             <td>
                   <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>suffix_block_size</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>When set, reserve exactly this many suffix tokens after the prefix
+(suffix + EOS padded/truncated to fit). Positions beyond <code>prefix + BOS +
+suffix_block_size</code> are attention-hidden and excluded from MLM masking and loss,
+matching inference <code>max_new_tokens</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
             </td>
           </tr>
       </tbody>

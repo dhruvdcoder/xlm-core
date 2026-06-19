@@ -6492,7 +6492,7 @@
 <td><code>MLMSeq2SeqTrainCollator</code></td>
 <td><code>Seq2SeqCollatorInput</code></td>
 <td><code>MLMBatch</code></td>
-<td>Concatenates <code>[prompt][BOS][target][EOS]</code> with right padding; masks only suffix positions.</td>
+<td>Concatenates <code>[prompt][BOS][target][EOS]</code>; only <code>block_size</code> suffix positions after the prompt are visible and MLM-eligible (tail hidden via <code>attention_mask=0</code>).</td>
 </tr>
 <tr>
 <td><code>MLMSeq2SeqCollator</code></td>
@@ -6647,12 +6647,16 @@
 <td>0</td>
 </tr>
 <tr>
+<td><code>model.max_length</code></td>
+<td>2048 (prompt + <code>block_size</code> suffix; overrides default 516)</td>
+</tr>
+<tr>
 <td>Batching</td>
 <td>Per-device 32; global 512</td>
 </tr>
 <tr>
 <td>Collators</td>
-<td>STAR seq2seq (<code>seq2seq_*</code> / <code>seq2seq_pred_*</code>); no BOS between question and code</td>
+<td>STAR seq2seq (<code>seq2seq_*</code> / <code>seq2seq_pred_*</code>); no BOS; train/val <code>truncate: null</code></td>
 </tr>
 <tr>
 <td>Val / test prediction</td>
