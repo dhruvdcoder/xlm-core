@@ -100,3 +100,36 @@ class TestMLMPredictorConfidenceSampling:
                 top_k=5,
                 top_p=0.9,
             )
+
+
+class TestMLMPredictorSeq2SeqMaskInjection:
+    """Seq2seq inference appends exactly ``max_new_tokens`` [MASK] slots."""
+
+    def test_appends_block_size_masks_after_prefix(
+        self, tiny_mlm_model, simple_tokenizer, dummy_noise_schedule
+    ):
+        block_size = 8
+        input_block_size = 16
+        predictor = MLMPredictor(
+            max_steps=block_size,
+            max_new_tokens=block_size,
+            tokenizer=simple_tokenizer,
+            model=tiny_mlm_model,
+            noise_schedule=dummy_noise_schedule,
+            top_k=1,
+        )
+        batch = {
+            "input_ids": torch.tensor(
+                [[0, 0, 0, 10, 11, 12, 13, 14, 15, 16, 0, 0, 0, 0, 0, 0]],
+                dtype=torch.long,
+            ),
+            "attention_mask": torch.tensor(
+                [[0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0]],
+                dtype=torch.bool,
+            ),
+        }
+        with torch.no_grad():
+            preds = predictor.predict(batch)
+        assert preds["output_start_idx"] == input_block_size
+        assert preds["ids"].shape == (1, input_block_size + block_size)
+        assert preds["ids"].shape[-1] - preds["output_start_idx"] == block_size
