@@ -6640,15 +6640,11 @@
 </tr>
 <tr>
 <td><code>block_size</code></td>
-<td>512</td>
+<td>256</td>
 </tr>
 <tr>
 <td><code>input_block_size</code></td>
-<td>0</td>
-</tr>
-<tr>
-<td><code>model.max_length</code></td>
-<td>2048 (prompt + <code>block_size</code> suffix; overrides default 516)</td>
+<td>256</td>
 </tr>
 <tr>
 <td>Batching</td>
@@ -6656,7 +6652,7 @@
 </tr>
 <tr>
 <td>Collators</td>
-<td>STAR seq2seq (<code>seq2seq_*</code> / <code>seq2seq_pred_*</code>); no BOS; train/val <code>truncate: null</code></td>
+<td>STAR seq2seq (<code>seq2seq_*</code> / <code>seq2seq_pred_*</code>); no BOS</td>
 </tr>
 <tr>
 <td>Val / test prediction</td>
