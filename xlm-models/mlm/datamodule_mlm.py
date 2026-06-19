@@ -263,6 +263,7 @@ def prepare_prefix_suffix_ids(
     max_seq_len: Optional[int] = None,
     truncate: Literal["max", "block", None] = "block",
     loss_on_padding: bool = True,
+    suffix_block_size: Optional[int] = None,
 ) -> MLMBatch:
     """Prepare concatenated prefix and suffix ids for seq2seq tasks with padding on the right only
 
@@ -270,6 +271,10 @@ def prepare_prefix_suffix_ids(
         loss_on_padding: bool
           - If true, pad token is treated as a normal token: it has attention on it, it is predicted as a target token.
           - If false, it has no attention on it, it is not predicted as a target token (-100)
+        suffix_block_size: When set, reserve exactly this many suffix tokens after the prefix
+          (suffix + EOS padded/truncated to fit). Positions beyond ``prefix + BOS +
+          suffix_block_size`` are attention-hidden and excluded from MLM masking and loss,
+          matching inference ``max_new_tokens``.
     """
     input_ids: List[TT] = []
     attention_mask: List[TT] = []
@@ -280,10 +285,16 @@ def prepare_prefix_suffix_ids(
         bos_token_id is not None
     )  # always add bos before the suffix. Otherwise it is not needed.
     if truncate in ["max", None]:
-        max_len = max(
-            len(_prefix_ids) + len(_suffix_ids) + add_eos + add_bos
-            for _prefix_ids, _suffix_ids in zip(prefix_ids, suffix_ids)
-        )
+        if suffix_block_size is not None:
+            max_len = max(
+                len(_prefix_ids) + add_bos + suffix_block_size
+                for _prefix_ids, _suffix_ids in zip(prefix_ids, suffix_ids)
+            )
+        else:
+            max_len = max(
+                len(_prefix_ids) + len(_suffix_ids) + add_eos + add_bos
+                for _prefix_ids, _suffix_ids in zip(prefix_ids, suffix_ids)
+            )
         if truncate == "max" and max_seq_len is not None:
             max_len = max(max_len, max_seq_len)
     elif truncate == "block" and max_seq_len is not None:
@@ -296,58 +307,99 @@ def prepare_prefix_suffix_ids(
     for i, (_prefix_ids, _suffix_ids) in enumerate(
         zip(prefix_ids, suffix_ids)
     ):
-        # bos should not be masked
-        suffix_mask = pad_truncate_list(
-            [0] * (len(_prefix_ids) + add_bos)
-            + [1] * (len(_suffix_ids) + add_eos),
-            max_len,
-            1,
-            pad_left=False,
-        )
-        temp = pad_truncate_list(
-            _prefix_ids
-            + ([bos_token_id] * add_bos)
-            + _suffix_ids
-            + ([eos_token_id] * add_eos),
-            max_len,
-            pad_token_id,
-            pad_left=False,
-        )
-        _mask = (torch.rand(len(temp)) < t[i]).logical_and(
-            torch.tensor(suffix_mask, dtype=torch.bool)
-        )
-        _input_ids = torch.tensor(temp, dtype=torch.long)
-        input_ids.append(_input_ids)
-        if loss_on_padding:
-            attention_mask.append(
-                torch.tensor([1] * len(temp), dtype=torch.bool)
+        if suffix_block_size is not None:
+            suffix_slot = pad_truncate_list(
+                _suffix_ids + [eos_token_id] * add_eos,
+                suffix_block_size,
+                pad_token_id,
+                pad_left=False,
             )
-            target_ids.append(_input_ids.clone())
+            content = (
+                _prefix_ids + ([bos_token_id] * add_bos) + suffix_slot
+            )
+            visible_len = len(_prefix_ids) + add_bos + suffix_block_size
+            temp = pad_truncate_list(
+                content, max_len, pad_token_id, pad_left=False
+            )
+            effective_visible = min(visible_len, len(temp))
+            suffix_mask = pad_truncate_list(
+                [0] * (len(_prefix_ids) + add_bos)
+                + [1] * suffix_block_size,
+                max_len,
+                0,
+                pad_left=False,
+            )
+            _mask = (torch.rand(len(temp)) < t[i]).logical_and(
+                torch.tensor(suffix_mask, dtype=torch.bool)
+            )
+            _input_ids = torch.tensor(temp, dtype=torch.long)
+            input_ids.append(_input_ids)
+            _attn = torch.zeros(len(temp), dtype=torch.bool)
+            _attn[:effective_visible] = True
+            attention_mask.append(_attn)
+            _target_ids = _input_ids.clone()
+            _target_ids[effective_visible:] = -100
+            if not loss_on_padding:
+                content_len = (
+                    len(_prefix_ids) + add_bos + len(_suffix_ids) + add_eos
+                )
+                for j in range(min(content_len, effective_visible), effective_visible):
+                    _target_ids[j] = -100
+            target_ids.append(_target_ids)
             mask.append(_mask)
         else:
-            attention_mask.append(
-                torch.tensor(
-                    pad_truncate_list(
-                        [1]
-                        * (
-                            len(_prefix_ids)
-                            + len(_suffix_ids)
-                            + add_eos
-                            + add_bos
-                        ),
-                        max_len,
-                        0,
-                        pad_left=False,
-                    ),
-                    dtype=torch.bool,
-                )
+            # bos should not be masked
+            suffix_mask = pad_truncate_list(
+                [0] * (len(_prefix_ids) + add_bos)
+                + [1] * (len(_suffix_ids) + add_eos),
+                max_len,
+                1,
+                pad_left=False,
             )
-            mask.append(
-                _mask.logical_and(attention_mask[-1])
-            )  # no input masks in padding
-            _target_ids = _input_ids.clone()
-            _target_ids[~attention_mask[-1]] = -100  # no loss on padding
-            target_ids.append(_target_ids)
+            temp = pad_truncate_list(
+                _prefix_ids
+                + ([bos_token_id] * add_bos)
+                + _suffix_ids
+                + ([eos_token_id] * add_eos),
+                max_len,
+                pad_token_id,
+                pad_left=False,
+            )
+            _mask = (torch.rand(len(temp)) < t[i]).logical_and(
+                torch.tensor(suffix_mask, dtype=torch.bool)
+            )
+            _input_ids = torch.tensor(temp, dtype=torch.long)
+            input_ids.append(_input_ids)
+            if loss_on_padding:
+                attention_mask.append(
+                    torch.tensor([1] * len(temp), dtype=torch.bool)
+                )
+                target_ids.append(_input_ids.clone())
+                mask.append(_mask)
+            else:
+                attention_mask.append(
+                    torch.tensor(
+                        pad_truncate_list(
+                            [1]
+                            * (
+                                len(_prefix_ids)
+                                + len(_suffix_ids)
+                                + add_eos
+                                + add_bos
+                            ),
+                            max_len,
+                            0,
+                            pad_left=False,
+                        ),
+                        dtype=torch.bool,
+                    )
+                )
+                mask.append(
+                    _mask.logical_and(attention_mask[-1])
+                )  # no input masks in padding
+                _target_ids = _input_ids.clone()
+                _target_ids[~attention_mask[-1]] = -100  # no loss on padding
+                target_ids.append(_target_ids)
     target_ids = torch.stack(target_ids, dim=0)
     attention_mask = torch.stack(attention_mask, dim=0)
     input_ids = torch.stack(input_ids, dim=0)
@@ -452,6 +504,12 @@ class MLMSeq2SeqTrainCollator(Collator):
         suffix_lists = [
             seq2seq_suffix_ids(e, self.target_field) for e in examples
         ]
+        if self.input_block_size == 0:
+            max_seq_len = None
+            truncate = None
+        else:
+            max_seq_len = self.input_block_size + self.block_size
+            truncate = self.truncate
         prefix_suffix = prepare_prefix_suffix_ids(
             [e["prompt_ids"] for e in examples],
             suffix_lists,
@@ -459,9 +517,10 @@ class MLMSeq2SeqTrainCollator(Collator):
             self.tokenizer.mask_token_id,
             eos_token_id=self.tokenizer.eos_token_id if self.add_eos else None,
             bos_token_id=self.tokenizer.bos_token_id if self.add_bos else None,
-            max_seq_len=(self.input_block_size + self.block_size),
-            truncate=self.truncate,
+            max_seq_len=max_seq_len,
+            truncate=truncate,
             loss_on_padding=self.loss_on_padding,
+            suffix_block_size=self.block_size,
         )
         return prefix_suffix
 

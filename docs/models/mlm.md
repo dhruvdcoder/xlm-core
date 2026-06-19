@@ -69,7 +69,7 @@ The packed FlexAttention variant uses `PackedFlexMLMBatch` (subset of the above)
 | Class | Input | Output batch | Special behavior |
 |---|---|---|---|
 | `DefaultMLMCollator` | `BaseCollatorInput` | `MLMBatch` | Pad-right to `block_size`, BOS/EOS optional, random MLM masking. |
-| `MLMSeq2SeqTrainCollator` | `Seq2SeqCollatorInput` | `MLMBatch` | Concatenates `[prompt][BOS][target][EOS]` with right padding; masks only suffix positions. |
+| `MLMSeq2SeqTrainCollator` | `Seq2SeqCollatorInput` | `MLMBatch` | Concatenates `[prompt][BOS][target][EOS]`; only `block_size` suffix positions after the prompt are visible and MLM-eligible (tail hidden via `attention_mask=0`). |
 | `MLMSeq2SeqCollator` | `Seq2SeqCollatorInput` | `MLMBatch` | Left-pads prompt and right-pads target separately (padding on both sides). |
 | `_MLMSeq2SeqPredCollator` | `Seq2SeqCollatorInput` | `MLMBatch` | Same as `MLMSeq2SeqCollator` but masks **all** suffix tokens (`mask_all=True`); used for exact-match eval. |
 | `MLMSeq2SeqPredCollator` | `Seq2SeqCollatorInput` | `MLMBatch` | `input_ids = left-padded prompt only`; `target_ids = right-padded target` (used for seq2seq prediction). |
@@ -140,8 +140,9 @@ Task dataset and preprocessing: [TinyGSM](../tasks/tinygsm.md). GSM8K and code-e
 | Tokenizer | Qwen2-0.5B (`Qwen/Qwen2-0.5B`) with added `<|mask|>` |
 | `block_size` | 512 |
 | `input_block_size` | 0 |
+| `model.max_length` | 2048 (prompt + `block_size` suffix; overrides default 516) |
 | Batching | Per-device 32; global 512 |
-| Collators | STAR seq2seq (`seq2seq_*` / `seq2seq_pred_*`); no BOS between question and code |
+| Collators | STAR seq2seq (`seq2seq_*` / `seq2seq_pred_*`); no BOS; train/val `truncate: null` |
 | Val / test prediction | Post-hoc `code_exec_accuracy` (`Gsm8kCodeEval`); token EM disabled |
 | Monitored metric | `val/lm/accumulated_loss` |
 | Training schedule | Up to 1M steps; validation every 50k steps; checkpoint every 2.5k steps (keep every 100k) |
