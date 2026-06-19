@@ -1,6 +1,9 @@
 # @package _global_
 defaults:
-  - star_mlm
+  - default
+  - /collator@datamodule.dataset_managers.train.lm.collator: seq2seq_mlm
+  - /collator@datamodule.dataset_managers.val.lm.collator: seq2seq_mlm
+  - /collator@datamodule.dataset_managers.val.prediction.collator: seq2seq_pred_mlm
   - /datasets@datamodule.dataset_managers.train.lm: tinygsm_train
   - /datasets@datamodule.dataset_managers.val.lm: tinygsm_val
   - /datasets@datamodule.dataset_managers.val.prediction: tinygsm_val_pred
