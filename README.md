@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>A Unified Framework for Non-Autoregressive Language Models</strong>
+  <strong>A Research First Framework for Training and Evaluating Non-Autoregressive Language Models</strong>
 </p>
 
 <p align="center">
