@@ -114,6 +114,10 @@ We welcome contributions. See [CONTRIBUTING.md](./CONTRIBUTING.md) and the [Good
 }
 ```
 
+## Acknowledgements
+
+We thank the authors of the papers listed above for making their research and implementation public. Our model implementations borrow heavily from these original codebases. 
+
 ## License
 
 MIT · Built at [IESL](https://iesl.cs.umass.edu/), UMass Amherst.
