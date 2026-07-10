@@ -99,6 +99,10 @@ Wire a dataset by pointing Hydra at any importable preprocess function (e.g. `my
 
 → [Add yours](./CONTRIBUTING.md)
 
+## News
+
+1. [xLM](https://aclanthology.org/2026.eacl-demo.31/) was presented at the [Bridging Research and Open Source social](https://ginger66.github.io/icml-social-2026-bridgingOSS/) at ICML 2026 in Seoul!
+
 ## Contributing
 
 We welcome contributions. See [CONTRIBUTING.md](./CONTRIBUTING.md) and the [Good First Issue](https://github.com/dhruvdcoder/xlm-core/issues?q=state%3Aopen+label%3A%22good+first+issue%22) list.
