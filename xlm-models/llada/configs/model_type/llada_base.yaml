@@ -1,0 +1,11 @@
+# @package _global_
+# Shared LLaDA harness + predictor. Compose via `llada_eval` (eval-only).
+# NOTE: no logits_hook — LLaDA predicts masked positions in place (no Dream-style shift).
+lightning_module:
+  _target_: xlm.harness.Harness
+
+predictor:
+  _target_: llada.predictor_llada.LLaDAPredictor
+
+tags:
+  model_type: llada

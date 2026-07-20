@@ -1,0 +1,52 @@
+# @package _global_
+defaults:
+  - override /callbacks: default_hf
+  - override /datamodule: math500_llada
+  - override /noise_schedule: dummy
+  - override /model_type: llada_eval
+  - override /model: llada_8b
+
+per_device_batch_size: 4
+global_batch_size: 4
+block_size: 512
+monitored_metric: null
+init_dtype: bfloat16
+skip_init_weights: true
+
+global_components:
+  tokenizer:
+    _target_: xlm.datamodule.load_auto_tokenizer
+    pretrained_model_name_or_path: GSAI-ML/LLaDA-8B-Base
+    special_tokens:
+      mask_token: "<|mdm_mask|>"  # id 126336, already in the checkpoint vocab
+
+hub:
+  repo_id: GSAI-ML/LLaDA-8B-Base
+
+eval:
+  split: test
+
+predictor:
+  max_new_tokens: ${block_size}
+  max_steps: 512
+  temperature: 0.0
+  confidence: top_prob  # == LLaDA reference remasking='low_confidence'
+  block_size: 32  # == LLaDA reference block_length (semi-AR)
+  generate_until:
+    - <|endoftext|>
+    - "Problem:"
+    - <|eot_id|>
+
+log_predictions:
+  _target_: xlm.log_predictions.LogPredictions
+  writers:
+    - file
+  additional_fields_from_batch:
+    - answer
+
+post_hoc_evaluator:
+  _target_: xlm.tasks.math500.Math500Eval
+
+trainer:
+  max_steps: 0
+  num_sanity_val_steps: 0

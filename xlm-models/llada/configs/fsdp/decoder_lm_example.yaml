@@ -1,0 +1,14 @@
+# Example FSDP grouping for the LLaDA decoder (embed + per-layer + output head).
+# Paths follow the LLaDA checkpoint layout (model.transformer.*, ff_out untied head).
+# Use with ``build_fsdp_grouping_plan_from_config`` and ``context: { model: ${model} }``.
+fsdp_grouping:
+  embed:
+    path: model.transformer.wte
+    wrap: false
+  layers:
+    path_template: "model.transformer.blocks.{i}"
+    wrap: false
+    count: ${model.config.n_layers}
+  head:
+    path: model.transformer.ff_out
+    wrap: true

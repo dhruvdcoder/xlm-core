@@ -1,0 +1,47 @@
+_target_: llada.llada_model.LLaDAXLMModel
+init_params: false
+config:
+  _target_: llada.configuration_llada.LLaDAConfig
+  # Aligned with https://huggingface.co/GSAI-ML/LLaDA-8B-Base/blob/main/config.json
+  # (LLaDA-8B-Instruct shares the same architecture; select weights via hub.repo_id.)
+  d_model: 4096
+  n_heads: 32
+  n_kv_heads: 32
+  n_layers: 32
+  mlp_hidden_size: 12288
+  mlp_ratio: 4
+  activation_type: silu
+  block_type: llama
+  block_group_size: 1
+  alibi: false
+  alibi_bias_max: 8.0
+  rope: true
+  rope_theta: 500000.0
+  rope_full_precision: true
+  flash_attention: false
+  attention_dropout: 0.0
+  multi_query_attention: null
+  attention_layer_norm: false
+  attention_layer_norm_with_affine: true
+  residual_dropout: 0.0
+  embedding_dropout: 0.0
+  input_emb_norm: false
+  layer_norm_type: rms
+  layer_norm_with_affine: true
+  rms_norm_eps: 1e-05
+  bias_for_layer_norm: false
+  max_sequence_length: 4096
+  include_qkv_bias: false
+  include_bias: false
+  scale_logits: false
+  vocab_size: 126464
+  embedding_size: 126464
+  weight_tying: false
+  eos_token_id: 126081
+  pad_token_id: 126081
+  mask_token_id: 126336
+  init_fn: mitchell
+  init_std: 0.02
+  init_cutoff_factor: null
+  init_device: cpu
+  use_cache: false

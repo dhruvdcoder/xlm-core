@@ -1,0 +1,13 @@
+# @package _global_
+defaults:
+  - default
+  - /collator@datamodule.dataset_managers.val.math500_prediction.collator: math500_pred_llada
+  - /collator@datamodule.dataset_managers.test.math500_prediction.collator: math500_pred_llada
+  - /datasets@datamodule.dataset_managers.val.math500_prediction: math500_test
+  - /datasets@datamodule.dataset_managers.test.math500_prediction: math500_test
+
+datamodule:
+  print_batch_fn: llada.datamodule_llada.print_batch_llada
+
+tags:
+  dataset: math500

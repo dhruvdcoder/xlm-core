@@ -1,0 +1,4 @@
+# @package _global_
+# Eval / inference: same as llada_base (no accumulated_loss metrics; avoids mandatory prefix/update_fn).
+defaults:
+  - llada_base
