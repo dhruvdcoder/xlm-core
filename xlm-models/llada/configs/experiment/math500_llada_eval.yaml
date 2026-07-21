@@ -6,8 +6,8 @@ defaults:
   - override /model_type: llada_eval
   - override /model: llada_8b
 
-per_device_batch_size: 4
-global_batch_size: 4
+per_device_batch_size: 8
+global_batch_size: 8
 # block_size == generation budget (predictor.max_new_tokens). LLaDA reference
 # MATH eval uses gen_length=256 with steps=256 (1 token/step).
 block_size: 256
@@ -31,16 +31,22 @@ hub:
 eval:
   split: test
 
+# truncate: null pads prompts to the batch max instead of a fixed
+# prompt_block_size (attention is O(L^2); fixed 2688 padding dominated the
+# v2 runtime). All 4-shot prompts (max 2638 tokens) fit the 4096 context
+# alongside the 256-token generation, so no truncation is needed.
 datamodule:
   dataset_managers:
     val:
       math500_prediction:
         collator:
           input_block_size: ${prompt_block_size}
+          truncate: null
     test:
       math500_prediction:
         collator:
           input_block_size: ${prompt_block_size}
+          truncate: null
 
 # These two callbacks in the shared `default_hf` group point at classes that no
 # longer exist (xlm.datamodule.base.PrintBatchCallback,
@@ -54,7 +60,10 @@ predictor:
   max_steps: 256
   temperature: 0.0
   confidence: top_prob  # == LLaDA reference remasking='low_confidence'
-  block_size: 32  # == LLaDA reference block_length (semi-AR)
+  # Reference *base-model* eval (EVAL.md) uses block_length == gen_length
+  # (single global block, no semi-AR). block_length=32 is the Instruct demo
+  # setting and starves long solutions of budget.
+  block_size: ${block_size}
   generate_until:
     - <|endoftext|>
     - "Problem:"

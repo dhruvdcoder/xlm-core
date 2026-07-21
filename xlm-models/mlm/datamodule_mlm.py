@@ -680,6 +680,7 @@ class MLMSeq2SeqPredCollator(MLMSeq2SeqCollator):
             prefix_ids_list,
             self.tokenizer.pad_token_id,
             max_seq_len=self.input_block_size,
+            truncate=self.truncate,
         )
         suffix_lists = self._suffix_lists(examples)
         if all(len(s) == 0 for s in suffix_lists):
