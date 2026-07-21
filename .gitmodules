@@ -1,3 +1,6 @@
 [submodule "vendor/dplm"]
 	path = vendor/dplm
 	url = https://github.com/bytedance/dplm.git
+[submodule "slurm_scripts"]
+	path = slurm_scripts
+	url = https://github.com/dhruvdcoder/slurm_scripts.git

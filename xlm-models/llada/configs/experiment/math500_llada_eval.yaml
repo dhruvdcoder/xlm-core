@@ -8,7 +8,12 @@ defaults:
 
 per_device_batch_size: 4
 global_batch_size: 4
-block_size: 512
+# block_size == generation budget (predictor.max_new_tokens). LLaDA reference
+# MATH eval uses gen_length=256 with steps=256 (1 token/step).
+block_size: 256
+# Separate prompt budget: 4-shot MATH-500 prompts are 1364-2638 tokens with the
+# LLaDA tokenizer, so 2688 avoids left-truncation (2688 + 256 <= 4096 context).
+prompt_block_size: 2688
 monitored_metric: null
 init_dtype: bfloat16
 skip_init_weights: true
@@ -26,9 +31,27 @@ hub:
 eval:
   split: test
 
+datamodule:
+  dataset_managers:
+    val:
+      math500_prediction:
+        collator:
+          input_block_size: ${prompt_block_size}
+    test:
+      math500_prediction:
+        collator:
+          input_block_size: ${prompt_block_size}
+
+# These two callbacks in the shared `default_hf` group point at classes that no
+# longer exist (xlm.datamodule.base.PrintBatchCallback,
+# xlm.diffusion.base.UnconditionalSampleGenerator); disable them here.
+callbacks:
+  print_batch: null
+  unconditional_sample_generator: null
+
 predictor:
   max_new_tokens: ${block_size}
-  max_steps: 512
+  max_steps: 256
   temperature: 0.0
   confidence: top_prob  # == LLaDA reference remasking='low_confidence'
   block_size: 32  # == LLaDA reference block_length (semi-AR)
@@ -44,8 +67,14 @@ log_predictions:
   additional_fields_from_batch:
     - answer
 
+# The default post_hoc_evaluator group is CompositePostHocEvaluator with
+# `evaluators: {}`; overriding only _target_ leaves that key behind and breaks
+# instantiation (Math500Eval takes no arguments). Nest it instead.
 post_hoc_evaluator:
-  _target_: xlm.tasks.math500.Math500Eval
+  _target_: xlm.tasks.composite_eval.CompositePostHocEvaluator
+  evaluators:
+    math500_prediction:
+      _target_: xlm.tasks.math500.Math500Eval
 
 trainer:
   max_steps: 0
