@@ -60,6 +60,10 @@ predictor:
   max_steps: 256
   temperature: 0.0
   confidence: top_prob  # == LLaDA reference remasking='low_confidence'
+  # Must be 0 for greedy (argmax-of-confidence) position selection, matching the
+  # reference. The default 1.0 samples positions with Gumbel noise of scale ~1
+  # added to top_prob scores in [0,1], i.e. near-uniform random order.
+  confidence_temperature: 0.0
   # Reference *base-model* eval (EVAL.md) uses block_length == gen_length
   # (single global block, no semi-AR). block_length=32 is the Instruct demo
   # setting and starves long solutions of budget.
