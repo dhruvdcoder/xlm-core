@@ -2,9 +2,9 @@
 
 ## 1. Overview
 
-`llada` integrates [LLaDA](https://arxiv.org/abs/2502.09992) (GSAI-ML) into xLM at **Dream parity**: a Hub-key-compatible backbone, an MLM-protocol adapter, a diffusion predictor, and Hydra eval configs. Training loss / metrics are **not** implemented yet (Alpha / eval-focused), same status as [`dream`](https://github.com/dhruvdcoder/xlm-core/tree/main/xlm-models/dream).
+`llada` integrates GSAI-ML's [LLaDA](https://arxiv.org/abs/2502.09992) into xLM. It provides the same pieces as the [`dream`](https://github.com/dhruvdcoder/xlm-core/tree/main/xlm-models/dream) package: a backbone whose state-dict keys match the Hub checkpoint, an adapter for the MLM predictor protocol, a diffusion predictor, and Hydra configs for evaluation. Like `dream`, it is currently eval-only — training loss and metrics are not implemented yet.
 
-LLaDA is a masked discrete diffusion LM: a bidirectional Transformer predicts tokens at `[MASK]` positions (`mask_token_id=126336`, string `<|mdm_mask|>`). Sampling fills a fixed canvas of masks and commits the most confident predictions per semi-autoregressive block (low-confidence remasking).
+LLaDA is a masked discrete diffusion LM. A bidirectional Transformer predicts tokens at `[MASK]` positions (`mask_token_id=126336`, string `<|mdm_mask|>`). To generate, the sampler starts from a canvas of mask tokens and, over a number of steps, commits the predictions it is most confident about ("low-confidence remasking" in the paper), optionally working left to right in semi-autoregressive blocks.
 
 ```bibtex
 @article{nie2025llada,
@@ -15,12 +15,12 @@ LLaDA is a masked discrete diffusion LM: a bidirectional Transformer predicts to
 }
 ```
 
-Hub checkpoints (same architecture; switch via `hub.repo_id`):
+Both Hub checkpoints share the same architecture, so they use the same model YAML — pick one with `hub.repo_id`:
 
 | Checkpoint | Notes |
 |---|---|
 | [`GSAI-ML/LLaDA-8B-Base`](https://huggingface.co/GSAI-ML/LLaDA-8B-Base) | Default in `math500_llada_eval` |
-| [`GSAI-ML/LLaDA-8B-Instruct`](https://huggingface.co/GSAI-ML/LLaDA-8B-Instruct) | Same model YAML; override `hub.repo_id` + tokenizer path |
+| [`GSAI-ML/LLaDA-8B-Instruct`](https://huggingface.co/GSAI-ML/LLaDA-8B-Instruct) | Override `hub.repo_id` and the tokenizer path (see below) |
 
 Package: {{ gh_dir('xlm-models/llada', 'xlm-models/llada/') }}. Backbone: {{ gh_dir('src/xlm/backbones/llada', 'src/xlm/backbones/llada/') }}.
 
@@ -35,17 +35,15 @@ Package: {{ gh_dir('xlm-models/llada', 'xlm-models/llada/') }}. Backbone: {{ gh_
 | {{ gh('xlm-models/llada/predictor_llada.py', 'predictor_llada.py') }} | `LLaDAPredictor` |
 | {{ gh('xlm-models/llada/datamodule_llada.py', 'datamodule_llada.py') }} | `print_batch_llada` |
 
-No `loss_llada.py` / `metrics_llada.py` yet (eval-only).
+There is no `loss_llada.py` or `metrics_llada.py` yet, since the package is eval-only.
 
 ## 3. Architecture
 
-Ported from the Hub `trust_remote_code` modules with **state-dict keys unchanged**, so weights load with `strict=True` and no remapping:
+The backbone is ported from the Hub `trust_remote_code` modules with state-dict keys left unchanged, so checkpoints load with `strict=True` and no key remapping. The relevant keys are `model.transformer.wte`, `model.transformer.blocks.{i}.{q,k,v,up,ff}_proj`, `model.transformer.ln_f`, and `model.transformer.ff_out` (the head is untied).
 
-`model.transformer.wte`, `model.transformer.blocks.{i}.{q,k,v,up,ff}_proj`, `model.transformer.ln_f`, `model.transformer.ff_out` (untied).
+The 8B layout, taken from the Hub `config.json`: `d_model=4096`, 32 layers, 32 MHA heads, `mlp_hidden_size=12288`, `vocab_size=embedding_size=126464`, RoPE with `rope_theta=500000`, no weight tying, and bidirectional attention (`is_causal=False`).
 
-8B layout (from Hub `config.json`): `d_model=4096`, 32 layers, 32 MHA heads, `mlp_hidden_size=12288`, `vocab_size=embedding_size=126464`, RoPE (`rope_theta=500000`), `weight_tying=false`, bidirectional attention (`is_causal=False` / MDM path).
-
-`LLaDAXLMModel` adapts the HF wrapper to the MLM predictor protocol (same surface as Dream, without a logits shift):
+`LLaDAXLMModel` adapts the HF wrapper to the MLM predictor protocol — the same surface as Dream, minus the logits shift:
 
 ```python
 forward(
@@ -55,7 +53,7 @@ forward(
 ) -> Tensor                                   # (B, L, embedding_size) logits
 ```
 
-Unlike Dream, LLaDA predicts each masked position **in place** — do **not** wire `LogitsShiftBy1`.
+Unlike Dream, LLaDA predicts each masked position in place, so `LogitsShiftBy1` must not be wired in.
 
 ## 4. Batch contract
 
@@ -67,11 +65,11 @@ Eval uses the shared MLM seq2seq prediction collator (`MLMSeq2SeqPredCollator`) 
 | `attention_mask` | `(B, L)` | 1 = real, 0 = pad |
 | `answer` / `target` | pass-through | For `Math500Eval` post-hoc |
 
-Predictor appends `max_new_tokens` of `<|mdm_mask|>` (id `126336`) as the generation canvas.
+The predictor then appends `max_new_tokens` copies of `<|mdm_mask|>` (id `126336`) to the right of the prompt; this is the canvas the sampler fills in.
 
 ## 5. Loss
 
-Not implemented. There is no `loss:` key under `model_type/llada_base.yaml` (Dream-style).
+Not implemented yet. `model_type/llada_base.yaml` has no `loss:` key, following the same convention as Dream.
 
 ## 6. Collators
 
@@ -81,7 +79,7 @@ Not implemented. There is no `loss:` key under `model_type/llada_base.yaml` (Dre
 
 ## 7. Predictor
 
-`LLaDAPredictor` subclasses `DreamPredictor`. Mapping to the LLaDA reference sampler (`generate.py`):
+`LLaDAPredictor` subclasses `DreamPredictor` directly — the Dream machinery already implements LLaDA's sampling procedure, so no new sampling code was needed. The knobs map onto the reference sampler (`generate.py` in the LLaDA repo) as follows:
 
 | LLaDA reference | xLM predictor knobs |
 |---|---|
@@ -92,11 +90,11 @@ Not implemented. There is no `loss:` key under `model_type/llada_base.yaml` (Dre
 | `gen_length` | `max_new_tokens` |
 | `temperature=0` | `temperature: 0.0` (greedy) |
 
-Classifier-free guidance (`cfg_scale`) from the reference code is **not** implemented.
+Classifier-free guidance (`cfg_scale` in the reference code) is not implemented; the reference base-model evals run without it.
 
 ## 8. Metrics
 
-Step-level LM metrics are not wired for LLaDA eval. MATH-500 accuracy comes from the post-hoc evaluator {{ gh('src/xlm/tasks/math500/__init__.py', 'Math500Eval') }} over logged predictions.
+Step-level LM metrics are not wired up for LLaDA eval. MATH-500 accuracy is computed after the run by the post-hoc evaluator {{ gh('src/xlm/tasks/math500/__init__.py', 'Math500Eval') }}, which scores the logged predictions with `math_verify`.
 
 ## 9. Configs / experiments
 
@@ -111,7 +109,7 @@ Hydra configs under {{ gh_dir('xlm-models/llada/configs', 'xlm-models/llada/conf
 | `debug/math500_debug.yaml` | Tiny debug limits |
 | `fsdp/decoder_lm_example.yaml` | Example FSDP grouping for `model.transformer.*` |
 
-Register the package (`xlm_models.json` already lists `"llada": "llada"`). Ensure the editable install / `XLM_MODELS_PACKAGES` can see it:
+The package is registered in `xlm_models.json` (`"llada": "llada"`). Make sure your install can see it:
 
 ```bash
 # from the xlm-core repo root
@@ -128,7 +126,7 @@ xlm job_type=prepare_data job_name=math500_llada_prep \
   experiment=math500_llada_eval num_dataset_workers=4
 ```
 
-Run eval (loads `GSAI-ML/LLaDA-8B-Base` via `hub.repo_id` in the experiment YAML). Use a GPU with enough memory for bf16 8B (~16GB+):
+Then run the eval. Weights are pulled from the Hub (`hub.repo_id` in the experiment YAML, `GSAI-ML/LLaDA-8B-Base` by default); you need a GPU with enough memory for the 8B model in bf16 (~16GB+):
 
 ```bash
 xlm job_type=eval job_name=math500_llada_eval \
@@ -136,7 +134,7 @@ xlm job_type=eval job_name=math500_llada_eval \
   ++trainer.precision=bf16-mixed
 ```
 
-Instruct checkpoint (same model YAML):
+For the Instruct checkpoint, override the repo id and tokenizer path (the model YAML stays the same):
 
 ```bash
 xlm job_type=eval job_name=math500_llada_instruct_eval \
@@ -147,9 +145,9 @@ xlm job_type=eval job_name=math500_llada_instruct_eval \
 ```
 
 !!! note "Hub-only eval and local checkpoints"
-    If `checkpointing_dir` already contains `best.ckpt` / `last.ckpt`, those **override** Hub weights. Use a fresh `job_name` or a clean `checkpointing_dir`. Set `HF_HUB_KEY` (or `.secrets.env`) for Hub download. See [Evaluate](../guide/eval.md).
+    If `checkpointing_dir` already contains `best.ckpt` / `last.ckpt`, those take precedence over Hub weights. Use a fresh `job_name` or a clean `checkpointing_dir` when you want a pure Hub eval. Set `HF_HUB_KEY` (or `.secrets.env`) for the Hub download. See [Evaluate](../guide/eval.md).
 
-Debug smoke (few batches):
+For a quick smoke test that only runs a few batches:
 
 ```bash
 xlm job_type=eval job_name=math500_llada_debug \
