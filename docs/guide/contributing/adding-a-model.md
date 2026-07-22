@@ -2,7 +2,7 @@
 
 This guide covers adding a **first-party** model family under {{ gh_dir('xlm-models', 'xlm-models/') }} in this repository. For a model in a separate repo, see [External models](../external-models.md).
 
-Reference implementations: `arlm`, `ilm`, `mlm`, `mdlm`, `flexmdm`, `dream`. Conceptual comparison: [Models overview](../../models/index.md).
+Reference implementations: `arlm`, `ilm`, `mlm`, `mdlm`, `flexmdm`, `dream`, `llada`. Conceptual comparison: [Models overview](../../models/index.md).
 
 ## Quick start
 

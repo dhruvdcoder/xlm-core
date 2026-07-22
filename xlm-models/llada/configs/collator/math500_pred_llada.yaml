@@ -1,0 +1,12 @@
+_target_: mlm.datamodule_mlm.MLMSeq2SeqPredCollator
+tokenizer: ${global_components:tokenizer}
+noise_schedule: ${global_components:noise_schedule}
+block_size: ${block_size}
+input_block_size: ${block_size}
+add_bos: false
+add_eos: false
+truncate: block
+prompt_field: prompt_ids
+pass_through_fields:
+  - answer
+  - target

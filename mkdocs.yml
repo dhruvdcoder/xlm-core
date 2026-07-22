@@ -84,6 +84,7 @@ nav:
       - ARLM: models/arlm.md
       - FlexMDM: models/flexmdm.md
       - ILM: models/ilm.md
+      - LLaDA: models/llada.md
       - MDLM: models/mdlm.md
       - MLM: models/mlm.md
 

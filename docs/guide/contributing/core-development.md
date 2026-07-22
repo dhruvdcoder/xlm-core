@@ -38,7 +38,7 @@ Protocol or harness changes can break any model family — keep `xlm-models` edi
 1. **Search existing [Issues](https://github.com/dhruvdcoder/xlm-core/issues)** and [Discussions](https://github.com/dhruvdcoder/xlm-core/discussions) for overlap.
 2. **Open an issue** for non-trivial work. Use the [feature request template](https://github.com/dhruvdcoder/xlm-core/issues/new?template=feature_request.md) and note which component is affected (core, CLI, metrics, datamodule, etc.).
 3. **Assess impact radius:**
-   - **Protocol changes** (`LossFunction`, `Predictor`, `Collator`, or `Harness` in {{ gh('src/xlm/harness.py', 'harness.py') }} / {{ gh('src/xlm/datamodule.py', 'datamodule.py') }}) affect every family under {{ gh_dir('xlm-models', 'xlm-models/') }} (`arlm`, `ilm`, `mlm`, `mdlm`, `flexmdm`, `dream`) and external models using the same contracts.
+   - **Protocol changes** (`LossFunction`, `Predictor`, `Collator`, or `Harness` in {{ gh('src/xlm/harness.py', 'harness.py') }} / {{ gh('src/xlm/datamodule.py', 'datamodule.py') }}) affect every family under {{ gh_dir('xlm-models', 'xlm-models/') }} (`arlm`, `ilm`, `mlm`, `mdlm`, `flexmdm`, `dream`, `llada`) and external models using the same contracts.
    - **Hydra config changes** (renamed keys, moved defaults under {{ gh_dir('src/xlm/configs', 'configs/') }}) may require updating experiment and datamodule YAMLs across `xlm-models/` and downstream repos.
 4. Skim the closest existing code and the [Related guides](#related-guides) below before proposing API shape.
 

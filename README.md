@@ -42,7 +42,7 @@ XLM is a modular framework for developing and comparing non-autoregressive langu
 <details>
 <summary><strong>Model families (papers and docs)</strong></summary>
 
-The companion package [`xlm-models`](https://github.com/dhruvdcoder/xlm-core/tree/main/xlm-models) registers six families (see [`xlm_models.json`](https://github.com/dhruvdcoder/xlm-core/blob/main/xlm-models/xlm_models.json)). Cross-family comparison: [Models overview](https://dhruveshp.com/xlm-core/dev/models/).
+The companion package [`xlm-models`](https://github.com/dhruvdcoder/xlm-core/tree/main/xlm-models) registers seven families (see [`xlm_models.json`](https://github.com/dhruvdcoder/xlm-core/blob/main/xlm-models/xlm_models.json)). Cross-family comparison: [Models overview](https://dhruveshp.com/xlm-core/dev/models/).
 
 | Tag | Name | Docs | State | Paper / notes |
 |-----|------|------|-------|---------------|
@@ -52,6 +52,7 @@ The companion package [`xlm-models`](https://github.com/dhruvdcoder/xlm-core/tre
 | `mlm` | Masked language model (BERT-style) | [Guide](https://dhruveshp.com/xlm-core/dev/models/mlm/) | Beta | — |
 | `flexmdm` | Flexible masked diffusion | [Guide](https://dhruveshp.com/xlm-core/dev/models/flexmdm/) | Alpha | [arXiv:2509.01025](https://arxiv.org/abs/2509.01025) |
 | `dream` | Dream-style decoder LM | Partial | Alpha | [Source](https://github.com/dhruvdcoder/xlm-core/tree/main/xlm-models/dream); backbone in [`xlm.backbones.dream`](https://dhruveshp.com/xlm-core/dev/reference/xlm/backbones/dream/) |
+| `llada` | LLaDA masked diffusion LM | [Guide](https://dhruveshp.com/xlm-core/dev/models/llada/) | Partial / Alpha | [arXiv:2502.09992](https://arxiv.org/abs/2502.09992); [Source](https://github.com/dhruvdcoder/xlm-core/tree/main/xlm-models/llada); backbone in `xlm.backbones.llada` |
 
 </details>
 

@@ -1,6 +1,6 @@
 # Models
 
-Each `xlm-models/<family>/` package implements one language-modeling paradigm against a small set of shared `xlm.*` abstractions. The four families documented here — **ARLM**, **ILM**, **MDLM**, **MLM** — share the same component layout (model, loss, predictor, collator, metrics, types) but differ in what they predict and how they decode.
+Each `xlm-models/<family>/` package implements one language-modeling paradigm against a small set of shared `xlm.*` abstractions. The four families documented in full below — **ARLM**, **ILM**, **MDLM**, **MLM** — share the same component layout (model, loss, predictor, collator, metrics, types) but differ in what they predict and how they decode. **FlexMDM**, **Dream**, and **LLaDA** are additional packages (Alpha / partial); see their pages for the current surface.
 
 ## Shared abstractions
 
@@ -40,6 +40,8 @@ flowchart LR
 | **Per-family doc** | [arlm.md](arlm.md) | [ilm.md](ilm.md) | [mdlm.md](mdlm.md) | [mlm.md](mlm.md) |
 
 **FlexMDM** (variable-length masked diffusion; package {{ gh_dir('xlm-models/flexmdm', 'xlm-models/flexmdm/') }}) is documented separately in [flexmdm.md](flexmdm.md), including the [TinyGSM](flexmdm.md#tinygsm) seq2seq experiment.
+
+**LLaDA** (Hub masked diffusion LM; package {{ gh_dir('xlm-models/llada', 'xlm-models/llada/') }}, backbone {{ gh_dir('src/xlm/backbones/llada', 'src/xlm/backbones/llada/') }}) is documented in [llada.md](llada.md). Eval-focused / Dream-parity (no loss yet); MATH-500 Hub eval via `experiment=math500_llada_eval`.
 
 ## Page layout
 

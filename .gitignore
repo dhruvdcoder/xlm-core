@@ -57,3 +57,5 @@ evals/protein_eval/logs/
 .pytest_cache/
 docs/**/linkedin
 .cursor
+# local clone of dhruvdcoder/slurm_scripts (not tracked; was briefly a submodule)
+/slurm_scripts/

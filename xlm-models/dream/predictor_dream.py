@@ -245,6 +245,16 @@ def check_batched_generate_until(
     return mask
 
 
+def trim_at_stop_strings(text: str, stop_strings: List[str]) -> str:
+    """Cut text at the first occurrence of any stop string (stop string excluded)."""
+    cut = len(text)
+    for s in stop_strings:
+        idx = text.find(s)
+        if idx != -1:
+            cut = min(cut, idx)
+    return text[:cut]
+
+
 class DreamPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
     """Same as MLMPredictor for now."""
 
@@ -644,7 +654,19 @@ class DreamPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
         final_time = time.time() - _start_time
         time_taken[time_taken == 0] = final_time
 
-        (out, final_x) = self.decode(step_results)
+        final_x = step_results["x"]
+        # Decode only the generated span; the full canvas includes the
+        # (left-padded) prompt, which must not leak into logged predictions
+        # or downstream evaluators like Math500Eval.
+        out: List[str] = tokenizer.batch_decode(
+            final_x[:, output_start_idx:],
+            skip_special_tokens=self.skip_special_tokens,
+        )
+        if self._generate_until_strings:
+            out = [
+                trim_at_stop_strings(t, list(self._generate_until_strings))
+                for t in out
+            ]
 
         self.reset()
         if flags.DEBUG_PRINT_PREDS:
