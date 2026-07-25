@@ -62,6 +62,7 @@ class ILMPredictorUtilitiesMixin:
         Integer[TT, " batch seq_len"],
         Integer[TT, " batch seq_len"],
         Integer[TT, " batch seq_len"],
+        Bool[TT, " batch seq_len"],
     ]:
         x: Integer[TT, " batch seq_len"] = results["x"]
         positions: Integer[TT, " batch seq_len"] = results["positions"]
@@ -94,7 +95,34 @@ class ILMPredictorUtilitiesMixin:
             final_x,
             final_attention_mask,
             final_positions,
+            prefix_mask,
         )
+
+    def decode_generation_suffix(
+        self,
+        token_ids: Integer[TT, " batch seq_len"],
+        prefix_mask: Bool[TT, " batch seq_len"],
+        *,
+        skip_special_tokens: bool = True,
+    ) -> List[str]:
+        """Decode non-prefix tokens only (logging / post-hoc path)."""
+        pad = self.tokenizer.pad_token_id
+        decoded: List[str] = []
+        for row_ids, row_prefix in zip(
+            token_ids.detach().cpu().tolist(),
+            prefix_mask.detach().cpu().tolist(),
+        ):
+            gen_ids = [
+                tid
+                for tid, is_prefix in zip(row_ids, row_prefix)
+                if (not is_prefix) and tid != pad
+            ]
+            decoded.append(
+                self.tokenizer.decode(
+                    gen_ids, skip_special_tokens=skip_special_tokens
+                )
+            )
+        return decoded
 
     def _update_history(
         self,
@@ -129,11 +157,29 @@ class ILMPredictorUtilitiesMixin:
         dataloader_idx: Optional[int] = None,
         dataloader_name: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
+        # Suffix decode lives here (logging path), not in timed predict().
+        if "generated_text" in preds:
+            generated_text = preds["generated_text"]
+        elif "prefix_mask" in preds:
+            generated_text = self.decode_generation_suffix(
+                preds["ids"], preds["prefix_mask"], skip_special_tokens=True
+            )
+        else:
+            generated_text = preds["text"]
+
         preds_list: List[
-            Tuple[str, str, List[int], List[Tuple[str, float, int]], float]
+            Tuple[
+                str,
+                str,
+                str,
+                List[int],
+                List[Tuple[str, float, int]],
+                float,
+            ]
         ] = list(
             zip(
                 preds["text"],
+                generated_text,
                 preds["text_with_spl_tokens"],
                 preds["ids"].tolist(),
                 preds["history"],
@@ -143,13 +189,21 @@ class ILMPredictorUtilitiesMixin:
             )
         )
         dicts: List[Dict[str, Any]] = []
-        for text, text_with_spl_tokens, ids, history, time_taken in preds_list:
+        for (
+            text,
+            gen_text,
+            text_with_spl_tokens,
+            ids,
+            history,
+            time_taken,
+        ) in preds_list:
             rounded_history = [
                 [subseq, round(t, 4), step] for subseq, t, step in history
             ]
             dicts.append(
                 {
                     "text": text,
+                    "generated_text": gen_text,
                     "text_with_spl_tokens": text_with_spl_tokens,
                     "ids": ids,
                     "history": rounded_history,
@@ -437,6 +491,7 @@ class ILMPredictor(
             final_x,
             final_attention_mask,
             final_positions,
+            prefix_mask,
         ) = self.decode(step_results)
         _end_time = time.time()
         _time_taken = _end_time - _start_time
@@ -446,6 +501,8 @@ class ILMPredictor(
             "ids": final_x,
             "attention_mask": final_attention_mask,
             "positions": final_positions,
+            # Tensor mask for to_dict suffix decode (outside timed path cost of strings)
+            "prefix_mask": prefix_mask,
             "history": history,
             "loss": None,
             "time_taken": (
@@ -843,6 +900,7 @@ class ILMPredictorWithLengthClassification(
             final_x,
             final_attention_mask,
             final_positions,
+            prefix_mask,
         ) = self.decode(step_results)
         _end_time = time.time()
         _time_taken = _end_time - _start_time
@@ -852,6 +910,7 @@ class ILMPredictorWithLengthClassification(
             "ids": final_x,
             "attention_mask": final_attention_mask,
             "positions": final_positions,
+            "prefix_mask": prefix_mask,
             "history": history,
             "loss": None,
             "time_taken": [_time_taken] * len(out),

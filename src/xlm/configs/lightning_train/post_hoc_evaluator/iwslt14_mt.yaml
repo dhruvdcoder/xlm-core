@@ -1,0 +1,6 @@
+# IWSLT14 MT metrics (SacreBLEU + chrF++). Requires: pip install "xlm-core[mt_eval]"
+_target_: xlm.tasks.iwslt14_de_en.mt_eval.Iwslt14MtEval
+mode: sacrebleu_detok
+hyp_field: null
+reference_field: null
+lowercase: false

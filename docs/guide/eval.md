@@ -106,6 +106,9 @@ Packaged snippets live under {{ gh_dir('src/xlm/configs/lightning_train/post_hoc
 | `syntactic`                                                       | Syntactic validity (`SyntacticMetricsEvaluator`)                 |
 | `mauve_text`                                                      | Text MAUVE (`MauveTextEval`)                                     |
 | `gen_ppl_gpt2_large` / `gen_ppl_gpt2_small` / `gen_ppl_llama3_3b` | Generative perplexity judges (`GenerativePerplexityPostHocEval`) |
+| `iwslt14_mt`                                                      | IWSLT14 SacreBLEU + chrF++ (needs `xlm-core[mt_eval]`) |
+
+For IWSLT14 DE→EN, experiments wire `iwslt14_mt` on the `prediction` dataloader. Prefer suffix-only `generated_text` from each predictor's `to_dict`. Primary mode `sacrebleu_detok` Moses-detokenizes hyps and scores against `target_raw` with signed SacreBLEU (`tok.13a`) plus chrF++; `moses_tokenized` scores already-tokenized text against `target_text` with `tokenize=none`. Signatures and `eval_mode` are stored on `results_*.json` rows.
 
 **Compose from `defaults`** (pattern `prediction` matches typical `*_prediction` dataloaders):
 

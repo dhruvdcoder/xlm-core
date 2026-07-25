@@ -507,14 +507,30 @@ class ILMSeq2SeqCollator:
         noise_schedule: NoiseSchedule,
         block_size: Optional[int] = None,
         input_block_size: Optional[int] = None,
+        pass_through_fields: Optional[List[str]] = None,
     ):
         self.tokenizer = tokenizer
         self.block_size = block_size
         self.noise_schedule = noise_schedule
         self.input_block_size = input_block_size
+        self.pass_through_fields = (
+            list(pass_through_fields) if pass_through_fields is not None else []
+        )
         self._vocab_size = (
             len(self.tokenizer) if self.tokenizer is not None else None
         )
+
+    def _merge_pass_through(
+        self,
+        examples: List[Seq2SeqCollatorInput],
+        batch: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        if not examples or not self.pass_through_fields:
+            return batch
+        for key in self.pass_through_fields:
+            if key in examples[0]:
+                batch[key] = [ex[key] for ex in examples]
+        return batch
 
     @property
     def vocab_size(self) -> int:
@@ -554,7 +570,7 @@ class ILMSeq2SeqCollator:
             drop_indices_fn=self.__class__.drop_indices_fn,
         )
         # cat prefix and suffix
-        return {
+        batch = {
             "input_ids": torch.cat(
                 [prefix["input_ids"], suffix["input_ids"]], dim=1
             ),
@@ -570,6 +586,7 @@ class ILMSeq2SeqCollator:
             "cls_position": prefix["cls_position"],
             "target_attention_mask": None,
         }
+        return self._merge_pass_through(examples, batch)  # type: ignore[return-value]
 
 
 class ILMSeq2SeqPredCollator(ILMSeq2SeqCollator):
@@ -594,7 +611,7 @@ class ILMSeq2SeqPredCollator(ILMSeq2SeqCollator):
             max_seq_len=self.block_size,
             bos_token_id=None,  # BOS will be preped by the prefix
         )
-        return {
+        batch = {
             "input_ids": prefix["input_ids"],
             "attention_mask": prefix["attention_mask"],
             "token_type_ids": prefix["token_type_ids"],
@@ -604,6 +621,7 @@ class ILMSeq2SeqPredCollator(ILMSeq2SeqCollator):
             "constraint": None,
             "cls_position": prefix["cls_position"],
         }
+        return self._merge_pass_through(examples, batch)  # type: ignore[return-value]
 
 
 # endregion: Collators

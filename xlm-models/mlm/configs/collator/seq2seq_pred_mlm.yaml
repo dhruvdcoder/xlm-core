@@ -6,4 +6,10 @@ noise_schedule: ${global_components:noise_schedule}
 add_bos: ${oc.select:add_bos,false}
 add_eos: ${oc.select:add_eos, true}
 truncate: block
-loss_on_padding: ${oc.select:loss_on_padding,true} 
+loss_on_padding: ${oc.select:loss_on_padding,true}
+pass_through_fields:
+  - answer
+  - target
+  - target_text
+  - target_raw
+  - id

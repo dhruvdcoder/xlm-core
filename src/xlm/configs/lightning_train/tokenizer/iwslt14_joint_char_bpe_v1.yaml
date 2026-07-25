@@ -1,0 +1,3 @@
+_target_: xlm.datamodule.load_auto_tokenizer
+pretrained_model_name_or_path:
+  _target_: xlm.tasks.iwslt14_de_en.joint_char_bpe_v1_dir

@@ -1,0 +1,71 @@
+# @package _global_
+defaults:
+  - /post_hoc_evaluator@post_hoc_evaluator.evaluators.prediction.mt: iwslt14_mt
+  - override /datamodule: iwslt14_de_en_ilm
+  - override /noise_schedule: dummy
+  - override /model_type: ilm_stopping_iwslt_seq2seq
+  - override /model: rotary_transformer_xtiny2_ilm_stopping
+
+per_device_batch_size: 32
+global_batch_size: 512
+num_dataloader_workers: 5
+block_size: 128
+input_block_size: 128
+monitored_metric: val/lm/accumulated_loss
+
+datamodule:
+  print_batch_fn: ilm.datamodule_ilm.print_batch_ilm
+
+trainer:
+  max_steps: 1000_000
+  val_check_interval: 50000
+  check_val_every_n_epoch: null
+  num_sanity_val_steps: 3
+
+optimizer:
+  lr: 0.0001
+
+lr_scheduler:
+  name: constant_with_warmup
+  num_warmup_steps: 2000
+  num_training_steps: ${trainer.max_steps}
+  monitor: train/loss
+
+callbacks:
+  checkpoint_every_n_steps:
+    every_n_train_steps: 2500
+    keep_multiple: 40
+
+log_predictions:
+  _target_: xlm.log_predictions.LogPredictions
+  fields_to_keep_in_output:
+    - text
+    - generated_text
+    - truth
+    - target_text
+    - target_raw
+    - id
+  inject_target: target_ids
+  additional_fields_from_batch:
+    - target_text
+    - target_raw
+    - id
+  writers:
+    - file
+    - logger
+
+predictor:
+  sampling_method: sample_top_k
+  top: 1
+  second_sampling_method: sample_top_k
+  second_top: 2
+  # CharBPE has no cls_token; default suppress list includes cls and breaks convert_tokens_to_ids(None).
+  tokens_to_suppress:
+    - "<mask>"
+    - "<eos>"
+    - "<pad>"
+    - "<bos>"
+
+
+tags:
+  dataset: iwslt14_de_en_rdm_v1

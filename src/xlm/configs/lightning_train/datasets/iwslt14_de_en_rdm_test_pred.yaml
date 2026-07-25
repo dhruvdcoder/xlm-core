@@ -1,0 +1,9 @@
+defaults:
+  - iwslt14_de_en_rdm_test
+
+stages:
+  - test
+  - predict
+dataloader_kwargs:
+  shuffle: false
+  drop_last: False
