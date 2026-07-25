@@ -4,7 +4,7 @@ defaults:
   - override /datamodule: iwslt14_de_en_ilm
   - override /noise_schedule: dummy
   - override /model_type: ilm_stopping_iwslt_seq2seq
-  - override /model: rotary_transformer_xtiny2_ilm_stopping
+  - override /model: rotary_transformer_xtiny_ilm_stopping
 
 per_device_batch_size: 32
 global_batch_size: 512

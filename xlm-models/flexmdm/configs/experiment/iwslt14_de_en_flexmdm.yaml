@@ -5,7 +5,7 @@ defaults:
   - override /datamodule: iwslt14_de_en_flexmdm
   - override /noise_schedule: flexmdm_linear
   - override /model_type: flexmdm_iwslt_seq2seq
-  - override /model: ddit_flexmdm
+  - override /model: ddit_flexmdm_xtiny
 
 per_device_batch_size: 32
 global_batch_size: 512
@@ -18,9 +18,6 @@ monitored_metric: val/lm/accumulated_loss
 model:
   force_flash_attn: false
   len_head_type: mlp
-  d_model: 384
-  num_layers: 4
-  nhead: 6
   compile: false
 
 trainer:

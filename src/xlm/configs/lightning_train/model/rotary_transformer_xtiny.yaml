@@ -1,0 +1,10 @@
+# @package _global_
+# Shared xtiny size. Compose after a package model base (mlm / ilm / flexmdm).
+model:
+  d_model: 384
+  num_layers: 4
+  nhead: 6
+  dim_feedforward: ${eval:${.d_model}*4}
+
+tags:
+  model_size: xtiny
