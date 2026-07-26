@@ -1,6 +1,12 @@
 # @package _global_
-# Overlay: compose as experiment=[openmath_llada_sft,fsdp_llada] with trainer_strategy=fsdp.
+# Overlay: compose as experiment=[openmath_llada_sft,fsdp_llada] (or
+# opencode_openmath_llada_sft) with trainer_strategy=fsdp.
+lightning_module:
+  _target_: llada.harness_llada.FSDPHarness
+
 trainer:
+  gradient_clip_val: 1.0
+  gradient_clip_algorithm: norm
   strategy:
     # Needed so RELAY forward hooks on wte / blocks see real parameters under FSDP.
     use_orig_params: true

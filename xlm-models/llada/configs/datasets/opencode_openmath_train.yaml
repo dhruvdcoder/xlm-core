@@ -1,0 +1,4 @@
+defaults:
+  - opencode_openmath
+
+make_infinite: true

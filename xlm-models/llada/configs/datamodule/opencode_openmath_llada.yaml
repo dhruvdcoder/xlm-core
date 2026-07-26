@@ -1,0 +1,20 @@
+# @package _global_
+defaults:
+  - default
+  - /collator@datamodule.dataset_managers.train.lm.collator: openmath_sft_llada
+  - /datasets@datamodule.dataset_managers.train.lm: opencode_openmath_train
+
+datamodule:
+  print_batch_fn: llada.datamodule_llada.print_batch_mix_llada
+  dataset_managers:
+    train:
+      lm:
+        collator:
+          add_bos: false
+          add_eos: true
+          loss_on_padding: false
+    val: {}
+    test: {}
+
+tags:
+  dataset: opencode_openmath_60k_c40m60

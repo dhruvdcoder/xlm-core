@@ -1,0 +1,38 @@
+defaults:
+  - default_text
+
+_target_: xlm.datamodule.LocalDatasetManager
+ds_type: parquet
+load_kwargs:
+  data_files: ${oc.env:LLADA_C40M60_PARQUET,/work/pi_mccallum_umass_edu/brozonoyer_umass_edu/relay/fast-dllm-v2/v2/data/opencode_openmath_60k_c40m60_llada/train.parquet}
+collator: ???
+# HF-style path so manual-cache naming works; LocalDatasetManager loads via
+# load_kwargs.data_files (parquet), not from the Hub.
+full_name: local/opencode_openmath_60k_c40m60_llada/train
+full_name_debug: local/opencode_openmath_60k_c40m60_llada/train
+filter_fn: llada.datamodule_llada.mix_raw_filter_fn
+filter_suffix: nonempty
+preprocess_function: llada.datamodule_llada.mix_preprocess_fn
+preprocess_function_kwargs:
+  sep: "\n"
+  max_length: ${oc.select:max_length,2048}
+on_the_fly_processor: xlm.datamodule.token_ids_to_input_ids_and_prompt_ids
+on_the_fly_group_processor: null
+columns_to_remove:
+  - prompt
+  - answer
+stages:
+  - fit
+iterable_dataset_shards: 64
+shuffle_buffer_size: 10000
+shuffle_seed: 42
+split_by_node: true
+dataloader_kwargs:
+  batch_size: ${per_device_batch_size}
+  num_workers: ${num_dataloader_workers}
+  shuffle: null
+  pin_memory: True
+  persistent_workers: False
+  prefetch_factor: ${dataloader_prefetch_factor}
+  drop_last: True
+model_name: null
