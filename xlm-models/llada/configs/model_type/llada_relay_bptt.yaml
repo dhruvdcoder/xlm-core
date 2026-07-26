@@ -1,0 +1,16 @@
+# @package _global_
+defaults:
+  - llada_sft
+
+loss:
+  _target_: llada.loss_llada.LLaDARelayBPTTLoss
+  use_time_weighting: false
+  num_steps: 2
+  stop_grad_h_s: false
+  threshold: 0.85
+
+predictor:
+  with_relay: true
+
+tags:
+  model_type: llada_relay_bptt

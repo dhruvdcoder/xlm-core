@@ -1,0 +1,16 @@
+# @package _global_
+# Overlay: compose as experiment=[openmath_llada_sft,fsdp_llada] with trainer_strategy=fsdp.
+trainer:
+  strategy:
+    # Needed so RELAY forward hooks on wte / blocks see real parameters under FSDP.
+    use_orig_params: true
+    auto_wrap_policy:
+      _target_: xlm.utils.fsdp_grouping.make_layer_wrap_policy
+      _args_:
+        - xlm.backbones.llada.modeling_llada.LLaDALlamaBlock
+    activation_checkpointing_policy:
+      _target_: xlm.utils.fsdp_grouping.make_layer_wrap_policy
+      _args_:
+        - xlm.backbones.llada.modeling_llada.LLaDALlamaBlock
+    mixed_precision:
+      _target_: xlm.utils.fsdp_grouping.fsdp_bf16_mixed_precision

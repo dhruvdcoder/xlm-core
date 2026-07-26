@@ -1,0 +1,74 @@
+# @package _global_
+defaults:
+  - override /callbacks: default_hf
+  - override /datamodule: openmath_llada
+  - override /noise_schedule: dummy
+  - override /model_type: llada_sft
+  - override /model: llada_8b_relay
+
+# Sequence budget: prompt + answer share this total (collator truncate=block).
+max_length: 2048
+input_block_size: 1024
+block_size: 1024
+
+# Effective batch 64 = per_device 2 × accum 4 × 8 GPUs (override devices at launch).
+per_device_batch_size: 2
+global_batch_size: 64
+num_dataloader_workers: 4
+monitored_metric: null
+init_dtype: bfloat16
+skip_init_weights: true
+compile: false
+
+# ~60k examples / 64 ≈ 938 steps/epoch × 3 epochs ≈ 2812 optimizer steps.
+# Keep this schedule length even when stopping early at ckpt-600.
+# For multi-GPU FSDP, compose experiment=[openmath_llada_sft,fsdp_llada]
+# and set trainer_strategy=fsdp at launch.
+trainer:
+  max_steps: 2812
+  val_check_interval: null
+  check_val_every_n_epoch: null
+  num_sanity_val_steps: 0
+  log_every_n_steps: 10
+  accumulate_grad_batches: 4
+  gradient_clip_val: 1.0
+  precision: bf16-mixed
+
+optimizer:
+  _target_: torch.optim.AdamW
+  lr: 5.0e-6
+  weight_decay: 0.01
+
+lr_scheduler:
+  name: cosine
+  fraction_warmup_steps: 0.03
+  num_warmup_steps: null
+  num_training_steps: ${trainer.max_steps}
+  monitor: train/loss
+
+loggers:
+  wandb:
+    project: relay-llada
+
+callbacks:
+  print_batch: null
+  unconditional_sample_generator: null
+  checkpoint_every_n_steps:
+    every_n_train_steps: 200
+    keep_multiple: 20
+  checkpoint_monitor: null
+  on_exception_checkpoint: null
+
+global_components:
+  tokenizer:
+    _target_: xlm.datamodule.load_auto_tokenizer
+    pretrained_model_name_or_path: GSAI-ML/LLaDA-8B-Base
+    special_tokens:
+      mask_token: "<|mdm_mask|>"
+
+hub:
+  repo_id: GSAI-ML/LLaDA-8B-Base
+
+tags:
+  experiment: openmath_llada_sft
+  model: llada_8b_relay

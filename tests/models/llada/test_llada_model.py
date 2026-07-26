@@ -131,6 +131,118 @@ class TestLLaDAXLMModel:
             assert torch.equal(tiny_llada_model(x), fresh(x))
 
 
+class TestLLaDARelayModel:
+    def test_relay_forward_returns_h_s_and_grads(self):
+        from llada import LLaDARelayModel
+        from llada.loss_llada import LLaDARelayBPTTLoss
+
+        torch.manual_seed(0)
+        model = LLaDARelayModel(
+            tiny_config(), init_params=True, use_relay=True, relay_layer=-1
+        )
+        model.train()
+        B, L = 2, 16
+        mask_id = 99
+        x = torch.randint(0, 98, (B, L))
+        x[:, L // 2 :] = mask_id
+        targets = torch.randint(0, 98, (B, L))
+        attention_mask = torch.ones(B, L, dtype=torch.bool)
+        batch = {
+            "input_ids": x.clone(),
+            "attention_mask": attention_mask,
+            "target_ids": targets,
+        }
+
+        class _Tok:
+            mask_token_id = mask_id
+
+        loss_fn = LLaDARelayBPTTLoss(
+            model=model, tokenizer=_Tok(), stop_grad_h_s=False, num_steps=2
+        )
+        loss_fn.mask_token_id_tensor = torch.tensor(mask_id, dtype=torch.long)
+        out = loss_fn.loss_fn(batch)
+        out["loss"].backward()
+        assert model.relay_layer_norm.weight.grad is not None
+        assert model.relay_layer_norm.weight.grad.abs().sum() > 0
+
+    def test_stop_grad_cuts_h_t_path(self):
+        from llada import LLaDARelayModel
+        from llada.loss_llada import LLaDARelayBPTTLoss
+
+        torch.manual_seed(0)
+        model = LLaDARelayModel(
+            tiny_config(), init_params=True, use_relay=True, relay_layer=-1
+        )
+        model.train()
+        B, L = 2, 16
+        mask_id = 99
+        x = torch.randint(0, 98, (B, L))
+        x[:, L // 2 :] = mask_id
+        targets = torch.randint(0, 98, (B, L))
+        attention_mask = torch.ones(B, L, dtype=torch.bool)
+        batch = {
+            "input_ids": x.clone(),
+            "attention_mask": attention_mask,
+            "target_ids": targets,
+        }
+
+        class _Tok:
+            mask_token_id = mask_id
+
+        loss_fn = LLaDARelayBPTTLoss(
+            model=model, tokenizer=_Tok(), stop_grad_h_s=True, num_steps=2
+        )
+        loss_fn.mask_token_id_tensor = torch.tensor(mask_id, dtype=torch.long)
+        out = loss_fn.loss_fn(batch)
+        out["loss"].backward()
+        # LayerNorm still receives local step-2 grads via the inject at step 2.
+        assert model.relay_layer_norm.weight.grad is not None
+
+    def test_use_relay_false_matches_vanilla_logits(self):
+        from llada import LLaDARelayModel, LLaDAXLMModel
+
+        torch.manual_seed(0)
+        cfg = tiny_config()
+        vanilla = LLaDAXLMModel(cfg, init_params=True)
+        relay = LLaDARelayModel(cfg, init_params=False, use_relay=False)
+        relay.load_state_dict(vanilla.state_dict(), strict=True)
+        x = torch.randint(0, 100, (2, 16))
+        with torch.no_grad():
+            assert torch.equal(vanilla(x), relay(x))
+
+    def test_bptt_skips_teacher_force_of_ignore_index(self):
+        """Suffix-slot pads are maskable but targets are -100; step-2 must not embed -100."""
+        from llada import LLaDARelayModel
+        from llada.loss_llada import LLaDARelayBPTTLoss
+
+        torch.manual_seed(0)
+        model = LLaDARelayModel(
+            tiny_config(), init_params=True, use_relay=True, relay_layer=-1
+        )
+        model.train()
+        B, L = 2, 16
+        mask_id = 99
+        x = torch.randint(0, 98, (B, L))
+        x[:, L // 2 :] = mask_id
+        targets = torch.randint(0, 98, (B, L))
+        targets[:, -4:] = -100  # ignore-index pads inside the masked span
+        batch = {
+            "input_ids": x.clone(),
+            "attention_mask": torch.ones(B, L, dtype=torch.bool),
+            "target_ids": targets,
+        }
+
+        class _Tok:
+            mask_token_id = mask_id
+
+        loss_fn = LLaDARelayBPTTLoss(
+            model=model, tokenizer=_Tok(), stop_grad_h_s=False, num_steps=2
+        )
+        loss_fn.mask_token_id_tensor = torch.tensor(mask_id, dtype=torch.long)
+        out = loss_fn.loss_fn(batch)
+        assert torch.isfinite(out["loss"])
+
+
 @pytest.mark.skipif(
     os.environ.get("XLM_RUN_HUB_TESTS", "0") != "1",
     reason="set XLM_RUN_HUB_TESTS=1 to download GSAI-ML/LLaDA-8B-Base and run parity",

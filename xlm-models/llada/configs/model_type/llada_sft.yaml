@@ -1,0 +1,32 @@
+# @package _global_
+defaults:
+  - /metrics@reported_metrics.train.lm.accumulated_loss: accumulated_loss
+
+lightning_module:
+  _target_: xlm.harness.Harness
+
+loss:
+  _target_: llada.loss_llada.LLaDASFTLoss
+  use_time_weighting: true
+
+predictor:
+  _target_: llada.predictor_llada.LLaDAPredictor
+  tokenizer: ${lightning_module:tokenizer}
+  noise_schedule: ${lightning_module:noise_schedule}
+  max_steps: ${block_size}
+  max_new_tokens: ${block_size}
+  temperature: 0.0
+  confidence: top_prob
+  confidence_temperature: 0.0
+  with_relay: false
+
+diagnostic_metrics: null
+reported_metrics:
+  train:
+    lm:
+      accumulated_loss:
+        prefix: train/lm
+        update_fn: mlm.metrics_mlm.mean_metric_update_fn
+
+tags:
+  model_type: llada_sft

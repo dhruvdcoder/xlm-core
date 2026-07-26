@@ -1,0 +1,6 @@
+defaults:
+  - openmath
+
+stages:
+  - fit
+make_infinite: true

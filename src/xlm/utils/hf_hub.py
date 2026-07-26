@@ -220,6 +220,10 @@ def _load_sharded_safetensors_into_model(
         model_keys = set(model.state_dict().keys())
         missing = model_keys - shard_keys_union
         unexpected = shard_keys_union - model_keys
+        # Allow newly-added RELAY adapter params absent from Hub base checkpoints.
+        missing = {
+            k for k in missing if not k.startswith("relay_layer_norm.")
+        }
         if missing or unexpected:
             raise RuntimeError(
                 f"Sharded load strict check failed: missing_keys={sorted(missing)!s}, "

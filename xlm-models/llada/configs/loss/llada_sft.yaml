@@ -1,0 +1,2 @@
+_target_: llada.loss_llada.LLaDASFTLoss
+use_time_weighting: true

@@ -79,6 +79,13 @@ log_predictions:
     - file
   additional_fields_from_batch:
     - answer
+  fields_to_keep_in_output:
+    - text
+    - generated_text
+    - answer
+    - nfe
+    - steps_taken
+    - time_taken
 
 # The default post_hoc_evaluator group is CompositePostHocEvaluator with
 # `evaluators: {}`; overriding only _target_ leaves that key behind and breaks

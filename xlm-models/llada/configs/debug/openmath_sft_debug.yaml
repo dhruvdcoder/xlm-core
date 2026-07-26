@@ -1,0 +1,51 @@
+# @package _global_
+defaults:
+  - override /callbacks: debug_v2
+  - override /loggers: debug
+
+paths:
+  log_dir: ${paths.root_dir}/debug_logs/
+
+num_dataset_workers: 1
+global_batch_size: 1
+num_dataloader_workers: 0
+per_device_batch_size: 1
+dataloader_prefetch_factor: null
+dataloader_persistent_workers: False
+max_length: 256
+input_block_size: 128
+block_size: 128
+
+trainer:
+  max_steps: 20
+  log_every_n_steps: 1
+  limit_train_batches: 20
+  accumulate_grad_batches: 1
+  num_sanity_val_steps: 0
+
+optimizer:
+  lr: 5.0e-6
+
+lr_scheduler:
+  name: cosine
+  fraction_warmup_steps: 0.03
+  num_warmup_steps: null
+  num_training_steps: 20
+
+datamodule:
+  dataset_managers:
+    train:
+      lm:
+        full_name: nvidia/OpenMathInstruct-2/train[:128]
+        full_name_debug: nvidia/OpenMathInstruct-2/train[:128]
+        preprocess_load_from_cache_file: false
+        rewrite_manual_cache: true
+        iterable_dataset_shards: null
+        shuffle_buffer_size: null
+        make_infinite: false
+        preprocess_function_kwargs:
+          max_length: 256
+        dataloader_kwargs:
+          shuffle: null
+          num_workers: 0
+          drop_last: true

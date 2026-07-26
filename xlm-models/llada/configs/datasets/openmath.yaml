@@ -1,0 +1,35 @@
+defaults:
+  - default_text
+
+_target_: xlm.datamodule.DatasetManager
+collator: ???
+full_name: nvidia/OpenMathInstruct-2/train[:60000]
+full_name_debug: nvidia/OpenMathInstruct-2/train[:128]
+filter_fn: llada.datamodule_llada.openmath_raw_filter_fn
+filter_suffix: nonempty
+preprocess_function: llada.datamodule_llada.openmath_preprocess_fn
+preprocess_function_kwargs:
+  sep: "\n"
+  max_length: ${oc.select:max_length,2048}
+on_the_fly_processor: xlm.datamodule.token_ids_to_input_ids_and_prompt_ids
+on_the_fly_group_processor: null
+columns_to_remove:
+  - problem
+  - generated_solution
+  - expected_answer
+  - problem_source
+stages:
+  - fit
+iterable_dataset_shards: 64
+shuffle_buffer_size: 10000
+shuffle_seed: 42
+split_by_node: true
+dataloader_kwargs:
+  batch_size: ${per_device_batch_size}
+  num_workers: ${num_dataloader_workers}
+  shuffle: null
+  pin_memory: True
+  persistent_workers: False
+  prefetch_factor: ${dataloader_prefetch_factor}
+  drop_last: True
+model_name: null

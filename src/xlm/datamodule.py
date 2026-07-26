@@ -1390,6 +1390,21 @@ class DatasetManager:
         ):  # case 4
             DL = StatefulDataLoader
             sampler = None
+        elif (
+            type == "train" and is_ddp and world_size <= 1
+        ):  # case 5: FSDP/DDP strategy selected but process group not ready yet
+            # (Lightning may request the train dataloader before world_size > 1).
+            # Fall back to the single-process train loader shapes.
+            DL = StatefulDataLoader
+            if self.is_iterable_dataset:
+                sampler = None
+            else:
+                self.dataloader_kwargs.pop("shuffle", None)
+                sampler = (
+                    RandomSampler(self.dataset)
+                    if not flags.DEBUG_OVERFIT
+                    else SequentialSampler(self.dataset)
+                )
         elif type in ["val", "test", "predict"]:
             sampler = None
             DL = DataLoader
