@@ -119,6 +119,50 @@ class TestMLMSeq2SeqPredCollator:
         assert batch["target_ids"][0, 2] == eos
         assert batch["target_ids"][0, -1] == pad
 
+    def test_long_target_raises_by_default(
+        self, collator, simple_tokenizer, block_size
+    ):
+        long_suffix = list(range(7, 7 + block_size + 40))
+        examples = [
+            {
+                "prompt_ids": [10, 11, 12],
+                "input_ids": long_suffix,
+            }
+        ]
+        with pytest.raises(ValueError, match="greater than block size"):
+            collator(examples)
+
+    def test_long_target_truncated_when_flag_set(
+        self,
+        simple_tokenizer,
+        dummy_noise_schedule,
+        input_block_size,
+        block_size,
+    ):
+        collator = MLMSeq2SeqPredCollator(
+            tokenizer=simple_tokenizer,
+            noise_schedule=dummy_noise_schedule,
+            block_size=block_size,
+            input_block_size=input_block_size,
+            add_bos=True,
+            add_eos=True,
+            truncate_long_targets=True,
+        )
+        long_suffix = list(range(7, 7 + block_size + 40))
+        examples = [
+            {
+                "prompt_ids": [10, 11, 12],
+                "input_ids": long_suffix,
+            }
+        ]
+        batch = collator(examples)
+        eos = simple_tokenizer.eos_token_id
+        assert batch["target_ids"].shape == (1, block_size)
+        # Content is truncated to reserve the final slot for EOS.
+        assert batch["target_ids"][0, -1] == eos
+        assert batch["target_ids"][0, 0] == long_suffix[0]
+        assert batch["target_ids"][0, -2] == long_suffix[block_size - 2]
+
 
 class TestPreparePrefixIds:
     """Direct test of the ``prepare_prefix_ids`` helper.

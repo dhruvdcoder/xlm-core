@@ -547,6 +547,7 @@ class MLMSeq2SeqCollator(Collator):
         prompt_field: str = "prompt_ids",
         target_field: str = "target_ids",
         pass_through_fields: Optional[List[str]] = None,
+        truncate_long_targets: bool = False,
     ):
         self.tokenizer = tokenizer
         self.noise_schedule = noise_schedule
@@ -563,6 +564,8 @@ class MLMSeq2SeqCollator(Collator):
             if pass_through_fields is not None
             else ["answer", "target"]
         )
+        # Pred collator only: when False (default), raise if target exceeds block_size.
+        self.truncate_long_targets = truncate_long_targets
 
     def _prompt_ids(
         self, examples: List[Seq2SeqCollatorInput]
@@ -693,17 +696,21 @@ class MLMSeq2SeqPredCollator(MLMSeq2SeqCollator):
             raise ValueError(
                 "Mixed empty and non-empty suffix in one batch is not supported."
             )
-        # simply add eos and pad on right
+        # Pad/truncate suffix to block_size (reserve room for EOS).
         add_eos = int(self.add_eos)
-        max_len = max(len(s) + add_eos for s in suffix_lists)
-        if self.block_size is not None and max_len > self.block_size:
-            raise ValueError(
-                f"Max length of target is greater than block size. {max_len} > {self.block_size}"
-            )
+        if self.block_size is None:
+            raise ValueError("block_size must be set for seq2seq pred collator")
         max_len = self.block_size
+        raw_max = max(len(s) + add_eos for s in suffix_lists)
+        if raw_max > max_len and not self.truncate_long_targets:
+            raise ValueError(
+                f"Max length of target is greater than block size. {raw_max} > {max_len}"
+            )
+        max_content = max_len - add_eos
         target_ids = [
             pad_truncate_list(
-                s + [self.tokenizer.eos_token_id] * int(self.add_eos),
+                s[:max_content]
+                + [self.tokenizer.eos_token_id] * add_eos,
                 max_len,
                 self.tokenizer.pad_token_id,
                 pad_left=False,

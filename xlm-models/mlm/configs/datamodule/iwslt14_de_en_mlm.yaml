@@ -32,6 +32,7 @@ datamodule:
       prediction:
         collator:
           add_bos: false
+          truncate_long_targets: true
     test:
       lm:
         collator:
@@ -39,10 +40,12 @@ datamodule:
       prediction:
         collator:
           add_bos: false
+          truncate_long_targets: true
     predict:
       prediction:
         collator:
           add_bos: false
+          truncate_long_targets: true
 
 tags:
   dataset: iwslt14_de_en_rdm_v1

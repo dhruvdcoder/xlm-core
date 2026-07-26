@@ -7,6 +7,8 @@ add_bos: ${oc.select:add_bos,false}
 add_eos: ${oc.select:add_eos, true}
 truncate: block
 loss_on_padding: ${oc.select:loss_on_padding,true}
+# When false (default), raise if any target exceeds block_size. Set true to truncate.
+truncate_long_targets: ${oc.select:truncate_long_targets,false}
 pass_through_fields:
   - answer
   - target

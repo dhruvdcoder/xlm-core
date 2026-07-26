@@ -227,6 +227,20 @@ def ilm_single_segment_collate_target_fn(
     # 1. Add the special tokens: CLS and BOS to the left of input_ids.
     # 2. Perform the dropping (protect the special tokens), and construct the target_ids, n_drops, attention_mask, and token_type_ids.
     # For seq2seq tasks, we won't add cls here.
+    # When truncating to a fixed block, clip content before dropping so that
+    # post-drop length (specials + kept tokens) cannot exceed max_seq_len and
+    # sparse target / n_drops indices stay in range.
+    if truncate == "block":
+        if max_seq_len is None:
+            raise ValueError("")
+        n_special = 1 + (1 if cls_token_id is not None else 0)
+        max_content = max_seq_len - n_special
+        if max_content < 0:
+            raise ValueError(
+                f"max_seq_len={max_seq_len} is smaller than n_special={n_special}"
+            )
+        examples = [ex[:max_content] for ex in examples]
+
     target_batch_indices: List[int] = []
     target_seq_indices: List[int] = []
     target_vocab_indices: List[int] = []
