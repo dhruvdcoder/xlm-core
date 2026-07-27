@@ -55,7 +55,9 @@ callbacks:
   unconditional_sample_generator: null
   checkpoint_every_n_steps:
     every_n_train_steps: 200
-    keep_multiple: 20
+    # keep every saved step (200/400/600) until we scancel at 600; ThinningCheckpoint
+    # with keep_multiple=20 would delete 200/400 before evals can consume them
+    keep_multiple: 1
   checkpoint_monitor: null
   on_exception_checkpoint: null
 
