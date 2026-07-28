@@ -215,7 +215,7 @@ def ilm_single_segment_collate_target_fn(
     truncate: Literal["max", "block", None] = "block",
     global_offset: int = 0,  # support have multiple target segments will with some fixed segments in between
     return_dense_target: bool = False,
-    return_dense_n_drops: bool = True,
+    return_dense_n_drops: bool = False,
     drop_indices_fn: Callable[[int, int], List[int]] = _drop_uniformly,
     sample_n_drops_fn: Callable[[int], int] = _n_drop_uniformly,
 ) -> ILMBatch:
@@ -332,8 +332,7 @@ def ilm_single_segment_collate_target_fn(
             pad_truncate_list(
                 (
                     [0, 2]
-                    + 
-                    (
+                    + (
                         [type_extension_id]
                         * (
                             len(
@@ -387,8 +386,6 @@ def ilm_single_segment_collate_target_fn(
         check_invariants=False,
         is_coalesced=False,
     )
-    # checks
-    assert (n_drops_counts.to_dense() == target_ids.to_dense().sum(-1)).all()
     return {
         "input_ids": torch.tensor(input_ids, dtype=torch.long),
         "attention_mask": torch.tensor(attention_mask, dtype=torch.bool),
@@ -461,7 +458,7 @@ class DefaultILMCollator(Collator):
         block_size: int,
         noise_schedule: NoiseSchedule,
         loss_on_padding: bool = False,
-        return_dense_target: bool = False,  # setting to two will increase the cpu memory usage
+        return_dense_target: bool = False,  # True densifies (B, L, V) on CPU workers
         truncate: Literal["max", "block", None] = "block",
     ):
         self.block_size = block_size
@@ -499,7 +496,7 @@ class DefaultILMCollator(Collator):
             truncate=self.truncate,
             global_offset=0,
             return_dense_target=self.return_dense_target,
-            return_dense_n_drops=True,
+            return_dense_n_drops=False,
             sample_n_drops_fn=self.__class__.sample_n_drops_fn,
             drop_indices_fn=self.__class__.drop_indices_fn,
         )
@@ -528,7 +525,9 @@ class ILMSeq2SeqCollator:
         self.noise_schedule = noise_schedule
         self.input_block_size = input_block_size
         self.pass_through_fields = (
-            list(pass_through_fields) if pass_through_fields is not None else []
+            list(pass_through_fields)
+            if pass_through_fields is not None
+            else []
         )
         self._vocab_size = (
             len(self.tokenizer) if self.tokenizer is not None else None
@@ -579,7 +578,7 @@ class ILMSeq2SeqCollator:
             max_seq_len=self.block_size,
             global_offset=global_offset,
             return_dense_target=False,
-            return_dense_n_drops=True,
+            return_dense_n_drops=False,
             sample_n_drops_fn=self.__class__.sample_n_drops_fn,
             drop_indices_fn=self.__class__.drop_indices_fn,
         )
@@ -617,7 +616,7 @@ class ILMSeq2SeqPredCollator(ILMSeq2SeqCollator):
             self.tokenizer.pad_token_id,
             max_seq_len=self.input_block_size,
             cls_token_id=cls_token_id,
-            bos_token_id=self.tokenizer.bos_token_id
+            bos_token_id=self.tokenizer.bos_token_id,
         )
         target_ids = prepare_target_ids_for_test(
             [e["input_ids"] for e in examples],
@@ -666,15 +665,21 @@ def print_batch_ilm(
     print(batch["token_type_ids"][0])
     if batch.get("n_drops", None) is not None:
         print("n_drops:")
-        print(batch["n_drops"][0])
+        n_drops0 = batch["n_drops"][0]
+        print(n_drops0.to_dense() if n_drops0.is_sparse else n_drops0)
     if batch.get("target_attention_mask", None) is not None:
         print("target_attention_mask:")
         print(batch["target_attention_mask"][0])
     print("target_ids:")
-    print(
-        batch["target_ids"][0].to_sparse()
+    _target0 = (
+        batch["target_ids"][0]
         if batch is not None and batch.get("target_ids", None) is not None
         else None
+    )
+    print(
+        _target0
+        if _target0 is None or _target0.is_sparse
+        else _target0.to_sparse()
     )
     print("constraint:")
     print(

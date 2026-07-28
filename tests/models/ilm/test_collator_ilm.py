@@ -118,8 +118,7 @@ class TestDefaultILMCollator:
         assert target.size(1) == block_size
         if target._nnz() > 0:
             assert int(target.indices()[1].max()) < block_size
-        dense = target.to_dense()
-        assert (batch["n_drops"] == dense.sum(-1)).all()
+        assert (batch["n_drops"].to_dense() == target.to_dense().sum(-1)).all()
 
 
 class TestPreparePrefixIdsILM:
@@ -166,15 +165,14 @@ class TestIlmSingleSegmentCollateLongTarget:
             truncate="block",
             global_offset=global_offset,
             return_dense_target=False,
-            return_dense_n_drops=True,
+            return_dense_n_drops=False,
         )
         target = batch["target_ids"].coalesce()
         assert target.size(1) == global_offset + block_size
         if target._nnz() > 0:
             assert int(target.indices()[1].max()) < global_offset + block_size
             assert int(target.indices()[2].max()) < vocab_size
-        dense = target.to_dense()
-        assert (batch["n_drops"] == dense.sum(-1)).all()
+        assert (batch["n_drops"].to_dense() == target.to_dense().sum(-1)).all()
 
 
 class TestILMSeq2SeqCollatorLongSequences:
@@ -211,5 +209,4 @@ class TestILMSeq2SeqCollatorLongSequences:
                 int(target.indices()[1].max())
                 < input_block_size + block_size
             )
-        dense = target.to_dense()
-        assert (batch["n_drops"] == dense.sum(-1)).all()
+        assert (batch["n_drops"].to_dense() == target.to_dense().sum(-1)).all()
