@@ -101,6 +101,7 @@ Hydra groups under {{ gh_dir('xlm-models/arlm/configs', 'xlm-models/arlm/configs
 - `experiment=star_easy_arlm`
 - `experiment=owt_arlm` (OpenWebText; [OWT](#owt))
 - `experiment=tinygsm_arlm` (seq2seq; [TinyGSM](#tinygsm))
+- `experiment=iwslt14_de_en_arlm` (seq2seq MT; [IWSLT14](#iwslt14-deen))
 
 ### OWT
 
@@ -202,6 +203,50 @@ xlm job_name=tinygsm_arlm job_type=train experiment=tinygsm_arlm \
 #### Experiment results
 
 Full W&B write-ups under `docs/experiments/` are deferred until runs exist. Use `experiment=tinygsm_arlm` with the [document experiment](../guide/eval.md) workflow when ready.
+
+### IWSLT14 DE→EN
+
+Shared task datasets, CharBPE tokenizer, and SacreBLEU/chrF++ post-hoc: see [eval.md](../guide/eval.md) (`iwslt14_mt`). Unlike MLM/FlexMDM IWSLT (`add_bos: false`), ARLM keeps `add_bos: output` so the causal model sees `source + <bos> + target`.
+
+| | |
+|---|---|
+| Experiment | `experiment=iwslt14_de_en_arlm` |
+| Datamodule | {{ gh('xlm-models/arlm/configs/datamodule/iwslt14_de_en_arlm.yaml', 'iwslt14_de_en_arlm') }} |
+| Experiment YAML | {{ gh('xlm-models/arlm/configs/experiment/iwslt14_de_en_arlm.yaml', 'iwslt14_de_en_arlm') }} |
+| Model | `rotary_transformer_xtiny_arlm` (384 / 4 / 6; same size as other IWSLT families) |
+| Model type | `arlm_iwslt_seq2seq` (lm `accumulated_loss` only; MT metrics via post-hoc) |
+
+#### Training settings
+
+| Setting | Value |
+|---------|--------|
+| Tokenizer | `iwslt14_joint_char_bpe_v1` |
+| `block_size` / `input_block_size` | 128 / 128 |
+| Batching | Per-device 32; global 512 |
+| Collators | `seq2seq_arlm` / `seq2seq_pred_arlm` with `add_bos: output` |
+| Val / test prediction | Post-hoc `iwslt14_mt` (SacreBLEU + chrF++); requires `xlm-core[mt_eval]` |
+| Monitored metric | `val/lm/accumulated_loss` |
+| Training schedule | Up to 1M steps; validation every 50k steps; checkpoint every 2.5k steps |
+
+Requires `IWSLT14_RDM_TEXT_ROOT` pointing at the parquet root (`train.parquet`, `validation.parquet`, `test.parquet`).
+
+#### Commands
+
+**Prepare cache:**
+
+```bash
+xlm job_type=prepare_data experiment=iwslt14_de_en_arlm num_dataset_workers=8
+```
+
+**Train** (DDP):
+
+```bash
+xlm job_name=iwslt14_de_en_arlm job_type=train experiment=iwslt14_de_en_arlm \
+  per_device_batch_size=32 trainer_strategy=ddp trainer.devices=8 trainer.num_nodes=1 \
+  ++trainer.precision=bf16-mixed compile=False
+```
+
+**Debug:** `xlm job_type=train experiment=iwslt14_de_en_arlm debug=overfit`
 
 ## 10. Testing
 

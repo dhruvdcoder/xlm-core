@@ -301,19 +301,33 @@ class ARLMPredictor(
         Returns:
             List of dictionaries containing prediction results.
         """
-        preds_list: List[Tuple[str, str, List[int]]] = list(
+        # Suffix decode lives here (logging path), not in timed predict().
+        if "generated_text" in preds:
+            generated_text = preds["generated_text"]
+        elif "output_start_idx" in preds:
+            start = int(preds["output_start_idx"])
+            generated_text = self.tokenizer.batch_decode(
+                preds["ids"][:, start:],
+                skip_special_tokens=True,
+            )
+        else:
+            generated_text = preds["text"]
+
+        preds_list: List[Tuple[str, str, str, List[int]]] = list(
             zip(
                 preds["text"],
+                generated_text,
                 preds["text_with_spl_tokens"],
                 preds["ids"].tolist(),
             )
         )
 
         dicts: List[Dict[str, Any]] = []
-        for text, text_with_spl_tokens, ids in preds_list:
+        for text, gen_text, text_with_spl_tokens, ids in preds_list:
             dicts.append(
                 {
                     "text": text,
+                    "generated_text": gen_text,
                     "text_with_spl_tokens": text_with_spl_tokens,
                     "ids": ids,
                 }

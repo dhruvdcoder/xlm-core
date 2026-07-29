@@ -3,6 +3,7 @@ from typing import (
     List,
     Literal,
     Any,
+    Mapping,
     Optional,
 )
 from torch.utils.data import IterableDataset
@@ -435,6 +436,44 @@ class ARLMSeq2SeqCollator:
 class ARLMSeq2SeqPredCollator(ARLMSeq2SeqCollator):
     """Drops all the suffix/target tokens and sends them in the target_ids of shape (batch_size, target_seq_len)"""
 
+    def __init__(
+        self,
+        tokenizer: Tokenizer,
+        noise_schedule: NoiseSchedule,
+        block_size: Optional[int] = None,
+        input_block_size: Optional[int] = None,
+        add_bos: Optional[str] = None,
+        add_eos: bool = False,
+        truncate: Literal["max", "block", None] = "block",
+        pass_through_fields: Optional[List[str]] = None,
+    ):
+        super().__init__(
+            tokenizer=tokenizer,
+            noise_schedule=noise_schedule,
+            block_size=block_size,
+            input_block_size=input_block_size,
+            add_bos=add_bos,
+            add_eos=add_eos,
+            truncate=truncate,
+        )
+        self.pass_through_fields = (
+            list(pass_through_fields)
+            if pass_through_fields is not None
+            else ["answer", "target_text", "target_raw", "id"]
+        )
+
+    def _merge_pass_through(
+        self,
+        examples: List[Mapping[str, Any]],
+        batch: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        if not examples or not self.pass_through_fields:
+            return batch
+        for key in self.pass_through_fields:
+            if key in examples[0]:
+                batch[key] = [ex[key] for ex in examples]
+        return batch
+
     def __call__(
         self,
         examples: List[Seq2SeqCollatorInput],
@@ -482,7 +521,7 @@ class ARLMSeq2SeqPredCollator(ARLMSeq2SeqCollator):
         ]  # Use unshifted target_ids for prediction
 
         # Convert to tensors
-        return {
+        batch: Dict[str, Any] = {
             "input_ids": torch.tensor(input_ids, dtype=torch.long),
             "attention_mask": torch.tensor(attention_mask, dtype=torch.bool),
             "token_type_ids": torch.zeros(
@@ -492,6 +531,7 @@ class ARLMSeq2SeqPredCollator(ARLMSeq2SeqCollator):
             ),
             "target_ids": torch.tensor(target_ids, dtype=torch.long),
         }
+        return self._merge_pass_through(examples, batch)  # type: ignore[return-value]
 
 
 # endregion: Collators

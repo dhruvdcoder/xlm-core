@@ -5,3 +5,8 @@ tokenizer: ${global_components:tokenizer}
 noise_schedule: ${global_components:noise_schedule} 
 add_bos: output
 add_eos: true
+pass_through_fields:
+  - answer
+  - target_text
+  - target_raw
+  - id

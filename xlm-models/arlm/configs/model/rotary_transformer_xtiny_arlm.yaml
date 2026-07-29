@@ -1,0 +1,8 @@
+# @package _global_
+defaults:
+  - rotary_transformer_small_arlm
+  - rotary_transformer_xtiny   # core: d_model=384, num_layers=4, nhead=6
+  - _self_
+
+tags:
+  model: rotary_transformer_xtiny_arlm
