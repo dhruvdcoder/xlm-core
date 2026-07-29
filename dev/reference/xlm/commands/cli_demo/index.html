@@ -824,6 +824,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../../guide/demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interactive demo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../../guide/faq/" class="md-nav__link">
         
   
@@ -2572,6 +2600,17 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#xlm.commands.cli_demo.replace_model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;replace_model
+      
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#xlm.commands.cli_demo.instantiate_model" class="md-nav__link">
@@ -6434,6 +6473,24 @@
 <div class="doc doc-object doc-function">
 
 
+<h2 id="xlm.commands.cli_demo.replace_model" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">replace_model</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Legacy +hub/checkpoint=* path: swap model to hub from_pretrained target.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h2 id="xlm.commands.cli_demo.instantiate_model" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">instantiate_model</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">datamodule</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">)</span></code>
 
@@ -6442,93 +6499,7 @@
 
     <div class="doc doc-contents ">
 
-        <p>Instantiate a model from checkpoint for interactive CLI demo.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>cfg</code>
-            </td>
-            <td>
-                  <code><span title="omegaconf.DictConfig">DictConfig</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Hydra config</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>datamodule</code>
-            </td>
-            <td>
-                  <code><span title="typing.Any">Any</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Datamodule instance</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>tokenizer</code>
-            </td>
-            <td>
-                  <code><span title="typing.Any">Any</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Tokenizer instance</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-<th>Name</th>          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-<td><code>Harness</code></td>            <td>
-                  <code><a class="autorefs autorefs-internal" title="            Harness (xlm.harness.Harness)" href="../../harness/#xlm.harness.Harness">Harness</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The instantiated model ready for demo</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
+        <p>Instantiate a model from checkpoint / Hub for interactive CLI demo.</p>
 
 
     </div>
