@@ -1,10 +1,8 @@
 # %%
-# change dir to the root of the project
-# create the notebook inside the commands directory
+# Interactive CLI demo for prompt → generation.
 import os
 
 from xlm.utils.debug import set_flags
-from xlm.utils.slurm import print_slurm_info
 
 if "PROJECT_ROOT" not in os.environ:
     os.environ["PROJECT_ROOT"] = "."
@@ -12,10 +10,23 @@ os.environ["HYDRA_FULL_ERROR"] = "1"
 
 # region: Import necessary modules
 from pathlib import Path
-import hydra
-from omegaconf import DictConfig, OmegaConf
-from xlm.utils import omegaconf_resolvers
+from typing import Any, Dict
+
 import dotenv
+import hydra
+import torch
+from hydra.core.config_search_path import ConfigSearchPath
+from hydra.core.plugins import Plugins
+from hydra.plugins.search_path_plugin import SearchPathPlugin
+from lightning import seed_everything
+from omegaconf import DictConfig, OmegaConf
+
+from xlm.external_models import setup_external_models
+from xlm.harness import Harness
+from xlm.utils import omegaconf_resolvers
+from xlm.utils.model_loading import load_model_for_inference
+from xlm.utils.rank_zero import RankedLogger
+from xlm.utils.rich_utils import print_config_tree
 
 # endregion
 
@@ -28,18 +39,17 @@ if not found_secrets:
     print("Warning: .secrets.env not found")
 # endregion
 
-from typing import Any, Dict, cast
-
-import torch
-
-from xlm.harness import Harness
-from xlm.utils.model_loading import load_model_for_inference
-from xlm.utils.rich_utils import print_config_tree
-from lightning import seed_everything
-from xlm.utils.rank_zero import RankedLogger
-from .cli_demo import replace_model
-
 logger = RankedLogger(__name__, rank_zero_only=True)
+
+
+def replace_model(cfg: DictConfig) -> DictConfig:
+    """Legacy +hub/checkpoint=* path: swap model to hub from_pretrained target."""
+    if "hub_model" in cfg:
+        cfg.model = cfg.hub_model
+        del cfg.hub_model
+        if "generation" in cfg:
+            del cfg.generation
+    return cfg
 
 
 def instantiate_model(
@@ -47,16 +57,15 @@ def instantiate_model(
     datamodule: Any,
     tokenizer: Any,
 ) -> Harness:
-    """Instantiate a model from checkpoint for interactive CLI demo.
-
-    Args:
-        cfg: Hydra config
-        datamodule: Datamodule instance
-        tokenizer: Tokenizer instance
-
-    Returns:
-        Harness: The instantiated model ready for demo
-    """
+    """Instantiate a model from checkpoint / Hub for interactive CLI demo."""
+    # Hub weights via +hub.repo_id / +hub.revision (same as job_type=generate).
+    # Legacy +hub/checkpoint=* still works via replace_model → from_pretrained;
+    # in that case allow_random_init is needed because weights are already in the
+    # model object and there is no generation.* checkpoint path.
+    use_hub_model = "hub_model" in cfg or (
+        cfg.get("model") is not None
+        and "from_pretrained" in str(cfg.model.get("_target_", ""))
+    )
     module, _ = load_model_for_inference(
         cfg,
         datamodule,
@@ -65,8 +74,8 @@ def instantiate_model(
         manual_ema_restore=False,
         move_to_device="cuda",
         set_eval_mode=True,
-        enable_hub_support=False,
-        allow_random_init=False,
+        enable_hub_support=True,
+        allow_random_init=use_hub_model,
     )
     return module
 
@@ -118,9 +127,39 @@ def generate(cfg: DictConfig):
 # Hydra configuration parameters for CLI demo
 _HYDRA_PARAMS = {
     "version_base": "1.3",
-    "config_path": str(Path("../../../configs") / "lightning_train"),
+    "config_path": str(
+        (
+            Path(__file__).parent.parent / "configs" / "lightning_train"
+        ).resolve()
+    ),
     "config_name": "config.yaml",
 }
+
+hydra_plugins = Plugins.instance()
+
+
+class HydraCommonSearchPathPlugin(SearchPathPlugin):
+    def manipulate_search_path(self, search_path: ConfigSearchPath) -> None:
+        search_path.append(
+            "file", str(Path(__file__).parent.parent / "configs/common")
+        )
+
+
+hydra_plugins.register(HydraCommonSearchPathPlugin)
+
+external_model_dirs = setup_external_models()
+if external_model_dirs:
+
+    class ExternalModelsSearchPathPlugin(SearchPathPlugin):
+        def manipulate_search_path(
+            self, search_path: ConfigSearchPath
+        ) -> None:
+            for model_dir in external_model_dirs:
+                config_dir = model_dir / "configs"
+                if config_dir.exists():
+                    search_path.append("file", str(config_dir))
+
+    hydra_plugins.register(ExternalModelsSearchPathPlugin)
 
 
 @hydra.main(**_HYDRA_PARAMS)

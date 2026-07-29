@@ -570,6 +570,56 @@ class FlexMDMPredictor(
             # "output_start_idx": output_start_idx,
         }
 
+    def prepare_batch_for_generation(
+        self, prompts: List[str]
+    ) -> FlexMDMBatch:
+        """Build a pred batch for ``generate`` / cli_demo (prefix or unconditional).
+
+        Non-empty prompts are conditioned as ``[prefix] [bos] [eos] [pad…]`` with
+        fixed gaps on the prefix (same as ``flexmdm_pred_collate_fn``). Empty
+        prompts use the unconditional canvas ``[eos] [pad…]``.
+        """
+        from .datamodule_flexmdm import flexmdm_pred_collate_fn
+
+        assert self.tokenizer is not None
+        token_ids = self.tokenizer(prompts, add_special_tokens=False)[
+            "input_ids"
+        ]
+        has_prefix = any(len(ids) > 0 for ids in token_ids)
+        if has_prefix and any(len(ids) == 0 for ids in token_ids):
+            raise ValueError(
+                "prepare_batch_for_generation: mix of empty and non-empty "
+                "prompts is not supported; pass all empty (unconditional) or "
+                "all non-empty (prefix-conditioned)."
+            )
+
+        if self.model is not None and hasattr(self.model, "max_length"):
+            max_seq_len = int(self.model.max_length)
+        elif self.max_new_tokens is not None and has_prefix:
+            max_prefix = max(len(ids) for ids in token_ids)
+            max_seq_len = max_prefix + 1 + int(self.max_new_tokens)  # +bos
+        else:
+            max_seq_len = 1024
+
+        batch = flexmdm_pred_collate_fn(
+            num_examples=len(prompts),
+            prompt_ids=token_ids if has_prefix else None,
+            target_ids=[[] for _ in prompts],
+            pad_token_id=self.tokenizer.pad_token_id,
+            bos_token_id=self.tokenizer.bos_token_id,
+            eos_token_id=self.tokenizer.eos_token_id,
+            max_seq_len=max_seq_len,
+        )
+        device = (
+            next(self.model.parameters()).device
+            if self.model is not None
+            else torch.device("cuda")
+        )
+        return {
+            k: (v.to(device) if isinstance(v, torch.Tensor) else v)
+            for k, v in batch.items()
+        }
+
     @torch.inference_mode()
     def generate(self, prompts: List[str]) -> List[str]:
         batch = self.prepare_batch_for_generation(prompts)

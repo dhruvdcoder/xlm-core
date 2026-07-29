@@ -10,11 +10,24 @@ xlm "job_type=generate" \
 "predictor.stopping_threshold=0.9"
 ```
 
-# Debugging
-
-
 # Demo
 
+Interactive prompt → generation (`job_type=demo`). See [docs/guide/demo.md](../../docs/guide/demo.md).
+
 ```bash
-python src/xlm/commands/cli_demo.py "job_type=demo" "job_name=owt_ilm_demo" "experiment=owt_ilm" predictor.stopping_threshold=0.9 +global_flags.DEBUG_PRINT_PREDS=true +hub/checkpoint=ilm_owt
+# OWT ILM
+python -m xlm.commands.cli_demo \
+  job_type=demo job_name=owt_ilm_hub_demo experiment=owt_ilm \
+  +hub.repo_id=dhruveshpatel/ilm-owt +hub.revision=step-800000 \
+  +trainer.precision=32-true compile=false model.force_flash_attn=false \
+  predictor.stopping_threshold=0.9 predictor.max_steps=1024 \
+  paths.output_dir=/tmp/xlm_cli_demo_ilm_owt
+
+# OWT FlexMDM
+python -m xlm.commands.cli_demo \
+  job_type=demo job_name=owt_flexmdm_hub_demo experiment=owt_flexmdm \
+  +hub.repo_id=dhruveshpatel/flexmdm-owt +hub.revision=step-800000 \
+  +trainer.precision=32-true compile=false model.force_flash_attn=false \
+  predictor.max_steps=1024 ++predictor.top_p=0.95 \
+  paths.output_dir=/tmp/xlm_cli_demo_flexmdm_owt
 ```
