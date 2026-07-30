@@ -21,7 +21,7 @@ Reference: [PUMA gsm8k_eval.py](https://github.com/JaeyeonKim01/PUMA/blob/main/e
 - Suffix at inference: empty (model generates code)
 - `answer`: numeric gold from executing reference `code` once at preprocess time
 
-Post-hoc runs at validation epoch end → `val/code_exec_accuracy`.
+Post-hoc runs at validation epoch end → `val/prediction/code_exec_accuracy`.
 
 Prediction JSONL rows include:
 

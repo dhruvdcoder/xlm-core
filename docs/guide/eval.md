@@ -87,7 +87,7 @@ Your class should implement:
 
 `eval(predictions, tokenizer=None, **kwargs) -> (predictions, aggregated_metrics)`
 
-The harness passes `tokenizer=self.tokenizer` and `dataloader_name=...` (evaluators may ignore extra kwargs). **`aggregated_metrics`** is logged with `self.log(f"{split}/{metric_name}", value, ...)`, so values must be **numeric scalars** (floats/ints). Strings or nested structures will not work as Lightning-logged metrics.
+The harness passes `tokenizer=self.tokenizer` and `dataloader_name=...` (evaluators may ignore extra kwargs). **`aggregated_metrics`** is logged with `self.log(f"{split}/{dataloader_name}/{metric_name}", value, ...)`, so values must be **numeric scalars** (floats/ints). Strings or nested structures will not work as Lightning-logged metrics.
 
 Full results (aggregated dict **plus** per-row dicts, including any fields your `eval` added) are written beside the predictions tree:
 
