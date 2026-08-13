@@ -83,6 +83,7 @@ nav:
   - Models:
       - Overview: models/index.md
       - ARLM: models/arlm.md
+      - BD3-LM: models/bd3lm.md
       - FlexMDM: models/flexmdm.md
       - ILM: models/ilm.md
       - LLaDA: models/llada.md
