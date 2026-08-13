@@ -1,0 +1,13 @@
+# @package _global_
+# "tiny" backbone from the reference implementation (its configs/model/tiny.yaml).
+defaults:
+  - bd3lm
+
+model:
+  config:
+    model:
+      name: tiny
+      hidden_size: 256
+      cond_dim: 64
+      n_blocks: 8
+      n_heads: 8

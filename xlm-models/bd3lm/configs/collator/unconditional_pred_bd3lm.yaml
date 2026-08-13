@@ -1,0 +1,11 @@
+
+_target_: bd3lm.datamodule_bd3lm.Bd3lmUnconditionalPredCollator
+
+block_size: ${block_size}
+
+
+max_length: ${eval:${prompt_size}+${target_size}}
+
+add_bos: true
+
+tokenizer: ${global_components:tokenizer}

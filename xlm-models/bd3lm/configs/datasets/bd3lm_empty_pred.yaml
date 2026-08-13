@@ -1,0 +1,20 @@
+# Dataset for unconditional generation: N blank rows for the prediction loop to drive.
+# xlm's text_unconditional_prediction.yaml leaves dataset_constructor_str unset, so this
+# supplies it along with the dataset kwargs.
+_target_: xlm.datamodule.UnconditionalGenerationDatasetManager
+dataset_constructor_str: bd3lm.datamodule_bd3lm.Bd3lmEmptyDataset
+collator: ???
+
+num_examples: ${oc.select:num_unconditional_prediction_examples,${per_device_batch_size}}
+
+dataset_kwargs:
+    max_length: ${eval:${prompt_size}+${target_size}}
+
+dataloader_kwargs:
+    batch_size: ${per_device_batch_size}
+    num_workers: 0
+    shuffle: null 
+    pin_memory: False
+    persistent_workers: False
+    prefetch_factor: null
+    drop_last: True

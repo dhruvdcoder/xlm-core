@@ -1,0 +1,9 @@
+_target_: bd3lm.datamodule_bd3lm.Bd3lmSeq2SeqCollator
+block_size: 4
+tokenizer: ${global_components:tokenizer}
+noise_schedule: ${global_components:noise_schedule}
+add_bos: output
+add_eos: true
+prompt_size: ${prompt_size}
+target_size: ${target_size}
+loss_on_padding: ${oc.select:loss_on_padding,true}

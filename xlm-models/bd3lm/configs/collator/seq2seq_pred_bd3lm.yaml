@@ -1,0 +1,7 @@
+_target_: bd3lm.datamodule_bd3lm.Bd3lmSeq2SeqPredCollator
+block_size: ${block_size}
+input_block_size: ${prompt_size}
+tokenizer: ${global_components:tokenizer}
+noise_schedule: ${global_components:noise_schedule}
+add_bos: output
+add_eos: true

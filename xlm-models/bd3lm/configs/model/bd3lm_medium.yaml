@@ -1,0 +1,12 @@
+# @package _global_
+defaults:
+  - bd3lm
+
+model:
+  config:
+    model:
+      name: medium
+      hidden_size: 1024
+      cond_dim: 128
+      n_blocks: 24
+      n_heads: 16

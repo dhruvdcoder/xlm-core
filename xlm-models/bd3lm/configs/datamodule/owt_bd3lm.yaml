@@ -1,0 +1,24 @@
+# @package _global_
+# Unconditional (pre-training) datamodule: OpenWebText through the default collator.
+# owt_{train,val,test} is dhruveshpatel/owt-gpt2-1024-split - GPT-2 tokenised and
+# already cut into 1024-token rows, which is why the collator's max_length is 1024.
+defaults:
+  - default
+  - /datasets@datamodule.dataset_managers.train.lm: owt_train
+  - /datasets@datamodule.dataset_managers.val.lm: owt_val
+  - /datasets@datamodule.dataset_managers.test.lm: owt_test
+  - /collator@datamodule.dataset_managers.train.lm.collator: default_bd3lm
+  - /collator@datamodule.dataset_managers.val.lm.collator: default_bd3lm
+  - /collator@datamodule.dataset_managers.test.lm.collator: default_bd3lm
+  - /datasets@datamodule.dataset_managers.val.prediction: bd3lm_empty_pred
+  - /datasets@datamodule.dataset_managers.test.prediction: bd3lm_empty_pred
+  - /datasets@datamodule.dataset_managers.predict.prediction: bd3lm_empty_pred
+  - /collator@datamodule.dataset_managers.val.prediction.collator: unconditional_pred_bd3lm
+  - /collator@datamodule.dataset_managers.test.prediction.collator: unconditional_pred_bd3lm
+  - /collator@datamodule.dataset_managers.predict.prediction.collator: unconditional_pred_bd3lm
+
+datamodule:
+  print_batch_fn: bd3lm.datamodule_bd3lm.print_batch_bd3lm
+
+tags:
+  dataset: owt

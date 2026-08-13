@@ -1,0 +1,39 @@
+# @package _global_
+defaults:
+  - star_medium_bd3lm
+
+prompt_size: 36
+target_size: 12
+block_size: 4
+
+per_device_batch_size: 1
+global_batch_size: 1
+per_device_val_batch_size: 1
+
+num_dataloader_workers: 0
+num_dataset_workers: 0
+dataloader_prefetch_factor: null
+dataloader_pin_memory: false
+trainer:
+  accelerator: cpu   # cpu for local runs; set to cuda if GPU available.
+  devices: 1
+  strategy: auto
+  limit_test_batches: null   # 20 batches instead of all 5000; null for the full test set
+
+
+datamodule:
+  dataset_managers:
+    test:
+      prediction:
+        dataloader_kwargs:
+          batch_size: 1
+
+eval:
+  split: test
+  # Pass your own: eval.ckpt_path=/path/to/last.ckpt
+  ckpt_path: ???
+
+  max_steps: 4
+  max_length: 48
+  sampling_method: sample_top_k
+  top: 1

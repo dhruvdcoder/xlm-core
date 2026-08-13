@@ -1,0 +1,7 @@
+
+_target_: xlm.metrics.MetricWrapper
+name: perplexity
+metric:
+  _target_: torchmetrics.MeanMetric
+prefix: ??? # eg: val/lm/, test/lm/
+update_fn: ??? # bd3lm.metrics_bd3lm.perplexity_metric_update_fn

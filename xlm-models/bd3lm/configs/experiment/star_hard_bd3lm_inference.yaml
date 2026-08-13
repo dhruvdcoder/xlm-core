@@ -1,0 +1,29 @@
+# @package _global_
+defaults:
+  - star_hard_bd3lm
+
+prompt_size: 116
+target_size: 24
+block_size: 4
+
+per_device_batch_size: 1
+global_batch_size: 1
+per_device_val_batch_size: 1
+
+num_dataloader_workers: 0
+num_dataset_workers: 0
+dataloader_prefetch_factor: null
+dataloader_pin_memory: false
+trainer:
+  accelerator: cuda
+  devices: 1
+  strategy: auto
+
+eval:
+  split: test
+  ckpt_path: ???
+  
+  max_steps: 4
+  max_length: 140
+  sampling_method: sample_top_k
+  top: 1

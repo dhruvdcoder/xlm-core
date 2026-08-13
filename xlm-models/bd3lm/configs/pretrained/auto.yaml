@@ -1,0 +1,7 @@
+# @package _global_
+# Warm start from the released OWT checkpoint matching your block_size, fetched from
+# HuggingFace at model construction - nothing to download or convert by hand.
+#
+#   xlm job_type=train ... +pretrained=auto                 # block_size=4 -> block_size4
+#   xlm job_type=train ... +pretrained=auto block_size=8    # -> block_size8
+pretrained_from: kuleshov-group/bd3lm-owt-block_size${block_size}

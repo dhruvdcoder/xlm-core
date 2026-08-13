@@ -1,0 +1,9 @@
+# @package _global_
+block_size: 4
+
+# The released models are 768/12/12, which is what model=bd3lm (the default) and
+# model=bd3lm_small both are.
+
+pretrained_repo: kuleshov-group/bd3lm-owt-block_size4
+model_only_checkpoint_path: ${oc.env:BD3LM_PRETRAINED_DIR,pretrained}/bd3lm-owt-block_size4.safetensors
+strict_model_only_load: false
