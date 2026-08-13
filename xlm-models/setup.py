@@ -21,13 +21,15 @@ setup(
     - flexmdm: Flexible Masked Diffusion Language Model
     - dream: Dream diffusion LM 
     - llada: LLaDA masked diffusion LM
+    - bd3lm: Block Discrete Denoising Diffusion Language Model
+
     
     Usage:
         pip install xlm-models
 
         Model package names must be specified in the XLM_MODEL_PACKAGES environment variable as a colon-separated list (e.g., arlm:mlm:ilm:mdlm:dream)
     """,
-    packages=["arlm", "mlm", "ilm", "mdlm", "flexmdm", "dream", "llada"],
+    packages=["arlm", "mlm", "ilm", "mdlm", "flexmdm", "dream", "llada", "bd3lm"],
     author="Dhruvesh Patel, Benjamin Rozonoyer, Sai Sreenivas Chintha, Durga Prasad Maram",
     package_dir={
         "arlm": "arlm",
@@ -37,6 +39,7 @@ setup(
         "flexmdm": "flexmdm",
         "dream": "dream",
         "llada": "llada",
+        "bd3lm": "bd3lm"
     },
     package_data={
         "arlm": ["configs/**/*.yaml", "configs/**/*.yml"],
@@ -46,6 +49,8 @@ setup(
         "flexmdm": ["configs/**/*.yaml", "configs/**/*.yml"],
         "dream": ["configs/**/*.yaml", "configs/**/*.yml"],
         "llada": ["configs/**/*.yaml", "configs/**/*.yml"],
+        "bd3lm": ["configs/**/*.yaml", "configs/**/*.yml"],
+
     },
     install_requires=[
         f"xlm-core=={VERSION['VERSION']}",
