@@ -199,7 +199,3 @@ transfer — they are skipped and reported, and the transformer blocks still loa
 [bd3lm] warm start from kuleshov-group/bd3lm-owt-block_size4: loaded 128/131 tensors
 [bd3lm]   3 skipped on shape (training from scratch) - usually a vocabulary difference
 ```
-
-!!! note "Newer released repos are not compatible"
-    The `{owt,gsm8k,cnndm}-bd3lm-s*` repos are a later release with a different config
-    schema and a Qwen3 backbone rather than this DiT. They will not load here.
