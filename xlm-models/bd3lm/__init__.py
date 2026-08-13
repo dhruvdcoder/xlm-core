@@ -1,17 +1,11 @@
-"""
-Bd3lm - External Language Model for XLM Framework
+"""BD3-LM - Block Discrete Denoising Diffusion Language Model.
 
-This package implements the Bd3lm model with all necessary components:
-- Model architecture (model_bd3lm.py)
-- Loss function (loss_bd3lm.py) 
-- Predictor for inference (predictor_bd3lm.py)
-- Data module (datamodule_bd3lm.py)
-- Metrics computation (metrics_bd3lm.py)
-- Type definitions (types_bd3lm.py)
+Autoregressive across blocks, diffusion within a block.
 
-To use this model:
-1. Add 'bd3lm' to your xlm_models.json file
-2. Use model_type=bd3lm and model=bd3lm in your config
+    xlm job_type=train job_name=my_run experiment=star_medium_bd3lm   # seq2seq
+    xlm job_type=train job_name=my_run experiment=owt_bd3lm           # unconditional
+
+See README.md for the experiments, model sizes and fine-tuning options.
 """
 
 from .model_bd3lm import Bd3lmModel
