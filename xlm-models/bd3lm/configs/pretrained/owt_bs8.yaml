@@ -1,6 +1,0 @@
-# @package _global_
-block_size: 8
-
-pretrained_repo: kuleshov-group/bd3lm-owt-block_size8
-model_only_checkpoint_path: ${oc.env:BD3LM_PRETRAINED_DIR,pretrained}/bd3lm-owt-block_size8.safetensors
-strict_model_only_load: false
