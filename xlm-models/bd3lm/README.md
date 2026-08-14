@@ -18,7 +18,6 @@ bd3lm/
 ├── metrics_bd3lm.py         
 ├── noise_schedule.py        
 ├── types_bd3lm.py           
-├── convert_hf_checkpoint.py 
 └── configs/
     ├── model/bd3lm{,_tiny,_small,_medium}.yaml   
     ├── model_type/bd3lm.yaml                     
@@ -26,7 +25,7 @@ bd3lm/
     ├── collator/{default,unconditional_pred,seq2seq,seq2seq_pred}_bd3lm.yaml
     ├── datamodule/{owt,star{,_easy,_medium,_hard}}_bd3lm*.yaml
     ├── experiment/{owt,star_{easy,medium,hard}}_bd3lm*.yaml
-    ├── pretrained/{auto,owt_bs4,owt_bs8,owt_bs16}.yaml   # pretrained model
+    ├── pretrained/auto.yaml                     # released checkpoints from the Hub
     ├── datasets/bd3lm_empty_pred.yaml            
     ├── metrics/perplexity_bd3lm.yaml
     └── noise_schedule/bd3lm.yaml
@@ -77,16 +76,11 @@ xlm ... model.config.sampling.confidence_decoding=false
 
 ## Unconditional generation
 
-To do the inference on the released checkpoint:
+Generate from a released checkpoint. `+pretrained=auto` picks the one matching your
+`block_size` and pulls it from the Hub:
 
 ```bash
-# make the released checkpoint compatible with this model
-python -m bd3lm.convert_hf_checkpoint \
-  kuleshov-group/bd3lm-owt-block_size4 bd3lm_owt_bs4.safetensors
-
-xlm job_type=eval job_name=my_gen experiment=owt_bd3lm_inference \
-  eval.model_only_checkpoint_path=bd3lm_owt_bs4.safetensors
-
+xlm job_type=eval job_name=my_gen experiment=owt_bd3lm_inference +pretrained=auto
 ```
 
 ## Model sizes
@@ -120,6 +114,14 @@ GPT-2 vocabulary:
 | 8 | `kuleshov-group/bd3lm-owt-block_size8` |
 | 16 | `kuleshov-group/bd3lm-owt-block_size16` |
 | 1024 | `kuleshov-group/bd3lm-owt-block_size1024-pretrain` |
+
+On a task whose vocabulary is not GPT-2's, the three vocabulary-sized tensors cannot
+transfer. They are skipped and reported, and the transformer blocks still load:
+
+```
+[bd3lm] 3 tensor(s) skipped on shape and will train from scratch - usually a vocabulary difference:
+[bd3lm]     backbone.vocab_embed.embedding: model (27, 768) vs checkpoint (50258, 768)
+```
 
 ## Cite
 

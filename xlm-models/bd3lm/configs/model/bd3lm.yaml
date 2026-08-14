@@ -21,7 +21,6 @@ model:
       tie_word_embeddings: true
       adaln: false
       attn_backend: sdpa
-      pretrained_from: ${oc.select:pretrained_from,null}
 
     algo:
       name: bd3lm

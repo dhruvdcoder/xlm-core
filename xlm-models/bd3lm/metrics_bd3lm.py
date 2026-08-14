@@ -109,10 +109,7 @@ def perplexity_metric_update_fn(
     Returns:
         Dictionary with perplexity value.
     """
-    # Previously read loss_dict["nlls"], which the loss does not return (so this
-    # raised KeyError), and averaged it over *all* positions including the unscored
-    # ones - dividing by the sequence length instead of by the number of scored
-    # tokens. loss_dict["loss"] is already the correctly normalised per-token NLL.
+   
     return {
         "value": torch.exp(loss_dict["loss"]),
     }

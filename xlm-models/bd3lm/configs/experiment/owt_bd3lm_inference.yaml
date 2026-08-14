@@ -18,9 +18,9 @@ dataloader_pin_memory: false
 
 monitored_metric: null
 
+# Pass the weights with +pretrained=auto, or your own eval.ckpt_path.
 eval:
   split: validation
-  model_only_checkpoint_path: ???
 
 trainer:
   max_steps: 0

@@ -160,8 +160,6 @@ class Rotary(torch.nn.Module):
 
 
     else:
-      # Without custom positions the embedding depends only on the sequence length, so
-      # it is the same tensor on every call - compute it once and reuse. 
       if (self.seq_len_cached != seq_len
           or self.cos_cached is None
           or self.cos_cached.device != x.device
@@ -660,61 +658,11 @@ class DDiTFinalLayer(nn.Module):
 
 
 
-def load_pretrained_bd3lm(model, pretrained_from, log=None):
-  """Warm-start `model` from a released BD3-LM checkpoint (HF repo id or local dir).
-
-  Downloads and remaps in memory, so there is no conversion step first.
-
-  Tensors whose shape does not match are skipped instead of raising, so a task with a
-  different vocabulary still gets the transformer blocks.
+class DDiT(nn.Module):
+  """The transformer. Held by Bd3lmModel as `self.backbone` so that the state dict
+  matches the released checkpoints, whose tensors are named backbone.blocks.0...
   """
-  import logging
-  from .convert_hf_checkpoint import (
-    load_released_state_dict, strip_backbone_prefix)
 
-  log = log or logging.getLogger(__name__).warning
-
-  log(f"[bd3lm] warm start: loading pretrained checkpoint {pretrained_from} "
-      f"from HuggingFace (cached after the first run) ...")
-  released = load_released_state_dict(pretrained_from)
-  src, outside_backbone = strip_backbone_prefix(released)
-  if not src:
-    raise RuntimeError(
-      f"{pretrained_from} has no tensors under 'backbone.' - this does not look like "
-      f"a released BD3-LM checkpoint. Top-level names were: "
-      f"{sorted({k.split('.')[0] for k in released})}")
-
-  own = model.state_dict()
-  to_load, skipped_shape = {}, []
-  for key, value in src.items():
-    if key not in own:
-      continue
-    if own[key].shape != value.shape:
-      skipped_shape.append((key, tuple(own[key].shape), tuple(value.shape)))
-      continue
-    to_load[key] = value
-  skipped_keys = {key for key, _, _ in skipped_shape}
-  missing = [k for k in model.load_state_dict(to_load, strict=False).missing_keys
-             if k not in skipped_keys]
-
-  log(f"[bd3lm] warm start from {pretrained_from}: "
-      f"loaded {len(to_load)}/{len(own)} tensors")
-  if skipped_shape:
-    log(f"[bd3lm]   {len(skipped_shape)} skipped on shape (training from scratch) - "
-        f"usually a vocabulary difference:")
-    for key, ours, theirs in skipped_shape:
-      log(f"[bd3lm]     {key}: model {ours} vs checkpoint {theirs}")
-  if missing:
-    log(f"[bd3lm]   {len(missing)} not present in the checkpoint: {missing[:5]}"
-        f"{' ...' if len(missing) > 5 else ''}")
-  if outside_backbone:
-    log(f"[bd3lm]   ignored {len(outside_backbone)} tensor(s) outside the backbone: "
-        f"{outside_backbone}")
-  return {"loaded": sorted(to_load), "skipped_shape": skipped_shape,
-          "missing": missing}
-
-
-class Bd3lmModel(nn.Module, huggingface_hub.PyTorchModelHubMixin):
   def __init__(self, config, vocab_size: int):
     super().__init__()
     if type(config) == dict:
@@ -773,11 +721,6 @@ class Bd3lmModel(nn.Module, huggingface_hub.PyTorchModelHubMixin):
       tie_word_embeddings=config.model.tie_word_embeddings)
     if config.algo.cross_attn:
       self.gen_mask(config.model.length, self.block_size, self.attn_backend)
-
-    # Warm-start from a released BD3-LM checkpoint, if one was configured.
-    pretrained_from = getattr(config.model, 'pretrained_from', None)
-    if pretrained_from:
-      load_pretrained_bd3lm(self, pretrained_from)
 
   def _get_bias_dropout_scale(self):
     if self.training:
@@ -873,3 +816,62 @@ class Bd3lmModel(nn.Module, huggingface_hub.PyTorchModelHubMixin):
     if cross_attn and not sample_mode:
       x = x[:, :self.n]
     return x
+
+
+class Bd3lmModel(nn.Module, huggingface_hub.PyTorchModelHubMixin):
+  """Holds the transformer as `self.backbone`.
+
+  The released BD3-LM checkpoints are a module of the same shape, so their tensors are
+  already named backbone.blocks.0... and xlm's shared loader reads them directly:
+
+      xlm job_type=eval ... hub.repo_id=kuleshov-group/bd3lm-owt-block_size4
+  """
+
+  # The released checkpoints carry these two, we do not. They are the
+  # clipped-noise-schedule range the paper searched per block size (4: 0.45-0.95,
+  # 8: 0.35-0.85, 16: 0.30-0.80); here the noise schedule config owns that range.
+  UNUSED_BUFFERS = ('sampling_eps_min', 'sampling_eps_max')
+
+  def __init__(self, config, vocab_size: int):
+    super().__init__()
+    if type(config) == dict:
+      config = omegaconf.OmegaConf.create(config)
+    self.config = config
+    self.vocab_size = vocab_size
+    self.backbone = DDiT(config, vocab_size)
+    self._register_load_state_dict_pre_hook(self._adapt_state_dict)
+
+  def _adapt_state_dict(self, state_dict, prefix, *args):
+    """Drop what a released checkpoint carries that this model cannot take.
+
+    The eval path loads with strict=True, so both of these have to be handled here
+    rather than by strict_model_only_load.
+    """
+    import logging
+
+    dropped = {name: state_dict.pop(prefix + name).tolist()
+               for name in self.UNUSED_BUFFERS if prefix + name in state_dict}
+    if dropped:
+      logging.getLogger(__name__).info(
+        "[bd3lm] checkpoint was trained with %s; this run uses the range in the "
+        "noise_schedule config", dropped)
+
+    
+    own = self.state_dict()
+    mismatched = []
+    for key in [k for k in state_dict if k.startswith(prefix)]:
+      tail = key[len(prefix):]
+      if tail in own and own[tail].shape != state_dict[key].shape:
+        mismatched.append((tail, tuple(own[tail].shape), tuple(state_dict.pop(key).shape)))
+    if mismatched:
+      log = logging.getLogger(__name__).warning
+      log("[bd3lm] %d tensor(s) skipped on shape and will train from scratch - "
+          "usually a vocabulary difference:", len(mismatched))
+      for name, ours, theirs in mismatched:
+        log("[bd3lm]     %s: model %s vs checkpoint %s", name, ours, theirs)
+
+  def reset_kv_cache(self):
+    self.backbone.reset_kv_cache()
+
+  def forward(self, *args, **kwargs):
+    return self.backbone(*args, **kwargs)

@@ -1,7 +1,7 @@
 """Loss function implementation for Bd3lm model.
 
 This file implements the training loss computation. Modify the loss_fn method
-to implement specific loss computation logic.
+to implement your specific loss computation logic.
 """
 
 from typing import Optional
