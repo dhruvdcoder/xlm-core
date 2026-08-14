@@ -63,11 +63,9 @@ forward(
 ) -> Tensor                                   # (B, L, vocab_size)
 ```
 
-
 `indices` is the noisy and clean sequences concatenated, which is why it is twice the
 length in training: each noisy block attends to the clean tokens of the blocks before it.
 Only the noisy half is returned as logits.
-
 
 ## 4. Batch contract
 
@@ -84,24 +82,21 @@ Both training collators emit:
 | `loss_scale` | `(B, L)` | from the noise schedule |
 | `sigma` | `(B, 1)` | per-example noise level |
 
-
 ## 5. Loss
 
 `Bd3lmLoss` computes the diffusion NLL over the masked positions.
 
-`loss_on_padding` … controls whether answer-side PAD takes part …
-
+`loss_on_padding` controls whether answer-side PAD takes part in diffusion and in the
+loss. Set it to `true` when the tokenizer has no PAD at all, as in OWT pre-training.
 
 ## 6. Collators
 
 | Config | Class | Role |
 |---|---|---|
 | {{ gh('xlm-models/bd3lm/configs/collator/default_bd3lm.yaml', 'default_bd3lm') }} | `DefaultBd3lmCollator` | pre-training: noises the whole sequence |
-| {{ gh('xlm-models/bd3lm/configs/collator/seq2seq_bd3lm.yaml', 'seq2seq_bd3lm') }} | `Bd3lmSeq2SeqCollator` | Supervised Seq2Seq training  |
-| {{ gh('xlm-models/bd3lm/configs/collator/seq2seq_pred_bd3lm.yaml', 'seq2seq_pred_bd3lm') }} | `Bd3lmSeq2SeqPredCollator` | Seq2Seq Generation |
+| {{ gh('xlm-models/bd3lm/configs/collator/seq2seq_bd3lm.yaml', 'seq2seq_bd3lm') }} | `Bd3lmSeq2SeqCollator` | supervised seq2seq training |
+| {{ gh('xlm-models/bd3lm/configs/collator/seq2seq_pred_bd3lm.yaml', 'seq2seq_pred_bd3lm') }} | `Bd3lmSeq2SeqPredCollator` | seq2seq generation |
 | {{ gh('xlm-models/bd3lm/configs/collator/unconditional_pred_bd3lm.yaml', 'unconditional_pred_bd3lm') }} | `Bd3lmUnconditionalPredCollator` | unconditional generation |
-
-
 
 ## 7. Predictor
 
@@ -111,10 +106,11 @@ right, and within each block one position is unmasked per step.
 | Key (under `model.config.sampling`) | Default | Meaning |
 |---|---|---|
 | `confidence_decoding` | `true` | unmask the most confident position |
+| `confidence` | `prob_diff` | scoring criterion: `top_prob`, `prob_diff`, `entropy` |
 | `first_hitting` | `true` | first-hitting sampler (Zheng et al., 2025) |
 | `var_length` | `true` | stop at EOS instead of filling the window |
-| `nucleus_p` | `0.9` | nucleus Sampling |
-| `kv_cache` | `true` | enables KV-caching |
+| `nucleus_p` | `0.9` | nucleus sampling |
+| `kv_cache` | `false` | cache finalised blocks instead of re-encoding the prefix |
 
 Setting `confidence_decoding=false` gives the reference implementation's uniformly random
 unmasking.
@@ -131,8 +127,8 @@ rows through xLM's `UnconditionalGenerationDatasetManager`.
 | `perplexity` | val / test, `bd3lm_unconditional` only |
 | `exact_match`, `token_accuracy` | val / test prediction, `bd3lm` (seq2seq star-graph) |
 
-For unconditional *sample* quality rather than modelling quality, use xLM's post-hoc
-generative perplexity evaluator, e.g. `post_hoc_evaluator=gen_ppl_gpt2_large`.
+For unconditional *sample* quality rather than modelling quality, use
+`experiment=owt_bd3lm_inference`, which wires up the GPT-2 Large evaluator.
 
 ## 9. Configs / experiments
 
@@ -146,6 +142,8 @@ Hydra configs under {{ gh_dir('xlm-models/bd3lm/configs', 'xlm-models/bd3lm/conf
 | `experiment/star_{easy,medium,hard}_bd3lm.yaml` | seq2seq training |
 | `experiment/star_{easy,medium,hard}_bd3lm_inference.yaml` | matching eval configs |
 | `experiment/owt_bd3lm.yaml` | unconditional pre-training on OpenWebText |
+| `experiment/owt_bd3lm_inference.yaml` | unconditional generation + generative perplexity |
+| `datamodule/owt_bd3lm_pred.yaml` | generation-only datamodule, downloads nothing |
 | `pretrained/{auto,owt_bs4,owt_bs8,owt_bs16}.yaml` | to use the pretrained HuggingFace models |
 
 The package is registered in `xlm_models.json` (`"bd3lm": "bd3lm"`).
@@ -178,6 +176,24 @@ xlm job_type=eval job_name=my_eval \
 xlm job_type=train job_name=my_run experiment=owt_bd3lm
 ```
 
+### Unconditional generation
+
+To run inference on a released checkpoint:
+
+```bash
+# make the released checkpoint compatible with this model
+python -m bd3lm.convert_hf_checkpoint \
+  kuleshov-group/bd3lm-owt-block_size4 bd3lm_owt_bs4.safetensors
+
+xlm job_type=eval job_name=my_gen experiment=owt_bd3lm_inference \
+  eval.model_only_checkpoint_path=bd3lm_owt_bs4.safetensors
+```
+
+Use `eval.model_only_checkpoint_path` rather than `+pretrained=auto` here — xLM's eval
+command builds the model only once it has a checkpoint, so the HuggingFace hook never
+runs. `owt_bd3lm_pred` declares only the prediction managers, so nothing is downloaded;
+evaluating through `owt_bd3lm` would prepare the 26GB OWT train split first.
+
 ### Fine-tuning from a released checkpoint
 
 ```bash
@@ -199,3 +215,18 @@ transfer — they are skipped and reported, and the transformer blocks still loa
 [bd3lm] warm start from kuleshov-group/bd3lm-owt-block_size4: loaded 128/131 tensors
 [bd3lm]   3 skipped on shape (training from scratch) - usually a vocabulary difference
 ```
+
+## 10. Results
+
+| experiment | exact match | token accuracy |
+|---|---|---|
+| `star_easy` | 1.000 | 1.000 |
+| `star_medium` | 1.000 | 1.000 |
+
+Verified at batch sizes 1, 4 and 16, and on star-medium with `kv_cache=true`.
+
+Generative perplexity of `kuleshov-group/bd3lm-owt-block_size4` at length 1024, scored
+by GPT-2 Large: **25.74** over 300 samples, against **25.70** reported in the paper.
+Sampling follows `scripts/gen_ppl/genppl_bd3lm.sh` in the reference repo — batch size 1,
+`nucleus_p=0.9`, first-hitting, `var_length=false`, kv cache, and
+`confidence_decoding=false` so the sampler unmasks at random.
