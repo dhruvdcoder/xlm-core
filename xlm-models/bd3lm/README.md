@@ -77,14 +77,16 @@ xlm ... model.config.sampling.confidence_decoding=false
 
 ## Unconditional generation
 
-Convert a released checkpoint once, then generate:
+To do the inference on the released checkpoint:
 
 ```bash
+# make the released checkpoint compatible with this model
 python -m bd3lm.convert_hf_checkpoint \
   kuleshov-group/bd3lm-owt-block_size4 bd3lm_owt_bs4.safetensors
 
 xlm job_type=eval job_name=my_gen experiment=owt_bd3lm_inference \
   eval.model_only_checkpoint_path=bd3lm_owt_bs4.safetensors
+
 ```
 
 ## Model sizes
