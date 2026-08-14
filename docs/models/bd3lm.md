@@ -81,21 +81,13 @@ Both training collators emit:
 | `loss_scale` | `(B, L)` | from the noise schedule |
 | `sigma` | `(B, 1)` | per-example noise level |
 
-Diffusion denoises in place, so there is no shift-by-one target. In the seq2seq case
-`target_ids` is answer-width only, and the loss slices the last `target_len` positions to
-match it.
 
 ## 5. Loss
 
 `Bd3lmLoss` computes the diffusion NLL over the masked positions.
 
 `loss_on_padding` (declared once in the model_type config and read by both the loss and
-the collator) controls whether answer-side PAD takes part in diffusion and in the loss:
-
-- `true` — PAD is treated like any other token; `q_xt` may noise it into `[MASK]`, and
-  those positions are scored.
-- `false` — PAD is protected from noising and excluded from the loss, so only real
-  tokens produce gradient.
+the collator) controls whether answer-side PAD takes part in diffusion and in the loss.
 
 ## 6. Collators
 
@@ -106,8 +98,6 @@ the collator) controls whether answer-side PAD takes part in diffusion and in th
 | {{ gh('xlm-models/bd3lm/configs/collator/seq2seq_pred_bd3lm.yaml', 'seq2seq_pred_bd3lm') }} | `Bd3lmSeq2SeqPredCollator` | prompt → prediction batch |
 | {{ gh('xlm-models/bd3lm/configs/collator/unconditional_pred_bd3lm.yaml', 'unconditional_pred_bd3lm') }} | `Bd3lmUnconditionalPredCollator` | all-`[MASK]` canvas for unconditional generation |
 
-`ignore_bos` keeps the BOS at position 0 out of the diffusion — never noised, never
-scored — mirroring `algo.ignore_bos` in the reference implementation.
 
 ## 7. Predictor
 
@@ -125,16 +115,6 @@ right, and within each block one position is unmasked per step.
 
 Setting `confidence_decoding=false` gives the reference implementation's uniformly random
 unmasking.
-
-`kv_cache=true` produces byte-identical generations to the uncached path. It is only
-sound because the sampling mask is strictly block-causal (prompt tokens never attend to
-the answer) and `algo.time_conditioning=false` makes the prompt's hidden states constant
-across denoising steps — **turning `time_conditioning` on invalidates it**. It also
-requires `prompt_len % block_size == 0`, which the code checks.
-
-`Bd3lmUnconditionalPredictor` generates with no prompt: the sampler draws a prior block
-and writes BOS at position 0. It is driven by `Bd3lmEmptyDataset`, which supplies blank
-rows through xLM's `UnconditionalGenerationDatasetManager`.
 
 ## 8. Metrics
 
@@ -197,24 +177,12 @@ xlm job_type=train job_name=my_run experiment=owt_bd3lm
 
 ### Unconditional generation
 
-`owt_bd3lm_inference` generates from an empty prompt and scores the samples with GPT-2
-Large. It pins the reference implementation's sampling protocol, so the numbers are
-comparable to the paper out of the box.
+`owt_bd3lm_inference` generates from an empty [MASK] sequence  and scores the samples with GPT-2
+Large.
 
 ```bash
 xlm job_type=eval job_name=my_gen experiment=owt_bd3lm_inference +pretrained=auto
 ```
-
-`+pretrained=auto` sets `hub.repo_id` from `block_size`, so the weights come through
-xLM's shared checkpoint loader - the same path LLaDA and Dream use. `Bd3lmModel` holds
-the transformer as `self.backbone`, so the released tensor names match ours 1:1 and
-nothing needs converting first.
-
-This experiment swaps in `datamodule/owt_bd3lm_pred.yaml`, which declares only the
-prediction managers. `owt_bd3lm` also declares train/val/test `lm` managers over
-`owt-gpt2-1024-split`, and `prepare_data()` takes no stage argument — so evaluating with
-the training experiment would download and tokenise the 26GB train split before
-generating anything.
 
 ### Fine-tuning from a released checkpoint
 
@@ -238,9 +206,6 @@ transfer — they are skipped and reported, and the transformer blocks still loa
 [bd3lm]   3 skipped on shape (training from scratch) - usually a vocabulary difference
 ```
 
-!!! note "Newer released repos are not compatible"
-    The `{owt,gsm8k,cnndm}-bd3lm-s*` repos are a later release with a different config
-    schema and a Qwen3 backbone rather than this DiT. They will not load here.
 
 ## 10. Results
 
@@ -249,13 +214,7 @@ transfer — they are skipped and reported, and the transformer blocks still loa
 | `star_easy` (`dhruveshpatel/star-small`) | 1.000 | 1.000 |
 | `star_medium` (`dhruveshpatel/star-medium`) | 1.000 | 1.000 |
 
-Verified at batch sizes 1, 4 and 16, and on star-medium additionally with
-`kv_cache=true`.
-
-`star-medium` has **22.6% train/test overlap** (1,101 of 4,872 unique test examples also
-appear in train), so an unseen-only figure should be reported alongside. `star-hard` is
-not reported — its answer lengths vary far more, and block diffusion is expected to find
-it about as hard as an autoregressive model does.
+Verified at batch sizes 1, 4 and 16, and on star-medium additionally with block_size 4 and `kv_cache=true`.
 
 ### Generative perplexity, released checkpoint
 
@@ -267,19 +226,8 @@ at length 1024 and scored by GPT-2 Large:
 | **this implementation** | 300 | **25.74** |
 | reference, Table 7 | 300 | 25.70 |
 
-Mean sample length 1020.1 tokens, entropy 5.29.
 
 Sampling matches `scripts/gen_ppl/genppl_bd3lm.sh` in the reference repo: batch size 1,
 `nucleus_p=0.9`, `first_hitting=true`, `var_length=false`, `kv_cache=true`, `algo.T=5000`,
 and `confidence_decoding=false` so the sampler unmasks at random as the reference does.
-All 131 tensors load under `strict=True`. Generation took ~1h35 on one A100.
 
-!!! note "Differences from the reference measurement"
-    Ours is a single seed; the paper pools its 300 samples over 12. Scoring also differs
-    slightly: xLM masks padding via the attention mask, while the reference sets
-    `pad_token = eos_token` and so has to drop *every* `<|endoftext|>` from the average,
-    including real document separators. The 0.04 gap suggests neither matters much here.
-
-## 11. Testing
-
-No unit tests yet. The package is exercised through the eval configs above.
