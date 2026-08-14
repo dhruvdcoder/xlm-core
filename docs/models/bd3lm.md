@@ -63,8 +63,7 @@ forward(
 ) -> Tensor                                   # (B, L, vocab_size)
 ```
 
-`indices` is the noisy and clean sequences concatenated, which is why it is twice the
-length in training: each noisy block attends to the clean tokens of the blocks before it.
+`indices` is the noisy and clean sequences concatenated: each noisy block attends to the clean tokens of the blocks before it.
 Only the noisy half is returned as logits.
 
 ## 4. Batch contract
@@ -80,7 +79,6 @@ Both training collators emit:
 | `loss_mask` | `(B, L)` | 1 where the position is `[MASK]` and should be scored |
 | `target_ids` | `(B, L)` seq / `(B, T)` s2s | the clean tokens |
 | `loss_scale` | `(B, L)` | from the noise schedule |
-| `sigma` | `(B, 1)` | per-example noise level |
 
 ## 5. Loss
 
@@ -108,9 +106,9 @@ right, and within each block one position is unmasked per step.
 | `confidence_decoding` | `true` | unmask the most confident position |
 | `confidence` | `prob_diff` | scoring criterion: `top_prob`, `prob_diff`, `entropy` |
 | `first_hitting` | `true` | first-hitting sampler (Zheng et al., 2025) |
-| `var_length` | `true` | stop at EOS instead of filling the window |
+| `var_length` | `true` | stops at EOS instead of filling until the target length |
 | `nucleus_p` | `0.9` | nucleus sampling |
-| `kv_cache` | `false` | cache finalised blocks instead of re-encoding the prefix |
+| `kv_cache` | `true` | KV-caching |
 
 Setting `confidence_decoding=false` gives the reference implementation's uniformly random
 unmasking.
@@ -189,11 +187,6 @@ xlm job_type=eval job_name=my_gen experiment=owt_bd3lm_inference \
   eval.model_only_checkpoint_path=bd3lm_owt_bs4.safetensors
 ```
 
-Use `eval.model_only_checkpoint_path` rather than `+pretrained=auto` here — xLM's eval
-command builds the model only once it has a checkpoint, so the HuggingFace hook never
-runs. `owt_bd3lm_pred` declares only the prediction managers, so nothing is downloaded;
-evaluating through `owt_bd3lm` would prepare the 26GB OWT train split first.
-
 ### Fine-tuning from a released checkpoint
 
 ```bash
@@ -223,7 +216,7 @@ transfer — they are skipped and reported, and the transformer blocks still loa
 | `star_easy` | 1.000 | 1.000 |
 | `star_medium` | 1.000 | 1.000 |
 
-Verified at batch sizes 1, 4 and 16, and on star-medium with `kv_cache=true`.
+Verified at batch sizes 1, 4 and 16, and on star-medium with block_size 4 and `kv_cache=true`.
 
 Generative perplexity of `kuleshov-group/bd3lm-owt-block_size4` at length 1024, scored
 by GPT-2 Large: **25.74** over 300 samples, against **25.70** reported in the paper.
