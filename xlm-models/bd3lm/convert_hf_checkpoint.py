@@ -5,7 +5,7 @@ are named `backbone.blocks.0.attn_qkv.weight` and ours are `blocks.0.attn_qkv.we
 dropping that prefix is the whole conversion.
 
 Only needed to work offline. `+pretrained=auto` does the same thing in memory at model
-construction, and also handles the vocabulary mismatch for you.
+construction, and also handles the vocabulary mismatch.
 
     python -m bd3lm.convert_hf_checkpoint \\
         kuleshov-group/bd3lm-owt-block_size4 bd3lm_owt_bs4.safetensors [--drop-vocab]
