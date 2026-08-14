@@ -1,7 +1,7 @@
 # @package _global_
 # Unconditional (pre-training) datamodule: OpenWebText through the default collator.
 # owt_{train,val,test} is dhruveshpatel/owt-gpt2-1024-split - GPT-2 tokenised and
-# already cut into 1024-token rows, which is why the collator's max_length is 1024.
+# already cut into 1024-token rows.
 defaults:
   - default
   - /datasets@datamodule.dataset_managers.train.lm: owt_train
