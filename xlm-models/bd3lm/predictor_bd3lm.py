@@ -553,14 +553,19 @@ class Bd3lmPredictor(Predictor[Bd3lmBatch, Bd3lmPredictionDict]):
 
         Returns:
             List of dictionaries containing prediction results
+
+        Note the generated sequence must be under "text" and "ids", the names every
+        other xlm model uses. LogPredictions only keeps fields starting with one of
+        text/length/perplexity/entropy/nll, and the post-hoc evaluators read
+        pred["text"] directly - under any other name the rows come out empty.
         """
         results = []
         for i in range(len(preds["text"])):
             result = {
+                "text": preds["text"][i],
+                "ids": preds["ids"][i].tolist(),
+                "text_with_spl_tokens": preds["text_with_spl_tokens"][i],
                 "input_text": self.tokenizer.decode(batch["input_ids"][i], skip_special_tokens=False),
-                "generated_text": preds["text"][i],
-                "generated_text_with_spl": preds["text_with_spl_tokens"][i],
-                "generated_ids": preds["ids"][i].tolist(),
             }
             results.append(result)
 

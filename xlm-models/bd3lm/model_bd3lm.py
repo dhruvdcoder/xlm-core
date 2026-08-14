@@ -663,14 +663,10 @@ class DDiTFinalLayer(nn.Module):
 def load_pretrained_bd3lm(model, pretrained_from, log=None):
   """Warm-start `model` from a released BD3-LM checkpoint (HF repo id or local dir).
 
-  Downloads and remaps in memory, so there is no conversion step to run first -
-  convert_hf_checkpoint.py does the same thing offline if you would rather have the
-  file on disk.
+  Downloads and remaps in memory, so there is no conversion step first.
 
-  Tensors whose shape does not match are skipped rather than raising. That is what
-  makes this work across vocabularies: the released models are GPT-2 (50258), so on a
-  task with a smaller vocabulary vocab_embed and output_layer cannot transfer, while
-  the 12 transformer blocks still do. 
+  Tensors whose shape does not match are skipped instead of raising, so a task with a
+  different vocabulary still gets the transformer blocks.
   """
   import logging
   from .convert_hf_checkpoint import (
@@ -678,6 +674,8 @@ def load_pretrained_bd3lm(model, pretrained_from, log=None):
 
   log = log or logging.getLogger(__name__).warning
 
+  log(f"[bd3lm] warm start: loading pretrained checkpoint {pretrained_from} "
+      f"from HuggingFace (cached after the first run) ...")
   released = load_released_state_dict(pretrained_from)
   src, outside_backbone = strip_backbone_prefix(released)
   if not src:

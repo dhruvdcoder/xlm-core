@@ -21,8 +21,12 @@ monitored_metric: val/lm/accumulated_loss
 
 global_components:
   tokenizer:
-    _target_: xlm.datamodule.GPT2TokenizerFast.from_pretrained
+    _target_: xlm.datamodule.load_auto_tokenizer
     pretrained_model_name_or_path: gpt2
+    special_tokens:
+      mask_token: "<|mask|>"   
+
+loss_on_padding: false
 
 trainer:
   max_steps: 100000

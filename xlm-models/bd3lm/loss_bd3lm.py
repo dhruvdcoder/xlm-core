@@ -114,8 +114,8 @@ class Bd3lmLoss(LossFunction[Bd3lmBatch, Bd3lmLossDict]):
 
         model_output = model_output[:, -target_len:, :]  # [1, 12, 27]
         loss_mask = loss_mask[:, -target_len:]    # [1, 12]
-        if not self.loss_on_padding:
-            
+        ## when loss_on_padding is False, we want to ignore the PAD tokens in the target_ids
+        if not self.loss_on_padding and self.tokenizer.pad_token_id is not None:
             loss_mask = loss_mask * (
                 target_ids != self.tokenizer.pad_token_id
             ).to(loss_mask.dtype)
@@ -156,11 +156,6 @@ class Bd3lmLoss(LossFunction[Bd3lmBatch, Bd3lmLossDict]):
         Args:
             pl_module: The lightning module instance
         """
-        # TODO: Add any configuration logic here if needed
-        # For example:
-        # - Set up loss scaling
-        # - Initialize auxiliary loss components
-        # - Configure metric computation
         
         self.model = pl_module.model
         self.tokenizer = pl_module.tokenizer

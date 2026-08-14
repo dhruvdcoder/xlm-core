@@ -1,0 +1,15 @@
+# @package _global_
+defaults:
+  - default
+  - /datasets@datamodule.dataset_managers.val.prediction: bd3lm_empty_pred
+  - /datasets@datamodule.dataset_managers.test.prediction: bd3lm_empty_pred
+  - /datasets@datamodule.dataset_managers.predict.prediction: bd3lm_empty_pred
+  - /collator@datamodule.dataset_managers.val.prediction.collator: unconditional_pred_bd3lm
+  - /collator@datamodule.dataset_managers.test.prediction.collator: unconditional_pred_bd3lm
+  - /collator@datamodule.dataset_managers.predict.prediction.collator: unconditional_pred_bd3lm
+
+datamodule:
+  print_batch_fn: bd3lm.datamodule_bd3lm.print_batch_bd3lm
+
+tags:
+  dataset: owt

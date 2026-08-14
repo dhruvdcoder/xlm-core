@@ -154,7 +154,13 @@ class DefaultBd3lmCollator(Collator):
             if self.add_eos:
                 seq_with_bos = seq_with_bos + [self.tokenizer.eos_token_id]
 
-            # Pad to max_len
+            
+            if len(seq_with_bos) < max_len and self.tokenizer.pad_token_id is None:
+                raise ValueError(
+                    f"a sequence is {len(seq_with_bos)} tokens and needs padding to "
+                    f"{max_len}, but the tokenizer has no pad_token. Add one via the "
+                    f"tokenizer's special_tokens, e.g. pad_token: \"<|endoftext|>\"."
+                )
             padded_seq = pad_truncate_list(
                 seq_with_bos,
                 max_len,
@@ -477,14 +483,9 @@ class Bd3lmSeq2SeqCollator:
         ### loss mask...
         prefix_attention_mask = torch.tensor(prefix["attention_mask"], dtype=torch.long)
         prefix_loss_mask = torch.zeros_like(prefix_attention_mask)
-        #suffix_loss_mask = torch.tensor(suffix_attention_mask)
         suffix_loss_mask = (noisy_suffix == self.tokenizer.mask_token_id).long()
         if not self.loss_on_padding:
-            # keep only real answer tokens. suffix_attention_mask is 1 for real
-            # tokens and 0 for the right padding added to reach target_size.
-            # With pad_token_id passed to q_xt above, PAD can no longer be MASK,
-            # so this is belt-and-braces - but it also covers the case where a PAD
-            # id happens to coincide with the mask id.
+           
             suffix_loss_mask = suffix_loss_mask * torch.tensor(
                 suffix_attention_mask, dtype=suffix_loss_mask.dtype
             )
@@ -577,12 +578,6 @@ class Bd3lmSeq2SeqPredCollator(Bd3lmSeq2SeqCollator):
 # region: Utilities
 
 
-def _replace_100_with_pad(ids: torch.Tensor, tokenizer: Tokenizer):
-    _ids = ids.clone()
-    _ids[_ids == -100] = tokenizer.pad_token_id
-    return _ids
-
-
 def print_batch_bd3lm(
     batch: Dict[str, Any],
     split: Literal["train", "val", "test", "predict"],
@@ -601,22 +596,17 @@ def print_batch_bd3lm(
         f"Printing first entries of the tensors in batch for {split}/{dataloader_name}..."
     )
     print("input tokens:")
-    # replace -100 with <pad>
-    _input_ids = _replace_100_with_pad(batch["input_ids"][0], tokenizer)
-    print(tokenizer.decode(_input_ids))
+    print(tokenizer.decode(batch["input_ids"][0]))
     print("input_ids:")
     print(batch["input_ids"][0])
     print("attention_mask (int):")
     print(batch["attention_mask"][0].int())
-    # Unconditional prediction batches carry no targets - there is nothing to compare
-    # a sample against - so target_ids is absent rather than empty. Print what is there
-    # instead of raising KeyError from a debug helper.
+    
     if "target_ids" in batch:
         print("target_ids:")
         print(batch["target_ids"][0])
         print("target tokens:")
-        _target_ids = _replace_100_with_pad(batch["target_ids"][0], tokenizer)
-        print(tokenizer.decode(_target_ids))
+        print(tokenizer.decode(batch["target_ids"][0]))
     else:
         print("target_ids: (none - unconditional batch)")
 
