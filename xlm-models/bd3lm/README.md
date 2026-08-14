@@ -24,8 +24,8 @@ bd3lm/
     ├── model_type/bd3lm.yaml                     
     ├── model_type/bd3lm_unconditional.yaml       
     ├── collator/{default,unconditional_pred,seq2seq,seq2seq_pred}_bd3lm.yaml
-    ├── datamodule/{owt,star{,_easy,_medium,_hard}}_bd3lm.yaml
-    ├── experiment/{owt_bd3lm,star_{easy,medium,hard}_bd3lm*}.yaml
+    ├── datamodule/{owt,star{,_easy,_medium,_hard}}_bd3lm*.yaml
+    ├── experiment/{owt,star_{easy,medium,hard}}_bd3lm*.yaml
     ├── pretrained/{auto,owt_bs4,owt_bs8,owt_bs16}.yaml   # pretrained model
     ├── datasets/bd3lm_empty_pred.yaml            
     ├── metrics/perplexity_bd3lm.yaml
