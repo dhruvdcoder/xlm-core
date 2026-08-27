@@ -215,7 +215,7 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
                     sorted_values, sorted_indices = torch.sort(confidence)
                     unmask = (
                         torch.cumsum(sorted_values, dim=-1)
-                        - torch.cummax(sorted_indices, dim=-1).values
+                        - torch.cummax(sorted_values, dim=-1).values
                         < self.threshold
                     )
                     unmask = unmask.scatter(-1, sorted_indices, unmask)
