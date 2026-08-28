@@ -4,8 +4,11 @@ import pytest
 import torch
 
 from mlm.datamodule_mlm import (
+    DefaultInfillMLMCollator,
     DefaultMLMCollator,
+    MLMInfillWithExactTargetPredCollator,
     MLMSeq2SeqPredCollator,
+    finalize_fixed_positions_mask,
     prepare_prefix_ids,
     prepare_prefix_suffix_ids,
 )
@@ -105,6 +108,11 @@ class TestMLMSeq2SeqPredCollator:
         assert (batch["input_ids"][:, -1] == bos).all()
         # The first position is padding for shorter prompts (3+1=4 < 16).
         assert (batch["input_ids"][:, 0] == pad).all()
+        assert "fixed_positions_mask" in batch
+        assert batch["fixed_positions_mask"].shape == (n, input_block_size)
+        assert batch["fixed_positions_mask"].all()
+        hidden = ~batch["attention_mask"]
+        assert batch["fixed_positions_mask"][hidden].all()
 
     def test_target_ids_pad_right(
         self, collator, raw_examples, simple_tokenizer, block_size
@@ -233,3 +241,133 @@ class TestPreparePrefixSuffixIds:
         # MLM masks only in suffix slot
         suffix_region = batch["input_ids"][0, 4:visible_len]
         assert (suffix_region == mask).any()
+        fixed = batch["fixed_positions_mask"]
+        assert fixed[0, :4].all()
+        assert not fixed[0, 4:visible_len].any()
+        assert fixed[0, visible_len:].all()
+        assert finalize_fixed_positions_mask(
+            fixed, batch["attention_mask"]
+        ).equal(fixed)
+        # Visible suffix pads take loss (target is pad, not -100).
+        assert batch["target_ids"][0, 7] == pad
+        assert batch["target_ids"][0, 7] != -100
+
+
+class TestFixedMaskInvariant:
+    """``fixed_positions_mask`` is the mutation-policy bit."""
+
+    def test_default_mlm_hides_right_pads_when_no_loss_on_padding(
+        self, simple_tokenizer, dummy_noise_schedule
+    ):
+        collator = DefaultMLMCollator(
+            tokenizer=simple_tokenizer,
+            block_size=16,
+            noise_schedule=dummy_noise_schedule,
+            loss_on_padding=False,
+        )
+        examples = [
+            {
+                "input_ids": [10, 11, 12],
+                "attention_mask": [1, 1, 1],
+                "token_type_ids": [0, 0, 0],
+            }
+        ]
+        torch.manual_seed(0)
+        batch = collator(examples)
+        torch.manual_seed(0)
+        again = collator(examples)
+        assert torch.equal(batch["input_ids"], again["input_ids"])
+        assert torch.equal(batch["target_ids"], again["target_ids"])
+        assert torch.equal(batch["attention_mask"], again["attention_mask"])
+        hidden = ~batch["attention_mask"]
+        assert hidden.any()
+        assert batch["fixed_positions_mask"][hidden].all()
+        assert not batch["fixed_positions_mask"][batch["attention_mask"]].any()
+
+    def test_visible_right_pads_are_not_fixed_when_loss_on_padding(
+        self, simple_tokenizer
+    ):
+        torch.manual_seed(0)
+        batch = prepare_prefix_suffix_ids(
+            prefix_ids=[[10, 11]],
+            suffix_ids=[[20]],
+            pad_token_id=simple_tokenizer.pad_token_id,
+            mask_token_id=simple_tokenizer.mask_token_id,
+            eos_token_id=simple_tokenizer.eos_token_id,
+            bos_token_id=simple_tokenizer.bos_token_id,
+            max_seq_len=12,
+            truncate="block",
+            loss_on_padding=True,
+        )
+        pad = simple_tokenizer.pad_token_id
+        # Last columns are right pads of the concat; they attend and take loss.
+        assert batch["attention_mask"][0, -1]
+        assert batch["target_ids"][0, -1] == pad
+        assert not batch["fixed_positions_mask"][0, -1]
+        # Prefix + BOS stay fixed.
+        assert batch["fixed_positions_mask"][0, :3].all()
+
+    def test_prepare_prefix_ids_marks_left_pads_fixed(self, simple_tokenizer):
+        out = prepare_prefix_ids(
+            [[10, 11, 12], [13, 14]],
+            simple_tokenizer.pad_token_id,
+            max_seq_len=8,
+            truncate="block",
+        )
+        assert out["fixed_positions_mask"].all()
+        hidden = ~out["attention_mask"]
+        assert hidden.any()
+        assert out["fixed_positions_mask"][hidden].all()
+
+    def test_infill_clues_and_hidden_pads_are_fixed(
+        self, simple_tokenizer, dummy_noise_schedule
+    ):
+        mask = simple_tokenizer.mask_token_id
+        collator = DefaultInfillMLMCollator(
+            tokenizer=simple_tokenizer,
+            block_size=12,
+            noise_schedule=dummy_noise_schedule,
+            loss_on_padding=False,
+            add_bos=False,
+            add_eos=False,
+        )
+        examples = [
+            {
+                "input_ids": [10, 11, 12, 13],
+                "prompt_ids": [10, mask, 12, mask],
+            }
+        ]
+        batch = collator(examples)
+        hidden = ~batch["attention_mask"]
+        assert batch["fixed_positions_mask"][0, 0]
+        assert not batch["fixed_positions_mask"][0, 1]
+        assert batch["fixed_positions_mask"][0, 2]
+        assert not batch["fixed_positions_mask"][0, 3]
+        assert hidden.any()
+        assert batch["fixed_positions_mask"][hidden].all()
+
+    def test_exact_target_pred_emits_clue_fixed_mask(
+        self, simple_tokenizer, dummy_noise_schedule
+    ):
+        mask = simple_tokenizer.mask_token_id
+        collator = MLMInfillWithExactTargetPredCollator(
+            tokenizer=simple_tokenizer,
+            block_size=8,
+            noise_schedule=dummy_noise_schedule,
+            loss_on_padding=True,
+            add_bos=False,
+            add_eos=False,
+        )
+        examples = [
+            {
+                "prompt_ids": [10, mask, 12],
+                "input_ids": [10, 11, 12],
+            }
+        ]
+        batch = collator(examples)
+        assert batch["fixed_positions_mask"][0, 0]
+        assert not batch["fixed_positions_mask"][0, 1]
+        assert batch["fixed_positions_mask"][0, 2]
+        # Visible right pads remain editable when loss_on_padding=True.
+        assert batch["attention_mask"][0, -1]
+        assert not batch["fixed_positions_mask"][0, -1]

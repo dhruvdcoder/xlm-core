@@ -34,6 +34,66 @@ def seq2seq_suffix_ids(
     return []
 
 
+def finalize_fixed_positions_mask(
+    fixed: Optional[TT],
+    attention_mask: TT,
+) -> TT:
+    """Close ``fixed`` over attention-hidden slots.
+
+    ``True`` means the tensor slot must not change. Visible suffix-canvas
+    pads stay ``False`` when they have ``attention_mask=True``.
+    """
+    attn = attention_mask.to(dtype=torch.bool)
+    if fixed is None:
+        closed = torch.zeros_like(attn)
+    else:
+        closed = fixed.to(dtype=torch.bool)
+        if closed.shape != attn.shape:
+            raise ValueError(
+                "fixed_positions_mask shape "
+                f"{tuple(closed.shape)} does not match attention_mask "
+                f"{tuple(attn.shape)}"
+            )
+    closed = closed | ~attn
+    if attn.numel() > 0 and not closed[~attn].all():
+        raise AssertionError(
+            "fixed_positions_mask must be True wherever "
+            "attention_mask is False"
+        )
+    return closed
+
+
+def resolve_fixed_positions_mask(
+    batch: Mapping[str, Any],
+    attention_mask: TT,
+    *,
+    fallback: Optional[TT] = None,
+) -> TT:
+    """Read the canonical mask or its ``infill_positions_mask`` alias."""
+    fixed = batch.get("fixed_positions_mask")
+    if fixed is None:
+        fixed = batch.get("infill_positions_mask")
+    if fixed is None:
+        fixed = fallback
+    return finalize_fixed_positions_mask(fixed, attention_mask)
+
+
+def extend_fixed_positions_mask(
+    fixed: TT,
+    num_new: int,
+    *,
+    fill: bool = False,
+) -> TT:
+    """Append ``num_new`` slots to a fixed mask (prediction-time suffix)."""
+    extra = torch.full(
+        (fixed.shape[0], num_new),
+        fill,
+        dtype=torch.bool,
+        device=fixed.device,
+    )
+    return torch.cat([fixed, extra], dim=-1)
+
+
 ################################################################################
 # region: Collators
 
@@ -185,14 +245,16 @@ def mlm_single_segment_collate_fn(
     if not loss_on_padding:
         mask = mask.logical_and(attention_mask)
     input_ids[mask] = mask_token_id
+    if mask_positions is not None:
+        fixed = torch.stack(fixed_positions_mask, dim=0)
+    else:
+        fixed = None
     return {
         "input_ids": input_ids,
         "attention_mask": attention_mask,
         "target_ids": torch.stack(target_ids, dim=0),
-        "fixed_positions_mask": (
-            torch.stack(fixed_positions_mask, dim=0)
-            if mask_positions is not None
-            else None
+        "fixed_positions_mask": finalize_fixed_positions_mask(
+            fixed, attention_mask
         ),
     }
 
@@ -221,6 +283,8 @@ def prepare_prefix_ids(
         Dict[str, TT]:
             input_ids: Integer[TT, " batch seq_len"]
             attention_mask: Integer[TT, " batch seq_len"]
+            fixed_positions_mask: Bool[TT, " batch seq_len"]
+                All ``True`` — the prompt block, including left pads, is frozen.
     """
     input_ids: List[List[int]] = []
     attention_mask: List[List[int]] = []
@@ -247,9 +311,12 @@ def prepare_prefix_ids(
             pad_truncate_list([1] * len(temp), max_len, 0, pad_left=True)
         )
 
+    input_ids_t = torch.tensor(input_ids, dtype=torch.long)
+    attention_mask_t = torch.tensor(attention_mask, dtype=torch.bool)
     return {
-        "input_ids": torch.tensor(input_ids, dtype=torch.long),
-        "attention_mask": torch.tensor(attention_mask, dtype=torch.bool),
+        "input_ids": input_ids_t,
+        "attention_mask": attention_mask_t,
+        "fixed_positions_mask": torch.ones_like(attention_mask_t),
     }
 
 
@@ -280,6 +347,7 @@ def prepare_prefix_suffix_ids(
     attention_mask: List[TT] = []
     target_ids: List[TT] = []
     mask: List[TT] = []
+    fixed_positions_mask: List[TT] = []
     add_eos = int(eos_token_id is not None)
     add_bos = int(
         bos_token_id is not None
@@ -347,6 +415,9 @@ def prepare_prefix_suffix_ids(
                     _target_ids[j] = -100
             target_ids.append(_target_ids)
             mask.append(_mask)
+            _fixed = torch.zeros(len(temp), dtype=torch.bool)
+            _fixed[: len(_prefix_ids) + add_bos] = True
+            fixed_positions_mask.append(_fixed)
         else:
             # bos should not be masked
             suffix_mask = pad_truncate_list(
@@ -400,6 +471,9 @@ def prepare_prefix_suffix_ids(
                 _target_ids = _input_ids.clone()
                 _target_ids[~attention_mask[-1]] = -100  # no loss on padding
                 target_ids.append(_target_ids)
+            _fixed = torch.zeros(len(temp), dtype=torch.bool)
+            _fixed[: len(_prefix_ids) + add_bos] = True
+            fixed_positions_mask.append(_fixed)
     target_ids = torch.stack(target_ids, dim=0)
     attention_mask = torch.stack(attention_mask, dim=0)
     input_ids = torch.stack(input_ids, dim=0)
@@ -409,6 +483,9 @@ def prepare_prefix_suffix_ids(
         "input_ids": input_ids,
         "attention_mask": attention_mask,
         "target_ids": target_ids,
+        "fixed_positions_mask": finalize_fixed_positions_mask(
+            torch.stack(fixed_positions_mask, dim=0), attention_mask
+        ),
     }
 
 
@@ -612,15 +689,26 @@ class MLMSeq2SeqCollator(Collator):
             truncate=self.truncate,
             loss_on_padding=self.loss_on_padding,
         )
+        attention_mask = torch.cat(
+            [prefix["attention_mask"], suffix["attention_mask"]], dim=1
+        )
         batch = {
             "input_ids": torch.cat(
                 [prefix["input_ids"], suffix["input_ids"]], dim=1
             ),
-            "attention_mask": torch.cat(
-                [prefix["attention_mask"], suffix["attention_mask"]], dim=1
-            ),
+            "attention_mask": attention_mask,
             "target_ids": torch.cat(
                 [prefix["input_ids"], suffix["target_ids"]], dim=1
+            ),
+            "fixed_positions_mask": finalize_fixed_positions_mask(
+                torch.cat(
+                    [
+                        prefix["fixed_positions_mask"],
+                        suffix["fixed_positions_mask"],
+                    ],
+                    dim=1,
+                ),
+                attention_mask,
             ),
         }
         return self._merge_pass_through(examples, batch)  # type: ignore[return-value]
@@ -652,15 +740,26 @@ class _MLMSeq2SeqPredCollator(MLMSeq2SeqCollator):
             mask_all=True,
         )
 
+        attention_mask = torch.cat(
+            [prefix["attention_mask"], suffix["attention_mask"]], dim=1
+        )
         batch = {
             "input_ids": torch.cat(
                 [prefix["input_ids"], suffix["input_ids"]], dim=1
             ),
-            "attention_mask": torch.cat(
-                [prefix["attention_mask"], suffix["attention_mask"]], dim=1
-            ),
+            "attention_mask": attention_mask,
             "target_ids": torch.cat(
                 [prefix["input_ids"], suffix["target_ids"]], dim=1
+            ),
+            "fixed_positions_mask": finalize_fixed_positions_mask(
+                torch.cat(
+                    [
+                        prefix["fixed_positions_mask"],
+                        suffix["fixed_positions_mask"],
+                    ],
+                    dim=1,
+                ),
+                attention_mask,
             ),
         }
         return self._merge_pass_through(examples, batch)  # type: ignore[return-value]
@@ -686,10 +785,14 @@ class MLMSeq2SeqPredCollator(MLMSeq2SeqCollator):
             truncate=self.truncate,
         )
         suffix_lists = self._suffix_lists(examples)
+        prefix_fixed = finalize_fixed_positions_mask(
+            prefix["fixed_positions_mask"], prefix["attention_mask"]
+        )
         if all(len(s) == 0 for s in suffix_lists):
             batch = {
                 "input_ids": prefix["input_ids"],
                 "attention_mask": prefix["attention_mask"],
+                "fixed_positions_mask": prefix_fixed,
             }
             return self._merge_pass_through(examples, batch)  # type: ignore[return-value]
         if any(len(s) == 0 for s in suffix_lists):
@@ -722,6 +825,7 @@ class MLMSeq2SeqPredCollator(MLMSeq2SeqCollator):
             "input_ids": prefix["input_ids"],
             "attention_mask": prefix["attention_mask"],
             "target_ids": torch.tensor(target_ids, dtype=torch.long),
+            "fixed_positions_mask": prefix_fixed,
         }
         return self._merge_pass_through(examples, batch)  # type: ignore[return-value]
 
@@ -733,16 +837,21 @@ class MLMInfillWithExactTargetPredCollator(DefaultMLMCollator):
         self,
         examples: List[BaseCollatorInput],
     ) -> MLMBatch:
+        mask_token_id = self.tokenizer.mask_token_id
         batch = mlm_single_segment_collate_fn(
             [e["prompt_ids"] for e in examples],
             self.tokenizer.pad_token_id,
-            self.tokenizer.mask_token_id,
+            mask_token_id,
             bos_token_id=self.tokenizer.bos_token_id if self.add_bos else None,
             eos_token_id=self.tokenizer.eos_token_id if self.add_eos else None,
             max_seq_len=self.block_size,
             truncate=self.truncate,
             loss_on_padding=self.loss_on_padding,
-            mask_none=True,  # This is the only difference from the default collator
+            mask_none=True,  # keep masks already present in prompt_ids
+            mask_positions=[
+                [token == mask_token_id for token in e["prompt_ids"]]
+                for e in examples
+            ],
         )
         # replace the target_ids
         batch["target_ids"] = torch.tensor(

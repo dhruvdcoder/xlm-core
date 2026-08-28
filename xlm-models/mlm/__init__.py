@@ -21,6 +21,8 @@ from .datamodule_mlm import (
     MLMSeq2SeqTrainCollator,
     MLMSeq2SeqCollator,
     MLMSeq2SeqPredCollator,
+    finalize_fixed_positions_mask,
+    resolve_fixed_positions_mask,
 )
 from .types_mlm import (
     MLMBatch,
@@ -42,6 +44,8 @@ __all__ = [
     "MLMSeq2SeqTrainCollator",
     "MLMSeq2SeqCollator",
     "MLMSeq2SeqPredCollator",
+    "finalize_fixed_positions_mask",
+    "resolve_fixed_positions_mask",
     "MLMBatch",
     "PackedFlexMLMBatch",
     "MLMSeq2SeqPredictionBatch",
