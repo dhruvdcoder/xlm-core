@@ -142,7 +142,7 @@ Hydra configs under {{ gh_dir('xlm-models/bd3lm/configs', 'xlm-models/bd3lm/conf
 | `experiment/owt_bd3lm.yaml` | unconditional pre-training on OpenWebText |
 | `experiment/owt_bd3lm_inference.yaml` | unconditional generation + generative perplexity |
 | `datamodule/owt_bd3lm_pred.yaml` | generation-only datamodule (downloads nothing) |
-| `pretrained/auto.yaml` | released checkpoint from the Hub, chosen by `block_size` |
+| `pretrained/kuleshov_group_bd3lm.yaml` | released checkpoint from the Hub, chosen by `block_size` |
 | `datasets/bd3lm_empty_pred.yaml` | blank rows for unconditional generation |
 
 The package is registered in `xlm_models.json` (`"bd3lm": "bd3lm"`).
@@ -181,29 +181,7 @@ xlm job_type=train job_name=my_run experiment=owt_bd3lm
 Large.
 
 ```bash
-xlm job_type=eval job_name=my_gen experiment=owt_bd3lm_inference +pretrained=auto
-```
-
-### Fine-tuning from a released checkpoint
-
-```bash
-xlm job_type=train job_name=my_finetune \
-  experiment=star_medium_bd3lm \
-  +pretrained=auto
-```
-
-The checkpoint is derived from `block_size`, so `block_size=8` pulls
-`kuleshov-group/bd3lm-owt-block_size8`. Weights are fetched at model construction and
-cached by HuggingFace. Compatible checkpoints are `block_size` 4, 8 and 16, plus
-`block_size1024-pretrain` (pin that one with `hub.repo_id=<repo>`); all are
-768 / 12 / 12 on the GPT-2 vocabulary.
-
-On a task whose vocabulary is not GPT-2's, the three vocabulary-sized tensors cannot
-transfer — they are skipped and reported, and the transformer blocks still load:
-
-```
-[bd3lm] warm start from kuleshov-group/bd3lm-owt-block_size4: loaded 128/131 tensors
-[bd3lm]   3 skipped on shape (training from scratch) - usually a vocabulary difference
+xlm job_type=eval job_name=my_gen experiment=owt_bd3lm_inference +pretrained=kuleshov_group_bd3lm
 ```
 
 
