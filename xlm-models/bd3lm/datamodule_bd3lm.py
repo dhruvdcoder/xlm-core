@@ -503,7 +503,7 @@ class Bd3lmSeq2SeqCollator:
                 max(len(seq) for seq in x0),
                 dtype=torch.long,
             ),
-            "target_ids": torch.tensor(target_ids, dtype=torch.long),
+            "target_ids": target_ids.clone().detach().to(torch.long),
             "loss_scale": loss_scale,
             "sigma": sigma,
             "input_ids": torch.cat((xt, x0), dim=-1),
