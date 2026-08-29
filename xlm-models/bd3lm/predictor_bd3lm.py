@@ -75,10 +75,11 @@ class Bd3lmPredictor(Predictor[Bd3lmBatch, Bd3lmPredictionDict]):
         stop = False # stop sampling?
         truncate_idx = None # truncate sample? (variable-length sampling only)
 
-        '''# CRITERION 2: always stop sampling if entropy is low
-        entropy = self._compute_entropy(x[:, -9:])
-        if entropy < 4:
-            stop = True'''
+        # CRITERION 2: always stop sampling if entropy is low
+        entropy = self._compute_entropy(x[:, -self.config.sampling.entropy_window:])
+        if self.config.sampling.entropy_stop and entropy < self.config.sampling.entropy_threshold:
+            stop = True
+
 
         # for variable length sampling, check if we should stop
         # sampling, and where to truncate the sample
@@ -97,9 +98,9 @@ class Bd3lmPredictor(Predictor[Bd3lmBatch, Bd3lmPredictionDict]):
                     # truncate_idx = min(eos_idx[1][0]+1, x.shape[1])
 
             # CRITERION 2: stop if entropy/likelihood is low
-            '''if entropy < 4:
+            if self.config.sampling.entropy_stop and entropy < self.config.sampling.entropy_threshold:
                 stop = True
-                truncate_idx = x.shape[1] '''
+                truncate_idx = x.shape[1] - self.config.sampling.entropy_window
 
         # truncate sample (variable-length sampling only)
         if truncate_idx is not None:
