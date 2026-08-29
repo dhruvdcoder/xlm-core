@@ -59,12 +59,17 @@ class Bd3lmPredictor(Predictor[Bd3lmBatch, Bd3lmPredictionDict]):
         self.block_size = self.config.block_size if self.config is not None else None
         self.neg_infinity = -1000000.0
     def _compute_entropy(self, x):
-        _, counts = torch.unique(x, return_counts=True, sorted=False)
-        entropy = torch.special.entr(counts.float() / counts.sum()).sum()
-        return entropy
+        """Token-distribution entropy per row, in nats. Returns shape [B]."""
+        out = []
+        for row in x:
+            _, counts = torch.unique(row, return_counts=True, sorted=False)
+            out.append(torch.special.entr(counts.float() / counts.sum()).sum())
+        return torch.stack(out)
+
     def _check_stop_conds(self, x):
-        """Check if sampling should stop based on 1) eos, 2) entropy, or 3) likelihood.
-        Entropy/likelihood evaluated on last 256 token-block.
+        """Stop on EOS, or on low entropy in the last `sampling.entropy_window`
+        tokens.
+
     
         Args:
         x: torch.Tensor, current sample.
@@ -79,8 +84,6 @@ class Bd3lmPredictor(Predictor[Bd3lmBatch, Bd3lmPredictionDict]):
         entropy = self._compute_entropy(x[:, -self.config.sampling.entropy_window:])
         if self.config.sampling.entropy_stop and entropy < self.config.sampling.entropy_threshold:
             stop = True
-
-
         # for variable length sampling, check if we should stop
         # sampling, and where to truncate the sample
         if self.config.sampling.var_length:
