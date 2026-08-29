@@ -27,6 +27,10 @@ datamodule:
       prediction:
         dataloader_kwargs:
           batch_size: 1
+model:
+  config:
+    sampling:
+      entropy_stop: false
 
 eval:
   split: test
