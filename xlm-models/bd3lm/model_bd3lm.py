@@ -808,10 +808,6 @@ class DDiT(nn.Module):
         sample_mode=sample_mode,
         mask=mask,
         store_kv=store_kv)
-      if not torch.isfinite(x).all():
-        print("NaN after block", i)
-        print("x min/max:", torch.nan_to_num(x).min().item(), torch.nan_to_num(x).max().item())
-        raise RuntimeError("NaN inside transformer block")
     x = self.output_layer(x, t_cond)
     if cross_attn and not sample_mode:
       x = x[:, :self.n]
