@@ -94,8 +94,7 @@ class Bd3lmPredictor(Predictor[Bd3lmBatch, Bd3lmPredictionDict]):
                     has_eos = is_eos.any(dim=1)
                     truncate_idx = min(
                         int(first_eos[has_eos].max().item()) + 1, x.shape[1])
-                    # original (batch size 1 only):
-                    # truncate_idx = min(eos_idx[1][0]+1, x.shape[1])
+                    
 
             # CRITERION 2: stop if entropy/likelihood is low
             if self.config.sampling.entropy_stop and entropy < self.config.sampling.entropy_threshold:
