@@ -34,6 +34,8 @@ model:
       nucleus_p: 0.9
       kv_cache: true
       confidence_decoding: false
+      entropy_stop: true
+
 
 
 num_unconditional_prediction_examples: 300
