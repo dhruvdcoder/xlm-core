@@ -59,12 +59,10 @@ class Bd3lmPredictor(Predictor[Bd3lmBatch, Bd3lmPredictionDict]):
         self.block_size = self.config.block_size if self.config is not None else None
         self.neg_infinity = -1000000.0
     def _compute_entropy(self, x):
-        """Token-distribution entropy per row, in nats. Returns shape [B]."""
-        out = []
-        for row in x:
-            _, counts = torch.unique(row, return_counts=True, sorted=False)
-            out.append(torch.special.entr(counts.float() / counts.sum()).sum())
-        return torch.stack(out)
+        _, counts = torch.unique(x, return_counts=True, sorted=False)
+        entropy = torch.special.entr(counts.float() / counts.sum()).sum()
+        return entropy
+
 
     def _check_stop_conds(self, x):
         """Stop on EOS, or on low entropy in the last `sampling.entropy_window`
