@@ -127,14 +127,6 @@ class Bd3lmLoss(LossFunction[Bd3lmBatch, Bd3lmLossDict]):
         loss = loss_scale * log_p_theta
         nlls = (loss * loss_mask)
         token_nll = nlls.sum() / loss_mask.sum()
-        if not torch.isfinite(loss).all():
-            print("NaN loss debug", {
-                "sigma": (sigma.min().item(), sigma.max().item(), torch.isfinite(sigma).all().item()),
-                "loss_scale": (loss_scale.min().item(), loss_scale.max().item(), torch.isfinite(loss_scale).all().item()),
-                "logits_finite": torch.isfinite(logits).all().item(),
-                "loss_mask_sum": loss_mask.sum().item(),
-            })
-            raise RuntimeError("NaN before loss return")
         return {
             "loss": token_nll,
         }
