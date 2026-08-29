@@ -794,10 +794,6 @@ class DDiT(nn.Module):
         else:
             mask = mask.to(x.device)
             mask = mask[None, None, :, :] & pad_key_mask
-    if not torch.isfinite(x).all():
-      print("NaN before blocks")
-      print(x)
-      raise RuntimeError("NaN before blocks")
 
     for i in range(len(self.blocks)):
       x = self.blocks[i](
