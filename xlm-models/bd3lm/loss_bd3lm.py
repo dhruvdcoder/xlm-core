@@ -106,8 +106,7 @@ class Bd3lmLoss(LossFunction[Bd3lmBatch, Bd3lmLossDict]):
         model_output = self._subs_parameterization(logits=logits,
                                       xt=xt)
         
-        if torch.isnan(model_output).any():
-            print("NaNs found in model_output")
+        
         
        
         
