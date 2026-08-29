@@ -19,6 +19,12 @@ trainer:
   devices: 1
   strategy: auto
 
+model:
+  config:
+    sampling:
+      entropy_stop: false
+
+
 eval:
   split: test
   ckpt_path: ???
