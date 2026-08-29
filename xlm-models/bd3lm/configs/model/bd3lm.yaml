@@ -48,7 +48,7 @@ model:
       confidence_decoding: true
       confidence: prob_diff
       # Stop on repetition
-      entropy_stop: true            
+      entropy_stop: false
       entropy_threshold: 4.0
       entropy_window: 256
 
