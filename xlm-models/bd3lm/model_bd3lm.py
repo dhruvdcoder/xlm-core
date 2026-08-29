@@ -844,8 +844,8 @@ class Bd3lmModel(nn.Module, huggingface_hub.PyTorchModelHubMixin):
   def _adapt_state_dict(self, state_dict, prefix, *args):
     """Drop what a released checkpoint carries that this model cannot take.
 
-    The eval path loads with strict=True, so both of these have to be handled here
-    rather than by strict_model_only_load.
+    The eval path loads with strict=True, so here we drop the unused buffers.
+
     """
     import logging
 
@@ -855,21 +855,7 @@ class Bd3lmModel(nn.Module, huggingface_hub.PyTorchModelHubMixin):
       logging.getLogger(__name__).info(
         "[bd3lm] checkpoint was trained with %s; this run uses the range in the "
         "noise_schedule config", dropped)
-
-    
-    own = self.state_dict()
-    mismatched = []
-    for key in [k for k in state_dict if k.startswith(prefix)]:
-      tail = key[len(prefix):]
-      if tail in own and own[tail].shape != state_dict[key].shape:
-        mismatched.append((tail, tuple(own[tail].shape), tuple(state_dict.pop(key).shape)))
-    if mismatched:
-      log = logging.getLogger(__name__).warning
-      log("[bd3lm] %d tensor(s) skipped on shape and will train from scratch - "
-          "usually a vocabulary difference:", len(mismatched))
-      for name, ours, theirs in mismatched:
-        log("[bd3lm]     %s: model %s vs checkpoint %s", name, ours, theirs)
-
+        
   def reset_kv_cache(self):
     self.backbone.reset_kv_cache()
 

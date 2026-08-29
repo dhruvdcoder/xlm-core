@@ -25,7 +25,7 @@ bd3lm/
     ├── collator/{default,unconditional_pred,seq2seq,seq2seq_pred}_bd3lm.yaml
     ├── datamodule/{owt,star{,_easy,_medium,_hard}}_bd3lm*.yaml
     ├── experiment/{owt,star_{easy,medium,hard}}_bd3lm*.yaml
-    ├── pretrained/auto.yaml                     # released checkpoints from the Hub
+    ├── pretrained/kuleshov_group_bd3lm.yaml                        # released checkpoints from the Hub
     ├── datasets/bd3lm_empty_pred.yaml            
     ├── metrics/perplexity_bd3lm.yaml
     └── noise_schedule/bd3lm.yaml
@@ -76,11 +76,11 @@ xlm ... model.config.sampling.confidence_decoding=false
 
 ## Unconditional generation
 
-Generate from a released checkpoint. `+pretrained=auto` picks the one matching your
+Generate from a released checkpoint. `+pretrained=kuleshov_group_bd3lm` picks the one matching your
 `block_size` and pulls it from the Hub:
 
 ```bash
-xlm job_type=eval job_name=my_gen experiment=owt_bd3lm_inference +pretrained=auto
+xlm job_type=eval job_name=my_gen experiment=owt_bd3lm_inference +pretrained=kuleshov_group_bd3lm
 ```
 
 ## Model sizes
@@ -92,35 +92,6 @@ available — `tiny`, `small` and `medium`. Pick one with `model=`:
 xlm job_type=train job_name=my_run \
   experiment=star_medium_bd3lm \
   model=bd3lm_tiny        # or bd3lm_small (default), bd3lm_medium
-```
-
-## Fine-tuning from a released checkpoint
-
-Add one flag:
-
-```bash
-xlm job_type=train job_name=my_finetune \
-  experiment=star_medium_bd3lm \
-  +pretrained=auto
-```
-
-The checkpoint is derived from `block_size`, so `block_size=8` pulls the block_size8
-weights. Four are compatible, all 768 / 12 blocks / 12 heads (`bd3lm_small`) on the
-GPT-2 vocabulary:
-
-| block size | checkpoint |
-|---|---|
-| 4 | `kuleshov-group/bd3lm-owt-block_size4` |
-| 8 | `kuleshov-group/bd3lm-owt-block_size8` |
-| 16 | `kuleshov-group/bd3lm-owt-block_size16` |
-| 1024 | `kuleshov-group/bd3lm-owt-block_size1024-pretrain` |
-
-On a task whose vocabulary is not GPT-2's, the three vocabulary-sized tensors cannot
-transfer. They are skipped and reported, and the transformer blocks still load:
-
-```
-[bd3lm] 3 tensor(s) skipped on shape and will train from scratch - usually a vocabulary difference:
-[bd3lm]     backbone.vocab_embed.embedding: model (27, 768) vs checkpoint (50258, 768)
 ```
 
 ## Cite

@@ -18,7 +18,7 @@ dataloader_pin_memory: false
 
 monitored_metric: null
 
-# Pass the weights with +pretrained=auto, or your own eval.ckpt_path.
+# Pass the weights with +pretrained=kuleshov_group_bd3lm, or your own eval.ckpt_path.
 eval:
   split: validation
 
