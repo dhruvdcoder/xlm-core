@@ -105,12 +105,6 @@ class Bd3lmLoss(LossFunction[Bd3lmBatch, Bd3lmLossDict]):
         
         model_output = self._subs_parameterization(logits=logits,
                                       xt=xt)
-        
-        
-        
-       
-        
-
         model_output = model_output[:, -target_len:, :]  # [1, 12, 27]
         loss_mask = loss_mask[:, -target_len:]    # [1, 12]
         ## when loss_on_padding is False, we want to ignore the PAD tokens in the target_ids
