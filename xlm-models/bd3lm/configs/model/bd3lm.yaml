@@ -47,5 +47,10 @@ model:
       nucleus_p: 0.9
       confidence_decoding: true
       confidence: prob_diff
+      # Stop on repetition
+      entropy_stop: true
+      entropy_threshold: 4.0
+      entropy_window: 256
+
 tags:
   model: bd3lm
