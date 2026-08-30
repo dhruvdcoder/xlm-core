@@ -1100,6 +1100,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../models/bd3lm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BD3-LM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../models/flexmdm/" class="md-nav__link">
         
   
@@ -6472,7 +6500,7 @@ matching metric group on the right.</p>
     test_pred -- "dataloader_name = #quot;prediction#quot;" --&gt; rm_test_pred</code></pre>
 <p>Internally, <code>TextDataModule</code> stores its managers as a nested dictionary:</p>
 <div class="highlight"><pre><span></span><code><span class="n">dataset_managers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span>
-    <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="s2">&quot;predict&quot;</span><span class="p">],</span>
+    <span class="n">Literal</span><span class="p">[</span><span class="s2">"train"</span><span class="p">,</span> <span class="s2">"val"</span><span class="p">,</span> <span class="s2">"test"</span><span class="p">,</span> <span class="s2">"predict"</span><span class="p">],</span>
     <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">DatasetManager</span><span class="p">],</span>  <span class="c1"># key = dataloader name</span>
 <span class="p">]</span>
 </code></pre></div>
@@ -6485,10 +6513,10 @@ the dataloader name to find the right metrics:</p>
 <div class="highlight"><pre><span></span><code>dataloader_idx  (from Lightning Trainer)
       |
       v
-dataloader_names[stage][idx]   --&gt;  dataloader_name  (e.g. &quot;lm&quot;)
+dataloader_names[stage][idx]   --&gt;  dataloader_name  (e.g. "lm")
       |
       v
-reported_metrics[&quot;metrics_{stage}&quot;][dataloader_name]  --&gt;  list of MetricWrapper
+reported_metrics["metrics_{stage}"][dataloader_name]  --&gt;  list of MetricWrapper
 </code></pre></div>
 <p>Because the same name appears in both the datamodule config and the metrics
 config, adding a new evaluation dataset with its own metrics is just a matter of

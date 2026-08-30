@@ -987,6 +987,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../models/bd3lm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BD3-LM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../models/flexmdm/" class="md-nav__link">
         
   
@@ -6365,8 +6393,8 @@
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">xlm.utils.fsdp_grouping</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_layer_wrap_policy</span>
 
 <span class="n">policy</span> <span class="o">=</span> <span class="n">make_layer_wrap_policy</span><span class="p">(</span>
-    <span class="s2">&quot;my_package.modeling.MyDecoderLayer&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;my_package.modeling.SomeOtherBlock&quot;</span><span class="p">,</span>
+    <span class="s2">"my_package.modeling.MyDecoderLayer"</span><span class="p">,</span>
+    <span class="s2">"my_package.modeling.SomeOtherBlock"</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 <h3 id="activation_checkpointing_policy"><code>activation_checkpointing_policy</code></h3>
@@ -6375,7 +6403,7 @@
 <h3 id="mixed_precision"><code>mixed_precision</code></h3>
 <p>From <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/utils/fsdp_grouping.py">fsdp_grouping.py</a>:</p>
 <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fsdp_bf16_mixed_precision</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Default FSDP mixed precision: bf16 params, fp32 reductions.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Default FSDP mixed precision: bf16 params, fp32 reductions."""</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">torch.distributed.fsdp</span><span class="w"> </span><span class="kn">import</span> <span class="n">MixedPrecision</span>
 
@@ -6476,7 +6504,7 @@
 </code></pre></div>
 <p>Lightning's heuristic for distinguishing the two formats is exactly this:</p>
 <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_is_sharded_checkpoint</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">path</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span> <span class="ow">and</span> <span class="p">(</span><span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;meta.pt&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">path</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span> <span class="ow">and</span> <span class="p">(</span><span class="n">path</span> <span class="o">/</span> <span class="s2">"meta.pt"</span><span class="p">)</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_is_full_checkpoint</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">path</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span>
@@ -6559,7 +6587,7 @@
         <span class="n">dist</span><span class="o">.</span><span class="n">all_reduce</span><span class="p">(</span><span class="n">local_sq</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">dist</span><span class="o">.</span><span class="n">ReduceOp</span><span class="o">.</span><span class="n">SUM</span><span class="p">)</span>
     <span class="n">global_norm</span> <span class="o">=</span> <span class="n">local_sq</span><span class="o">.</span><span class="n">sqrt</span><span class="p">()</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
-        <span class="s2">&quot;Total gradient (norm)&quot;</span><span class="p">,</span>
+        <span class="s2">"Total gradient (norm)"</span><span class="p">,</span>
         <span class="n">global_norm</span><span class="p">,</span>
         <span class="n">on_step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">on_epoch</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>

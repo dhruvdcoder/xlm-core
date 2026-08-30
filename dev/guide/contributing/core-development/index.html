@@ -995,6 +995,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../models/bd3lm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BD3-LM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../models/flexmdm/" class="md-nav__link">
         
   
@@ -6526,7 +6554,7 @@
 <h2 id="prerequisites">Prerequisites</h2>
 <p>Set up your environment first: <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/CONTRIBUTING.md#install-from-source">Install from source</a> in the Contributing hub.</p>
 <p>For core work, install the same stacks CI uses so optional task paths and model families stay importable:</p>
-<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[all]&quot;</span>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">".[all]"</span>
 pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>./xlm-models
 pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements/test_requirements.txt<span class="w"> </span><span class="se">\</span>
 <span class="w">            </span>-r<span class="w"> </span>requirements/dev_requirements.txt<span class="w"> </span><span class="se">\</span>
@@ -6573,12 +6601,12 @@ pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </s
 <ul>
 <li><strong>Fast loop (while developing):</strong></li>
 </ul>
-<div class="highlight"><pre><span></span><code>pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;not slow and not cli&quot;</span>
+<div class="highlight"><pre><span></span><code>pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">"not slow and not cli"</span>
 </code></pre></div>
 <ul>
 <li><strong>CI-aligned run</strong> (matches <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/.github/workflows/tests.yml">tests.yml</a>):</li>
 </ul>
-<div class="highlight"><pre><span></span><code>pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;not gpu and not cli and not integration&quot;</span>
+<div class="highlight"><pre><span></span><code>pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">"not gpu and not cli and not integration"</span>
 </code></pre></div>
 <ul>
 <li><strong>Style:</strong> format and lint changed paths, e.g. <code>black src xlm-models tests</code> and <code>flake8 src/xlm/</code> on files you modified.</li>

@@ -995,6 +995,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../../models/bd3lm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BD3-LM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../../models/flexmdm/" class="md-nav__link">
         
   
@@ -6769,9 +6797,9 @@ checkpoint or random init). Used by eval to pass to trainer.</li>
     <h3 id="xlm.utils.model_loading.load_model_for_inference--generation-load-from-checkpoint-with-hf-hub-support">Generation: Load from checkpoint with HF Hub support</h3>
     <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">module</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">load_model_for_inference</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">cfg</span><span class="p">,</span> <span class="n">datamodule</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">config_prefix</span><span class="o">=</span><span class="s2">&quot;generation&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">config_prefix</span><span class="o">=</span><span class="s2">"generation"</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">manual_ema_restore</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">move_to_device</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">move_to_device</span><span class="o">=</span><span class="s2">"cuda"</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">set_eval_mode</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">enable_hub_support</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="gp">... </span><span class="p">)</span>
@@ -6779,7 +6807,7 @@ checkpoint or random init). Used by eval to pass to trainer.</li>
     <h3 id="xlm.utils.model_loading.load_model_for_inference--evaluation-return-checkpoint-path-for-trainer">Evaluation: Return checkpoint path for trainer</h3>
     <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">module</span><span class="p">,</span> <span class="n">ckpt_path</span> <span class="o">=</span> <span class="n">load_model_for_inference</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">cfg</span><span class="p">,</span> <span class="n">datamodule</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">config_prefix</span><span class="o">=</span><span class="s2">&quot;eval&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">config_prefix</span><span class="o">=</span><span class="s2">"eval"</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">checkpoint_fallback_dir</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">checkpointing_dir</span><span class="p">,</span>
 <span class="gp">... </span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">trainer</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">datamodule</span><span class="p">,</span> <span class="n">ckpt_path</span><span class="o">=</span><span class="n">ckpt_path</span><span class="p">)</span>
@@ -6787,9 +6815,9 @@ checkpoint or random init). Used by eval to pass to trainer.</li>
     <h3 id="xlm.utils.model_loading.load_model_for_inference--push-to-hub-top-level-config-keys">Push to Hub: Top-level config keys</h3>
     <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">module</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">load_model_for_inference</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">cfg</span><span class="p">,</span> <span class="n">datamodule</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">config_prefix</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">config_prefix</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">manual_ema_restore</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">move_to_device</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">move_to_device</span><span class="o">=</span><span class="s2">"cuda"</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">set_eval_mode</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">enable_hub_support</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="gp">... </span><span class="p">)</span>

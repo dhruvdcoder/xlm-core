@@ -16,7 +16,7 @@
         <link rel="prev" href="../">
       
       
-        <link rel="next" href="../flexmdm/">
+        <link rel="next" href="../bd3lm/">
       
       
         
@@ -1210,6 +1210,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bd3lm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BD3-LM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -6594,11 +6622,11 @@
 <h2 id="3-architecture">3. Architecture</h2>
 <p><code>RotaryTransformerARLMModel(num_embeddings, d_model, num_layers, nhead, ...)</code> is structurally similar to the MLM backbone (RoPE + <code>RotaryTransformerLayer</code>s + <code>RotaryTransformerFinalLayer</code>), but the loss path always supplies a <strong>3-D causal attention mask</strong>:</p>
 <div class="highlight"><pre><span></span><code><span class="n">forward</span><span class="p">(</span>
-    <span class="n">x_t</span><span class="p">:</span> <span class="n">Integer</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">&quot; *batch seq_len&quot;</span><span class="p">],</span>
-    <span class="n">attention_mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Bool</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">&quot; *batch seq_len seq_len&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">positions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Integer</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">&quot; *batch seq_len&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">token_type_ids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Integer</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">&quot; *batch seq_len&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Float</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">&quot; *batch seq_len vocab_size&quot;</span><span class="p">]</span>
+    <span class="n">x_t</span><span class="p">:</span> <span class="n">Integer</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">" *batch seq_len"</span><span class="p">],</span>
+    <span class="n">attention_mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Bool</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">" *batch seq_len seq_len"</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">positions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Integer</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">" *batch seq_len"</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">token_type_ids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Integer</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">" *batch seq_len"</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Float</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">" *batch seq_len vocab_size"</span><span class="p">]</span>
 </code></pre></div>
 <ul>
 <li><code>attention_mask</code> accepts a <code>(B, L, L)</code> or <code>(B, L)</code> mask. The loss builds <code>causal_attention_mask = tril(ones(L, L)) &amp; attention_mask.unsqueeze(1)</code> so future tokens are masked out.</li>

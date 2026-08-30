@@ -995,6 +995,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../models/bd3lm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BD3-LM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../models/flexmdm/" class="md-nav__link">
         
   
@@ -7050,7 +7078,7 @@ stored as a list of tuples: (decoded_text, confidence_score, step_number).</p>
 
 
 <h3 id="xlm.harness.PredictorHistoryMixin.update_history_from_state" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">update_history_from_state</span><span class="p">(</span><span class="n">history</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">confidence_key</span><span class="o">=</span><span class="s1">&#39;confidence&#39;</span><span class="p">,</span> <span class="n">active_mask_key</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">update_history_from_state</span><span class="p">(</span><span class="n">history</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">confidence_key</span><span class="o">=</span><span class="s1">'confidence'</span><span class="p">,</span> <span class="n">active_mask_key</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 </h3>
 
@@ -7669,7 +7697,7 @@ enabling global metric computation (e.g., diversity on full generated set).</p>
 
 
 <h3 id="xlm.harness.Harness.create_lr_scheduler" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">create_lr_scheduler</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">num_warmup_steps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fraction_warmup_steps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_training_steps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="s1">&#39;step&#39;</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">monitor</span><span class="o">=</span><span class="s1">&#39;train_loss&#39;</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">create_lr_scheduler</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">num_warmup_steps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fraction_warmup_steps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_training_steps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="s1">'step'</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">monitor</span><span class="o">=</span><span class="s1">'train_loss'</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
@@ -8411,7 +8439,7 @@ the existing model. It does NOT reconstruct a new Harness instance.</p>
 
 
 <h3 id="xlm.harness.Harness.from_checkpoint" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">from_checkpoint</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">,</span> <span class="n">cfg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">datamodule</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">apply_ema</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">map_location</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">from_checkpoint</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">,</span> <span class="n">cfg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">datamodule</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">apply_ema</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">map_location</span><span class="o">=</span><span class="s1">'cpu'</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>

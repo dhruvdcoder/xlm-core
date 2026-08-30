@@ -1066,6 +1066,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../models/bd3lm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BD3-LM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../models/flexmdm/" class="md-nav__link">
         
   
@@ -6403,9 +6431,9 @@
 <h2 id="single-file-ckpt-ddp-or-fsdp-state_dict_type-full">Single-file <code>.ckpt</code> (DDP or FSDP <code>state_dict_type: full</code>)</h2>
 <p>Writes a PyTorch <code>.pth</code> via <code>torch.save</code> (or pushes to the Hub using the Harness / <code>PyTorchModelHubMixin</code>). EMA is supported via <code>apply_ema</code>.</p>
 <p>!!! example
-<div class="highlight"><pre><span></span><code>xlm<span class="w"> </span><span class="s2">&quot;job_type=extract_checkpoint&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="s2">&quot;job_name=owt_flexmdm&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="s2">&quot;experiment=owt_flexmdm&quot;</span><span class="w"> </span><span class="se">\</span>
+<div class="highlight"><pre><span></span><code>xlm<span class="w"> </span><span class="s2">"job_type=extract_checkpoint"</span><span class="w"> </span><span class="se">\</span>
+<span class="s2">"job_name=owt_flexmdm"</span><span class="w"> </span><span class="se">\</span>
+<span class="s2">"experiment=owt_flexmdm"</span><span class="w"> </span><span class="se">\</span>
 +post_training<span class="o">=</span>default<span class="w"> </span><span class="se">\</span>
 +post_training.checkpoint_path<span class="o">=</span>location/of/checkpoints/34-400000.ckpt<span class="w"> </span><span class="se">\</span>
 +post_training.model_state_dict_path<span class="o">=</span>output/folder/model_state_dict.pth

@@ -995,6 +995,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../models/bd3lm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BD3-LM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../models/flexmdm/" class="md-nav__link">
         
   
@@ -6662,11 +6690,11 @@ exercise in a single process.</p>
 </tbody>
 </table>
 <h3 id="run-the-single-process-lifecycle-tier">Run the single-process lifecycle tier</h3>
-<div class="highlight"><pre><span></span><code>pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;integration and not ddp&quot;</span><span class="w"> </span>tests/integration/
+<div class="highlight"><pre><span></span><code>pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">"integration and not ddp"</span><span class="w"> </span>tests/integration/
 </code></pre></div>
 <p>Fast (~1 s), no subprocesses; safe to run on every push.</p>
 <h3 id="run-the-cpu-multi-process-ddp-tier">Run the CPU multi-process DDP tier</h3>
-<div class="highlight"><pre><span></span><code>pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;integration and ddp and not slurm&quot;</span><span class="w"> </span>tests/integration/
+<div class="highlight"><pre><span></span><code>pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">"integration and ddp and not slurm"</span><span class="w"> </span>tests/integration/
 </code></pre></div>
 <p>Spawns Python subprocesses with <code>gloo</code>. Expect ~10-15 s per test.
 Requires nothing beyond the standard test environment.</p>
@@ -6675,7 +6703,7 @@ Requires nothing beyond the standard test environment.</p>
 PATH and <em>also</em> without <code>XLM_INTEGRATION_SLURM_ENABLE=1</code>. This
 prevents accidental job submissions on cluster login nodes.</p>
 <div class="highlight"><pre><span></span><code><span class="nv">XLM_INTEGRATION_SLURM_ENABLE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
-pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;integration and slurm&quot;</span><span class="w"> </span>tests/integration/
+pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">"integration and slurm"</span><span class="w"> </span>tests/integration/
 </code></pre></div>
 <p>If the default partition / GRES in
 <code>tests/integration/datamodule/slurm/ddp_iterable_shards/script.sh</code>
@@ -6683,13 +6711,13 @@ does not match your cluster, override via
 <code>XLM_INTEGRATION_SBATCH_ARGS</code> (comma-separated, forwarded verbatim
 to <code>sbatch</code>):</p>
 <div class="highlight"><pre><span></span><code><span class="nv">XLM_INTEGRATION_SLURM_ENABLE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
-<span class="nv">XLM_INTEGRATION_SBATCH_ARGS</span><span class="o">=</span><span class="s2">&quot;--partition=gpu,--qos=debug&quot;</span><span class="w"> </span><span class="se">\</span>
-pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;integration and slurm&quot;</span><span class="w"> </span>tests/integration/
+<span class="nv">XLM_INTEGRATION_SBATCH_ARGS</span><span class="o">=</span><span class="s2">"--partition=gpu,--qos=debug"</span><span class="w"> </span><span class="se">\</span>
+pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">"integration and slurm"</span><span class="w"> </span>tests/integration/
 </code></pre></div>
 <p>Per-rank <code>rank_&lt;RANK&gt;.json</code> result files and SLURM <code>slurm-*.out</code> logs
 land in pytest's <code>tmp_path</code>; on failure the assertion message points at the directory.</p>
 <h3 id="run-the-entire-integration-suite-locally">Run the entire integration suite locally</h3>
-<div class="highlight"><pre><span></span><code>pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;integration and not slurm&quot;</span><span class="w"> </span>tests/integration/
+<div class="highlight"><pre><span></span><code>pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">"integration and not slurm"</span><span class="w"> </span>tests/integration/
 </code></pre></div>
 <p>This runs everything that does not require SLURM (~2 min).</p>
 <h2 id="goals-and-design-choices">Goals and design choices</h2>
@@ -6799,11 +6827,11 @@ land in pytest's <code>tmp_path</code>; on failure the assertion message points 
 writes a single <code>rank_&lt;RANK&gt;.json</code> file into the test's <code>result_dir</code>
 with the same baseline schema:</p>
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;rank&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;world_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;ok&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;error&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;...&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;scenario-specific fields (epochs, ids, batch_shapes, ...)&quot;</span>
+<span class="w">  </span><span class="nt">"rank"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"world_size"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"ok"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"error"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"..."</span><span class="p">:</span><span class="w"> </span><span class="s2">"scenario-specific fields (epochs, ids, batch_shapes, ...)"</span>
 <span class="p">}</span>
 </code></pre></div>
 <p>If anything raises inside the entrypoint, the same file is still
@@ -6840,9 +6868,9 @@ embedded in the message.</p>
 </tbody>
 </table>
 <p>The markers compose:</p>
-<div class="highlight"><pre><span></span><code>pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;integration and not ddp&quot;</span><span class="w">     </span><span class="c1"># single-process matrix only</span>
-pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;integration and ddp&quot;</span><span class="w">         </span><span class="c1"># multi-process incl. Lightning</span>
-pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;integration and slurm&quot;</span><span class="w">       </span><span class="c1"># SLURM only (needs opt-in env)</span>
+<div class="highlight"><pre><span></span><code>pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">"integration and not ddp"</span><span class="w">     </span><span class="c1"># single-process matrix only</span>
+pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">"integration and ddp"</span><span class="w">         </span><span class="c1"># multi-process incl. Lightning</span>
+pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">"integration and slurm"</span><span class="w">       </span><span class="c1"># SLURM only (needs opt-in env)</span>
 </code></pre></div>
 <h2 id="fixtures-cheat-sheet">Fixtures cheat-sheet</h2>
 <p>All fixtures live in the root <code>tests/conftest.py</code> so both the unit suite (<code>tests/core/</code>) and the integration suite (<code>tests/integration/</code>) can use them:</p>
@@ -6930,10 +6958,10 @@ pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;i
 <h2 id="cpu-multi-process-runner">CPU multi-process runner</h2>
 <p><code>tests.integration._runner.run_cpu_distributed</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="n">results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="n">run_cpu_distributed</span><span class="p">(</span>
-    <span class="n">script_module</span><span class="o">=</span><span class="s2">&quot;tests.integration._scripts.ddp_dsm_entrypoint&quot;</span><span class="p">,</span>
+    <span class="n">script_module</span><span class="o">=</span><span class="s2">"tests.integration._scripts.ddp_dsm_entrypoint"</span><span class="p">,</span>
     <span class="n">world_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
     <span class="n">result_dir</span><span class="o">=</span><span class="n">result_dir</span><span class="p">,</span>           <span class="c1"># the result_dir fixture</span>
-    <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dsm_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">},</span> <span class="s2">&quot;run&quot;</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">}},</span>
+    <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">"dsm_kwargs"</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">},</span> <span class="s2">"run"</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">}},</span>
     <span class="n">timeout</span><span class="o">=</span><span class="mf">120.0</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -6949,12 +6977,12 @@ pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;i
 <h2 id="slurm-job-runner">SLURM job runner</h2>
 <p><code>tests.integration._slurm.submit_sbatch_and_wait</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="n">results</span> <span class="o">=</span> <span class="n">submit_sbatch_and_wait</span><span class="p">(</span>
-    <span class="n">script_sh</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;.../slurm/ddp_iterable_shards/script.sh&quot;</span><span class="p">),</span>
+    <span class="n">script_sh</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">".../slurm/ddp_iterable_shards/script.sh"</span><span class="p">),</span>
     <span class="n">result_dir</span><span class="o">=</span><span class="n">result_dir</span><span class="p">,</span>
-    <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dsm_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">},</span> <span class="s2">&quot;run&quot;</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">}},</span>
+    <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">"dsm_kwargs"</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">},</span> <span class="s2">"run"</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">}},</span>
     <span class="n">expected_world_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
     <span class="n">timeout</span><span class="o">=</span><span class="mf">900.0</span><span class="p">,</span>
-    <span class="n">extra_sbatch_args</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;--partition=gpu&quot;</span><span class="p">],</span>
+    <span class="n">extra_sbatch_args</span><span class="o">=</span><span class="p">[</span><span class="s2">"--partition=gpu"</span><span class="p">],</span>
 <span class="p">)</span>
 </code></pre></div>
 <p>Same result-file contract as the CPU runner; the only differences are:</p>

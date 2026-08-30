@@ -995,6 +995,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../models/bd3lm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BD3-LM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../models/flexmdm/" class="md-nav__link">
         
   
@@ -6611,7 +6639,7 @@
 
 
 <h3 id="ilm.predictor_ilm.ILMPredictor.__init__" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">max_steps</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">noise_schedule</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tokens_to_suppress</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_history</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sampling_method</span><span class="o">=</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">second_sampling_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">second_top</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">second_p</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_constraint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">max_steps</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">noise_schedule</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tokens_to_suppress</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_history</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sampling_method</span><span class="o">=</span><span class="s1">'sample'</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">second_sampling_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">second_top</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">second_p</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_constraint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 </h3>
 
@@ -6923,7 +6951,7 @@ using the <code>second_sampling_method</code>.
 
 
 <h3 id="ilm.predictor_ilm.ILMPredictorWithLengthClassification.__init__" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">max_steps</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">stopping_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">noise_schedule</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tokens_to_suppress</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_history</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sampling_method</span><span class="o">=</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">second_sampling_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">second_top</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">second_p</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">force_predict_first_step</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">input_constraint</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_high_precision</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stopping_temperature</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">max_steps</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">stopping_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">noise_schedule</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tokens_to_suppress</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_history</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sampling_method</span><span class="o">=</span><span class="s1">'sample'</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">second_sampling_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">second_top</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">second_p</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">force_predict_first_step</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">input_constraint</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_high_precision</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stopping_temperature</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span></code>
 
 </h3>
 

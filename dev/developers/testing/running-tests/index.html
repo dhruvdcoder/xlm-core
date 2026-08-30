@@ -995,6 +995,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../models/bd3lm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BD3-LM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../models/flexmdm/" class="md-nav__link">
         
   
@@ -6584,7 +6612,7 @@
 </ul>
 <p>A session-scoped fixture first runs <code>job_type=prepare_data</code> for each unique experiment in <code>SMOKE_RUNS</code>, then the parametrized test runs <code>job_type=train</code> (or whatever you list). Success means the subprocess exits with code 0.</p>
 <p><strong>Run smoke tests only</strong> (requires <code>xlm</code> on your <code>PATH</code>, e.g. <code>pip install -e .</code>):</p>
-<div class="highlight"><pre><span></span><code>pytest<span class="w"> </span>tests/cli/test_smoke.py<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;cli and slow&quot;</span><span class="w"> </span>-v
+<div class="highlight"><pre><span></span><code>pytest<span class="w"> </span>tests/cli/test_smoke.py<span class="w"> </span>-m<span class="w"> </span><span class="s2">"cli and slow"</span><span class="w"> </span>-v
 </code></pre></div>
 <p>Markers <code>cli</code> and <code>slow</code> are defined in <code>pyproject.toml</code> under <code>[tool.pytest.ini_options]</code>.</p>
 <p><strong>Caches:</strong> point these at existing caches to avoid re-downloading datasets (the <code>prepare_data</code> step respects them):</p>
@@ -6595,7 +6623,7 @@
 <p><strong>Add a new combo:</strong> append a <code>(experiment_name, job_type)</code> tuple to <code>SMOKE_RUNS</code> in <code>tests/cli/test_smoke.py</code>. The parametrized test id becomes <code>experiment_name-job_type</code>.</p>
 <h2 id="running-tests_1">Running tests</h2>
 <h3 id="run-the-fast-unit-tests-recommended-during-development">Run the fast unit tests (recommended during development)</h3>
-<div class="highlight"><pre><span></span><code>pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;not slow and not cli&quot;</span>
+<div class="highlight"><pre><span></span><code>pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">"not slow and not cli"</span>
 </code></pre></div>
 <p>This runs only the fast tests (~76 tests) and skips anything that needs
 large datasets, real noise schedules, Hydra configs, or subprocess calls.
@@ -6664,10 +6692,10 @@ pytest<span class="w"> </span>tests/core/test_tokenizers.py::TestSimpleSpaceToke
 </table>
 <p>You can combine markers:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Everything except slow and GPU tests</span>
-pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;not slow and not gpu&quot;</span>
+pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">"not slow and not gpu"</span>
 </code></pre></div>
 <h2 id="running-with-coverage">Running with coverage</h2>
-<div class="highlight"><pre><span></span><code>coverage<span class="w"> </span>run<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;not slow and not cli&quot;</span>
+<div class="highlight"><pre><span></span><code>coverage<span class="w"> </span>run<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">"not slow and not cli"</span>
 coverage<span class="w"> </span>report
 </code></pre></div>
 <p>Coverage settings are in <code>pyproject.toml</code> under <code>[tool.coverage.*]</code>.

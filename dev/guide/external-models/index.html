@@ -1308,6 +1308,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../models/bd3lm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BD3-LM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../models/flexmdm/" class="md-nav__link">
         
   
@@ -7006,9 +7034,9 @@
     <span class="n">tokenizer</span><span class="p">:</span> <span class="n">Tokenizer</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">loss_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="n">T_in</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T_out</span><span class="p">:</span> <span class="o">...</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pl_module</span><span class="p">:</span> <span class="s2">&quot;Harness&quot;</span><span class="p">):</span> <span class="o">...</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts scalar to tensor such that loss_fn becomes compile friendly. If you don&#39;t want to compile you don&#39;t need to implement this.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pl_module</span><span class="p">:</span> <span class="s2">"Harness"</span><span class="p">):</span> <span class="o">...</span>
+<span class="w">        </span><span class="sd">"""Converts scalar to tensor such that loss_fn becomes compile friendly. If you don't want to compile you don't need to implement this.</span>
+<span class="sd">        """</span>
 </code></pre></div></p>
 <p>Examples: <code>xlm-models/arlm/loss_arlm.py</code></p>
 <h3 id="2-predictor">2. <strong>Predictor</strong></h3>
@@ -7033,15 +7061,15 @@
 - Handle padding and truncation.</p>
 <p><strong>Interface:</strong>
 <div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Collator</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;For pre-training the model on language modeling.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""For pre-training the model on language modeling."""</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">examples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span> <span class="o">...</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Seq2SeqCollator</span><span class="p">(</span><span class="n">Collator</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;For training the model on seq2seq tasks.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""For training the model on seq2seq tasks."""</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">examples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span> <span class="o">...</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Seq2SeqCollatorPrediction</span><span class="p">(</span><span class="n">Collator</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;For generating predictions for seq2seq tasks.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""For generating predictions for seq2seq tasks."""</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">examples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span> <span class="o">...</span>
 </code></pre></div></p>
 <p>Examples: <code>xlm-models/arlm/datamodule_arlm.py</code></p>
@@ -7106,15 +7134,15 @@
 </ul>
 <p>Create a <code>xlm_models.json</code> file in the search directory:</p>
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;my_awesome_model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my_awesome_model&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;another_model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;path/to/another_model&quot;</span>
+<span class="w">  </span><span class="nt">"my_awesome_model"</span><span class="p">:</span><span class="w"> </span><span class="s2">"my_awesome_model"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"another_model"</span><span class="p">:</span><span class="w"> </span><span class="s2">"path/to/another_model"</span>
 <span class="p">}</span>
 </code></pre></div>
 <p>The paths are relative to the directory containing <code>xlm_models.json</code>.</p>
 <p><strong>Example:</strong></p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Project structure</span>
 .
-├──<span class="w"> </span>xlm_models.json<span class="w">          </span><span class="c1"># {&quot;my_model&quot;: &quot;my_model&quot;}</span>
+├──<span class="w"> </span>xlm_models.json<span class="w">          </span><span class="c1"># {"my_model": "my_model"}</span>
 ├──<span class="w"> </span>setup.py
 ├──<span class="w"> </span>README.md
 ├──<span class="w"> </span>my_model/<span class="w">                </span><span class="c1"># Model root = Python package</span>
@@ -7130,10 +7158,10 @@
 <p>Each model needs its own <code>setup.py</code> that packages the configs:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># setup.py</span>
 <span class="n">setup</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_awesome_model&quot;</span><span class="p">,</span>
-    <span class="n">packages</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;my_awesome_model&quot;</span><span class="p">],</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"my_awesome_model"</span><span class="p">,</span>
+    <span class="n">packages</span><span class="o">=</span><span class="p">[</span><span class="s2">"my_awesome_model"</span><span class="p">],</span>
     <span class="n">package_data</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;my_awesome_model&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;configs/**/*.yaml&quot;</span><span class="p">,</span> <span class="s2">&quot;configs/**/*.yml&quot;</span><span class="p">],</span>
+        <span class="s2">"my_awesome_model"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"configs/**/*.yaml"</span><span class="p">,</span> <span class="s2">"configs/**/*.yml"</span><span class="p">],</span>
     <span class="p">},</span>
     <span class="n">include_package_data</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span>
@@ -7147,12 +7175,12 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>./another_model
 
 <span class="c1"># Register both installed packages</span>
-<span class="nb">export</span><span class="w"> </span><span class="nv">XLM_MODELS_PACKAGES</span><span class="o">=</span><span class="s2">&quot;my_awesome_model:another_model&quot;</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">XLM_MODELS_PACKAGES</span><span class="o">=</span><span class="s2">"my_awesome_model:another_model"</span>
 </code></pre></div>
 <p><strong>Core models</strong> (<code>arlm</code>, <code>mlm</code>, <code>ilm</code>, <code>mdlm</code>) are automatically discovered and don't need to be added to <code>XLM_MODELS_PACKAGES</code>.</p>
 <h2 id="troubleshooting">Troubleshooting</h2>
 <h3 id="model-not-found">Model Not Found</h3>
-<div class="highlight"><pre><span></span><code>Error: No module named &#39;my_model&#39;
+<div class="highlight"><pre><span></span><code>Error: No module named 'my_model'
 </code></pre></div>
 <p><strong>Check:</strong></p>
 <ul>
@@ -7166,7 +7194,7 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 </code></pre></div>
 <p><strong>Solution:</strong> Each model must have a unique name. Check for duplicate entries in <code>xlm_models.json</code> files or conflicts with core XLM models.</p>
 <h3 id="config-not-found">Config Not Found</h3>
-<div class="highlight"><pre><span></span><code>hydra.errors.ConfigCompositionException: Could not find &#39;model/my_model&#39;
+<div class="highlight"><pre><span></span><code>hydra.errors.ConfigCompositionException: Could not find 'model/my_model'
 </code></pre></div>
 <p><strong>Check:</strong></p>
 <ul>

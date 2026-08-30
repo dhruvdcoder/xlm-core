@@ -995,6 +995,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../models/bd3lm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BD3-LM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../models/flexmdm/" class="md-nav__link">
         
   
@@ -6774,7 +6802,7 @@
 
 
 <h3 id="arlm.datamodule_arlm.DefaultARLMCollator.__init__" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="n">block_size</span><span class="p">,</span> <span class="n">noise_schedule</span><span class="p">,</span> <span class="n">truncate</span><span class="o">=</span><span class="s1">&#39;block&#39;</span><span class="p">,</span> <span class="n">add_eos</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="n">block_size</span><span class="p">,</span> <span class="n">noise_schedule</span><span class="p">,</span> <span class="n">truncate</span><span class="o">=</span><span class="s1">'block'</span><span class="p">,</span> <span class="n">add_eos</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 </h3>
 
@@ -7003,7 +7031,7 @@
 
 
 <h3 id="arlm.datamodule_arlm.ARLMSeq2SeqCollator.__init__" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="n">noise_schedule</span><span class="p">,</span> <span class="n">block_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_block_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">add_bos</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">add_eos</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">truncate</span><span class="o">=</span><span class="s1">&#39;block&#39;</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="n">noise_schedule</span><span class="p">,</span> <span class="n">block_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_block_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">add_bos</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">add_eos</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">truncate</span><span class="o">=</span><span class="s1">'block'</span><span class="p">)</span></code>
 
 </h3>
 
@@ -7349,7 +7377,7 @@
 
 
 <h2 id="arlm.datamodule_arlm.prepare_prefix_ids_arlm" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">prepare_prefix_ids_arlm</span><span class="p">(</span><span class="n">prefix_ids</span><span class="p">,</span> <span class="n">pad_token_id</span><span class="p">,</span> <span class="n">bos_token_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">eos_token_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_seq_len</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">truncate</span><span class="o">=</span><span class="s1">&#39;block&#39;</span><span class="p">,</span> <span class="n">add_bos</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">add_eos</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">prepare_prefix_ids_arlm</span><span class="p">(</span><span class="n">prefix_ids</span><span class="p">,</span> <span class="n">pad_token_id</span><span class="p">,</span> <span class="n">bos_token_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">eos_token_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_seq_len</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">truncate</span><span class="o">=</span><span class="s1">'block'</span><span class="p">,</span> <span class="n">add_bos</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">add_eos</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 </h2>
 
@@ -7533,7 +7561,7 @@
 
 
 <h2 id="arlm.datamodule_arlm.prepare_suffix_ids_arlm" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">prepare_suffix_ids_arlm</span><span class="p">(</span><span class="n">suffix_ids</span><span class="p">,</span> <span class="n">pad_token_id</span><span class="p">,</span> <span class="n">bos_token_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">eos_token_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_seq_len</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">truncate</span><span class="o">=</span><span class="s1">&#39;block&#39;</span><span class="p">,</span> <span class="n">add_bos</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">add_eos</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">prepare_suffix_ids_arlm</span><span class="p">(</span><span class="n">suffix_ids</span><span class="p">,</span> <span class="n">pad_token_id</span><span class="p">,</span> <span class="n">bos_token_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">eos_token_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_seq_len</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">truncate</span><span class="o">=</span><span class="s1">'block'</span><span class="p">,</span> <span class="n">add_bos</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">add_eos</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 </h2>
 
@@ -7717,7 +7745,7 @@
 
 
 <h2 id="arlm.datamodule_arlm.print_batch_arlm" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">print_batch_arlm</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">split</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">,</span> <span class="n">dataloader_name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">print_batch_arlm</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">split</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">,</span> <span class="n">dataloader_name</span><span class="o">=</span><span class="s1">''</span><span class="p">)</span></code>
 
 </h2>
 

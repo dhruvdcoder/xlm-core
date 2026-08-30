@@ -995,6 +995,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../../../models/bd3lm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BD3-LM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../../../models/flexmdm/" class="md-nav__link">
         
   
@@ -6501,11 +6529,11 @@
 be encoded differently whether it is at the beginning of the sentence (without space) or not:</p>
 <p><div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoTokenizer</span>
 
-<span class="o">&gt;&gt;&gt;</span> <span class="n">tokenizer</span> <span class="o">=</span> <span class="n">AutoTokenizer</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="s2">&quot;Dream-org/Dream-v0-Base-7B&quot;</span><span class="p">,</span> <span class="n">trust_remote_code</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">tokenizer</span><span class="p">(</span><span class="s2">&quot;Hello world&quot;</span><span class="p">)[</span><span class="s2">&quot;input_ids&quot;</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">tokenizer</span> <span class="o">=</span> <span class="n">AutoTokenizer</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="s2">"Dream-org/Dream-v0-Base-7B"</span><span class="p">,</span> <span class="n">trust_remote_code</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">tokenizer</span><span class="p">(</span><span class="s2">"Hello world"</span><span class="p">)[</span><span class="s2">"input_ids"</span><span class="p">]</span>
 <span class="p">[</span><span class="mi">9707</span><span class="p">,</span> <span class="mi">1879</span><span class="p">]</span>
 
-<span class="o">&gt;&gt;&gt;</span> <span class="n">tokenizer</span><span class="p">(</span><span class="s2">&quot; Hello world&quot;</span><span class="p">)[</span><span class="s2">&quot;input_ids&quot;</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">tokenizer</span><span class="p">(</span><span class="s2">" Hello world"</span><span class="p">)[</span><span class="s2">"input_ids"</span><span class="p">]</span>
 <span class="p">[</span><span class="mi">21927</span><span class="p">,</span> <span class="mi">1879</span><span class="p">]</span>
 </code></pre></div>
 This is expected.</p>

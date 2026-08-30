@@ -998,6 +998,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../bd3lm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BD3-LM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../flexmdm/" class="md-nav__link">
         
   
@@ -6558,14 +6586,14 @@
 </ul>
 <p>Common forward signature:</p>
 <div class="highlight"><pre><span></span><code><span class="n">forward</span><span class="p">(</span>
-    <span class="n">x_t</span><span class="p">:</span> <span class="n">Integer</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">&quot; *batch seq_len&quot;</span><span class="p">],</span>
-    <span class="n">attention_mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Bool</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">&quot; *batch seq_len&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">positions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Integer</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">&quot; *batch seq_len&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">token_type_ids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Integer</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">&quot; *batch seq_len&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">cls_position</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Integer</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">&quot; *batch&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">x_t</span><span class="p">:</span> <span class="n">Integer</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">" *batch seq_len"</span><span class="p">],</span>
+    <span class="n">attention_mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Bool</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">" *batch seq_len"</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">positions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Integer</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">" *batch seq_len"</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">token_type_ids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Integer</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">" *batch seq_len"</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">cls_position</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Integer</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">" *batch"</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
-    <span class="n">Float</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">&quot; *batch seq_len vocab_size&quot;</span><span class="p">],</span>
-    <span class="n">Optional</span><span class="p">[</span><span class="n">Float</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">&quot; *batch max_length | num_classes&quot;</span><span class="p">]],</span>
+    <span class="n">Float</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">" *batch seq_len vocab_size"</span><span class="p">],</span>
+    <span class="n">Optional</span><span class="p">[</span><span class="n">Float</span><span class="p">[</span><span class="n">TT</span><span class="p">,</span> <span class="s2">" *batch max_length | num_classes"</span><span class="p">]],</span>
 <span class="p">]</span>
 </code></pre></div>
 <ul>

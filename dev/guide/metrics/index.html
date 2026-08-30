@@ -1116,6 +1116,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../models/bd3lm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BD3-LM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../models/flexmdm/" class="md-nav__link">
         
   
@@ -6495,8 +6523,8 @@ in the <code>update_fn</code>.</p>
 <h2 id="storage-structure">Storage Structure</h2>
 <p>Metrics are stored as nested <code>ModuleDict</code>s inside the <code>Harness</code>:</p>
 <div class="highlight"><pre><span></span><code>reported_metrics
-  └── metrics_{stage}          (e.g. &quot;metrics_val&quot;)
-        └── {dataloader_name}  (e.g. &quot;lm&quot;, &quot;prediction&quot;)
+  └── metrics_{stage}          (e.g. "metrics_val")
+        └── {dataloader_name}  (e.g. "lm", "prediction")
               └── ModuleList[MetricWrapper, ...]
 </code></pre></div>
 <p><code>diagnostic_metrics</code> follows the same layout.</p>

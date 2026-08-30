@@ -1131,6 +1131,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../models/bd3lm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BD3-LM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../models/flexmdm/" class="md-nav__link">
         
   
@@ -6476,7 +6504,7 @@
 <p>Create a token at <a href="https://huggingface.co/settings/tokens">Settings → Access Tokens</a>.</p>
 </li>
 <li>Example:
-     <div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">HF_HUB_KEY</span><span class="o">=</span><span class="s2">&quot;hf_...&quot;</span>
+     <div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">HF_HUB_KEY</span><span class="o">=</span><span class="s2">"hf_..."</span>
 </code></pre></div>
      or <code>export HF_TOKEN=...</code> (same as <code>huggingface-cli login</code>).</li>
 <li>Or place <code>HF_HUB_KEY</code> / <code>HF_TOKEN</code> in <code>.secrets.env</code> (loaded automatically by the command).</li>
@@ -6507,7 +6535,7 @@
 <div class="highlight"><pre><span></span><code>xlm<span class="w"> </span><span class="nv">job_type</span><span class="o">=</span>push_to_hub<span class="w"> </span><span class="nv">job_name</span><span class="o">=</span>my_model_hub<span class="w"> </span><span class="nv">experiment</span><span class="o">=</span>my_experiment<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>+hub_checkpoint_path<span class="o">=</span>&lt;CHECKPOINT_PATH&gt;<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>+hub.repo_id<span class="o">=</span>&lt;YOUR_REPO_ID&gt;<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>+hub.commit_message<span class="o">=</span><span class="s2">&quot;Trained on LM1B, 50k steps&quot;</span>
+<span class="w">    </span>+hub.commit_message<span class="o">=</span><span class="s2">"Trained on LM1B, 50k steps"</span>
 </code></pre></div>
 <h3 id="pushing-to-a-specific-branch">Pushing to a specific branch</h3>
 <p>Push to a named branch (e.g., to track checkpoint steps). The <strong>model repository</strong> is created if it does not exist, then the branch is created from <code>main</code> if missing, then files are uploaded.</p>

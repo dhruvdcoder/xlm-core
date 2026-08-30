@@ -993,6 +993,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../models/bd3lm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BD3-LM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../models/flexmdm/" class="md-nav__link">
         
   
@@ -6477,7 +6505,7 @@
 <div class="highlight"><pre><span></span><code><span class="nv">HUB_REVISION</span><span class="o">=</span>step-800000
 <span class="nv">TOP_P</span><span class="o">=</span><span class="m">0</span>.95
 <span class="nv">MAX_STEPS</span><span class="o">=</span><span class="m">1024</span>
-<span class="nv">STEP</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">HUB_REVISION</span><span class="p">#step-</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="nv">STEP</span><span class="o">=</span><span class="s2">"</span><span class="si">${</span><span class="nv">HUB_REVISION</span><span class="p">#step-</span><span class="si">}</span><span class="s2">"</span>
 
 xlm<span class="w"> </span><span class="nv">job_name</span><span class="o">=</span>owt_mlm_eval_<span class="si">${</span><span class="nv">HUB_REVISION</span><span class="si">}</span>_<span class="si">${</span><span class="nv">TOP_P</span><span class="si">}</span>_<span class="si">${</span><span class="nv">MAX_STEPS</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span><span class="nv">job_type</span><span class="o">=</span><span class="nb">eval</span><span class="w"> </span><span class="nv">experiment</span><span class="o">=</span>owt_mlm<span class="w"> </span><span class="se">\</span>
@@ -6499,7 +6527,7 @@ xlm<span class="w"> </span><span class="nv">job_name</span><span class="o">=</sp
 <p>Reproduce the <strong>Results</strong> table below (<span class="arithmatex">\(p=0.95\)</span>, <span class="arithmatex">\(T \in \{128,256,512,1024\}\)</span>, checkpoint <code>step-800000</code>):</p>
 <div class="highlight"><pre><span></span><code><span class="nv">HUB_REVISION</span><span class="o">=</span>step-800000
 <span class="nv">TOP_P</span><span class="o">=</span><span class="m">0</span>.95
-<span class="nv">STEP</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">HUB_REVISION</span><span class="p">#step-</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="nv">STEP</span><span class="o">=</span><span class="s2">"</span><span class="si">${</span><span class="nv">HUB_REVISION</span><span class="p">#step-</span><span class="si">}</span><span class="s2">"</span>
 
 <span class="k">for</span><span class="w"> </span>MAX_STEPS<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="m">128</span><span class="w"> </span><span class="m">256</span><span class="w"> </span><span class="m">512</span><span class="w"> </span><span class="m">1024</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
 <span class="w">  </span>xlm<span class="w"> </span><span class="nv">job_name</span><span class="o">=</span>owt_mlm_eval_<span class="si">${</span><span class="nv">HUB_REVISION</span><span class="si">}</span>_<span class="si">${</span><span class="nv">TOP_P</span><span class="si">}</span>_<span class="si">${</span><span class="nv">MAX_STEPS</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
