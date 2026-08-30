@@ -1,0 +1,57 @@
+# @package _global_
+defaults:
+  - owt_bd3lm
+  - override /datamodule: owt_bd3lm_pred
+
+block_size: 4
+prompt_size: 0
+target_size: 1024   
+
+per_device_batch_size: 1
+global_batch_size: 1
+per_device_val_batch_size: 1
+
+num_dataloader_workers: 0
+num_dataset_workers: 0
+dataloader_prefetch_factor: null
+dataloader_pin_memory: false
+
+monitored_metric: null
+
+# Pass the weights with +pretrained=kuleshov_group_bd3lm, or your own eval.ckpt_path.
+eval:
+  split: validation
+
+trainer:
+  max_steps: 0
+  num_sanity_val_steps: 0
+
+model:
+  config:
+    sampling:
+      var_length: false
+      first_hitting: true
+      nucleus_p: 0.9
+      kv_cache: true
+      confidence_decoding: false
+      entropy_stop: true
+
+
+
+num_unconditional_prediction_examples: 300
+
+# Generative perplexity under GPT-2 Large.
+post_hoc_evaluator:
+  _target_: xlm.tasks.composite_eval.CompositePostHocEvaluator
+  evaluators:
+    prediction:
+      _target_: xlm.tasks.owt.generative_perplexity_post_hoc.GenerativePerplexityPostHocEval
+      default_judge_device: cuda
+      judge_devices: null
+      metric_prefix: ""
+      evaluators:
+        gpt2-large:
+          _target_: xlm.generative_perplexity.AutoModelForCausalLMGenerativePerplexityEvaluator
+          name: gpt2-large
+          batch_size: 64
+          max_length: ${target_size}

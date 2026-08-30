@@ -1,0 +1,16 @@
+# Unconditional (pre-training) collator: noises a whole sequence.
+_target_: bd3lm.datamodule_bd3lm.DefaultBd3lmCollator
+
+# Block size [4, 8, 16, 32, 64]
+block_size: ${block_size}
+
+# Sequence length [128, 256, 512, 1024]
+max_length: 1024
+loss_on_padding: False
+
+ignore_bos: true
+
+add_eos: false
+
+tokenizer: ${global_components:tokenizer}
+noise_schedule: ${global_components:noise_schedule}

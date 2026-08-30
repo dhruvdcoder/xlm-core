@@ -1,0 +1,14 @@
+# @package _global_
+# Load the released OWT checkpoint matching your block_size.
+#
+#   xlm job_type=train ... experiment=owt_bd3lm +pretrained=kuleshov_group_bd3lm
+#   xlm job_type=eval  ... experiment=owt_bd3lm_inference +pretrained=kuleshov_group_bd3lm
+#
+hub:
+  repo_id: kuleshov-group/bd3lm-owt-block_size${block_size}
+
+
+strict_model_only_load: false
+
+# Weights are about to be overwritten, so skip the random init.
+skip_init_weights: true

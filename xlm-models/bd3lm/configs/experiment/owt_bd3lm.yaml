@@ -1,0 +1,49 @@
+# @package _global_
+# Unconditional pre-training on OpenWebText.
+defaults:
+  - override /datamodule: owt_bd3lm
+  - override /noise_schedule: bd3lm
+  # loss + perplexity
+  - override /model_type: bd3lm_unconditional
+  - override /model: bd3lm
+
+per_device_batch_size: 8
+global_batch_size: 8
+per_device_val_batch_size: 8
+
+block_size: 4
+
+# Prompt size is 0 for unconditional pre-training, and target size is 1024 (the model's context length).
+prompt_size: 0
+target_size: 1024
+
+monitored_metric: val/lm/accumulated_loss
+
+global_components:
+  tokenizer:
+    _target_: xlm.datamodule.load_auto_tokenizer
+    pretrained_model_name_or_path: gpt2
+    special_tokens:
+      mask_token: "<|mask|>"   
+
+loss_on_padding: false
+
+trainer:
+  max_steps: 100000
+  val_check_interval: 2000
+  num_sanity_val_steps: 3
+  check_val_every_n_epoch: null
+
+callbacks:
+  checkpoint_monitor:
+    monitor: val/lm/accumulated_loss
+
+optimizer:
+  lr: 0.0003
+  weight_decay: 0.0
+
+lr_scheduler:
+  name: "constant_warmup"
+  num_warmup_steps: 2500
+  num_training_steps: ${trainer.max_steps}
+  monitor: "train/loss"

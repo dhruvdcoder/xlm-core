@@ -1,0 +1,15 @@
+# @package _global_
+global_components:
+  noise_schedule:
+    _target_: bd3lm.noise_schedule.Bd3lmNoise
+    block_size: ${block_size}
+    model_length: ${target_size}
+    antithetic_sampling: true
+    sampling_eps_min: 0.45
+    sampling_eps_max: 1.0
+    eps: 1e-3
+    noise_type: loglinear
+    resample: true
+
+tags:
+  noise_schedule: bd3lm_loglinear

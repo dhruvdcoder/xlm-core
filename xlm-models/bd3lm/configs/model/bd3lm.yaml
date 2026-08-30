@@ -1,0 +1,56 @@
+# @package _global_
+model:
+  _target_: bd3lm.model_bd3lm.Bd3lmModel
+  vocab_size: ${tokenizer:full_vocab_size}
+
+  config:
+    block_size: ${block_size}
+
+    model:
+      name: small
+      type: ddit
+      hidden_size: 768
+      cond_dim: 128
+      length: ${eval:${prompt_size}+${target_size}}
+      prompt_size: ${prompt_size}
+      target_length: ${target_size}
+      n_blocks: 12
+      n_heads: 12
+      scale_by_sigma: true
+      dropout: 0.3   
+      tie_word_embeddings: true
+      adaln: false
+      attn_backend: sdpa
+
+    algo:
+      name: bd3lm
+      backbone: dit
+      parameterization: subs
+      time_conditioning: false
+      T: 5000
+      causal_attention: false
+      cross_attn: true
+      var_min: true
+      clip_search_delta: 0.05
+      clip_search_widths: []
+      fix_clipping: false
+      sampler: semi_ar
+      mdlm_loss_scale: false
+  
+    loader:
+      eval_batch_size: ${per_device_val_batch_size}
+
+    sampling:
+      kv_cache: false
+      first_hitting: true
+      var_length: true
+      nucleus_p: 0.9
+      confidence_decoding: true
+      confidence: prob_diff
+      # Stop on repetition
+      entropy_stop: false
+      entropy_threshold: 4.0
+      entropy_window: 256
+
+tags:
+  model: bd3lm
