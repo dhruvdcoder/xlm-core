@@ -1,0 +1,13 @@
+defaults:
+  - iwslt14_de_en_rdm
+
+full_name: local/iwslt14_de_en_rdm_text_v1/train
+full_name_debug: local/iwslt14_de_en_rdm_text_v1/train
+load_kwargs:
+  data_files: ${oc.env:IWSLT14_RDM_TEXT_ROOT}/train.parquet
+stages:
+  - fit
+dataloader_kwargs:
+  # Sampler is set by DatasetManager; leave shuffle null (same as other map-style trains).
+  shuffle: null
+  drop_last: True

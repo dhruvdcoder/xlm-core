@@ -1,0 +1,8 @@
+# @package _global_
+defaults:
+  - ddit_flexmdm
+  - rotary_transformer_xtiny
+  - _self_
+
+tags:
+  model: ddit_flexmdm_xtiny

@@ -1,0 +1,10 @@
+defaults:
+  - iwslt14_de_en_rdm_val
+
+stages:
+  - fit
+  - validate
+  - predict
+dataloader_kwargs:
+  shuffle: false
+  drop_last: False

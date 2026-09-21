@@ -1428,23 +1428,23 @@ class LocalDatasetManager(DatasetManager):
         self.ds_type = ds_type
 
     def _download(self, num_proc: Optional[int] = None) -> datasets.Dataset:
-        if self.ds_type == "csv":
+        if self.ds_type in ("csv", "parquet"):
             # If data_files is specified in load_kwargs, use it; otherwise construct from path
             load_kwargs_copy = self.load_kwargs.copy()
             if "data_files" in load_kwargs_copy:
                 data_files = load_kwargs_copy.pop("data_files")
                 ds = datasets.load_dataset(
-                    "csv",
+                    self.ds_type,
                     data_files=data_files,
                     **load_kwargs_copy,
                     num_proc=num_proc,
                 )["train"]
             else:
-                file_name = f"{self._split_to_download}.csv"
+                file_name = f"{self._split_to_download}.{self.ds_type}"
                 _path = Path(self.full_name).parent
                 data_files = str(_path / file_name)
                 ds = datasets.load_dataset(
-                    "csv",
+                    self.ds_type,
                     data_files=data_files,
                     **self.load_kwargs,
                     num_proc=num_proc,

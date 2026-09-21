@@ -1,0 +1,50 @@
+{
+  "constructor": {
+    "bert_normalizer": false,
+    "dropout": null,
+    "lowercase": false,
+    "split_on_whitespace_only": true,
+    "suffix": "</w>",
+    "unicode_normalizer": null,
+    "unk_token": "<unk>"
+  },
+  "dependency_versions": {
+    "platform": "macOS-15.7.4-arm64-arm-64bit",
+    "python": "3.11.10",
+    "tokenizers": "0.22.2",
+    "transformers": "4.57.1"
+  },
+  "known_differences_from_subword_nmt": [
+    "HF CharBPE uses final vocab_size (incl. specials), not merge-count=10000",
+    "Merge tie-breaking may differ from subword-nmt",
+    "Segmentation is not required to be bit-identical to the legacy oracle"
+  ],
+  "name": "iwslt14_joint_char_bpe_v1",
+  "parent_recipe_code_version": "cddf21936d43c63c5659f815fd2814c88125c003eaaa050446c619b9ca1eed23",
+  "parent_text_artifact": "iwslt14_de_en_rdm_text_v1",
+  "parent_train_pair_sha256": "f3897679fc90e2f8196e8c04953eb36f8668c4515dd098b1621eb0d036ab5991",
+  "special_token_ids": {
+    "<bos>": 2,
+    "<eos>": 3,
+    "<mask>": 4,
+    "<pad>": 0,
+    "<unk>": 1
+  },
+  "tokenizer_class": "CharBPETokenizer",
+  "tokenizer_json_sha256": "975aedcb168bc1010ee3c67e28e8bf6242f2891e4a080c618782170ffe8f5e78",
+  "train": {
+    "corpus_order": "de_then_en",
+    "limit_alphabet": 50000,
+    "min_frequency": 2,
+    "special_tokens": [
+      "<pad>",
+      "<unk>",
+      "<bos>",
+      "<eos>",
+      "<mask>"
+    ],
+    "train_split_only": true,
+    "vocab_size_realized": 10152,
+    "vocab_size_requested": 10152
+  }
+}

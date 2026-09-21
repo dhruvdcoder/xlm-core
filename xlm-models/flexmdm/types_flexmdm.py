@@ -77,7 +77,7 @@ class FlexMDMPredictionDict(TypedDict, total=False):
     Attributes:
         loss (Optional[Float[TT, "batch"]]): The loss value. Typically None.
         text (List[str]): Full decoded sequence (prefix + generated suffix).
-        generated_text (List[str]): Decoded suffix only (non-fixed region).
+        generated_text (List[str]): Decoded suffix only (non-fixed region); filled in ``to_dict``.
         ids (Integer[TT, " batch seq_len"]): The batch of generated token_ids.
         time_taken (List[float]): Time taken for each prediction.
         history (List[List[Tuple[str, float, int]]]): Generation history for each batch element.

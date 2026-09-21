@@ -1,0 +1,11 @@
+# @package _global_
+defaults:
+  - rotary_transformer
+  - rotary_transformer_xtiny
+
+model:
+  _target_: ilm.model_ilm.RotaryTransformerILMModelWithStoppingClassification
+  final_layer_without_normalization: true
+
+tags:
+  model: rotary_transformer_xtiny_ilm_stopping

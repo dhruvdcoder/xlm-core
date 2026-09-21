@@ -30,8 +30,10 @@ class MLMBatch(TypedDict, total=False):
         segment_ids: Packed batches only — per-token segment index (for ``mask_mod``).
         block_mask: FlexAttention ``BlockMask`` from ``PackedMLMCollator`` when
             ``model.use_flex_attn=True``.
-        fixed_positions_mask: Optional boolean mask marking positions that should
-            not be masked (used by infilling collators).
+        fixed_positions_mask: Boolean mutation-policy mask. ``True`` means the
+            tensor slot must never change, including every slot where
+            ``attention_mask`` is False. Visible suffix-canvas pads stay
+            ``False`` when ``loss_on_padding=True``.
     """
 
     input_ids: Integer[TT, " batch seq_len"]
@@ -63,6 +65,7 @@ class MLMSeq2SeqPredictionBatch(TypedDict):
     input_ids: Integer[TT, " batch prefix_seq_len"]  # left-padded
     attention_mask: Integer[TT, " batch prefix_seq_len"]
     target_ids: NotRequired[Integer[TT, " batch suffix_seq_len"]]
+    fixed_positions_mask: Bool[TT, " batch prefix_seq_len"]
 
 
 class MLMUncondtionalPredictionBatch:

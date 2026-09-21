@@ -60,10 +60,7 @@ class _PredictionWriter:
                 or "time" in k
             ) or k.startswith("metric_"):
                 return True
-            for field in self.fields_to_keep_in_output:
-                if k.startswith(field) and k != "text_with_spl_tokens":
-                    return True
-            return False
+            return k in self.fields_to_keep_in_output
 
         return {k: v for k, v in out_dict.items() if keep(k)}
 

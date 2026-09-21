@@ -951,7 +951,7 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
             if isinstance(metric_value, torch.Tensor):
                 metric_value = float(metric_value.detach().cpu().item())
             self.log(
-                f"{split}/{metric_name}",
+                f"{split}/{dataloader_name}/{metric_name}",
                 metric_value,
                 prog_bar=False,
                 sync_dist=False,

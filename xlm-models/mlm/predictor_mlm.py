@@ -215,7 +215,7 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
                     sorted_values, sorted_indices = torch.sort(confidence)
                     unmask = (
                         torch.cumsum(sorted_values, dim=-1)
-                        - torch.cummax(sorted_indices, dim=-1).values
+                        - torch.cummax(sorted_values, dim=-1).values
                         < self.threshold
                     )
                     unmask = unmask.scatter(-1, sorted_indices, unmask)
@@ -299,6 +299,18 @@ class MLMPredictor(torch.nn.Module, Predictor[MLMBatch, MLMPredictionDict]):
         dataloader_idx: Optional[int] = None,
         dataloader_name: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
+        # Suffix decode lives here (logging path), not in timed predict().
+        # Same slice as seq2seq_exact_match_update_fn: ids[:, output_start_idx:].
+        if "generated_text" not in preds and "output_start_idx" in preds:
+            tokenizer = self._require_tokenizer()
+            start = int(preds["output_start_idx"])
+            preds = {
+                **preds,
+                "generated_text": tokenizer.batch_decode(
+                    preds["ids"][:, start:],
+                    skip_special_tokens=self.skip_special_tokens,
+                ),
+            }
         dicts: List[Dict[str, Any]] = unbatch(preds, length=len(preds["text"]))
         return dicts
 

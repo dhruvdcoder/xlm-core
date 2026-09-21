@@ -332,7 +332,7 @@ def pad_truncate_list(
             pad_values + ids[-max_len:]
         )  # when padding left, truncate left side
     if return_num_padded:
-        return padded, num_padded
+        return padded, max(0, num_padded)
     else:
         return padded
 

@@ -45,7 +45,7 @@ forward(
 | `positions` | `(B, L)` `int` | required for packed FlexAttention (RoPE reset per segment) |
 | `segment_ids` | `(B, L)` `int` | packed batches only — feeds `mask_mod` for `BlockMask` |
 | `block_mask` | `BlockMask` | packed batches when `model.use_flex_attn=True` |
-| `fixed_positions_mask` | `(B, L)` `bool` | infill collators only — positions that must not be re-masked |
+| `fixed_positions_mask` | `(B, L)` `bool` | mutation policy: `True` must never change, including every `attention_mask=False` slot. Visible suffix-canvas pads stay `False` when `loss_on_padding=True`. |
 
 The packed FlexAttention variant uses `PackedFlexMLMBatch` (subset of the above) and `MLMLoss.__call__` builds the `BlockMask` on the training device.
 
@@ -69,11 +69,11 @@ The packed FlexAttention variant uses `PackedFlexMLMBatch` (subset of the above)
 | Class | Input | Output batch | Special behavior |
 |---|---|---|---|
 | `DefaultMLMCollator` | `BaseCollatorInput` | `MLMBatch` | Pad-right to `block_size`, BOS/EOS optional, random MLM masking. |
-| `MLMSeq2SeqTrainCollator` | `Seq2SeqCollatorInput` | `MLMBatch` | Concatenates `[prompt][BOS][target][EOS]`; only `block_size` suffix positions after the prompt are visible and MLM-eligible (tail hidden via `attention_mask=0`). |
-| `MLMSeq2SeqCollator` | `Seq2SeqCollatorInput` | `MLMBatch` | Left-pads prompt and right-pads target separately (padding on both sides). |
+| `MLMSeq2SeqTrainCollator` | `Seq2SeqCollatorInput` | `MLMBatch` | Concatenates `[prompt][BOS][target][EOS]`; only `block_size` suffix positions after the prompt are visible and MLM-eligible (tail hidden via `attention_mask=0`). Prompt block is `fixed=True`; visible suffix canvas is `fixed=False`. |
+| `MLMSeq2SeqCollator` | `Seq2SeqCollatorInput` | `MLMBatch` | Left-pads prompt and right-pads target separately (padding on both sides). Prompt / left pads are `fixed=True`. |
 | `_MLMSeq2SeqPredCollator` | `Seq2SeqCollatorInput` | `MLMBatch` | Same as `MLMSeq2SeqCollator` but masks **all** suffix tokens (`mask_all=True`); used for exact-match eval. |
-| `MLMSeq2SeqPredCollator` | `Seq2SeqCollatorInput` | `MLMBatch` | `input_ids = left-padded prompt only`; `target_ids = right-padded target` (used for seq2seq prediction). |
-| `MLMInfillWithExactTargetPredCollator` | `BaseCollatorInput` with pre-masked `prompt_ids` | `MLMBatch` | `mask_none=True` so existing masks in `prompt_ids` are kept; `target_ids` filled from `input_ids`. |
+| `MLMSeq2SeqPredCollator` | `Seq2SeqCollatorInput` | `MLMBatch` | `input_ids = left-padded prompt only`; `target_ids = right-padded target` (used for seq2seq prediction). The prompt block is all `fixed=True`. |
+| `MLMInfillWithExactTargetPredCollator` | `BaseCollatorInput` with pre-masked `prompt_ids` | `MLMBatch` | `mask_none=True` so existing masks in `prompt_ids` are kept; `target_ids` filled from `input_ids`; `fixed_positions_mask` is True at clues and attention-hidden pads. |
 | `DefaultInfillMLMCollator` | `BaseCollatorInput` | `MLMBatch` | Like `DefaultMLMCollator` but restricts masking to positions where `prompt_ids[i] == mask_token_id`. |
 | `PackedMLMCollator` | pre-packed `BaseCollatorInput` (EOS-separated) | `PackedFlexMLMBatch` | Builds `segment_ids`, per-segment `positions`, random MLM masking; **requires `use_flex_attn=True`**. |
 

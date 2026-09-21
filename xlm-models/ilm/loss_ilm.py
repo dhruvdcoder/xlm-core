@@ -138,12 +138,20 @@ class ILMLossWithMaskedCE(LossFunction[ILMBatch, ILMLossDict]):
         dataloader_idx: Optional[int] = None,
         dataloader_name: Optional[str] = None,
     ) -> ILMLossDict:
+        # Densify on device (GPU) only for the loss; restore sparse into batch.
         sparse_target = batch["target_ids"]
-        batch["target_ids"] = sparse_target.to_dense()
-        loss_dict = self.loss_fn(
-            batch, batch_idx, dataloader_idx, dataloader_name
-        )
-        batch["target_ids"] = sparse_target
+        sparse_n_drops = batch["n_drops"]
+        if sparse_target is not None and sparse_target.is_sparse:
+            batch["target_ids"] = sparse_target.to_dense()
+        if sparse_n_drops is not None and sparse_n_drops.is_sparse:
+            batch["n_drops"] = sparse_n_drops.to_dense()
+        try:
+            loss_dict = self.loss_fn(
+                batch, batch_idx, dataloader_idx, dataloader_name
+            )
+        finally:
+            batch["target_ids"] = sparse_target
+            batch["n_drops"] = sparse_n_drops
         return loss_dict
 
     def loss_fn(

@@ -99,7 +99,54 @@ All `*_update_fn(batch, loss_dict, tokenizer=None)`. Worked examples: {{ gh('tes
 Hydra groups under {{ gh_dir('xlm-models/arlm/configs', 'xlm-models/arlm/configs/') }}. Available experiment entry points:
 
 - `experiment=star_easy_arlm`
+- `experiment=owt_arlm` (OpenWebText; [OWT](#owt))
 - `experiment=tinygsm_arlm` (seq2seq; [TinyGSM](#tinygsm))
+
+### OWT
+
+Task dataset and preprocessing: [OWT](../tasks/owt.md).
+
+| | |
+|---|---|
+| Experiment | `experiment=owt_arlm` |
+| Datamodule | {{ gh('xlm-models/arlm/configs/datamodule/owt_arlm.yaml', 'owt_arlm') }} |
+| Experiment YAML | {{ gh('xlm-models/arlm/configs/experiment/owt_arlm.yaml', 'owt_arlm') }} |
+
+#### Training settings
+
+| Setting | Value |
+|---------|--------|
+| Tokenizer | GPT-2 (`gpt2`) |
+| `block_size` | 1,024 |
+| Batching | Per-device 32; global 512 |
+| Train split | `dhruveshpatel/owt-gpt2-1024-split/train` |
+| Val split | `dhruveshpatel/owt-gpt2-1024-split/validation` |
+| Collators | `DefaultARLMCollator` |
+| Unconditional eval | `ARLMEmptyDataset` (`unconditional_prediction` dataloader) |
+| Monitored metric | `val/lm/accumulated_loss` |
+| Training schedule | Up to 1M steps; validation every 50k steps; checkpoint every 2.5k steps (keep every 100k) |
+
+#### Commands
+
+**Prepare cache** (rank 0 before multi-GPU training):
+
+```bash
+xlm job_type=prepare_data experiment=owt_arlm num_dataset_workers=8
+```
+
+On SLURM, see {{ gh('lib/slurm_scripts/submit_prepare_data.py', 'submit_prepare_data.py') }}.
+
+**Train** (DDP):
+
+```bash
+xlm job_name=owt_arlm job_type=train experiment=owt_arlm \
+  per_device_batch_size=32 trainer_strategy=ddp trainer.devices=8 trainer.num_nodes=1 \
+  ++trainer.precision=bf16-mixed compile=False
+```
+
+#### Experiment results
+
+Full W&B write-ups under `docs/experiments/` are deferred until runs exist. Use `experiment=owt_arlm` with the [document experiment](../guide/eval.md) workflow when ready.
 
 ### TinyGSM
 

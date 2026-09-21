@@ -667,6 +667,7 @@ class FlexMDMModel(torch.nn.Module, Model):
         force_flash_attn: bool = False,
         len_predict_type: str = "distribution",
         len_head_type: Literal["mlp", "linear"] = "linear",
+        use_time: bool = True,
         inner_autocast: bool = True,
         compile: bool = False,
     ):
@@ -702,6 +703,7 @@ class FlexMDMModel(torch.nn.Module, Model):
             d_model, num_embeddings, self.d_cond, layer_norm_eps
         )
         self.num_embeddings = num_embeddings
+        self.use_time = use_time
 
         self.len_predict_type = len_predict_type
         self.len_head_type = len_head_type
@@ -783,6 +785,8 @@ class FlexMDMModel(torch.nn.Module, Model):
         # )
 
         x = self.embed_tokens(x)  # (B, L, D)
+        if not self.use_time:
+            t = torch.ones(B, device=x.device, dtype=t.dtype)
         c = F.silu(self.sigma_map(t))
         positions = (attention_mask.cumsum(dim=1) - 1).clamp(min=0)
         if self.inner_autocast:

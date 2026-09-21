@@ -1,0 +1,130 @@
+{
+  "splits": {
+    "test": {
+      "de": {
+        "bpe_length": {
+          "max": 245,
+          "mean": 23.001333333333335,
+          "median": 19.0,
+          "min": 2,
+          "n": 6750
+        },
+        "empty_string_count": 0,
+        "moses_word_length": {
+          "max": 167,
+          "mean": 18.630222222222223,
+          "median": 15.0,
+          "min": 2,
+          "n": 6750
+        },
+        "total_bpe_tokens": 155259,
+        "unk_token_count": 47,
+        "unk_token_rate": 0.00030271997114498996
+      },
+      "en": {
+        "bpe_length": {
+          "max": 217,
+          "mean": 22.272444444444446,
+          "median": 18.0,
+          "min": 2,
+          "n": 6750
+        },
+        "empty_string_count": 0,
+        "moses_word_length": {
+          "max": 171,
+          "mean": 19.430518518518518,
+          "median": 16.0,
+          "min": 2,
+          "n": 6750
+        },
+        "total_bpe_tokens": 150339,
+        "unk_token_count": 5,
+        "unk_token_rate": 3.3258169869428425e-05
+      }
+    },
+    "train": {
+      "de": {
+        "bpe_length": {
+          "max": 244,
+          "mean": 24.214729248185524,
+          "median": 19.0,
+          "min": 2,
+          "n": 160239
+        },
+        "empty_string_count": 0,
+        "moses_word_length": {
+          "max": 172,
+          "mean": 19.350595048646085,
+          "median": 16.0,
+          "min": 2,
+          "n": 160239
+        },
+        "total_bpe_tokens": 3880144,
+        "unk_token_count": 0,
+        "unk_token_rate": 0.0
+      },
+      "en": {
+        "bpe_length": {
+          "max": 228,
+          "mean": 23.670816717528194,
+          "median": 19.0,
+          "min": 2,
+          "n": 160239
+        },
+        "empty_string_count": 0,
+        "moses_word_length": {
+          "max": 175,
+          "mean": 20.442769862517864,
+          "median": 17.0,
+          "min": 2,
+          "n": 160239
+        },
+        "total_bpe_tokens": 3792988,
+        "unk_token_count": 0,
+        "unk_token_rate": 0.0
+      }
+    },
+    "validation": {
+      "de": {
+        "bpe_length": {
+          "max": 171,
+          "mean": 24.100782644514624,
+          "median": 19.0,
+          "min": 2,
+          "n": 7283
+        },
+        "empty_string_count": 0,
+        "moses_word_length": {
+          "max": 142,
+          "mean": 19.2823012494851,
+          "median": 16.0,
+          "min": 2,
+          "n": 7283
+        },
+        "total_bpe_tokens": 175526,
+        "unk_token_count": 0,
+        "unk_token_rate": 0.0
+      },
+      "en": {
+        "bpe_length": {
+          "max": 154,
+          "mean": 23.55004805711932,
+          "median": 19.0,
+          "min": 2,
+          "n": 7283
+        },
+        "empty_string_count": 0,
+        "moses_word_length": {
+          "max": 143,
+          "mean": 20.352190031580392,
+          "median": 17.0,
+          "min": 2,
+          "n": 7283
+        },
+        "total_bpe_tokens": 171515,
+        "unk_token_count": 0,
+        "unk_token_rate": 0.0
+      }
+    }
+  }
+}

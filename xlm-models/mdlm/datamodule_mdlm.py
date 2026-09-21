@@ -429,6 +429,7 @@ class MDLMSeq2SeqPredCollator(Collator):
         bos_location: Literal[
             "before_prefix", "after_prefix"
         ] = "after_prefix",
+        truncate_long_targets: bool = False,
     ):
         self.tokenizer = tokenizer
         self.noise_schedule = noise_schedule
@@ -439,6 +440,7 @@ class MDLMSeq2SeqPredCollator(Collator):
         self.truncate = truncate
         self.loss_on_padding = loss_on_padding
         self.bos_location = bos_location
+        self.truncate_long_targets = truncate_long_targets
 
     def __call__(
         self,
@@ -461,18 +463,21 @@ class MDLMSeq2SeqPredCollator(Collator):
             self.tokenizer.pad_token_id,
             max_seq_len=self.input_block_size,
         )
-        # simply add eos and pad on right
+        # Pad/truncate suffix to block_size (reserve room for EOS).
         add_eos = int(self.add_eos)
-        max_len = max(len(e["input_ids"]) + add_eos for e in examples)
-        if self.block_size is not None and max_len > self.block_size:
-            raise ValueError(
-                f"Max length of target is greater than block size. {max_len} > {self.block_size}"
-            )
+        if self.block_size is None:
+            raise ValueError("block_size must be set for seq2seq pred collator")
         max_len = self.block_size
+        raw_max = max(len(e["input_ids"]) + add_eos for e in examples)
+        if raw_max > max_len and not self.truncate_long_targets:
+            raise ValueError(
+                f"Max length of target is greater than block size. {raw_max} > {max_len}"
+            )
+        max_content = max_len - add_eos
         target_ids = [
             pad_truncate_list(
-                e["input_ids"]
-                + [self.tokenizer.eos_token_id] * int(self.add_eos),
+                e["input_ids"][:max_content]
+                + [self.tokenizer.eos_token_id] * add_eos,
                 max_len,
                 self.tokenizer.pad_token_id,
                 pad_left=False,

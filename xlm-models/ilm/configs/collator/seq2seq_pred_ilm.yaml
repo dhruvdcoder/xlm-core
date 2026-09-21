@@ -3,3 +3,7 @@ input_block_size: ${oc.select:input_block_size,null}
 block_size: ${block_size}
 tokenizer: ${global_components:tokenizer}
 noise_schedule: ${global_components:noise_schedule}
+pass_through_fields:
+  - target_text
+  - target_raw
+  - id

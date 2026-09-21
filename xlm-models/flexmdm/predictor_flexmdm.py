@@ -45,8 +45,8 @@ def decode_generation_suffix(
     """Decode only the generated (non-fixed, non-pad) region for seq2seq prediction.
 
     FlexMDM pred batches set ``fixed=1`` on the question prefix and ``fixed=0`` on
-    the suffix where the model generates code. Full-sequence ``batch_decode`` is
-    kept in ``text`` for debugging; this helper is for downstream code-exec eval.
+    the suffix where the model generates. Full-sequence ``batch_decode`` stays in
+    ``text``; call this from ``to_dict`` (logging path), not timed ``predict()``.
     """
     pad = tokenizer.pad_token_id
     decoded: List[str] = []
@@ -200,6 +200,7 @@ class FlexMDMPredictor(
         formatted_history = self.format_history_for_output(
             history_data, round_precision=4
         )
+        # Suffix decode lives here (logging path), not in timed predict().
         if "generated_text" in preds:
             generated_text = preds["generated_text"]
         elif "fixed" in batch:
@@ -547,19 +548,13 @@ class FlexMDMPredictor(
         out = self.tokenizer.batch_decode(
             xt, skip_special_tokens=self.skip_special_tokens_in_history
         )
-        generated_text = decode_generation_suffix(
-            xt,
-            fixed_gaps,
-            self.tokenizer,
-            skip_special_tokens=self.skip_special_tokens_in_history,
-        )
 
         _end_time = time.time()
         _time_taken = _end_time - _start_time
         self.reset()
         return {
             "text": out,
-            "generated_text": generated_text,
+            # generated_text is derived in to_dict (outside timed predict)
             "ids": xt,
             "loss": None,
             "time_taken": [_time_taken]

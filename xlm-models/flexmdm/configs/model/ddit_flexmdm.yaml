@@ -18,6 +18,7 @@ model:
   force_flash_attn: false
   len_predict_type: ${len_predict_type} # choices: 'expectation', 'distribution'
   len_head_type: mlp # choices: 'mlp', 'linear'
+  use_time: true
 
 tags:
   model: ddit_flexmdm

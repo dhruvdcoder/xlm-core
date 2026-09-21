@@ -1,0 +1,35 @@
+defaults:
+  - default_text
+
+_target_: xlm.datamodule.LocalDatasetManager
+ds_type: parquet
+collator: ???
+full_name: ???
+full_name_debug: ???
+load_kwargs:
+  data_files: ???
+preprocess_function: xlm.tasks.iwslt14_de_en.iwslt14_mt_preprocess_fn
+on_the_fly_processor: xlm.datamodule.token_ids_to_input_ids_and_prompt_ids
+on_the_fly_group_processor: null
+columns_to_remove: null
+columns_to_keep:
+  - id
+  - source_text
+  - target_text
+  - target_raw
+filter_suffix: tok_975aedcb168b_rawref
+stages: ???
+iterable_dataset_shards: null
+shuffle_buffer_size: null
+shuffle_seed: 42
+split_by_node: true
+dataloader_kwargs:
+  batch_size: ${per_device_batch_size}
+  num_workers: ${num_dataloader_workers}
+  shuffle: null
+  pin_memory: True
+  persistent_workers: False
+  prefetch_factor: ${dataloader_prefetch_factor}
+  drop_last: True
+model_name: null
+use_manual_cache: true

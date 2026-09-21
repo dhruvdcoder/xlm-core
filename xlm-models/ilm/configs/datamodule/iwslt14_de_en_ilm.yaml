@@ -1,0 +1,25 @@
+# @package _global_
+defaults:
+  - default
+  - /datasets@datamodule.dataset_managers.train.lm: iwslt14_de_en_rdm_train
+  - /datasets@datamodule.dataset_managers.val.lm: iwslt14_de_en_rdm_val
+  - /datasets@datamodule.dataset_managers.val.prediction: iwslt14_de_en_rdm_val_pred
+  - /datasets@datamodule.dataset_managers.test.lm: iwslt14_de_en_rdm_test
+  - /datasets@datamodule.dataset_managers.test.prediction: iwslt14_de_en_rdm_test_pred
+  - /datasets@datamodule.dataset_managers.predict.prediction: iwslt14_de_en_rdm_test_pred
+  - /collator@datamodule.dataset_managers.train.lm.collator: seq2seq_ilm
+  - /collator@datamodule.dataset_managers.val.lm.collator: seq2seq_ilm
+  - /collator@datamodule.dataset_managers.test.lm.collator: seq2seq_ilm
+  - /collator@datamodule.dataset_managers.val.prediction.collator: seq2seq_pred_ilm
+  - /collator@datamodule.dataset_managers.test.prediction.collator: seq2seq_pred_ilm
+  - /collator@datamodule.dataset_managers.predict.prediction.collator: seq2seq_pred_ilm
+  - /tokenizer@global_components.tokenizer: iwslt14_joint_char_bpe_v1
+
+block_size: 128
+input_block_size: 128
+
+datamodule:
+  print_batch_fn: ilm.datamodule_ilm.print_batch_ilm
+
+tags:
+  dataset: iwslt14_de_en_rdm_v1
