@@ -301,9 +301,11 @@ class DefaultARLMCollator(Collator):
 
             # Create target_ids (shifted by 1 for next token prediction)
             # For ARLM, target_ids are the same as input_ids but shifted left by 1
-            # Use -100 for padding positions to ignore them during loss computation
-            target_seq = seq_with_bos[1:] + [-100]  # Shift left by 1
-            # Set padding positions to -100
+            # Use -100 for padding positions (and the last logit) so CE sees
+            # the same length as padded input_ids / attention_mask.
+            target_seq = seq_with_bos[1:] + [-100] * (
+                max_len - len(seq_with_bos) + 1
+            )
             for j in range(len(target_seq)):
                 if (
                     j < len(mask) - 1 and mask[j + 1] == 0

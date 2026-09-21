@@ -37,3 +37,9 @@ class TestDefaultARLMCollator(BaseCollatorTests):
         """Target should contain -100 at ignored positions (prompt or padding)."""
         batch = collator(raw_examples)
         assert (batch["target_ids"] == -100).any()
+
+    def test_target_padded_to_input_length(self, collator, raw_examples):
+        """Short examples must pad target_ids to the same length as input_ids."""
+        batch = collator(raw_examples)
+        assert batch["target_ids"].shape == batch["input_ids"].shape
+        assert batch["target_ids"].shape[1] == collator.block_size
