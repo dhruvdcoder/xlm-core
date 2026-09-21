@@ -3693,6 +3693,122 @@
   
   
   
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_1_14_6" id="__nav_8_1_14_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>iwslt14_de_en
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_14_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_14_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>iwslt14_de_en
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../xlm/tasks/iwslt14_de_en/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    iwslt14_de_en
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../xlm/tasks/iwslt14_de_en/mt_eval/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>mt_eval
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
       <a href="../xlm/tasks/lm1b/" class="md-nav__link">
         
@@ -3763,10 +3879,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14_9" >
         
           
-          <label class="md-nav__link" for="__nav_8_1_14_8" id="__nav_8_1_14_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8_1_14_9" id="__nav_8_1_14_9_label" tabindex="0">
             
   
   
@@ -3784,8 +3900,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_14_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8_1_14_8">
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_14_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_14_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -4047,10 +4163,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14_14" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14_15" >
         
           
-          <label class="md-nav__link" for="__nav_8_1_14_14" id="__nav_8_1_14_14_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8_1_14_15" id="__nav_8_1_14_15_label" tabindex="0">
             
   
   
@@ -4068,8 +4184,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_14_14_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8_1_14_14">
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_14_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_14_15">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -5746,6 +5862,28 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;HistoryTopKPlugin
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mlm.finalize_fixed_positions_mask" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;finalize_fixed_positions_mask
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mlm.resolve_fixed_positions_mask" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;resolve_fixed_positions_mask
       
     </span>
   </a>
@@ -7512,8 +7650,10 @@ batches; otherwise <code>MLMLoss</code> derives from the 1-D <code>attention_mas
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Optional boolean mask marking positions that should
-not be masked (used by infilling collators).</p>
+                <p>Boolean mutation-policy mask. <code>True</code> means the
+tensor slot must never change, including every slot where
+<code>attention_mask</code> is False. Visible suffix-canvas pads stay
+<code>False</code> when <code>loss_on_padding=True</code>.</p>
               </div>
             </td>
           </tr>
@@ -7979,6 +8119,44 @@ mask_mod closures across DataLoader worker queues.</p>
 
 </div>
 
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="mlm.finalize_fixed_positions_mask" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">finalize_fixed_positions_mask</span><span class="p">(</span><span class="n">fixed</span><span class="p">,</span> <span class="n">attention_mask</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Close <code>fixed</code> over attention-hidden slots.</p>
+<p><code>True</code> means the tensor slot must not change. Visible suffix-canvas
+pads stay <code>False</code> when they have <code>attention_mask=True</code>.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="mlm.resolve_fixed_positions_mask" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">resolve_fixed_positions_mask</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">attention_mask</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">fallback</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Read the canonical mask or its <code>infill_positions_mask</code> alias.</p>
+
+
+    </div>
+
+</div>
 
 
 

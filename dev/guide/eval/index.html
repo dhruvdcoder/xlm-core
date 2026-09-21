@@ -3854,6 +3854,122 @@
   
   
   
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_1_14_6" id="__nav_8_1_14_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>iwslt14_de_en
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_14_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_14_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>iwslt14_de_en
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/xlm/tasks/iwslt14_de_en/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    iwslt14_de_en
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/xlm/tasks/iwslt14_de_en/mt_eval/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>mt_eval
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
       <a href="../../reference/xlm/tasks/lm1b/" class="md-nav__link">
         
@@ -3924,10 +4040,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14_9" >
         
           
-          <label class="md-nav__link" for="__nav_8_1_14_8" id="__nav_8_1_14_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8_1_14_9" id="__nav_8_1_14_9_label" tabindex="0">
             
   
   
@@ -3945,8 +4061,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_14_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8_1_14_8">
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_14_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_14_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -4208,10 +4324,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14_14" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14_15" >
         
           
-          <label class="md-nav__link" for="__nav_8_1_14_14" id="__nav_8_1_14_14_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8_1_14_15" id="__nav_8_1_14_15_label" tabindex="0">
             
   
   
@@ -4229,8 +4345,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_14_14_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8_1_14_14">
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_14_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_14_15">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -6575,7 +6691,7 @@
 <h3 id="eval-contract"><code>eval()</code> contract</h3>
 <p>Your class should implement:</p>
 <p><code>eval(predictions, tokenizer=None, **kwargs) -&gt; (predictions, aggregated_metrics)</code></p>
-<p>The harness passes <code>tokenizer=self.tokenizer</code> and <code>dataloader_name=...</code> (evaluators may ignore extra kwargs). <strong><code>aggregated_metrics</code></strong> is logged with <code>self.log(f"{split}/{metric_name}", value, ...)</code>, so values must be <strong>numeric scalars</strong> (floats/ints). Strings or nested structures will not work as Lightning-logged metrics.</p>
+<p>The harness passes <code>tokenizer=self.tokenizer</code> and <code>dataloader_name=...</code> (evaluators may ignore extra kwargs). <strong><code>aggregated_metrics</code></strong> is logged with <code>self.log(f"{split}/{dataloader_name}/{metric_name}", value, ...)</code>, so values must be <strong>numeric scalars</strong> (floats/ints). Strings or nested structures will not work as Lightning-logged metrics.</p>
 <p>Full results (aggregated dict <strong>plus</strong> per-row dicts, including any fields your <code>eval</code> added) are written beside the predictions tree:</p>
 <p><code>{run_dir}/predictions/{split}/{dataloader_name}/results_{epoch=…}_{step=…}.json</code></p>
 <p>The original <strong><code>.jsonl</code> is not modified</strong> by post-hoc (unlike older generative-perplexity behavior that could append enriched rows).</p>
@@ -6609,8 +6725,13 @@
 <td><code>gen_ppl_gpt2_large</code> / <code>gen_ppl_gpt2_small</code> / <code>gen_ppl_llama3_3b</code></td>
 <td>Generative perplexity judges (<code>GenerativePerplexityPostHocEval</code>)</td>
 </tr>
+<tr>
+<td><code>iwslt14_mt</code></td>
+<td>IWSLT14 SacreBLEU + chrF++ (needs <code>xlm-core[mt_eval]</code>)</td>
+</tr>
 </tbody>
 </table>
+<p>For IWSLT14 DE→EN, experiments wire <code>iwslt14_mt</code> on the <code>prediction</code> dataloader. Prefer suffix-only <code>generated_text</code> from each predictor's <code>to_dict</code>. Primary mode <code>sacrebleu_detok</code> Moses-detokenizes hyps and scores against <code>target_raw</code> with signed SacreBLEU (<code>tok.13a</code>) plus chrF++; <code>moses_tokenized</code> scores already-tokenized text against <code>target_text</code> with <code>tokenize=none</code>. Signatures and <code>eval_mode</code> are stored on <code>results_*.json</code> rows.</p>
 <p><strong>Compose from <code>defaults</code></strong> (pattern <code>prediction</code> matches typical <code>*_prediction</code> dataloaders):</p>
 <div class="highlight"><pre><span></span><code><span class="nt">defaults</span><span class="p">:</span>
 <span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">/post_hoc_evaluator@post_hoc_evaluator.evaluators.prediction.mauve</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mauve_text</span>

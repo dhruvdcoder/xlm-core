@@ -10,28 +10,28 @@
       
       
       
-        <link rel="canonical" href="https://dhruvdcoder.github.io/xlm-core/dev/reference/mdlm/loss_mdlm/">
+        <link rel="canonical" href="https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/tasks/iwslt14_de_en/">
       
       
-        <link rel="prev" href="../datamodule_mdlm/">
+        <link rel="prev" href="../gram_n_queens/">
       
       
-        <link rel="next" href="../metrics_mdlm/">
+        <link rel="next" href="mt_eval/">
       
       
         
       
       
-      <link rel="icon" href="../../../assets/images/favicon.png">
+      <link rel="icon" href="../../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
-        <title>loss_mdlm - XLM</title>
+        <title>iwslt14_de_en - XLM</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.ec1eaa64.min.css">
       
       
   
@@ -60,9 +60,9 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../../../assets/_mkdocstrings.css">
     
-    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#mdlm.loss_mdlm" class="md-skip">
+        <a href="#xlm.tasks.iwslt14_de_en" class="md-skip">
           Skip to content
         </a>
       
@@ -98,7 +98,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="XLM" class="md-header__button md-logo" aria-label="XLM" data-md-component="logo">
+    <a href="../../../.." title="XLM" class="md-header__button md-logo" aria-label="XLM" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -118,7 +118,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              loss_mdlm
+              iwslt14_de_en
             
           </span>
         </div>
@@ -203,7 +203,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../.." class="md-tabs__link">
+      <a href="../../../.." class="md-tabs__link">
         
   
   
@@ -224,7 +224,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../guide/quickstart/" class="md-tabs__link">
+        <a href="../../../../guide/quickstart/" class="md-tabs__link">
           
   
   
@@ -244,7 +244,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../models/" class="md-tabs__link">
+        <a href="../../../../models/" class="md-tabs__link">
           
   
   
@@ -264,7 +264,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../tasks/owt/" class="md-tabs__link">
+        <a href="../../../../tasks/owt/" class="md-tabs__link">
           
   
   
@@ -284,7 +284,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../experiments/owt_flexmdm/" class="md-tabs__link">
+        <a href="../../../../experiments/owt_flexmdm/" class="md-tabs__link">
           
   
   
@@ -311,7 +311,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../guide/contributing/overview/" class="md-tabs__link">
+        <a href="../../../../guide/contributing/overview/" class="md-tabs__link">
           
   
   
@@ -332,7 +332,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../" class="md-tabs__link">
+      <a href="../../../" class="md-tabs__link">
         
   
   
@@ -364,7 +364,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../../xlm/" class="md-tabs__link">
+        <a href="../../" class="md-tabs__link">
           
   
   
@@ -403,7 +403,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="XLM" class="md-nav__button md-logo" aria-label="XLM" data-md-component="logo">
+    <a href="../../../.." title="XLM" class="md-nav__button md-logo" aria-label="XLM" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -433,7 +433,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../.." class="md-nav__link">
+      <a href="../../../.." class="md-nav__link">
         
   
   
@@ -512,7 +512,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guide/quickstart/" class="md-nav__link">
+      <a href="../../../../guide/quickstart/" class="md-nav__link">
         
   
   
@@ -540,7 +540,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guide/adding-a-task/" class="md-nav__link">
+      <a href="../../../../guide/adding-a-task/" class="md-nav__link">
         
   
   
@@ -568,7 +568,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guide/push-to-hub/" class="md-nav__link">
+      <a href="../../../../guide/push-to-hub/" class="md-nav__link">
         
   
   
@@ -648,7 +648,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guide/data-pipeline/" class="md-nav__link">
+      <a href="../../../../guide/data-pipeline/" class="md-nav__link">
         
   
   
@@ -676,7 +676,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guide/metrics/" class="md-nav__link">
+      <a href="../../../../guide/metrics/" class="md-nav__link">
         
   
   
@@ -712,7 +712,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guide/external-models/" class="md-nav__link">
+      <a href="../../../../guide/external-models/" class="md-nav__link">
         
   
   
@@ -740,7 +740,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guide/custom-commands/" class="md-nav__link">
+      <a href="../../../../guide/custom-commands/" class="md-nav__link">
         
   
   
@@ -768,7 +768,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guide/extract-checkpoint/" class="md-nav__link">
+      <a href="../../../../guide/extract-checkpoint/" class="md-nav__link">
         
   
   
@@ -796,7 +796,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guide/eval/" class="md-nav__link">
+      <a href="../../../../guide/eval/" class="md-nav__link">
         
   
   
@@ -824,7 +824,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guide/demo/" class="md-nav__link">
+      <a href="../../../../guide/demo/" class="md-nav__link">
         
   
   
@@ -852,7 +852,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guide/faq/" class="md-nav__link">
+      <a href="../../../../guide/faq/" class="md-nav__link">
         
   
   
@@ -939,7 +939,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../models/" class="md-nav__link">
+      <a href="../../../../models/" class="md-nav__link">
         
   
   
@@ -967,7 +967,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../models/arlm/" class="md-nav__link">
+      <a href="../../../../models/arlm/" class="md-nav__link">
         
   
   
@@ -995,7 +995,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../models/bd3lm/" class="md-nav__link">
+      <a href="../../../../models/bd3lm/" class="md-nav__link">
         
   
   
@@ -1023,7 +1023,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../models/flexmdm/" class="md-nav__link">
+      <a href="../../../../models/flexmdm/" class="md-nav__link">
         
   
   
@@ -1051,7 +1051,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../models/ilm/" class="md-nav__link">
+      <a href="../../../../models/ilm/" class="md-nav__link">
         
   
   
@@ -1079,7 +1079,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../models/llada/" class="md-nav__link">
+      <a href="../../../../models/llada/" class="md-nav__link">
         
   
   
@@ -1107,7 +1107,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../models/mdlm/" class="md-nav__link">
+      <a href="../../../../models/mdlm/" class="md-nav__link">
         
   
   
@@ -1135,7 +1135,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../models/mlm/" class="md-nav__link">
+      <a href="../../../../models/mlm/" class="md-nav__link">
         
   
   
@@ -1222,7 +1222,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../tasks/owt/" class="md-nav__link">
+      <a href="../../../../tasks/owt/" class="md-nav__link">
         
   
   
@@ -1250,7 +1250,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../tasks/tinygsm/" class="md-nav__link">
+      <a href="../../../../tasks/tinygsm/" class="md-nav__link">
         
   
   
@@ -1337,7 +1337,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../experiments/owt_flexmdm/" class="md-nav__link">
+      <a href="../../../../experiments/owt_flexmdm/" class="md-nav__link">
         
   
   
@@ -1365,7 +1365,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../experiments/owt_mlm/" class="md-nav__link">
+      <a href="../../../../experiments/owt_mlm/" class="md-nav__link">
         
   
   
@@ -1504,7 +1504,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guide/contributing/overview/" class="md-nav__link">
+      <a href="../../../../guide/contributing/overview/" class="md-nav__link">
         
   
   
@@ -1532,7 +1532,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guide/contributing/adding-a-model/" class="md-nav__link">
+      <a href="../../../../guide/contributing/adding-a-model/" class="md-nav__link">
         
   
   
@@ -1560,7 +1560,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guide/external-models/" class="md-nav__link">
+      <a href="../../../../guide/external-models/" class="md-nav__link">
         
   
   
@@ -1588,7 +1588,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guide/adding-a-task/" class="md-nav__link">
+      <a href="../../../../guide/adding-a-task/" class="md-nav__link">
         
   
   
@@ -1616,7 +1616,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guide/contributing/adding-a-task-external/" class="md-nav__link">
+      <a href="../../../../guide/contributing/adding-a-task-external/" class="md-nav__link">
         
   
   
@@ -1644,7 +1644,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guide/contributing/core-development/" class="md-nav__link">
+      <a href="../../../../guide/contributing/core-development/" class="md-nav__link">
         
   
   
@@ -1672,7 +1672,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guide/contributing/docs-and-issues/" class="md-nav__link">
+      <a href="../../../../guide/contributing/docs-and-issues/" class="md-nav__link">
         
   
   
@@ -1708,7 +1708,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../developers/dependencies/" class="md-nav__link">
+      <a href="../../../../developers/dependencies/" class="md-nav__link">
         
   
   
@@ -1736,7 +1736,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../developers/releasing/" class="md-nav__link">
+      <a href="../../../../developers/releasing/" class="md-nav__link">
         
   
   
@@ -1816,7 +1816,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../developers/testing/running-tests/" class="md-nav__link">
+      <a href="../../../../developers/testing/running-tests/" class="md-nav__link">
         
   
   
@@ -1844,7 +1844,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../developers/testing/unit-tests/" class="md-nav__link">
+      <a href="../../../../developers/testing/unit-tests/" class="md-nav__link">
         
   
   
@@ -1872,7 +1872,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../developers/testing/integration-tests/" class="md-nav__link">
+      <a href="../../../../developers/testing/integration-tests/" class="md-nav__link">
         
   
   
@@ -1915,7 +1915,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../" class="md-nav__link">
+      <a href="../../../" class="md-nav__link">
         
   
   
@@ -1996,6 +1996,8 @@
                 
   
   
+    
+  
   
   
     
@@ -2011,11 +2013,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1" checked>
         
           
           <label class="md-nav__link" for="__nav_8_1" id="__nav_8_1_label" tabindex="">
@@ -2036,7 +2038,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_1_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_1_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_8_1">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2054,7 +2056,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/" class="md-nav__link">
+      <a href="../../" class="md-nav__link">
         
   
   
@@ -2134,7 +2136,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/backbones/" class="md-nav__link">
+      <a href="../../backbones/" class="md-nav__link">
         
   
   
@@ -2214,7 +2216,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/backbones/dream/" class="md-nav__link">
+      <a href="../../backbones/dream/" class="md-nav__link">
         
   
   
@@ -2242,7 +2244,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/backbones/dream/configuration_base/" class="md-nav__link">
+      <a href="../../backbones/dream/configuration_base/" class="md-nav__link">
         
   
   
@@ -2270,7 +2272,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/backbones/dream/modeling_dream/" class="md-nav__link">
+      <a href="../../backbones/dream/modeling_dream/" class="md-nav__link">
         
   
   
@@ -2298,7 +2300,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/backbones/dream/tokenization_dream/" class="md-nav__link">
+      <a href="../../backbones/dream/tokenization_dream/" class="md-nav__link">
         
   
   
@@ -2386,7 +2388,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/backbones/llada/" class="md-nav__link">
+      <a href="../../backbones/llada/" class="md-nav__link">
         
   
   
@@ -2414,7 +2416,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/backbones/llada/configuration_llada/" class="md-nav__link">
+      <a href="../../backbones/llada/configuration_llada/" class="md-nav__link">
         
   
   
@@ -2442,7 +2444,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/backbones/llada/modeling_llada/" class="md-nav__link">
+      <a href="../../backbones/llada/modeling_llada/" class="md-nav__link">
         
   
   
@@ -2538,7 +2540,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/commands/" class="md-nav__link">
+      <a href="../../commands/" class="md-nav__link">
         
   
   
@@ -2566,7 +2568,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/commands/cli_demo/" class="md-nav__link">
+      <a href="../../commands/cli_demo/" class="md-nav__link">
         
   
   
@@ -2594,7 +2596,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/commands/extract_checkpoint/" class="md-nav__link">
+      <a href="../../commands/extract_checkpoint/" class="md-nav__link">
         
   
   
@@ -2622,7 +2624,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/commands/extract_model_state_dict/" class="md-nav__link">
+      <a href="../../commands/extract_model_state_dict/" class="md-nav__link">
         
   
   
@@ -2650,7 +2652,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/commands/generate_star_graphs/" class="md-nav__link">
+      <a href="../../commands/generate_star_graphs/" class="md-nav__link">
         
   
   
@@ -2678,7 +2680,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/commands/hydra_callbacks/" class="md-nav__link">
+      <a href="../../commands/hydra_callbacks/" class="md-nav__link">
         
   
   
@@ -2706,7 +2708,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/commands/lightning_eval/" class="md-nav__link">
+      <a href="../../commands/lightning_eval/" class="md-nav__link">
         
   
   
@@ -2734,7 +2736,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/commands/lightning_generate/" class="md-nav__link">
+      <a href="../../commands/lightning_generate/" class="md-nav__link">
         
   
   
@@ -2762,7 +2764,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/commands/lightning_main/" class="md-nav__link">
+      <a href="../../commands/lightning_main/" class="md-nav__link">
         
   
   
@@ -2790,7 +2792,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/commands/lightning_prepare_data/" class="md-nav__link">
+      <a href="../../commands/lightning_prepare_data/" class="md-nav__link">
         
   
   
@@ -2818,7 +2820,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/commands/lightning_train/" class="md-nav__link">
+      <a href="../../commands/lightning_train/" class="md-nav__link">
         
   
   
@@ -2846,7 +2848,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/commands/push_to_hub/" class="md-nav__link">
+      <a href="../../commands/push_to_hub/" class="md-nav__link">
         
   
   
@@ -2874,7 +2876,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/commands/scaffold_model/" class="md-nav__link">
+      <a href="../../commands/scaffold_model/" class="md-nav__link">
         
   
   
@@ -2902,7 +2904,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/commands/split_owt/" class="md-nav__link">
+      <a href="../../commands/split_owt/" class="md-nav__link">
         
   
   
@@ -2930,7 +2932,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/commands/train_tokenizer/" class="md-nav__link">
+      <a href="../../commands/train_tokenizer/" class="md-nav__link">
         
   
   
@@ -2966,7 +2968,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/datamodule/" class="md-nav__link">
+      <a href="../../datamodule/" class="md-nav__link">
         
   
   
@@ -2994,7 +2996,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/external_models/" class="md-nav__link">
+      <a href="../../external_models/" class="md-nav__link">
         
   
   
@@ -3022,7 +3024,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/flags/" class="md-nav__link">
+      <a href="../../flags/" class="md-nav__link">
         
   
   
@@ -3050,7 +3052,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/generative_perplexity/" class="md-nav__link">
+      <a href="../../generative_perplexity/" class="md-nav__link">
         
   
   
@@ -3078,7 +3080,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/harness/" class="md-nav__link">
+      <a href="../../harness/" class="md-nav__link">
         
   
   
@@ -3106,7 +3108,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/log_predictions/" class="md-nav__link">
+      <a href="../../log_predictions/" class="md-nav__link">
         
   
   
@@ -3134,7 +3136,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/metrics/" class="md-nav__link">
+      <a href="../../metrics/" class="md-nav__link">
         
   
   
@@ -3162,7 +3164,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/model/" class="md-nav__link">
+      <a href="../../model/" class="md-nav__link">
         
   
   
@@ -3242,7 +3244,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/modules/" class="md-nav__link">
+      <a href="../../modules/" class="md-nav__link">
         
   
   
@@ -3270,7 +3272,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/modules/ddit_simple/" class="md-nav__link">
+      <a href="../../modules/ddit_simple/" class="md-nav__link">
         
   
   
@@ -3298,7 +3300,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/modules/ddit_simple_v2/" class="md-nav__link">
+      <a href="../../modules/ddit_simple_v2/" class="md-nav__link">
         
   
   
@@ -3326,7 +3328,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/modules/encoder/" class="md-nav__link">
+      <a href="../../modules/encoder/" class="md-nav__link">
         
   
   
@@ -3354,7 +3356,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/modules/gpt2_transformer/" class="md-nav__link">
+      <a href="../../modules/gpt2_transformer/" class="md-nav__link">
         
   
   
@@ -3382,7 +3384,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/modules/position/" class="md-nav__link">
+      <a href="../../modules/position/" class="md-nav__link">
         
   
   
@@ -3410,7 +3412,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/modules/regression/" class="md-nav__link">
+      <a href="../../modules/regression/" class="md-nav__link">
         
   
   
@@ -3438,7 +3440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/modules/rotary_transformer/" class="md-nav__link">
+      <a href="../../modules/rotary_transformer/" class="md-nav__link">
         
   
   
@@ -3474,7 +3476,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/noise/" class="md-nav__link">
+      <a href="../../noise/" class="md-nav__link">
         
   
   
@@ -3499,8 +3501,10 @@
                 
   
   
+    
   
   
+  
     
     
     
@@ -3511,11 +3515,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14" checked>
         
           
           <label class="md-nav__link" for="__nav_8_1_14" id="__nav_8_1_14_label" tabindex="0">
@@ -3536,7 +3540,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_8_1_14_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_8_1_14_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_8_1_14">
             <span class="md-nav__icon md-icon"></span>
             
@@ -3554,7 +3558,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/tasks/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         
   
   
@@ -3582,7 +3586,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/tasks/cfg/" class="md-nav__link">
+      <a href="../cfg/" class="md-nav__link">
         
   
   
@@ -3610,7 +3614,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/tasks/composite_eval/" class="md-nav__link">
+      <a href="../composite_eval/" class="md-nav__link">
         
   
   
@@ -3638,7 +3642,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/tasks/gram_graph_coloring/" class="md-nav__link">
+      <a href="../gram_graph_coloring/" class="md-nav__link">
         
   
   
@@ -3666,7 +3670,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/tasks/gram_n_queens/" class="md-nav__link">
+      <a href="../gram_n_queens/" class="md-nav__link">
         
   
   
@@ -3691,8 +3695,10 @@
                 
   
   
+    
   
   
+  
     
     
     
@@ -3703,11 +3709,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14_6" checked>
         
           
           <label class="md-nav__link" for="__nav_8_1_14_6" id="__nav_8_1_14_6_label" tabindex="0">
@@ -3728,7 +3734,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_14_6_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_14_6_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_8_1_14_6">
             <span class="md-nav__icon md-icon"></span>
             
@@ -3743,10 +3749,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../xlm/tasks/iwslt14_de_en/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    iwslt14_de_en
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -3762,6 +3795,59 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#xlm.tasks.iwslt14_de_en.Iwslt14MtEval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Iwslt14MtEval
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xlm.tasks.iwslt14_de_en.joint_char_bpe_v1_dir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;joint_char_bpe_v1_dir
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xlm.tasks.iwslt14_de_en.iwslt14_mt_preprocess_fn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;iwslt14_mt_preprocess_fn
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -3774,7 +3860,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/tasks/iwslt14_de_en/mt_eval/" class="md-nav__link">
+      <a href="mt_eval/" class="md-nav__link">
         
   
   
@@ -3810,7 +3896,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/tasks/lm1b/" class="md-nav__link">
+      <a href="../lm1b/" class="md-nav__link">
         
   
   
@@ -3838,7 +3924,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/tasks/math500/" class="md-nav__link">
+      <a href="../math500/" class="md-nav__link">
         
   
   
@@ -3918,7 +4004,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/tasks/owt/" class="md-nav__link">
+      <a href="../owt/" class="md-nav__link">
         
   
   
@@ -3946,7 +4032,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/tasks/owt/generative_perplexity_post_hoc/" class="md-nav__link">
+      <a href="../owt/generative_perplexity_post_hoc/" class="md-nav__link">
         
   
   
@@ -3974,7 +4060,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/tasks/owt/mauve_text_eval/" class="md-nav__link">
+      <a href="../owt/mauve_text_eval/" class="md-nav__link">
         
   
   
@@ -4010,7 +4096,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/tasks/qm9/" class="md-nav__link">
+      <a href="../qm9/" class="md-nav__link">
         
   
   
@@ -4038,7 +4124,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/tasks/safe_molgen/" class="md-nav__link">
+      <a href="../safe_molgen/" class="md-nav__link">
         
   
   
@@ -4066,7 +4152,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/tasks/star/" class="md-nav__link">
+      <a href="../star/" class="md-nav__link">
         
   
   
@@ -4094,7 +4180,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/tasks/sudoku/" class="md-nav__link">
+      <a href="../sudoku/" class="md-nav__link">
         
   
   
@@ -4122,7 +4208,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/tasks/sudoku_extreme/" class="md-nav__link">
+      <a href="../sudoku_extreme/" class="md-nav__link">
         
   
   
@@ -4202,7 +4288,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/tasks/tinygsm/" class="md-nav__link">
+      <a href="../tinygsm/" class="md-nav__link">
         
   
   
@@ -4230,7 +4316,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/tasks/tinygsm/gsm8k/" class="md-nav__link">
+      <a href="../tinygsm/gsm8k/" class="md-nav__link">
         
   
   
@@ -4266,7 +4352,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/tasks/uniref50/" class="md-nav__link">
+      <a href="../uniref50/" class="md-nav__link">
         
   
   
@@ -4354,7 +4440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/" class="md-nav__link">
+      <a href="../../utils/" class="md-nav__link">
         
   
   
@@ -4382,7 +4468,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/batch_size/" class="md-nav__link">
+      <a href="../../utils/batch_size/" class="md-nav__link">
         
   
   
@@ -4410,7 +4496,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/checkpoint_paths/" class="md-nav__link">
+      <a href="../../utils/checkpoint_paths/" class="md-nav__link">
         
   
   
@@ -4438,7 +4524,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/checkpoint_with_thinning/" class="md-nav__link">
+      <a href="../../utils/checkpoint_with_thinning/" class="md-nav__link">
         
   
   
@@ -4466,7 +4552,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/consolidate_model_checkpoint/" class="md-nav__link">
+      <a href="../../utils/consolidate_model_checkpoint/" class="md-nav__link">
         
   
   
@@ -4494,7 +4580,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/data/" class="md-nav__link">
+      <a href="../../utils/data/" class="md-nav__link">
         
   
   
@@ -4522,7 +4608,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/ddp/" class="md-nav__link">
+      <a href="../../utils/ddp/" class="md-nav__link">
         
   
   
@@ -4550,7 +4636,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/debug/" class="md-nav__link">
+      <a href="../../utils/debug/" class="md-nav__link">
         
   
   
@@ -4578,7 +4664,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/ema/" class="md-nav__link">
+      <a href="../../utils/ema/" class="md-nav__link">
         
   
   
@@ -4606,7 +4692,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/file_friendly_progress_callback/" class="md-nav__link">
+      <a href="../../utils/file_friendly_progress_callback/" class="md-nav__link">
         
   
   
@@ -4634,7 +4720,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/flops_estimation/" class="md-nav__link">
+      <a href="../../utils/flops_estimation/" class="md-nav__link">
         
   
   
@@ -4662,7 +4748,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/fsdp_diagnostics_callback/" class="md-nav__link">
+      <a href="../../utils/fsdp_diagnostics_callback/" class="md-nav__link">
         
   
   
@@ -4690,7 +4776,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/fsdp_grouping/" class="md-nav__link">
+      <a href="../../utils/fsdp_grouping/" class="md-nav__link">
         
   
   
@@ -4718,7 +4804,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/hf_hub/" class="md-nav__link">
+      <a href="../../utils/hf_hub/" class="md-nav__link">
         
   
   
@@ -4746,7 +4832,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/imports/" class="md-nav__link">
+      <a href="../../utils/imports/" class="md-nav__link">
         
   
   
@@ -4774,7 +4860,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/model_loading/" class="md-nav__link">
+      <a href="../../utils/model_loading/" class="md-nav__link">
         
   
   
@@ -4802,7 +4888,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/model_state_dict/" class="md-nav__link">
+      <a href="../../utils/model_state_dict/" class="md-nav__link">
         
   
   
@@ -4830,7 +4916,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/nn/" class="md-nav__link">
+      <a href="../../utils/nn/" class="md-nav__link">
         
   
   
@@ -4858,7 +4944,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/omegaconf_resolvers/" class="md-nav__link">
+      <a href="../../utils/omegaconf_resolvers/" class="md-nav__link">
         
   
   
@@ -4886,7 +4972,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/on_exception_checkpoint/" class="md-nav__link">
+      <a href="../../utils/on_exception_checkpoint/" class="md-nav__link">
         
   
   
@@ -4914,7 +5000,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/os/" class="md-nav__link">
+      <a href="../../utils/os/" class="md-nav__link">
         
   
   
@@ -4942,7 +5028,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/rank_zero/" class="md-nav__link">
+      <a href="../../utils/rank_zero/" class="md-nav__link">
         
   
   
@@ -4970,7 +5056,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/rich_utils/" class="md-nav__link">
+      <a href="../../utils/rich_utils/" class="md-nav__link">
         
   
   
@@ -4998,7 +5084,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/saving_utils/" class="md-nav__link">
+      <a href="../../utils/saving_utils/" class="md-nav__link">
         
   
   
@@ -5026,7 +5112,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/seed/" class="md-nav__link">
+      <a href="../../utils/seed/" class="md-nav__link">
         
   
   
@@ -5054,7 +5140,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/signal/" class="md-nav__link">
+      <a href="../../utils/signal/" class="md-nav__link">
         
   
   
@@ -5082,7 +5168,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/slurm/" class="md-nav__link">
+      <a href="../../utils/slurm/" class="md-nav__link">
         
   
   
@@ -5110,7 +5196,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/speed_monitor_callback/" class="md-nav__link">
+      <a href="../../utils/speed_monitor_callback/" class="md-nav__link">
         
   
   
@@ -5138,7 +5224,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/tensorboard_logging/" class="md-nav__link">
+      <a href="../../utils/tensorboard_logging/" class="md-nav__link">
         
   
   
@@ -5166,7 +5252,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/text/" class="md-nav__link">
+      <a href="../../utils/text/" class="md-nav__link">
         
   
   
@@ -5194,7 +5280,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/tqdm/" class="md-nav__link">
+      <a href="../../utils/tqdm/" class="md-nav__link">
         
   
   
@@ -5222,7 +5308,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/utils/wandb/" class="md-nav__link">
+      <a href="../../utils/wandb/" class="md-nav__link">
         
   
   
@@ -5258,7 +5344,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../xlm/version/" class="md-nav__link">
+      <a href="../../version/" class="md-nav__link">
         
   
   
@@ -5349,7 +5435,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../arlm/" class="md-nav__link">
+      <a href="../../../arlm/" class="md-nav__link">
         
   
   
@@ -5377,7 +5463,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../arlm/datamodule_arlm/" class="md-nav__link">
+      <a href="../../../arlm/datamodule_arlm/" class="md-nav__link">
         
   
   
@@ -5405,7 +5491,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../arlm/loss_arlm/" class="md-nav__link">
+      <a href="../../../arlm/loss_arlm/" class="md-nav__link">
         
   
   
@@ -5433,7 +5519,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../arlm/metrics_arlm/" class="md-nav__link">
+      <a href="../../../arlm/metrics_arlm/" class="md-nav__link">
         
   
   
@@ -5461,7 +5547,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../arlm/model_arlm/" class="md-nav__link">
+      <a href="../../../arlm/model_arlm/" class="md-nav__link">
         
   
   
@@ -5489,7 +5575,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../arlm/predictor_arlm/" class="md-nav__link">
+      <a href="../../../arlm/predictor_arlm/" class="md-nav__link">
         
   
   
@@ -5517,7 +5603,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../arlm/types_arlm/" class="md-nav__link">
+      <a href="../../../arlm/types_arlm/" class="md-nav__link">
         
   
   
@@ -5608,7 +5694,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../mlm/" class="md-nav__link">
+      <a href="../../../mlm/" class="md-nav__link">
         
   
   
@@ -5636,7 +5722,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../mlm/datamodule_mlm/" class="md-nav__link">
+      <a href="../../../mlm/datamodule_mlm/" class="md-nav__link">
         
   
   
@@ -5664,7 +5750,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../mlm/history_mlm/" class="md-nav__link">
+      <a href="../../../mlm/history_mlm/" class="md-nav__link">
         
   
   
@@ -5692,7 +5778,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../mlm/loss_mlm/" class="md-nav__link">
+      <a href="../../../mlm/loss_mlm/" class="md-nav__link">
         
   
   
@@ -5720,7 +5806,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../mlm/metrics_mlm/" class="md-nav__link">
+      <a href="../../../mlm/metrics_mlm/" class="md-nav__link">
         
   
   
@@ -5748,7 +5834,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../mlm/model_mlm/" class="md-nav__link">
+      <a href="../../../mlm/model_mlm/" class="md-nav__link">
         
   
   
@@ -5776,7 +5862,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../mlm/papl_unconditional/" class="md-nav__link">
+      <a href="../../../mlm/papl_unconditional/" class="md-nav__link">
         
   
   
@@ -5804,7 +5890,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../mlm/predictor_mlm/" class="md-nav__link">
+      <a href="../../../mlm/predictor_mlm/" class="md-nav__link">
         
   
   
@@ -5832,7 +5918,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../mlm/types_mlm/" class="md-nav__link">
+      <a href="../../../mlm/types_mlm/" class="md-nav__link">
         
   
   
@@ -5860,7 +5946,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../mlm/unbatch/" class="md-nav__link">
+      <a href="../../../mlm/unbatch/" class="md-nav__link">
         
   
   
@@ -5951,7 +6037,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ilm/" class="md-nav__link">
+      <a href="../../../ilm/" class="md-nav__link">
         
   
   
@@ -5979,7 +6065,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ilm/datamodule_ilm/" class="md-nav__link">
+      <a href="../../../ilm/datamodule_ilm/" class="md-nav__link">
         
   
   
@@ -6007,7 +6093,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ilm/loss_ilm/" class="md-nav__link">
+      <a href="../../../ilm/loss_ilm/" class="md-nav__link">
         
   
   
@@ -6035,7 +6121,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ilm/metrics_ilm/" class="md-nav__link">
+      <a href="../../../ilm/metrics_ilm/" class="md-nav__link">
         
   
   
@@ -6063,7 +6149,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ilm/model_ilm/" class="md-nav__link">
+      <a href="../../../ilm/model_ilm/" class="md-nav__link">
         
   
   
@@ -6091,7 +6177,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ilm/nn/" class="md-nav__link">
+      <a href="../../../ilm/nn/" class="md-nav__link">
         
   
   
@@ -6119,7 +6205,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ilm/predictor_ilm/" class="md-nav__link">
+      <a href="../../../ilm/predictor_ilm/" class="md-nav__link">
         
   
   
@@ -6147,7 +6233,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ilm/types_ilm/" class="md-nav__link">
+      <a href="../../../ilm/types_ilm/" class="md-nav__link">
         
   
   
@@ -6180,8 +6266,6 @@
                 
   
   
-    
-  
   
   
     
@@ -6197,11 +6281,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_5" >
         
           
           <label class="md-nav__link" for="__nav_8_5" id="__nav_8_5_label" tabindex="">
@@ -6222,7 +6306,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_8_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -6240,7 +6324,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../" class="md-nav__link">
+      <a href="../../../mdlm/" class="md-nav__link">
         
   
   
@@ -6268,7 +6352,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../datamodule_mdlm/" class="md-nav__link">
+      <a href="../../../mdlm/datamodule_mdlm/" class="md-nav__link">
         
   
   
@@ -6293,19 +6377,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../../mdlm/loss_mdlm/" class="md-nav__link">
         
   
   
@@ -6321,7 +6396,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -6334,7 +6408,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../metrics_mdlm/" class="md-nav__link">
+      <a href="../../../mdlm/metrics_mdlm/" class="md-nav__link">
         
   
   
@@ -6362,7 +6436,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../model_mdlm/" class="md-nav__link">
+      <a href="../../../mdlm/model_mdlm/" class="md-nav__link">
         
   
   
@@ -6390,7 +6464,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../noise_mdlm/" class="md-nav__link">
+      <a href="../../../mdlm/noise_mdlm/" class="md-nav__link">
         
   
   
@@ -6418,7 +6492,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../predictor_mdlm/" class="md-nav__link">
+      <a href="../../../mdlm/predictor_mdlm/" class="md-nav__link">
         
   
   
@@ -6446,7 +6520,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../types_mdlm/" class="md-nav__link">
+      <a href="../../../mdlm/types_mdlm/" class="md-nav__link">
         
   
   
@@ -6503,13 +6577,15 @@
 
 
 
-<h1 id="mdlm.loss_mdlm" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>mdlm.loss_mdlm</code>
+<h1 id="xlm.tasks.iwslt14_de_en" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <code>xlm.tasks.iwslt14_de_en</code>
 
 
 </h1>
 
     <div class="doc doc-contents first">
+
+        <p>IWSLT14 German→English (RDM text + joint CharBPE) preprocessing.</p>
 
 
 
@@ -6530,6 +6606,100 @@
 
 
 
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="xlm.tasks.iwslt14_de_en.Iwslt14MtEval" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>Iwslt14MtEval</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>Corpus MT metrics over logged IWSLT14 predictions.</p>
+<p>Hydra::</p>
+<pre><code>post_hoc_evaluator:
+  _target_: xlm.tasks.composite_eval.CompositePostHocEvaluator
+  evaluators:
+    prediction:
+      mt:
+        _target_: xlm.tasks.iwslt14_de_en.mt_eval.Iwslt14MtEval
+        mode: sacrebleu_detok
+</code></pre>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="xlm.tasks.iwslt14_de_en.joint_char_bpe_v1_dir" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">joint_char_bpe_v1_dir</span><span class="p">()</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Absolute path to the packaged joint CharBPE v1 directory.</p>
+<p>Prefer <code>IWSLT14_JOINT_CHAR_BPE_V1</code> when set; otherwise the files shipped under
+<code>xlm.tasks.iwslt14_de_en.tokenizer_v1</code> (works for editable and wheel installs).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="xlm.tasks.iwslt14_de_en.iwslt14_mt_preprocess_fn" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">iwslt14_mt_preprocess_fn</span><span class="p">(</span><span class="n">example</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Encode DE/EN text to raw BPE id lists (no special tokens).</p>
+<p>Collators own BOS/EOS, truncation, padding, and noise.</p>
+
+
+    </div>
+
+</div>
 
 
 
@@ -6596,12 +6766,12 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "toc.integrate"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "toc.integrate"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
-        <script src="../../../javascripts/mathjax.js"></script>
+        <script src="../../../../javascripts/mathjax.js"></script>
       
         <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
       

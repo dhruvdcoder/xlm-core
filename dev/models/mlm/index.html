@@ -3912,6 +3912,122 @@
   
   
   
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_1_14_6" id="__nav_8_1_14_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>iwslt14_de_en
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_14_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_14_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>iwslt14_de_en
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/xlm/tasks/iwslt14_de_en/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    iwslt14_de_en
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/xlm/tasks/iwslt14_de_en/mt_eval/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>mt_eval
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
       <a href="../../reference/xlm/tasks/lm1b/" class="md-nav__link">
         
@@ -3982,10 +4098,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14_9" >
         
           
-          <label class="md-nav__link" for="__nav_8_1_14_8" id="__nav_8_1_14_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8_1_14_9" id="__nav_8_1_14_9_label" tabindex="0">
             
   
   
@@ -4003,8 +4119,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_14_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8_1_14_8">
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_14_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_14_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -4266,10 +4382,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14_14" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1_14_15" >
         
           
-          <label class="md-nav__link" for="__nav_8_1_14_14" id="__nav_8_1_14_14_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8_1_14_15" id="__nav_8_1_14_15_label" tabindex="0">
             
   
   
@@ -4287,8 +4403,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_14_14_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8_1_14_14">
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_8_1_14_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1_14_15">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -6681,7 +6797,7 @@
 <tr>
 <td><code>fixed_positions_mask</code></td>
 <td><code>(B, L)</code> <code>bool</code></td>
-<td>infill collators only — positions that must not be re-masked</td>
+<td>mutation policy: <code>True</code> must never change, including every <code>attention_mask=False</code> slot. Visible suffix-canvas pads stay <code>False</code> when <code>loss_on_padding=True</code>.</td>
 </tr>
 </tbody>
 </table>
@@ -6720,13 +6836,13 @@
 <td><code>MLMSeq2SeqTrainCollator</code></td>
 <td><code>Seq2SeqCollatorInput</code></td>
 <td><code>MLMBatch</code></td>
-<td>Concatenates <code>[prompt][BOS][target][EOS]</code>; only <code>block_size</code> suffix positions after the prompt are visible and MLM-eligible (tail hidden via <code>attention_mask=0</code>).</td>
+<td>Concatenates <code>[prompt][BOS][target][EOS]</code>; only <code>block_size</code> suffix positions after the prompt are visible and MLM-eligible (tail hidden via <code>attention_mask=0</code>). Prompt block is <code>fixed=True</code>; visible suffix canvas is <code>fixed=False</code>.</td>
 </tr>
 <tr>
 <td><code>MLMSeq2SeqCollator</code></td>
 <td><code>Seq2SeqCollatorInput</code></td>
 <td><code>MLMBatch</code></td>
-<td>Left-pads prompt and right-pads target separately (padding on both sides).</td>
+<td>Left-pads prompt and right-pads target separately (padding on both sides). Prompt / left pads are <code>fixed=True</code>.</td>
 </tr>
 <tr>
 <td><code>_MLMSeq2SeqPredCollator</code></td>
@@ -6738,13 +6854,13 @@
 <td><code>MLMSeq2SeqPredCollator</code></td>
 <td><code>Seq2SeqCollatorInput</code></td>
 <td><code>MLMBatch</code></td>
-<td><code>input_ids = left-padded prompt only</code>; <code>target_ids = right-padded target</code> (used for seq2seq prediction).</td>
+<td><code>input_ids = left-padded prompt only</code>; <code>target_ids = right-padded target</code> (used for seq2seq prediction). The prompt block is all <code>fixed=True</code>.</td>
 </tr>
 <tr>
 <td><code>MLMInfillWithExactTargetPredCollator</code></td>
 <td><code>BaseCollatorInput</code> with pre-masked <code>prompt_ids</code></td>
 <td><code>MLMBatch</code></td>
-<td><code>mask_none=True</code> so existing masks in <code>prompt_ids</code> are kept; <code>target_ids</code> filled from <code>input_ids</code>.</td>
+<td><code>mask_none=True</code> so existing masks in <code>prompt_ids</code> are kept; <code>target_ids</code> filled from <code>input_ids</code>; <code>fixed_positions_mask</code> is True at clues and attention-hidden pads.</td>
 </tr>
 <tr>
 <td><code>DefaultInfillMLMCollator</code></td>
