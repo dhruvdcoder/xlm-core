@@ -1,0 +1,100 @@
+# @package _global_
+defaults:
+  - /metrics@reported_metrics.val.infill_prediction.exact_match: exact_match
+  - /metrics@reported_metrics.val.infill_prediction.token_accuracy: token_accuracy
+  - /metrics@reported_metrics.val.infill_prediction.steps_taken: steps_taken
+  - /metrics@reported_metrics.test.infill_prediction.exact_match: exact_match
+  - /metrics@reported_metrics.test.infill_prediction.token_accuracy: token_accuracy
+  - /metrics@reported_metrics.test.infill_prediction.steps_taken: steps_taken
+  - override /loggers: wandb
+  - override /datamodule: sudoku_extreme_frm
+  - override /model_type: frm
+  - override /model: ddit_frm
+  - override /loggers: wandb
+
+per_device_batch_size: 128
+global_batch_size: 128
+block_size: 81
+monitored_metric: val/lm/accumulated_loss
+add_bos: false
+add_eos: false
+loss_on_padding: true
+
+datamodule:
+  print_batch_fn: frm.datamodule_frm.print_batch_frm
+
+global_components:
+  tokenizer:
+    _target_: xlm.datamodule.SimpleSpaceTokenizer.for_numbers
+    vocab_size: 10
+
+log_predictions:
+  _target_: xlm.log_predictions.LogPredictions
+  fields_to_keep_in_output:
+    - text
+    - truth
+    - steps_taken
+    - exact_match
+  inject_target: target_ids
+  writers:
+    - file
+    - logger
+
+trainer:
+  max_steps: 100000
+  val_check_interval: 10000
+  check_val_every_n_epoch: null
+  num_sanity_val_steps: 1
+  limit_val_batches: 100
+  gradient_clip_val: 1.0
+
+predictor:
+  max_steps: 81
+  k_inner: 1
+
+loss:
+  self_cond_prob: 0.5
+  fpf_prob: 0.0
+  fpf_rollout_depth: 16
+  loss_on_clamped: true
+
+optimizer:
+  lr: 0.0003
+  weight_decay: 0.0
+
+lr_scheduler:
+  name: "constant"
+  num_warmup_steps: 0
+  num_training_steps: ${trainer.max_steps}
+  monitor: "train/loss"
+
+reported_metrics:
+  val:
+    infill_prediction:
+      exact_match:
+        prefix: val/prediction
+        update_fn: frm.metrics_frm.exact_match_update_fn
+      token_accuracy:
+        prefix: val/prediction
+        update_fn: frm.metrics_frm.infill_token_accuracy_update_fn
+      steps_taken:
+        prefix: val/prediction
+        update_fn: xlm.metrics.steps_taken_update_fn
+  test:
+    infill_prediction:
+      exact_match:
+        prefix: test/prediction
+        update_fn: frm.metrics_frm.exact_match_update_fn
+      token_accuracy:
+        prefix: test/prediction
+        update_fn: frm.metrics_frm.infill_token_accuracy_update_fn
+      steps_taken:
+        prefix: test/prediction
+        update_fn: xlm.metrics.steps_taken_update_fn
+
+callbacks:
+  checkpoint_every_n_steps:
+    every_n_train_steps: 10000
+    keep_multiple: 4
+  ema:
+    decay: 0.9999

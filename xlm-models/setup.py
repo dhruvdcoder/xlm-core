@@ -22,6 +22,7 @@ setup(
     - dream: Dream diffusion LM 
     - llada: LLaDA masked diffusion LM
     - bd3lm: Block Discrete Denoising Diffusion Language Model
+    - frm: Flow Reasoning Model
 
     
     Usage:
@@ -29,7 +30,7 @@ setup(
 
         Model package names must be specified in the XLM_MODEL_PACKAGES environment variable as a colon-separated list (e.g., arlm:mlm:ilm:mdlm:dream)
     """,
-    packages=["arlm", "mlm", "ilm", "mdlm", "flexmdm", "dream", "llada", "bd3lm"],
+    packages=["arlm", "mlm", "ilm", "mdlm", "flexmdm", "dream", "llada", "bd3lm", "frm"],
     author="Dhruvesh Patel, Benjamin Rozonoyer, Sai Sreenivas Chintha, Durga Prasad Maram",
     package_dir={
         "arlm": "arlm",
@@ -39,7 +40,8 @@ setup(
         "flexmdm": "flexmdm",
         "dream": "dream",
         "llada": "llada",
-        "bd3lm": "bd3lm"
+        "bd3lm": "bd3lm",
+        "frm": "frm",
     },
     package_data={
         "arlm": ["configs/**/*.yaml", "configs/**/*.yml"],
@@ -50,7 +52,7 @@ setup(
         "dream": ["configs/**/*.yaml", "configs/**/*.yml"],
         "llada": ["configs/**/*.yaml", "configs/**/*.yml"],
         "bd3lm": ["configs/**/*.yaml", "configs/**/*.yml"],
-
+        "frm": ["configs/**/*.yaml", "configs/**/*.yml"],
     },
     install_requires=[
         f"xlm-core=={VERSION['VERSION']}",
