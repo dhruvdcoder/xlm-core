@@ -10,6 +10,9 @@ defaults:
 datamodule:
   print_batch_fn: arlm.datamodule_arlm.print_batch_arlm
   dataset_managers:
+    train:
+      lm:
+        make_infinite: true
     val:
       unconditional_prediction:
         dataset_constructor_str: arlm.datamodule_arlm.ARLMEmptyDataset
