@@ -17,21 +17,21 @@ datamodule:
         collator:
           add_bos: false
           add_eos: true
-          truncate: max
+          truncate: block
     val:
       lm:
         collator:
           add_bos: false
           add_eos: true
-          truncate: max
+          truncate: block
       prediction:
         collator:
-          add_bos: null
+          add_bos: false
           truncate: null
     test:
       gsm8k_prediction:
         collator:
-          add_bos: null
+          add_bos: false
           truncate: null
 
 tags:
