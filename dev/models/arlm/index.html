@@ -7055,7 +7055,7 @@
 <tbody>
 <tr>
 <td>Tokenizer</td>
-<td>Qwen2-0.5B (<code>Qwen/Qwen2-0.5B</code>) with added <code>&lt;|mask|&gt;</code></td>
+<td>Qwen2-0.5B (<code>Qwen/Qwen2-0.5B</code>) with added <code>&lt;|mask|&gt;</code> and <code>&lt;|pad|&gt;</code></td>
 </tr>
 <tr>
 <td><code>block_size</code></td>
@@ -7071,7 +7071,7 @@
 </tr>
 <tr>
 <td>Collators</td>
-<td>Train/val <code>lm</code>: <code>default_arlm</code> (one right-padded sequence; BOS at the join when <code>add_bos</code> is set; prompt tokens masked from the loss). Prediction: <code>seq2seq_pred_arlm</code> with batch-max left padding (<code>truncate: null</code>)</td>
+<td>Train/val <code>lm</code>: <code>default_arlm</code> (one right-padded sequence, <code>truncate: block</code>, <code>add_bos: false</code>; prompt tokens masked from the loss). Prediction: <code>seq2seq_pred_arlm</code> with <code>add_bos: false</code> and batch-max left padding (<code>truncate: null</code>)</td>
 </tr>
 <tr>
 <td>Val / test prediction</td>
