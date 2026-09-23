@@ -166,12 +166,14 @@ Task dataset and preprocessing: [TinyGSM](../tasks/tinygsm.md). GSM8K and code-e
 | `block_size` | 512 |
 | `input_block_size` | 0 |
 | Batching | Per-device 32; global 512 |
-| Collators | STAR seq2seq (`seq2seq_*` / `seq2seq_pred_*`); no BOS between question and code |
+| Collators | Train/val `lm`: `default_arlm` (one right-padded sequence; BOS at the join when `add_bos` is set; prompt tokens masked from the loss). Prediction: `seq2seq_pred_arlm` with batch-max left padding (`truncate: null`) |
 | Val / test prediction | Post-hoc `code_exec_accuracy` (`Gsm8kCodeEval`); token EM disabled |
 | Monitored metric | `val/lm/accumulated_loss` |
 | Training schedule | Up to 1M steps; validation every 50k steps; checkpoint every 2.5k steps (keep every 100k) |
 
-Collators are reused from existing STAR seq2seq configs; no TinyGSM-specific collator YAMLs.
+Train/val loss loaders use `default_arlm` so prompt and answer form one
+right-padded sequence (`block_size` bounds both). Prediction still uses
+`seq2seq_pred_arlm` with batch-max left padding.
 
 #### Commands
 

@@ -198,7 +198,7 @@ def prepare_suffix_ids_arlm(
 
 
 class DefaultARLMCollator(Collator):
-    """Used for pre-training."""
+    """Used for pre-training and single-sequence seq2seq (prompt + answer)."""
 
     def __init__(
         self,
@@ -206,6 +206,7 @@ class DefaultARLMCollator(Collator):
         block_size: int,
         noise_schedule: NoiseSchedule,
         truncate: Literal["max", "block", None] = "block",
+        add_bos: bool = True,
         add_eos: bool = False,
     ):
         """Initialize the ARLM collator.
@@ -215,6 +216,8 @@ class DefaultARLMCollator(Collator):
             block_size: Maximum sequence length.
             noise_schedule: Noise schedule (not used in ARLM but kept for interface consistency).
             truncate: Truncation strategy.
+            add_bos: Whether to add a BOS token. With ``prompt_ids`` it is
+                inserted at the prompt/answer join; otherwise it is prepended.
             add_eos: Whether to add EOS token at the end of the sequence.
         """
         self.block_size = block_size
@@ -222,6 +225,7 @@ class DefaultARLMCollator(Collator):
         self.tokenizer = tokenizer
         self._vocab_size = len(self.tokenizer)
         self.truncate = truncate
+        self.add_bos = add_bos
         self.add_eos = add_eos
 
     @property
@@ -242,7 +246,10 @@ class DefaultARLMCollator(Collator):
         """Collate examples into a batch for ARLM training.
 
         Args:
-            examples: List of examples with input_ids.
+            examples: List of examples with ``input_ids``. Optional
+                ``prompt_ids`` are concatenated in front of the answer
+                (BOS at the join when ``add_bos`` is set) and masked
+                from the loss.
 
         Returns:
             ARLMBatch with input_ids, attention_mask, and target_ids.
@@ -251,65 +258,65 @@ class DefaultARLMCollator(Collator):
         attention_mask: List[List[int]] = []
         target_ids: List[List[int]] = []
 
-        # Extract input_ids from examples
-        seq_lens = [len(e["input_ids"]) for e in examples]
+        formed: List[List[int]] = []
+        prompt_ignore: List[int] = []
+        for example in examples:
+            prompt = (
+                list(example["prompt_ids"])  # type: ignore[typeddict-item]
+                if "prompt_ids" in example
+                else None
+            )
+            answer = list(example["input_ids"])
+            if prompt is not None:
+                if self.add_bos:
+                    seq = prompt + [self.tokenizer.bos_token_id] + answer
+                else:
+                    seq = prompt + answer
+                n_ignore = len(prompt) + int(self.add_bos) - 1
+            else:
+                if self.add_bos:
+                    seq = [self.tokenizer.bos_token_id] + answer
+                else:
+                    seq = answer
+                n_ignore = 0
+            if self.add_eos:
+                seq = seq + [self.tokenizer.eos_token_id]
+            formed.append(seq)
+            prompt_ignore.append(n_ignore)
 
-        # Determine max length based on truncation strategy
-        # Account for BOS and EOS tokens that will be added
-        tokens_to_add = 1  # BOS token
-        if self.add_eos:
-            tokens_to_add += 1  # EOS token
-
+        seq_lens = [len(seq) for seq in formed]
         if self.truncate == "max":
-            max_len = min(max(seq_lens) + tokens_to_add, self.block_size)
+            max_len = min(max(seq_lens), self.block_size)
         elif self.truncate == "block":
             max_len = self.block_size
         elif self.truncate is None:
-            max_len = max(seq_lens) + tokens_to_add
+            max_len = max(seq_lens)
         else:
             raise ValueError(f"Invalid truncate value: {self.truncate}")
 
-        for example in examples:
-            # Get the input sequence
-            seq = example["input_ids"]
+        for seq, n_prompt_ignore in zip(formed, prompt_ignore):
+            if len(seq) > max_len:
+                seq = seq[:max_len]
+            n_prompt_ignore = min(
+                max(0, n_prompt_ignore), max(0, len(seq) - 1)
+            )
 
-            # Truncate if necessary (account for BOS and EOS tokens)
-            if len(seq) > max_len - tokens_to_add:
-                seq = seq[: max_len - tokens_to_add]
-
-            # Add BOS token at the beginning
-            seq_with_bos = [self.tokenizer.bos_token_id] + seq
-
-            # Add EOS token at the end if requested
-            if self.add_eos:
-                seq_with_bos = seq_with_bos + [self.tokenizer.eos_token_id]
-
-            # Pad to max_len
             padded_seq = pad_truncate_list(
-                seq_with_bos,
+                seq,
                 max_len,
                 self.tokenizer.pad_token_id,
                 pad_left=False,
             )
             input_ids.append(padded_seq)
 
-            # Create attention mask (1 for real tokens including BOS/EOS, 0 for padding)
-            mask = [1] * len(seq_with_bos) + [0] * (
-                max_len - len(seq_with_bos)
-            )
+            mask = [1] * len(seq) + [0] * (max_len - len(seq))
             attention_mask.append(mask)
 
-            # Create target_ids (shifted by 1 for next token prediction)
-            # For ARLM, target_ids are the same as input_ids but shifted left by 1
-            # Use -100 for padding positions (and the last logit) so CE sees
-            # the same length as padded input_ids / attention_mask.
-            target_seq = seq_with_bos[1:] + [-100] * (
-                max_len - len(seq_with_bos) + 1
-            )
+            target_seq = seq[1:] + [-100] * (max_len - len(seq) + 1)
+            for j in range(n_prompt_ignore):
+                target_seq[j] = -100
             for j in range(len(target_seq)):
-                if (
-                    j < len(mask) - 1 and mask[j + 1] == 0
-                ):  # Check if next position is padding
+                if j < len(mask) - 1 and mask[j + 1] == 0:
                     target_seq[j] = -100
 
             target_ids.append(target_seq)

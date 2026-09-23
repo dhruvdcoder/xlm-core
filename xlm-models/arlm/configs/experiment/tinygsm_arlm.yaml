@@ -8,6 +8,7 @@ defaults:
 per_device_batch_size: 32
 global_batch_size: 512
 num_dataloader_workers: 5
+# Training ``default_arlm`` caps prompt + answer together at block_size.
 block_size: 512
 input_block_size: 0
 monitored_metric: val/lm/accumulated_loss

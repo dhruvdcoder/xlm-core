@@ -5,6 +5,8 @@ defaults:
   - /datasets@datamodule.dataset_managers.val.lm: tinygsm_val
   - /datasets@datamodule.dataset_managers.val.prediction: tinygsm_val_pred
   - /datasets@datamodule.dataset_managers.test.gsm8k_prediction: gsm8k_test_pred
+  - /collator@datamodule.dataset_managers.train.lm.collator: default_arlm
+  - /collator@datamodule.dataset_managers.val.lm.collator: default_arlm
   - /collator@datamodule.dataset_managers.test.gsm8k_prediction.collator: seq2seq_pred_arlm
 
 datamodule:
@@ -13,18 +15,24 @@ datamodule:
     train:
       lm:
         collator:
-          add_bos: null
+          add_bos: false
+          add_eos: true
+          truncate: max
     val:
       lm:
         collator:
-          add_bos: null
+          add_bos: false
+          add_eos: true
+          truncate: max
       prediction:
         collator:
           add_bos: null
+          truncate: null
     test:
       gsm8k_prediction:
         collator:
           add_bos: null
+          truncate: null
 
 tags:
   dataset: tinygsm
