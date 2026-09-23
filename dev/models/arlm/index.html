@@ -7071,7 +7071,7 @@
 </tr>
 <tr>
 <td>Collators</td>
-<td>STAR seq2seq (<code>seq2seq_*</code> / <code>seq2seq_pred_*</code>); no BOS between question and code</td>
+<td>Train/val <code>lm</code>: <code>default_arlm</code> (one right-padded sequence; BOS at the join when <code>add_bos</code> is set; prompt tokens masked from the loss). Prediction: <code>seq2seq_pred_arlm</code> with batch-max left padding (<code>truncate: null</code>)</td>
 </tr>
 <tr>
 <td>Val / test prediction</td>
@@ -7087,7 +7087,9 @@
 </tr>
 </tbody>
 </table>
-<p>Collators are reused from existing STAR seq2seq configs; no TinyGSM-specific collator YAMLs.</p>
+<p>Train/val loss loaders use <code>default_arlm</code> so prompt and answer form one
+right-padded sequence (<code>block_size</code> bounds both). Prediction still uses
+<code>seq2seq_pred_arlm</code> with batch-max left padding.</p>
 <h4 id="commands_1">Commands</h4>
 <p><strong>Prepare cache</strong> (rank 0 before multi-GPU training):</p>
 <div class="highlight"><pre><span></span><code>xlm<span class="w"> </span><span class="nv">job_type</span><span class="o">=</span>prepare_data<span class="w"> </span><span class="nv">experiment</span><span class="o">=</span>tinygsm_arlm<span class="w"> </span><span class="nv">num_dataset_workers</span><span class="o">=</span><span class="m">8</span>

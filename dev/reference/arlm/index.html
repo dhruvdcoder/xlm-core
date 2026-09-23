@@ -8543,7 +8543,7 @@ on the target sequence (which is already shifted in the batch).</p>
 
 
 
-        <p>Used for pre-training.</p>
+        <p>Used for pre-training and single-sequence seq2seq (prompt + answer).</p>
 
 
 
@@ -8570,7 +8570,7 @@ on the target sequence (which is already shifted in the batch).</p>
 
 
 <h3 id="arlm.DefaultARLMCollator.__init__" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="n">block_size</span><span class="p">,</span> <span class="n">noise_schedule</span><span class="p">,</span> <span class="n">truncate</span><span class="o">=</span><span class="s1">'block'</span><span class="p">,</span> <span class="n">add_eos</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="n">block_size</span><span class="p">,</span> <span class="n">noise_schedule</span><span class="p">,</span> <span class="n">truncate</span><span class="o">=</span><span class="s1">'block'</span><span class="p">,</span> <span class="n">add_bos</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">add_eos</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 </h3>
 
@@ -8657,6 +8657,23 @@ on the target sequence (which is already shifted in the batch).</p>
           </tr>
           <tr class="doc-section-item">
             <td>
+                <code>add_bos</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to add a BOS token. With <code>prompt_ids</code> it is
+inserted at the prompt/answer join; otherwise it is prepended.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
                 <code>add_eos</code>
             </td>
             <td>
@@ -8713,7 +8730,10 @@ on the target sequence (which is already shifted in the batch).</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>List of examples with input_ids.</p>
+                <p>List of examples with <code>input_ids</code>. Optional
+<code>prompt_ids</code> are concatenated in front of the answer
+(BOS at the join when <code>add_bos</code> is set) and masked
+from the loss.</p>
               </div>
             </td>
             <td>
