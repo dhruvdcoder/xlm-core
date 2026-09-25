@@ -121,7 +121,7 @@ Task dataset and preprocessing: [OWT](../tasks/owt.md).
 | Batching | Per-device 32; global 512 |
 | Train split | `dhruveshpatel/owt-gpt2-1024-split/train` |
 | Val split | `dhruveshpatel/owt-gpt2-1024-split/validation` |
-| Collators | `DefaultARLMCollator` |
+| Collators | `DefaultARLMCollator` (`add_eos: true` on train/val `lm`; unconditional pred keeps `add_eos: false`) |
 | Unconditional eval | `ARLMEmptyDataset` (`unconditional_prediction` dataloader) |
 | Monitored metric | `val/lm/accumulated_loss` |
 | Training schedule | Up to 1M steps; validation every 50k steps; checkpoint every 2.5k steps (keep every 100k) |

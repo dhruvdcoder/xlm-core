@@ -1,4 +1,5 @@
 _target_: arlm.datamodule_arlm.DefaultARLMCollator
 block_size: ${block_size}
 tokenizer: ${global_components:tokenizer}
-noise_schedule: ${global_components:noise_schedule} 
+noise_schedule: ${global_components:noise_schedule}
+add_eos: true 

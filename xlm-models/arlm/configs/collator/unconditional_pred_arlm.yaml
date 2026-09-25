@@ -3,3 +3,4 @@ block_size: ${block_size}
 tokenizer: ${global_components:tokenizer}
 noise_schedule: ${global_components:noise_schedule}
 truncate: max
+add_eos: false
