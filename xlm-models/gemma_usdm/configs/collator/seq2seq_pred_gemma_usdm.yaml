@@ -1,0 +1,15 @@
+_target_: gemma_usdm.datamodule_gemma_usdm.GemmaUsdmPredCollator
+input_block_size: ${input_block_size}
+block_size: ${block_size}
+tokenizer: ${global_components:tokenizer}
+add_bos: ${oc.select:add_bos,false}
+add_eos: ${oc.select:add_eos,true}
+truncate: block
+loss_on_padding: ${oc.select:loss_on_padding,true}
+truncate_long_targets: ${oc.select:truncate_long_targets,false}
+pass_through_fields:
+  - answer
+  - target
+  - target_text
+  - target_raw
+  - id

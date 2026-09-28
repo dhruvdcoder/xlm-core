@@ -1,0 +1,8 @@
+# @package _global_
+defaults:
+  - rotary_transformer_gemma_usdm
+  - rotary_transformer_xtiny
+  - _self_
+
+tags:
+  model: rotary_transformer_xtiny_gemma_usdm

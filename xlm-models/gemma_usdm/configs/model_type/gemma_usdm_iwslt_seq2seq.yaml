@@ -1,0 +1,60 @@
+# @package _global_
+# Seq2seq gemma-usdm. Token metrics stay off; SacreBLEU / chrF++ are post-hoc.
+# `nfe` is the mean of per-sequence sampler steps on the prediction split.
+defaults:
+  - /metrics@reported_metrics.train.lm.accumulated_loss: accumulated_loss
+  - /metrics@reported_metrics.val.lm.accumulated_loss: accumulated_loss
+  - /metrics@reported_metrics.test.lm.accumulated_loss: accumulated_loss
+  - /metrics@reported_metrics.val.prediction.nfe: steps_taken
+  - /metrics@reported_metrics.test.prediction.nfe: steps_taken
+
+lightning_module:
+  _target_: xlm.harness.Harness
+
+loss:
+  _target_: gemma_usdm.loss_gemma_usdm.GemmaUsdmLoss
+  loss_on_padding: ${oc.select:loss_on_padding,true}
+  clean_prob: ${oc.select:clean_prob,0.1}
+
+predictor:
+  _target_: gemma_usdm.predictor_gemma_usdm.GemmaUsdmPredictor
+  tokenizer: ${lightning_module:tokenizer}
+  noise_schedule: ${lightning_module:noise_schedule}
+  max_steps: 32
+  max_new_tokens: ${block_size}
+  entropy_budget: 0.1
+  stop_entropy: 0.005
+  tau_max: 0.8
+  tau_min: 0.4
+  loss_on_padding: ${oc.select:loss_on_padding,true}
+
+diagnostic_metrics: null
+reported_metrics:
+  train:
+    lm:
+      accumulated_loss:
+        prefix: train/lm
+        update_fn: xlm.metrics.mean_metric_update_fn
+  val:
+    lm:
+      accumulated_loss:
+        prefix: val/lm
+        update_fn: xlm.metrics.mean_metric_update_fn
+    prediction:
+      nfe:
+        name: nfe
+        prefix: val/prediction
+        update_fn: gemma_usdm.metrics_gemma_usdm.nfe_update_fn
+  test:
+    lm:
+      accumulated_loss:
+        prefix: test/lm
+        update_fn: xlm.metrics.mean_metric_update_fn
+    prediction:
+      nfe:
+        name: nfe
+        prefix: test/prediction
+        update_fn: gemma_usdm.metrics_gemma_usdm.nfe_update_fn
+
+tags:
+  model_type: gemma_usdm_iwslt_seq2seq
