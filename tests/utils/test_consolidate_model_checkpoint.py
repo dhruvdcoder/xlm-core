@@ -171,7 +171,20 @@ class TestPushModelOnlyFolderToHub:
 
         from huggingface_hub.errors import RevisionNotFoundError
 
-        mock_api.repo_info.side_effect = RevisionNotFoundError("missing")
+        try:
+            missing_revision = RevisionNotFoundError("missing")
+        except TypeError:
+            # huggingface_hub >= 1 requires the HTTP response.
+            import httpx
+
+            missing_revision = RevisionNotFoundError(
+                "missing",
+                response=httpx.Response(
+                    404,
+                    request=httpx.Request("GET", "https://huggingface.co"),
+                ),
+            )
+        mock_api.repo_info.side_effect = missing_revision
 
         (tmp_path / "model.safetensors").write_bytes(b"x")
         (tmp_path / "config.json").write_text("{}")
