@@ -11,7 +11,7 @@ from typing import Any, Optional, cast
 import hydra
 import torch
 from omegaconf import DictConfig, OmegaConf
-from transformers.modeling_utils import no_init_weights
+from transformers.initialization import no_init_weights
 
 from xlm.harness import Harness
 from xlm.utils.hf_hub import (

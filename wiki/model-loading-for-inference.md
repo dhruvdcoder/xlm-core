@@ -338,7 +338,7 @@ Different commands have different device requirements:
 
 **`init_dtype` (optional, top-level config):** `float32`, `float16`, or `bfloat16`. While the Lightning module is constructed, `torch.set_default_dtype` is set so the module is built in that dtype. The same context applies when loading a **full** checkpoint via `load_from_checkpoint`. If omitted, PyTorch’s default dtype is used (typically `float32`).
 
-**`skip_init_weights` (optional, top-level config):** When **true** and weights come from a **model-only** source (local file set in `model_only_checkpoint_path` or Hub download—not a full Lightning `.ckpt`), instantiation uses `transformers.modeling_utils.no_init_weights()` so parameters are not randomly initialized before `load_model_weights_into_model` runs. When a **full Lightning checkpoint** is loaded, that path uses `load_from_checkpoint` instead; `skip_init_weights` does not apply there.
+**`skip_init_weights` (optional, top-level config):** When **true** and weights come from a **model-only** source (local file set in `model_only_checkpoint_path` or Hub download—not a full Lightning `.ckpt`), instantiation uses `transformers.initialization.no_init_weights()` so parameters are not randomly initialized before `load_model_weights_into_model` runs. When a **full Lightning checkpoint** is loaded, that path uses `load_from_checkpoint` instead; `skip_init_weights` does not apply there.
 
 For **`skip_init_weights` during training**, see `commands/lightning_train.py` (activation when a training ckpt or model-only load will follow).
 

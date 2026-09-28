@@ -17,7 +17,7 @@ from omegaconf import DictConfig, OmegaConf
 from lightning import seed_everything
 from lightning.pytorch.loggers import Logger
 from lightning import Callback
-from transformers.modeling_utils import no_init_weights
+from transformers.initialization import no_init_weights
 from xlm.utils.model_loading import (
     load_model_weights_into_model,
     _get_model_only_checkpoint_path,
