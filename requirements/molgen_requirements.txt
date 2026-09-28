@@ -21,6 +21,6 @@ rdkit
 # PyTorch FCD backend (import path: fcd_torch); PyPI distribution is hyphenated:
 fcd-torch
 fcd
-transformers==4.57.1 # other versions may not work.
+# transformers==4.57.1  # other versions may not work. Uncomment if molgen fails on transformers v5.
 setuptools<82.0.0
 #numpy==1.26.4

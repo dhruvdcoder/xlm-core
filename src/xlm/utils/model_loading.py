@@ -11,7 +11,14 @@ from typing import Any, Optional, cast
 import hydra
 import torch
 from omegaconf import DictConfig, OmegaConf
-from transformers.initialization import no_init_weights
+
+try:
+    # transformers >= 5
+    from transformers.initialization import no_init_weights
+except ImportError:
+    # transformers < 5. If molgen fails on v5, pin transformers==4.57.1
+    # (see requirements/molgen_requirements.txt).
+    from transformers.modeling_utils import no_init_weights
 
 from xlm.harness import Harness
 from xlm.utils.hf_hub import (

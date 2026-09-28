@@ -120,7 +120,7 @@ Both should exit 0. Stop the train once you see loss decreasing and val batches 
 
 | Problem | Fix |
 |---------|-----|
-| `cannot import name 'no_init_weights'` | Pin `transformers<5` |
+| `cannot import name 'no_init_weights'` | `xlm.utils.model_loading` tries `transformers.initialization` (v5) then `transformers.modeling_utils` (v4) |
 | `collator: ???` unresolved | Wire collators in model datamodule, not dataset YAMLs |
 | Duplicate model warnings | Harmless when `xlm-models/` is both on disk and editable-installed |
 

@@ -17,10 +17,10 @@ from omegaconf import DictConfig, OmegaConf
 from lightning import seed_everything
 from lightning.pytorch.loggers import Logger
 from lightning import Callback
-from transformers.initialization import no_init_weights
 from xlm.utils.model_loading import (
     load_model_weights_into_model,
     _get_model_only_checkpoint_path,
+    no_init_weights,
 )
 from xlm.utils.checkpoint_paths import (
     find_auto_resume_checkpoint,

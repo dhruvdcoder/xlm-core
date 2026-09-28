@@ -95,7 +95,7 @@ auto-resume hit (`on_exception.ckpt` / `last.ckpt`) is found under
 | `hub.repo_id` (sharded safetensors) | ✅ | ✅ | `_download_sharded_safetensors` pulls the index + all shards into the HF cache, then loaded one shard at a time. |
 | `hub.repo_id` (legacy `pytorch_model.bin`) | ✅ | ✅ | `torch.load` + `load_state_dict`. Single-file path → high peak CPU RAM under FSDP. |
 | `strict_model_only_load: false` | ✅ | ✅ | Pass-through to `load_state_dict(strict=False)`. Useful when seeding a head from a base model. Missing / unexpected keys are warned, not raised. |
-| `skip_init_weights: true` combined with any of the above | ✅ | ✅ | Module is constructed under `transformers.initialization.no_init_weights()`, then weights are loaded on top. Strongly recommended for FSDP seeding at multi-B scale (saves a full random init on every rank that is about to be overwritten). |
+| `skip_init_weights: true` combined with any of the above | ✅ | ✅ | Module is constructed under `no_init_weights()` (`transformers.initialization` on v5, `transformers.modeling_utils` on v4), then weights are loaded on top. Strongly recommended for FSDP seeding at multi-B scale (saves a full random init on every rank that is about to be overwritten). |
 
 #### FSDP-specific notes on seeding
 

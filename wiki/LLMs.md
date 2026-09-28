@@ -79,7 +79,7 @@ Extended the HF Hub weight loading pipeline to handle sharded safetensors checkp
 
 ### 6. `skip_init_weights` & `init_dtype` for Large Model Loading (`commands/lightning_train.py`, `utils/model_loading.py`)
 
-**`skip_init_weights`:** When pretrained weights are loaded right after construction, full random initialization is wasteful and slow for large models. Setting `skip_init_weights: true` wraps the applicable path in `transformers.initialization.no_init_weights()`.
+**`skip_init_weights`:** When pretrained weights are loaded right after construction, full random initialization is wasteful and slow for large models. Setting `skip_init_weights: true` wraps the applicable path in `no_init_weights()` (`transformers.initialization` on v5, `transformers.modeling_utils` on v4).
 
 - **Training** (`lightning_train.py`): Activates when `skip_init_weights` is true **and** either a Lightning `ckpt_path` is set or a **model-only** checkpoint will be loaded before `trainer.fit`.
 - **Inference** (`load_model_for_inference`): Activates when `skip_init_weights` is true **and** there is a **model-only** weight source (local `model_only_checkpoint_path` or Hub-downloaded weights). A **full Lightning checkpoint** is loaded via `load_from_checkpoint`; that path does not wrap a fresh instantiate in `no_init_weights()`.
