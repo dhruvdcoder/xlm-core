@@ -6662,7 +6662,7 @@ auto-resume hit (<code>on_exception.ckpt</code> / <code>last.ckpt</code>) is fou
 <td><code>skip_init_weights: true</code> combined with any of the above</td>
 <td>✅</td>
 <td>✅</td>
-<td>Module is constructed under <code>transformers.initialization.no_init_weights()</code>, then weights are loaded on top. Strongly recommended for FSDP seeding at multi-B scale (saves a full random init on every rank that is about to be overwritten).</td>
+<td>Module is constructed under <code>no_init_weights()</code> (<code>transformers.initialization</code> on v5, <code>transformers.modeling_utils</code> on v4), then weights are loaded on top. Strongly recommended for FSDP seeding at multi-B scale (saves a full random init on every rank that is about to be overwritten).</td>
 </tr>
 </tbody>
 </table>
