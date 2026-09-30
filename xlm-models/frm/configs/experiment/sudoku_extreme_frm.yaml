@@ -6,7 +6,6 @@ defaults:
   - /metrics@reported_metrics.test.infill_prediction.exact_match: exact_match
   - /metrics@reported_metrics.test.infill_prediction.token_accuracy: token_accuracy
   - /metrics@reported_metrics.test.infill_prediction.steps_taken: steps_taken
-  - override /loggers: wandb
   - override /datamodule: sudoku_extreme_frm
   - override /model_type: frm
   - override /model: ddit_frm
