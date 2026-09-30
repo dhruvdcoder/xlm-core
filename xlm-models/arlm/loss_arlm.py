@@ -126,13 +126,15 @@ class ARLMLoss(LossFunction[ARLMBatch, ARLMLossDict]):
         # Since target_ids are already shifted we don't need to shift again
         # We don't even need to remove the last token from logits
 
-        # Transpose logits for cross_entropy (expects [N, C, ...] format)
-        logits_T = logits.transpose(1, 2)
-
-        # Compute cross-entropy loss ( ignores -100 positions)
+        # Flatten to (batch * seq_len, vocab) instead of passing (batch, vocab, seq_len):
+        # the spatial mean-reduction CUDA kernel hits an illegal memory access once
+        # logits exceed 2^31 elements (e.g. batch 32 x 512 x 151k vocab).
         ce_loss = torch.nn.functional.cross_entropy(
-            logits_T, target_ids, reduction="mean", ignore_index=-100
-        )  # (batch, seq_len)
+            logits.reshape(-1, logits.shape[-1]),
+            target_ids.reshape(-1),
+            reduction="mean",
+            ignore_index=-100,
+        )
 
         return {
             "loss": ce_loss,

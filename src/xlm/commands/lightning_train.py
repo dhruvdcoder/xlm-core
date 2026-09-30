@@ -195,4 +195,4 @@ def train(cfg: DictConfig):
             ckpt_path=test_ckpt,
         )
     except Exception as e:
-        logger.error(f"Could not run test: {e}")
+        logger.exception(f"Could not run test: {e}")
