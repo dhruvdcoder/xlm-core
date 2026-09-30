@@ -36,3 +36,11 @@ def tiny_ilm_model(tiny_model_kwargs):
     return RotaryTransformerILMModel(**tiny_model_kwargs)
 
 
+@pytest.fixture()
+def tiny_frm_model(tiny_model_kwargs):
+    """A tiny :class:`FRMModel`."""
+    from frm.model_frm import FRMModel
+
+    return FRMModel(**tiny_model_kwargs)
+
+

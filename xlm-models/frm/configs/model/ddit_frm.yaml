@@ -1,0 +1,21 @@
+# @package _global_
+
+model:
+  _target_: frm.model_frm.FRMModel
+  num_embeddings: ${tokenizer:full_vocab_size}
+  d_model: 256
+  num_layers: 7
+  nhead: 8
+  padding_idx: ${tokenizer:pad_token_id}
+  mask_idx: ${tokenizer:mask_token_id}
+  dim_feedforward: ${eval:${.d_model}*4}
+  dropout: 0.1
+  activation: "relu"
+  layer_norm_eps: 1e-5
+  d_cond: 128
+  rotary_emb_dim: 32
+  max_length: ${eval:${block_size}+${oc.select:input_block_size,0}+4}
+  force_flash_attn: false
+
+tags:
+  model: ddit_frm

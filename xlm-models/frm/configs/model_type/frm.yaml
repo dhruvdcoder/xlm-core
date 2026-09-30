@@ -1,0 +1,46 @@
+# @package _global_
+
+defaults:
+  - /metrics@reported_metrics.train.lm.accumulated_loss: accumulated_loss
+  - /metrics@reported_metrics.val.lm.accumulated_loss: accumulated_loss
+  - /metrics@reported_metrics.test.lm.accumulated_loss: accumulated_loss
+
+lightning_module:
+  _target_: xlm.harness.Harness
+
+loss:
+  _target_: frm.loss_frm.FRMLoss
+  loss_on_padding: ${oc.select:loss_on_padding,true}
+  loss_on_clamped: true
+  self_cond_prob: 0.5
+  fpf_prob: 0.0
+  fpf_rollout_depth: 16
+
+predictor:
+  _target_: frm.predictor_frm.FRMPredictor
+  tokenizer: ${global_components:tokenizer}
+  noise_schedule: ${global_components:noise_schedule}
+  max_steps: ${block_size}
+  max_new_tokens: null
+  k_inner: 1
+
+diagnostic_metrics: null
+reported_metrics:
+  train:
+    lm:
+      accumulated_loss:
+        prefix: train/lm
+        update_fn: frm.metrics_frm.mean_metric_update_fn
+  val:
+    lm:
+      accumulated_loss:
+        prefix: val/lm
+        update_fn: frm.metrics_frm.mean_metric_update_fn
+  test:
+    lm:
+      accumulated_loss:
+        prefix: test/lm
+        update_fn: frm.metrics_frm.mean_metric_update_fn
+
+tags:
+  model_type: frm

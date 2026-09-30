@@ -23,6 +23,7 @@ setup(
     - llada: LLaDA masked diffusion LM
     - bd3lm: Block Discrete Denoising Diffusion Language Model
     - gemma_usdm: Uniform-state discrete diffusion (gemma-usdm)
+    - frm: Flow Reasoning Model
 
     
     Usage:
@@ -30,7 +31,7 @@ setup(
 
         Model package names must be specified in the XLM_MODEL_PACKAGES environment variable as a colon-separated list (e.g., arlm:mlm:ilm:mdlm:dream)
     """,
-    packages=["arlm", "mlm", "ilm", "mdlm", "flexmdm", "dream", "llada", "bd3lm", "gemma_usdm"],
+    packages=["arlm", "mlm", "ilm", "mdlm", "flexmdm", "dream", "llada", "bd3lm", "gemma_usdm", "frm"],
     author="Dhruvesh Patel, Benjamin Rozonoyer, Sai Sreenivas Chintha, Durga Prasad Maram",
     package_dir={
         "arlm": "arlm",
@@ -42,6 +43,7 @@ setup(
         "llada": "llada",
         "bd3lm": "bd3lm",
         "gemma_usdm": "gemma_usdm",
+        "frm": "frm",
     },
     package_data={
         "arlm": ["configs/**/*.yaml", "configs/**/*.yml"],
@@ -53,6 +55,7 @@ setup(
         "llada": ["configs/**/*.yaml", "configs/**/*.yml"],
         "bd3lm": ["configs/**/*.yaml", "configs/**/*.yml"],
         "gemma_usdm": ["configs/**/*.yaml", "configs/**/*.yml"],
+        "frm": ["configs/**/*.yaml", "configs/**/*.yml"],
     },
     install_requires=[
         f"xlm-core=={VERSION['VERSION']}",
