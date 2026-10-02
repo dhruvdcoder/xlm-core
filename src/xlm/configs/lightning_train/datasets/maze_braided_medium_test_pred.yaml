@@ -1,0 +1,6 @@
+defaults:
+  - maze_braided_medium_train
+
+full_name: brozonoyer/maze-braided-medium/test
+full_name_debug: brozonoyer/maze-braided-medium/train
+stages: ["test", "predict"]

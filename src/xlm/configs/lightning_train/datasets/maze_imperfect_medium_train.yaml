@@ -1,0 +1,6 @@
+defaults:
+  - maze
+
+full_name: brozonoyer/maze-imperfect-medium/train
+full_name_debug: brozonoyer/maze-imperfect-medium/train
+stages: ["fit"]

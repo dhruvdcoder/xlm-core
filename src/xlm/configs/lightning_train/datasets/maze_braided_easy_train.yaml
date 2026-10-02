@@ -1,0 +1,6 @@
+defaults:
+  - maze
+
+full_name: brozonoyer/maze-braided-easy/train
+full_name_debug: brozonoyer/maze-braided-easy/train
+stages: ["fit"]

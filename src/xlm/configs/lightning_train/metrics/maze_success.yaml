@@ -1,0 +1,8 @@
+_target_: xlm.metrics.MetricWrapper
+name: maze_success
+metric:
+  _target_: xlm.tasks.maze.metrics.MazeSuccess
+  repo_id: ???
+  filename: maze.json
+prefix: ???
+update_fn: ???

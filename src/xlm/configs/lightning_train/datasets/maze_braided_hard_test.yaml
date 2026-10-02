@@ -1,0 +1,6 @@
+defaults:
+  - maze_braided_hard_train
+
+full_name: brozonoyer/maze-braided-hard/test
+full_name_debug: brozonoyer/maze-braided-hard/train
+stages: ["test"]
