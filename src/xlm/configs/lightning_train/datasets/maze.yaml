@@ -1,0 +1,30 @@
+defaults:
+  - default_text
+
+_target_: xlm.datamodule.DatasetManager
+collator: ???
+full_name: ???
+full_name_debug: ???
+preprocess_function: xlm.tasks.maze.preprocess_fn
+on_the_fly_processor: xlm.tasks.maze.on_the_fly_fn
+on_the_fly_processor_kwargs:
+  block_size: ${block_size}
+on_the_fly_group_processor: null
+columns_to_remove:
+  - subgoals
+  - subgoal_pos
+  - path
+stages: ???
+iterable_dataset_shards: null
+shuffle_buffer_size: null
+shuffle_seed: 42
+split_by_node: true
+dataloader_kwargs:
+  batch_size: ${per_device_batch_size}
+  num_workers: ${num_dataloader_workers}
+  shuffle: null
+  pin_memory: ${dataloader_pin_memory}
+  persistent_workers: ${dataloader_persistent_workers}
+  prefetch_factor: ${dataloader_prefetch_factor}
+  drop_last: true
+model_name: null

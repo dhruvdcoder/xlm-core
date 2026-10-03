@@ -1,0 +1,6 @@
+defaults:
+  - maze_perfect_easy_train
+
+full_name: brozonoyer/maze-perfect-easy/test
+full_name_debug: brozonoyer/maze-perfect-easy/train
+stages: ["test"]

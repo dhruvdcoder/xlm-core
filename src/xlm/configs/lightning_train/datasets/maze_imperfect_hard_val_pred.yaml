@@ -1,0 +1,6 @@
+defaults:
+  - maze_imperfect_hard_train
+
+full_name: brozonoyer/maze-imperfect-hard/validation
+full_name_debug: brozonoyer/maze-imperfect-hard/train
+stages: ["fit", "validate"]

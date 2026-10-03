@@ -1,0 +1,6 @@
+defaults:
+  - maze_imperfect_easy_train
+
+full_name: brozonoyer/maze-imperfect-easy/test
+full_name_debug: brozonoyer/maze-imperfect-easy/train
+stages: ["test", "predict"]

@@ -46,6 +46,7 @@ Drop unneeded columns via `columns_to_remove` or `columns_to_keep`.
 |---------|------|--------|
 | Minimal LM (text → token IDs) | {{ gh('src/xlm/tasks/owt/__init__.py', 'owt') }} | {{ gh('src/xlm/configs/lightning_train/datasets/owt_train.yaml', 'owt_train.yaml') }} |
 | Structured seq2seq (STAR) | {{ gh('src/xlm/tasks/star/__init__.py', 'star') }} | {{ gh('src/xlm/configs/lightning_train/datasets/star_easy_train.yaml', 'star_easy_train.yaml') }} |
+| Anchored planning (Maze) | {{ gh('src/xlm/tasks/maze/__init__.py', 'maze') }} | [Maze task](../tasks/maze.md) |
 | Row filters | {{ gh('src/xlm/tasks/sudoku_extreme/__init__.py', 'sudoku_extreme') }} | set `filter_fn` + `filter_suffix` |
 | Post-hoc eval (Math500) | {{ gh('src/xlm/tasks/math500/__init__.py', 'math500') }} | {{ gh('src/xlm/configs/lightning_train/datasets/math500_test.yaml', 'math500_test.yaml') }} |
 | Code-execution eval (GSM8K) | {{ gh('src/xlm/tasks/tinygsm/gsm8k.py', 'gsm8k') }} | [TinyGSM runbook](../tasks/tinygsm_gsm8k.md) |
