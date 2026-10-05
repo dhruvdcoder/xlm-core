@@ -14,7 +14,7 @@ hf_shuffle_buffer_size: 10000
 hf_min_chars: 8
 featurize_model_name: gpt2-large
 device_id: 0
-max_text_length: 256
+max_text_length: 1024
 batch_size: 8
 verbose: false
 num_buckets: "auto"
