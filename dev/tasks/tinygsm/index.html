@@ -1335,6 +1335,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#local-sample-for-debugging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Local sample for debugging
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#model-experiments" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4470,6 +4481,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/xlm/tasks/tinygsm/make_local_csv/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>make_local_csv
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -6764,6 +6803,31 @@
 </tbody>
 </table>
 <p>GSM8K and code-execution eval: <a href="../tinygsm_gsm8k/">tinygsm_gsm8k.md</a>.</p>
+<h2 id="local-sample-for-debugging">Local sample for debugging</h2>
+<p>Streaming the first rows avoids downloading the full ~11.8M-row train split. The CSV is written under <code>$DATA_DIR/tinygsm_sample/train.csv</code> (or <code>data/tinygsm_sample/train.csv</code> when <code>DATA_DIR</code> is unset):</p>
+<div class="highlight"><pre><span></span><code><span class="nv">DATA_DIR</span><span class="o">=</span>/tmp/xlm_data<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>xlm.tasks.tinygsm.make_local_csv<span class="w"> </span>--num-examples<span class="w"> </span><span class="m">10</span>
+</code></pre></div>
+<p>The writer is <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/tasks/tinygsm/make_local_csv.py">xlm.tasks.tinygsm.make_local_csv</a>. Columns are <code>question</code> and <code>code</code>, quoted so multi-line code round-trips through the Hugging Face csv loader.</p>
+<p>Point a debug overlay at the local file instead of the Hub dataset:</p>
+<table>
+<thead>
+<tr>
+<th>Config</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Train / val</td>
+<td><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/configs/lightning_train/datasets/tinygsm_local_sample.yaml">datasets/tinygsm_local_sample.yaml</a></td>
+</tr>
+<tr>
+<td>Prediction</td>
+<td><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/configs/lightning_train/datasets/tinygsm_local_sample_pred.yaml">datasets/tinygsm_local_sample_pred.yaml</a></td>
+</tr>
+</tbody>
+</table>
+<p>Both use <code>LocalDatasetManager</code> with <code>ds_type: csv</code>. Override them onto a TinyGSM experiment, for example <code>override /datasets@datamodule.dataset_managers.train.lm: tinygsm_local_sample</code> and <code>...val.prediction: tinygsm_local_sample_pred</code>.</p>
 <h2 id="model-experiments">Model experiments</h2>
 <p>Training settings, prepare/train commands, and experiment YAMLs live in the per-model docs:</p>
 <table>
