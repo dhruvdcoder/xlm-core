@@ -28,6 +28,25 @@ See also: [Adding a task or dataset](../guide/adding-a-task.md).
 
 GSM8K and code-execution eval: [tinygsm_gsm8k.md](tinygsm_gsm8k.md).
 
+## Local sample for debugging
+
+Streaming the first rows avoids downloading the full ~11.8M-row train split. The CSV is written under `$DATA_DIR/tinygsm_sample/train.csv` (or `data/tinygsm_sample/train.csv` when `DATA_DIR` is unset):
+
+```bash
+DATA_DIR=/tmp/xlm_data python -m xlm.tasks.tinygsm.make_local_csv --num-examples 10
+```
+
+The writer is {{ gh('src/xlm/tasks/tinygsm/make_local_csv.py', 'xlm.tasks.tinygsm.make_local_csv') }}. Columns are `question` and `code`, quoted so multi-line code round-trips through the Hugging Face csv loader.
+
+Point a debug overlay at the local file instead of the Hub dataset:
+
+| Config | Path |
+|--------|------|
+| Train / val | {{ gh('src/xlm/configs/lightning_train/datasets/tinygsm_local_sample.yaml', 'datasets/tinygsm_local_sample.yaml') }} |
+| Prediction | {{ gh('src/xlm/configs/lightning_train/datasets/tinygsm_local_sample_pred.yaml', 'datasets/tinygsm_local_sample_pred.yaml') }} |
+
+Both use `LocalDatasetManager` with `ds_type: csv`. Override them onto a TinyGSM experiment, for example `override /datasets@datamodule.dataset_managers.train.lm: tinygsm_local_sample` and `...val.prediction: tinygsm_local_sample_pred`.
+
 ## Model experiments
 
 Training settings, prepare/train commands, and experiment YAMLs live in the per-model docs:
