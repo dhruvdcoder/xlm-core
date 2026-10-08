@@ -1,0 +1,17 @@
+defaults:
+  - anyorder_train
+
+# validation split (~1.7k rows) keeps the debug filter fast vs. the 3.4M-row train split
+full_name: durgapra/any-order/validation
+full_name_debug: durgapra/any-order/validation
+filter_fn: xlm.tasks.anyorder.anyorder_debug_first_example_filter_fn
+filter_suffix: debug_one
+iterable_dataset_shards: null
+shuffle_buffer_size: null
+make_infinite: false
+on_the_fly_load_from_cache_file: false
+stages:
+  - fit
+  - validate
+dataloader_kwargs:
+  drop_last: false

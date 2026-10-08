@@ -1,0 +1,16 @@
+defaults:
+  - anyorder_debug_one
+
+filter_suffix: debug_one_pred
+preprocess_function: xlm.tasks.anyorder.anyorder_pred_preprocess_fn
+preprocess_function_kwargs:
+  sep: "\n"
+# keep ``answer``: passed through the pred collator as the reference
+columns_to_remove:
+  - prompt
+  - repeat_copy
+on_the_fly_load_from_cache_file: false
+stages:
+  - fit
+  - validate
+  - predict

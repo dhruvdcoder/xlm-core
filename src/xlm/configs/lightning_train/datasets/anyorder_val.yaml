@@ -1,0 +1,32 @@
+defaults:
+  - default_text
+
+_target_: xlm.datamodule.DatasetManager
+collator: ???
+full_name: durgapra/any-order/validation
+full_name_debug: durgapra/any-order/validation
+preprocess_function: xlm.tasks.anyorder.anyorder_preprocess_fn
+preprocess_function_kwargs:
+  sep: "\n"
+on_the_fly_processor: xlm.datamodule.token_ids_to_input_ids_and_prompt_ids
+on_the_fly_group_processor: null
+columns_to_remove:
+  - prompt
+  - answer
+  - repeat_copy
+iterable_dataset_shards: null
+shuffle_buffer_size: null
+shuffle_seed: 42
+split_by_node: true
+dataloader_kwargs:
+  batch_size: ${per_device_batch_size}
+  num_workers: ${num_dataloader_workers}
+  shuffle: null
+  pin_memory: True
+  persistent_workers: False
+  prefetch_factor: ${dataloader_prefetch_factor}
+  drop_last: True
+model_name: null
+stages:
+  - fit
+  - validate

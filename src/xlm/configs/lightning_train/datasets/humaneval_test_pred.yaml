@@ -1,0 +1,18 @@
+# HumanEval prompts, each repeated n_samples times (task_id, sample_k) for pass@k.
+# Rows come from xlm.tasks.humaneval.load_humaneval_tasks (openai_humaneval + evalplus/humanevalplus).
+defaults:
+  - default_eval
+
+_target_: xlm.tasks.humaneval.HumanEvalDatasetManager
+collator: ???
+full_name: openai/openai_humaneval/test
+n_samples: 1  # 16 for reference pass@{1,2,4,8,16}
+limit: null  # first N tasks, for smoke runs
+preprocess_function: xlm.tasks.humaneval.humaneval_pred_preprocess_fn
+preprocess_function_kwargs:
+  sep: "\n"
+columns_to_remove:
+  - prompt
+stages:
+  - test
+  - predict

@@ -1,0 +1,19 @@
+defaults:
+  - anyorder_val
+
+filter_suffix: pred_preprocess
+preprocess_function: xlm.tasks.anyorder.anyorder_pred_preprocess_fn
+preprocess_function_kwargs:
+  sep: "\n"
+# keep ``answer``: passed through the pred collator as the reference
+columns_to_remove:
+  - prompt
+  - repeat_copy
+stages:
+  - fit
+  - validate
+  - predict
+iterable_dataset_shards: null
+shuffle_buffer_size: null
+dataloader_kwargs:
+  drop_last: false
