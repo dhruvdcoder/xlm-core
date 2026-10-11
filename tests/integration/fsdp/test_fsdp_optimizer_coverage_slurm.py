@@ -34,6 +34,7 @@ pytestmark = [pytest.mark.integration, pytest.mark.slurm]
 
 SCENARIO_DIR = Path(__file__).resolve().parent / "slurm" / "fsdp_optimizer_coverage"
 SCRIPT_SH = SCENARIO_DIR / "script.sh"
+REPO_ROOT = Path(__file__).resolve().parents[3]
 WORLD_SIZE = 2
 SMOKE_STEPS = 5  # tests/configs/debug/smoke.yaml: trainer.max_steps
 
@@ -61,6 +62,9 @@ def _submit(result_dir: Path, config: Dict[str, Any]) -> List[Dict[str, Any]]:
         expected_world_size=WORLD_SIZE,
         timeout=1800.0,
         extra_sbatch_args=_extra_sbatch_args(),
+        # sbatch spools the script, so it cannot locate the repo from
+        # BASH_SOURCE; forward the root explicitly (sbatch exports env).
+        env={"XLM_REPO_ROOT": str(REPO_ROOT)},
     )
     assert len(results) == WORLD_SIZE
     print(f"\n[fsdp slurm] results in {result_dir}")

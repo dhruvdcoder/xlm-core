@@ -37,10 +37,20 @@ RESULT_DIR="$1"
 CONFIG_JSON="${2:-{}}"
 mkdir -p "${RESULT_DIR}"
 
-# Resolve the workspace root from this script's location:
-# tests/integration/fsdp/slurm/fsdp_optimizer_coverage/script.sh
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
-REPO_ROOT="$(cd -- "${SCRIPT_DIR}/../../../../.." &> /dev/null && pwd)"
+# Resolve the repo root. sbatch copies this script into the slurmd spool, so
+# BASH_SOURCE does not point into the repo; the pytest wrapper exports
+# XLM_REPO_ROOT (sbatch forwards the environment). Fall back to the submit
+# directory, which is the repo root when pytest runs from there.
+if [[ -n "${XLM_REPO_ROOT:-}" ]]; then
+    REPO_ROOT="$(cd -- "${XLM_REPO_ROOT}" && pwd)"
+else
+    REPO_ROOT="$(cd -- "${SLURM_SUBMIT_DIR:-.}" && pwd)"
+fi
+SCRIPT_DIR="${REPO_ROOT}/tests/integration/fsdp/slurm/fsdp_optimizer_coverage"
+if [[ ! -f "${SCRIPT_DIR}/script.py" ]]; then
+    echo "cannot locate ${SCRIPT_DIR}/script.py; set XLM_REPO_ROOT" >&2
+    exit 65
+fi
 
 export PYTHONPATH="${REPO_ROOT}/src:${REPO_ROOT}:${PYTHONPATH:-}"
 export PROJECT_ROOT="${REPO_ROOT}"
