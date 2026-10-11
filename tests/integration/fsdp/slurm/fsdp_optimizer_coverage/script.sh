@@ -63,6 +63,20 @@ export MKL_NUM_THREADS=${MKL_NUM_THREADS:-1}
 export HF_DATASETS_DISABLE_PROGRESS_BARS=1
 export HYDRA_FULL_ERROR=1
 export WANDB_MODE=disabled
+# Turn NCCL hangs into errors well inside the job's time limit, with a
+# flight-recorder dump, so a collective mismatch shows up in the log instead
+# of a TIMEOUT. Override NCCL_DEBUG=INFO in the environment for transport logs.
+export NCCL_DEBUG=${NCCL_DEBUG:-WARN}
+# This is a correctness test, not a throughput test: go through host memory
+# instead of CUDA P2P so a node with a broken P2P path (seen on Unity gpu050,
+# where a bare 2-rank all_reduce hangs until P2P is disabled) cannot wedge
+# the job. Set NCCL_P2P_DISABLE=0 to opt back in.
+export NCCL_P2P_DISABLE=${NCCL_P2P_DISABLE:-1}
+export TORCH_NCCL_ASYNC_ERROR_HANDLING=${TORCH_NCCL_ASYNC_ERROR_HANDLING:-1}
+export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=${TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC:-300}
+export TORCH_NCCL_TRACE_BUFFER_SIZE=${TORCH_NCCL_TRACE_BUFFER_SIZE:-16777216}
+export TORCH_NCCL_DUMP_ON_TIMEOUT=${TORCH_NCCL_DUMP_ON_TIMEOUT:-1}
+export TORCH_NCCL_DEBUG_INFO_TEMP_FILE="${RESULT_DIR}/nccl_trace_rank_"
 
 # Copy the slurm log next to the per-rank result files on exit.
 trap 'cp -f "${SLURM_SUBMIT_DIR:-.}/xlm_fsdp_cov_${SLURM_JOB_ID}.out" "${RESULT_DIR}/" 2>/dev/null || true' EXIT
@@ -79,15 +93,11 @@ python -m xlm \
     trainer_strategy=cpu \
     "paths.log_dir=${RESULT_DIR}/prepare_logs"
 
-# 2. One process per GPU. Lightning's SLURMEnvironment picks up
-#    SLURM_PROCID / SLURM_NTASKS_PER_NODE / SLURM_LOCALID (it rejects a
-#    plain --ntasks); MASTER_ADDR / MASTER_PORT are exported for
-#    torch.distributed.
-MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
-export MASTER_ADDR
-export MASTER_PORT=$((10000 + (SLURM_JOB_ID % 50000)))
-
-srun --export=ALL,MASTER_ADDR,MASTER_PORT \
-    python -u "${SCRIPT_DIR}/script.py" \
-        --result-dir "${RESULT_DIR}" \
-        --config-json "${CONFIG_JSON}"
+# 2. One process per GPU, launched the same way as xlm's own train_sbatch
+#    template (plain srun). Lightning's SLURMEnvironment derives rank /
+#    world size / main address / main port from SLURM_PROCID,
+#    SLURM_NTASKS_PER_NODE (a plain --ntasks is rejected), SLURM_LOCALID,
+#    SLURM_JOB_NODELIST and SLURM_JOB_ID.
+srun python -u "${SCRIPT_DIR}/script.py" \
+    --result-dir "${RESULT_DIR}" \
+    --config-json "${CONFIG_JSON}"

@@ -23,7 +23,7 @@ The test calls `tests.integration._slurm.submit_sbatch_and_wait`, which runs
 
 | File | Role |
 | --- | --- |
-| `script.sh` | SLURM batch script. Runs `prepare_data` for `star_easy_mlm` once, then `srun`s `script.py` on 2 tasks / 2 GPUs with `MASTER_ADDR` / `MASTER_PORT` exported. |
+| `script.sh` | SLURM batch script. Runs `prepare_data` for `star_easy_mlm` once, then `srun`s `script.py` on 2 tasks / 2 GPUs (Lightning's `SLURMEnvironment` derives rank / address / port from the SLURM variables, as in `configs/slurm/train_sbatch.yaml`). Sets `NCCL_P2P_DISABLE=1` (host-memory transport; a node with a broken CUDA P2P path otherwise hangs a bare 2-rank `all_reduce`), `TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=300` and the flight recorder so a collective mismatch fails inside the 15 min limit with a trace in `<result_dir>/nccl_trace_rank_*`. Every knob is `${VAR:-default}` and can be overridden from the submitting shell. |
 | `script.py` | Per-rank entrypoint. Builds the Hydra override list (`experiment=star_easy_mlm debug=smoke trainer_strategy=fsdp` + per-`RotaryTransformerLayer` wrap policy + the probe callback), calls `xlm.commands.lightning_main.main` in-process, and writes `rank_<RANK>.json` with the probe output and any exception the run raised. |
 | `probe.py` | `FSDPCoverageProbe` Lightning callback: records trainable vs optimizer numel, the coverage-check outcome, root-unit checksums before/after training, and local vs global vs logged gradient norms. |
 
