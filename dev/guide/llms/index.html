@@ -6649,19 +6649,23 @@
 <span class="nt">_target_</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lightning.pytorch.strategies.FSDPStrategy</span>
 <span class="nt">sharding_strategy</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FULL_SHARD</span>
 <span class="nt">cpu_offload</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">use_orig_params</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="nt">use_orig_params</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class="nt">state_dict_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sharded</span>
 </code></pre></div>
 <p>Notes:</p>
 <ul>
 <li><code>sharding_strategy: FULL_SHARD</code> shards parameters, gradients, and optimizer state across all ranks (ZeRO-3 equivalent). Use <code>SHARD_GRAD_OP</code> (ZeRO-2) or <code>NO_SHARD</code> (DDP) if memory is not the bottleneck.</li>
 <li><code>state_dict_type: sharded</code> writes one shard per rank instead of consolidating to a single full state dict. This is the only practical option for 7B+ models — a <code>full</code> state dict has to materialize the unsharded weights on rank 0, which is what we are trying to avoid in the first place.</li>
-<li><code>use_orig_params: false</code> is the default; flip to <code>true</code> only if you need parameter-group-aware optimizers or <code>torch.compile</code> over the wrapped model.</li>
+<li><code>use_orig_params: true</code> is the default (it is also Lightning's own default). Lightning wraps the <strong>whole <code>LightningModule</code></strong>, not <code>harness.model</code>, so with a per-block <code>auto_wrap_policy</code> every parameter outside a block (embeddings, final norm, <code>lm_head</code>, any freshly added head) lands in the <em>root</em> FSDP unit, whose <code>FlatParameter</code> is registered on the wrapper <em>above</em> <code>self.model</code>. With <code>use_orig_params: false</code> the original <code>nn.Parameter</code>s are deregistered and <code>self.model.named_parameters()</code> never reaches that root flat param, so an optimizer built from <code>self.model</code> silently skips those weights (<a href="https://github.com/dhruvdcoder/xlm-core/issues/59">issue #59</a>). <code>true</code> keeps the original parameters registered (as views into the local shard), which also enables per-parameter weight-decay / LR groups and <code>torch.compile</code>. <code>Harness.configure_optimizers</code> verifies coverage either way (see <a href="#6-gotchas">Gotchas</a>); do not flip this back to <code>false</code> unless you also build your optimizer from <code>Harness.optimizer_named_parameters()</code>.</li>
 </ul>
 <h2 id="2-the-model-specific-experiment-yaml">2. The model-specific experiment YAML</h2>
-<p>Layered on top of the base strategy, the experiment YAML supplies the three knobs FSDP needs to actually shard a specific model:</p>
+<p>Layered on top of the base strategy, the experiment YAML supplies the harness class and the three knobs FSDP needs to actually shard a specific model. Ready-made overlays ship with the bundled large models: <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/xlm-models/dream/configs/experiment/dream_fsdp_args.yaml">dream_fsdp_args.yaml</a> and <a href="https://github.com/dhruvdcoder/xlm-core/blob/main/xlm-models/llada/configs/experiment/llada_fsdp_args.yaml">llada_fsdp_args.yaml</a>. For your own model, copy one of them:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># @package _global_</span>
+<span class="nt">lightning_module</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">_target_</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">xlm.harness.FSDPHarness</span><span class="w">   </span><span class="c1"># FSDP-correct clipping / grad-norm logging, see section 6</span>
+
 <span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">gradient_clip_algorithm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">norm</span>
 <span class="w">  </span><span class="nt">strategy</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">auto_wrap_policy</span><span class="p">:</span>
 <span class="w">      </span><span class="nt">_target_</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">xlm.utils.fsdp_grouping.make_layer_wrap_policy</span>
@@ -6675,6 +6679,14 @@
 <span class="w">      </span><span class="nt">_target_</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">xlm.utils.fsdp_grouping.fsdp_bf16_mixed_precision</span>
 </code></pre></div>
 <p>Walking through each block:</p>
+<h3 id="lightning_module_target_-xlmharnessfsdpharness"><code>lightning_module._target_: xlm.harness.FSDPHarness</code></h3>
+<p><a href="https://github.com/dhruvdcoder/xlm-core/blob/main/src/xlm/harness.py">FSDPHarness</a> is a thin subclass of <code>Harness</code> for sharded training. Base <code>Harness</code> already sources optimizer parameters from the FSDP root and verifies coverage; <code>FSDPHarness</code> adds the three hooks that Lightning cannot do correctly on its own under FSDP:</p>
+<ul>
+<li><code>configure_gradient_clipping</code> calls <code>FullyShardedDataParallel.clip_grad_norm_</code> on the root (Lightning's <code>FSDPPrecision</code> raises for <code>gradient_clip_algorithm: norm</code>).</li>
+<li><code>on_before_optimizer_step</code> logs the <strong>global</strong> gradient norm as <code>Total gradient (norm)</code> (one all-reduce of the squared sums) and, when the model's <code>get_param_groups</code> names its groups, <code>grad_norm/&lt;group name&gt;</code> per group.</li>
+<li><code>on_fit_start</code> calls the optional model hook <code>init_new_parameters(tokenizer)</code> once at <code>global_step == 0</code> (skipped on resume) under <code>FSDP.summon_full_params(root, recurse=False, writeback=True)</code>. Use it to initialize weights that are missing from a pretrained checkpoint (fresh heads, new embedding rows); writes to root-unit tensors land in the shards without materializing the wrapped blocks.</li>
+</ul>
+<p>Every hook falls back to the base behaviour when the module is not FSDP-wrapped, so the same class works for single-device debug runs.</p>
 <h3 id="auto_wrap_policy"><code>auto_wrap_policy</code></h3>
 <p>Tells FSDP <strong>which submodule class to treat as a sharding unit</strong>. Each instance of the class becomes its own FSDP unit — its parameters are gathered for the forward, the gradients are reduced/scattered after the backward, and its sharded shard lives on a single rank between steps. For a transformer, this should be the decoder/encoder block class. Wrapping at the block level — not the whole model and not individual <code>nn.Linear</code>s — is what gives FSDP its memory savings without flooding the network with tiny collectives.</p>
 <p><code>xlm.utils.fsdp_grouping.make_layer_wrap_policy</code> simply imports the dotted class paths you pass and returns the <code>set</code> of classes that Lightning's <code>FSDPStrategy</code> expects. Pass multiple classes if your model mixes block types:</p>
@@ -6715,7 +6727,7 @@
 <p>So once you set <code>mixed_precision</code> on the strategy, <code>Trainer(precision=...)</code> cannot override the FSDP-internal dtypes — the strategy's bf16/fp32/fp32 config is what FSDP actually applies. What <code>Trainer(precision="bf16-mixed")</code> <em>still</em> does, even when overridden, is wrap the forward in <code>torch.autocast("cuda", dtype=torch.bfloat16)</code> via <code>FSDPPrecision.forward_context</code>. With <code>param_dtype=bf16</code> already, autocast is mostly a no-op (matmuls run in bf16 either way) but it gives a small amount of op-level numerical protection (e.g. cross-entropy intermediates) and matches DreamOn's reference setup, which wraps its forward in an explicit <code>torch.autocast(bf16)</code> block.</p>
 <p>For a different precision regime (e.g. fp16 with a loss scaler, or pure bf16 with <code>reduce_dtype=torch.bfloat16</code>), define your own factory and point <code>_target_</code> at it.</p>
 <h2 id="3-cli-invocation">3. CLI invocation</h2>
-<p>The base <code>lightning_train/config.yaml</code> defaults to <code>trainer_strategy: single_device</code>. To switch on FSDP at launch time, add <code>trainer.strategy=fsdp</code> and compose your FSDP experiment overlay in the experiment list:</p>
+<p>The base <code>lightning_train/config.yaml</code> defaults to <code>trainer_strategy: single_device</code>. To switch on FSDP at launch time, add <code>trainer.strategy=fsdp</code> and compose your FSDP experiment overlay in the experiment list (for the bundled models use <code>dream_fsdp_args</code> / <code>llada_fsdp_args</code>):</p>
 <div class="highlight"><pre><span></span><code>xlm<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span><span class="nv">job_type</span><span class="o">=</span>train<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span><span class="nv">job_name</span><span class="o">=</span>my_fsdp_run<span class="w"> </span><span class="se">\</span>
@@ -6837,57 +6849,23 @@
 <h2 id="6-gotchas">6. Gotchas</h2>
 <p>A few things that have bitten us in practice:</p>
 <ul>
-<li><strong>Norm clipping and grad-norm logging under FSDP.</strong> With <code>FSDPStrategy</code>, Lightning's built-in <code>gradient_clip_algorithm: norm</code> routes through <code>FSDPPrecision</code>, which raises <code>MisconfigurationException</code> — <code>torch.nn.utils.clip_grad_norm_()</code> is wrong for sharded <code>FlatParameter</code> gradients. Separately, <code>Harness.on_before_optimizer_step</code> uses <code>lightning.pytorch.utilities.grad_norm(self, ...)</code>, which only sums gradients visible on <em>that</em> rank; under FSDP that is a <strong>local shard norm</strong>, not the true global L2 norm (so W&amp;B can show huge, nearly flat curves that do not match training stability).</li>
-</ul>
-<p>Fix: subclass <code>Harness</code>, detect the FSDP root on <code>self.trainer.strategy.model</code>, and override <strong>two</strong> hooks (<code>configure_gradient_clipping</code> and <code>on_before_optimizer_step</code>). Set <code>lightning_module._target_</code> to your subclass and <code>trainer.gradient_clip_algorithm: norm</code>.</p>
-<p>Example pattern:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">torch.distributed.fsdp</span><span class="w"> </span><span class="kn">import</span> <span class="n">FullyShardedDataParallel</span> <span class="k">as</span> <span class="n">FSDP</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">configure_gradient_clipping</span><span class="p">(</span>
-    <span class="bp">self</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">gradient_clip_val</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">gradient_clip_algorithm</span><span class="o">=</span><span class="kc">None</span>
-<span class="p">):</span>
-    <span class="k">if</span> <span class="n">gradient_clip_val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span>
-    <span class="n">root</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">model</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">FSDP</span><span class="p">):</span>
-        <span class="n">root</span><span class="o">.</span><span class="n">clip_grad_norm_</span><span class="p">(</span><span class="n">max_norm</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">gradient_clip_val</span><span class="p">),</span> <span class="n">norm_type</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
-        <span class="k">return</span>
-    <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">configure_gradient_clipping</span><span class="p">(</span>
-        <span class="n">optimizer</span><span class="p">,</span>
-        <span class="n">gradient_clip_val</span><span class="o">=</span><span class="n">gradient_clip_val</span><span class="p">,</span>
-        <span class="n">gradient_clip_algorithm</span><span class="o">=</span><span class="n">gradient_clip_algorithm</span><span class="p">,</span>
-    <span class="p">)</span>
-</code></pre></div>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch.distributed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dist</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">torch.distributed.fsdp</span><span class="w"> </span><span class="kn">import</span> <span class="n">FullyShardedDataParallel</span> <span class="k">as</span> <span class="n">FSDP</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">on_before_optimizer_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">):</span>
-    <span class="n">root</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">model</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">FSDP</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">on_before_optimizer_step</span><span class="p">(</span><span class="n">optimizer</span><span class="p">)</span>
-
-    <span class="n">local_sq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((),</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">local_sq</span> <span class="o">+=</span> <span class="n">p</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">dist</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="ow">and</span> <span class="n">dist</span><span class="o">.</span><span class="n">is_initialized</span><span class="p">():</span>
-        <span class="n">dist</span><span class="o">.</span><span class="n">all_reduce</span><span class="p">(</span><span class="n">local_sq</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">dist</span><span class="o">.</span><span class="n">ReduceOp</span><span class="o">.</span><span class="n">SUM</span><span class="p">)</span>
-    <span class="n">global_norm</span> <span class="o">=</span> <span class="n">local_sq</span><span class="o">.</span><span class="n">sqrt</span><span class="p">()</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
-        <span class="s2">"Total gradient (norm)"</span><span class="p">,</span>
-        <span class="n">global_norm</span><span class="p">,</span>
-        <span class="n">on_step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">on_epoch</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">prog_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">sync_dist</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">rank_zero_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">logger</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">add_dataloader_idx</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="p">)</span>
-</code></pre></div>
-<p>With these overrides, <code>trainer.gradient_clip_algorithm: norm</code> is the right choice; <code>gradient_clip_algorithm: value</code> remains fine for <strong>non-FSDP</strong> experiments (e.g. single-GPU debug) that still use base <code>Harness</code>.</p>
+<li>
+<p><strong>The optimizer must cover the root FSDP unit.</strong> Lightning wraps the whole <code>Harness</code>; with a per-block <code>auto_wrap_policy</code> the embeddings, final norm, <code>lm_head</code> and any fresh head are flattened into the <em>root</em> unit, registered on the wrapper above <code>self.model</code>. With <code>use_orig_params: false</code> an optimizer built from <code>self.model.parameters()</code> (or from a model-level <code>get_param_groups</code> / <code>get_named_params_for_*</code> that iterates <code>self.named_parameters()</code>) never sees them. Nothing errors — Lightning only checks that <em>some</em> flat parameter is in the optimizer, gradients still flow, clipping and norm logging still iterate the root — but <code>optimizer.step()</code> leaves those weights at their initial values (<a href="https://github.com/dhruvdcoder/xlm-core/issues/59">issue #59</a>). Two guards now exist:</p>
 <ul>
+<li><code>trainer_strategy/fsdp.yaml</code> defaults to <code>use_orig_params: true</code>, so the original parameters stay reachable from <code>self.model</code>.</li>
+<li><code>Harness.configure_optimizers</code> calls <code>check_optimizer_covers_trainable_params</code> after building the optimizer and raises <code>RuntimeError</code> listing every <code>requires_grad</code> parameter of the wrapped module that is missing from the param groups, e.g. <code>... are not in any optimizer param group and would never be updated: _flat_param (12,345,678) ...</code>. If you write your own <code>configure_optimizers</code>, build the groups from <code>Harness.optimizer_named_parameters()</code> (iterates the FSDP root when wrapped, strips the <code>_fsdp_wrapped_module.</code> / <code>model.</code> prefixes so name-based filters keep working) and call the check yourself. <code>lightning_module.allow_partial_optimizer_coverage: true</code> downgrades the error to a warning for intentionally un-optimized parameters.</li>
+</ul>
+<p>Note that with <code>use_orig_params: false</code>, grouping is only possible at FSDP-unit granularity (one flat param per wrapped block plus the root), so per-parameter weight-decay splits or a separate head LR need <code>use_orig_params: true</code> (or the head wrapped as its own unit).</p>
+</li>
+<li>
+<p><strong>Norm clipping and grad-norm logging under FSDP.</strong> With <code>FSDPStrategy</code>, Lightning's built-in <code>gradient_clip_algorithm: norm</code> routes through <code>FSDPPrecision</code>, which raises <code>MisconfigurationException</code> — <code>torch.nn.utils.clip_grad_norm_()</code> is wrong for sharded <code>FlatParameter</code> gradients. Separately, <code>Harness.on_before_optimizer_step</code> uses <code>lightning.pytorch.utilities.grad_norm(self, ...)</code>, which only sums gradients visible on <em>that</em> rank; under FSDP that is a <strong>local shard norm</strong>, not the true global L2 norm (so W&amp;B can show huge, nearly flat curves that do not match training stability).</p>
+</li>
+</ul>
+<p>Fix: set <code>lightning_module._target_: xlm.harness.FSDPHarness</code> (or subclass it) and <code>trainer.gradient_clip_algorithm: norm</code>. <code>FSDPHarness</code> overrides <code>configure_gradient_clipping</code> (calls <code>root.clip_grad_norm_</code>) and <code>on_before_optimizer_step</code> (all-reduced global norm, plus <code>grad_norm/&lt;group&gt;</code> for named param groups); see the <code>FSDPHarness</code> block in section 2. <code>gradient_clip_algorithm: value</code> remains fine for <strong>non-FSDP</strong> experiments (e.g. single-GPU debug) that still use base <code>Harness</code>; base <code>Harness</code> under FSDP must run with <code>trainer.gradient_clip_val: null</code>.</p>
+<ul>
+<li>
+<p><strong>Initializing new weights after a pretrained load.</strong> Weights that the checkpoint does not contain (a new length head, extra embedding rows) are random after <code>load_model_weights_into_model</code>. Under FSDP you cannot just assign into them from <code>on_fit_start</code> because each rank only holds a shard. Define <code>init_new_parameters(self, tokenizer)</code> on your model; <code>FSDPHarness.on_fit_start</code> calls it once at step 0 under <code>FSDP.summon_full_params(root, recurse=False, writeback=True)</code> (and directly when not wrapped). Keep the method idempotent and restricted to tensors in the root unit (embeddings, heads); block-internal tensors would need <code>recurse=True</code>, which materializes the whole model on every rank.</p>
+</li>
 <li>
 <p><strong>Don't double-register the model on the predictor.</strong> In <code>Harness.instantiate_predictor</code>, the model is attached to the predictor via <code>object.__setattr__(self.predictor, "model", self.model)</code> rather than plain <code>=</code>. A normal assignment would register the same <code>nn.Module</code> as a submodule of both the harness and the predictor, and FSDP would walk those <code>FlatParameters</code> twice — roughly doubling GPU memory usage. If you write your own predictor, copy this pattern.</p>
 </li>

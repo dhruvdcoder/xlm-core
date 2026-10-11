@@ -3318,6 +3318,39 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#xlm.harness.Harness.fsdp_root" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;fsdp_root
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#xlm.harness.Harness.optimizer_named_parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;optimizer_named_parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#xlm.harness.Harness.check_optimizer_covers_trainable_params" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;check_optimizer_covers_trainable_params
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#xlm.harness.Harness.prepare_batch_for_prediction" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3435,6 +3468,17 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xlm.harness.FSDPHarness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;FSDPHarness
+      
+    </span>
+  </a>
   
 </li>
       
@@ -8204,6 +8248,77 @@ enabling global metric computation (e.g., diversity on full generated set).</p>
 <div class="doc doc-object doc-function">
 
 
+<h3 id="xlm.harness.Harness.fsdp_root" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">fsdp_root</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return the FullyShardedDataParallel root wrapping this module, if any.</p>
+<p>Lightning's FSDPStrategy wraps the whole LightningModule (not
+self.model), so after setup the strategy's model attribute is the
+FSDP root. Returns None when not attached to a trainer or when the
+strategy did not wrap the module in FSDP.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="xlm.harness.Harness.optimizer_named_parameters" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">optimizer_named_parameters</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Named parameters that an optimizer must cover.</p>
+<p>Under FSDP the per-block auto-wrap policy leaves every parameter that is
+not inside a wrapped block (embeddings, final norm, lm_head, fresh heads)
+in the root unit, whose FlatParameter is registered on the wrapper above
+self.model. Iterating self.model.named_parameters() therefore misses
+them when use_orig_params is false. This method iterates the FSDP root
+when wrapped (and self.model otherwise) and strips the FSDP / checkpoint
+wrapper prefixes together with the leading model. prefix so names look
+like plain self.model names and model-level name filters keep working.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="xlm.harness.Harness.check_optimizer_covers_trainable_params" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">check_optimizer_covers_trainable_params</span><span class="p">(</span><span class="n">optimizer</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Raise if a trainable parameter is missing from the optimizer.</p>
+<p>Compares the parameters held by optimizer.param_groups against every
+requires_grad parameter of the module that Lightning actually trains
+(the FSDP root when wrapped, self otherwise). Set
+lightning_module.allow_partial_optimizer_coverage: true to downgrade the
+error to a warning for intentionally un-optimized parameters.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h3 id="xlm.harness.Harness.prepare_batch_for_prediction" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">prepare_batch_for_prediction</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span></code>
 
@@ -8907,6 +9022,74 @@ to the checkpoint file containing the EMA state.</p>
     </div>
 
 </div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="xlm.harness.FSDPHarness" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <code>FSDPHarness</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="            Harness (xlm.harness.Harness)" href="#xlm.harness.Harness">Harness</a></code></p>
+
+
+
+        <p>Harness variant for training under Lightning's FSDPStrategy.</p>
+<p>Base Harness already sources optimizer parameters from the FSDP root and
+verifies coverage. This subclass fixes the two remaining FSDP-specific
+hooks and adds a guarded post-load initialization hook:</p>
+<ol>
+<li>configure_gradient_clipping: Lightning's gradient_clip_algorithm=norm
+   routes through FSDPPrecision, which raises for sharded FlatParameters.
+   We call FullyShardedDataParallel.clip_grad_norm_ on the root instead,
+   which computes the true global norm across ranks.</li>
+<li>on_before_optimizer_step: the default grad_norm(self, ...) only sees the
+   local shard on each rank. We all-reduce the squared sums (total plus one
+   per named optimizer group) in fp32 and log the global norms as
+   "Total gradient (norm)" and grad_norm/<group name>.</li>
+<li>on_fit_start: if the model defines init_new_parameters(tokenizer), call
+   it once at global_step 0 (skipped on resume) under
+   FSDP.summon_full_params(root, recurse=False, writeback=True) so weights
+   living in the root unit (embeddings, lm_head, fresh heads) can be written
+   in place without materializing the wrapped blocks on every rank.</li>
+</ol>
+<p>Every hook falls back to the base behaviour when the module is not FSDP
+wrapped, so the same class can be used for single-device debug runs.</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
 
 
 
