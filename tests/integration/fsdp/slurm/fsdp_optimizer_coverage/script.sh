@@ -34,7 +34,11 @@ if [[ $# -lt 1 ]]; then
 fi
 
 RESULT_DIR="$1"
-CONFIG_JSON="${2:-{}}"
+# NB: "${2:-{}}" would parse as "${2:-{}" + "}" and append a stray brace.
+CONFIG_JSON="${2:-}"
+if [[ -z "${CONFIG_JSON}" ]]; then
+    CONFIG_JSON="{}"
+fi
 mkdir -p "${RESULT_DIR}"
 
 # Resolve the repo root. sbatch copies this script into the slurmd spool, so
