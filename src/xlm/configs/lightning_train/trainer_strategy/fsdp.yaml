@@ -3,5 +3,13 @@
 _target_: lightning.pytorch.strategies.FSDPStrategy
 sharding_strategy: FULL_SHARD
 cpu_offload: false
-use_orig_params: false
+# Keep the original nn.Parameters registered after wrapping (as views into the
+# sharded FlatParameter). With `false`, FSDP deregisters them and the root
+# unit's flat param (embeddings, final norm, lm_head, any fresh head that is
+# not inside a wrapped block) lives on the wrapper *above* `harness.model`, so
+# `self.model.named_parameters()` never reaches it and the optimizer silently
+# skips those weights (see issue #59). `true` also enables per-parameter
+# weight-decay / LR groups and torch.compile over the wrapped model.
+# `Harness.configure_optimizers` additionally verifies coverage either way.
+use_orig_params: true
 state_dict_type: sharded
