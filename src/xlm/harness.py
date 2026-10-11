@@ -360,6 +360,39 @@ def to_nested_module_dict(
     )
 
 
+def _try_import_fsdp():
+    """Return torch's FullyShardedDataParallel class, or None if unavailable."""
+    try:
+        from torch.distributed.fsdp import FullyShardedDataParallel
+
+        return FullyShardedDataParallel
+    except Exception:  # pragma: no cover - CPU-only / old torch builds
+        return None
+
+
+_WRAPPER_PREFIXES: Tuple[str, ...] = (
+    "_fsdp_wrapped_module.",
+    "_checkpoint_wrapped_module.",
+    "_orig_mod.",
+)
+
+
+def _strip_wrapper_prefixes(name: str) -> str:
+    """Map a parameter name seen from the FSDP root onto its self.model name.
+
+    Removes every FSDP / activation-checkpoint / torch.compile wrapper segment
+    and the leading model. segment contributed by the Harness attribute, so
+    _fsdp_wrapped_module.model.layers.0._fsdp_wrapped_module.mlp.w becomes
+    layers.0.mlp.w. Names of flat parameters (use_orig_params=false) keep
+    their _flat_param suffix.
+    """
+    for prefix in _WRAPPER_PREFIXES:
+        name = name.replace(prefix, "")
+    if name.startswith("model."):
+        name = name[len("model.") :]
+    return name
+
+
 class Harness(L.LightningModule, PyTorchModelHubMixin):
     """Main module that provides the scaffolding for the codebase."""
 
@@ -701,6 +734,105 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
             strict=strict,
         )
 
+    ############################################################
+    # region: FSDP-aware parameter access
+
+    def fsdp_root(self) -> Optional[nn.Module]:
+        """Return the FullyShardedDataParallel root wrapping this module, if any.
+
+        Lightning's FSDPStrategy wraps the whole LightningModule (not
+        self.model), so after setup the strategy's model attribute is the
+        FSDP root. Returns None when not attached to a trainer or when the
+        strategy did not wrap the module in FSDP.
+        """
+        FSDP = _try_import_fsdp()
+        if FSDP is None or self._trainer is None:
+            return None
+        strategy = getattr(self.trainer, "strategy", None)
+        root = getattr(strategy, "model", None)
+        if isinstance(root, FSDP):
+            return root
+        return None
+
+    def optimizer_named_parameters(
+        self,
+    ) -> List[Tuple[str, torch.nn.Parameter]]:
+        """Named parameters that an optimizer must cover.
+
+        Under FSDP the per-block auto-wrap policy leaves every parameter that is
+        not inside a wrapped block (embeddings, final norm, lm_head, fresh heads)
+        in the root unit, whose FlatParameter is registered on the wrapper above
+        self.model. Iterating self.model.named_parameters() therefore misses
+        them when use_orig_params is false. This method iterates the FSDP root
+        when wrapped (and self.model otherwise) and strips the FSDP / checkpoint
+        wrapper prefixes together with the leading model. prefix so names look
+        like plain self.model names and model-level name filters keep working.
+        """
+        root = self.fsdp_root()
+        if root is None:
+            return list(self.model.named_parameters())
+        return [
+            (_strip_wrapper_prefixes(name), param)
+            for name, param in root.named_parameters()
+        ]
+
+    def check_optimizer_covers_trainable_params(
+        self, optimizer: Optimizer
+    ) -> None:
+        """Raise if a trainable parameter is missing from the optimizer.
+
+        Compares the parameters held by optimizer.param_groups against every
+        requires_grad parameter of the module that Lightning actually trains
+        (the FSDP root when wrapped, self otherwise). Set
+        lightning_module.allow_partial_optimizer_coverage: true to downgrade the
+        error to a warning for intentionally un-optimized parameters.
+        """
+        in_optimizer = {
+            id(p) for group in optimizer.param_groups for p in group["params"]
+        }
+        root = self.fsdp_root()
+        source = root if root is not None else self
+        missing: List[Tuple[str, int]] = []
+        total_trainable = 0
+        for name, param in source.named_parameters():
+            if not param.requires_grad:
+                continue
+            total_trainable += param.numel()
+            if id(param) not in in_optimizer:
+                missing.append((_strip_wrapper_prefixes(name), param.numel()))
+        if not missing:
+            return
+        missing_numel = sum(n for _, n in missing)
+        preview = ", ".join(f"{name} ({n:,})" for name, n in missing[:10])
+        if len(missing) > 10:
+            preview += f", ... ({len(missing) - 10} more)"
+        message = (
+            f"{len(missing)} trainable parameter tensor(s) totalling "
+            f"{missing_numel:,} / {total_trainable:,} elements are not in any "
+            f"optimizer param group and would never be updated: {preview}. "
+            "Under FSDP this usually means the optimizer was built from "
+            "self.model.parameters() while the root FSDP unit's flat parameter "
+            "lives on the wrapper above it (use_orig_params=false); build the "
+            "groups from Harness.optimizer_named_parameters() or set "
+            "trainer.strategy.use_orig_params=true. Set "
+            "lightning_module.allow_partial_optimizer_coverage=true to "
+            "silence this check on purpose."
+        )
+        allow_partial = bool(
+            OmegaConf.select(
+                self.config,
+                "lightning_module.allow_partial_optimizer_coverage",
+                default=False,
+            )
+        )
+        if allow_partial:
+            logger.warning(message)
+            return
+        raise RuntimeError(message)
+
+    # endregion: FSDP-aware parameter access
+    ############################################################
+
     def configure_optimizers(
         self,
     ) -> Dict[
@@ -734,9 +866,18 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
             ]
         else:
             groups = [
-                {"params": self.model.parameters()},
+                {
+                    "params": [
+                        p
+                        for _, p in self.optimizer_named_parameters()
+                        if p.requires_grad
+                    ]
+                },
             ]
         optimizer = partial_optimizer(groups)
+        # Fail fast instead of silently training a subset of the weights
+        # (e.g. the root FSDP unit left out of the groups above).
+        self.check_optimizer_covers_trainable_params(optimizer)
         lr_scheduler: LRSchedulerWithConfig = self.create_lr_scheduler(
             optimizer, **self.config.lr_scheduler
         )
@@ -1645,3 +1786,110 @@ class Harness(L.LightningModule, PyTorchModelHubMixin):
 
     # endregion: Hugging Face Hub methods
     ############################################################
+
+
+class FSDPHarness(Harness):
+    """Harness variant for training under Lightning's FSDPStrategy.
+
+    Base Harness already sources optimizer parameters from the FSDP root and
+    verifies coverage. This subclass fixes the two remaining FSDP-specific
+    hooks and adds a guarded post-load initialization hook:
+
+    1. configure_gradient_clipping: Lightning's gradient_clip_algorithm=norm
+       routes through FSDPPrecision, which raises for sharded FlatParameters.
+       We call FullyShardedDataParallel.clip_grad_norm_ on the root instead,
+       which computes the true global norm across ranks.
+    2. on_before_optimizer_step: the default grad_norm(self, ...) only sees the
+       local shard on each rank. We all-reduce the squared sums (total plus one
+       per named optimizer group) in fp32 and log the global norms as
+       "Total gradient (norm)" and grad_norm/<group name>.
+    3. on_fit_start: if the model defines init_new_parameters(tokenizer), call
+       it once at global_step 0 (skipped on resume) under
+       FSDP.summon_full_params(root, recurse=False, writeback=True) so weights
+       living in the root unit (embeddings, lm_head, fresh heads) can be written
+       in place without materializing the wrapped blocks on every rank.
+
+    Every hook falls back to the base behaviour when the module is not FSDP
+    wrapped, so the same class can be used for single-device debug runs.
+    """
+
+    def on_fit_start(self) -> None:
+        super().on_fit_start()
+        if self.trainer.global_step != 0:
+            return
+        init_fn = getattr(self.model, "init_new_parameters", None)
+        if init_fn is None:
+            return
+        root = self.fsdp_root()
+        if root is None:
+            init_fn(self.tokenizer)
+            return
+        FSDP = _try_import_fsdp()
+        assert FSDP is not None
+        with FSDP.summon_full_params(root, recurse=False, writeback=True):
+            init_fn(self.tokenizer)
+
+    def configure_gradient_clipping(
+        self,
+        optimizer: Optimizer,
+        gradient_clip_val: Optional[Union[int, float]] = None,
+        gradient_clip_algorithm: Optional[str] = None,
+    ) -> None:
+        if gradient_clip_val is None:
+            return
+        root = self.fsdp_root()
+        if root is None:
+            super().configure_gradient_clipping(
+                optimizer,
+                gradient_clip_val=gradient_clip_val,
+                gradient_clip_algorithm=gradient_clip_algorithm,
+            )
+            return
+        if gradient_clip_algorithm not in (None, "norm"):
+            raise ValueError(
+                "FSDPHarness only supports gradient_clip_algorithm='norm' "
+                f"under FSDP, got {gradient_clip_algorithm!r}."
+            )
+        root.clip_grad_norm_(max_norm=float(gradient_clip_val), norm_type=2.0)
+
+    def on_before_optimizer_step(self, optimizer: Optimizer) -> None:
+        root = self.fsdp_root()
+        if root is None:
+            super().on_before_optimizer_step(optimizer)
+            return
+
+        import torch.distributed as dist
+
+        names: List[str] = []
+        local_sqs: List[torch.Tensor] = []
+        for i, group in enumerate(optimizer.param_groups):
+            names.append(str(group.get("name") or f"group{i}"))
+            sq = torch.zeros((), device=self.device, dtype=torch.float32)
+            for p in group["params"]:
+                if p.grad is not None:
+                    sq += p.grad.detach().float().pow(2).sum()
+            local_sqs.append(sq)
+
+        total_sq = torch.zeros((), device=self.device, dtype=torch.float32)
+        for p in root.parameters():
+            if p.grad is not None:
+                total_sq += p.grad.detach().float().pow(2).sum()
+
+        stacked = torch.stack(local_sqs + [total_sq])
+        if dist.is_available() and dist.is_initialized():
+            dist.all_reduce(stacked, op=dist.ReduceOp.SUM)
+        norms = stacked.sqrt()
+
+        log_kwargs: Dict[str, Any] = dict(
+            on_step=True,
+            on_epoch=False,
+            prog_bar=False,
+            sync_dist=False,
+            rank_zero_only=True,
+            logger=True,
+            add_dataloader_idx=False,
+        )
+        self.log("Total gradient (norm)", norms[-1], **log_kwargs)
+        if len(names) > 1:
+            for name, norm in zip(names, norms[:-1]):
+                self.log(f"grad_norm/{name}", norm, **log_kwargs)

@@ -14,8 +14,8 @@ def load_requirements(
     path_dir: str = PATH_ROOT, comment_char: str = "#"
 ) -> List:
     with open(os.path.join(path_dir, "requirements.txt"), "r") as file:
-        reqs = [ln.strip() for ln in file.readlines()]
-    return reqs
+        lines = [ln.split(comment_char, 1)[0].strip() for ln in file.readlines()]
+    return [ln for ln in lines if ln]
 
 
 def load_requirements_optional(relative_filename: str) -> List[str]:

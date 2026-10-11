@@ -1,0 +1,35 @@
+# @package _global_
+# FSDP overlay for LLaDA-8B training. Compose it after your task experiment:
+#
+#   xlm experiment=[my_llada_experiment,llada_fsdp_args] \
+#       trainer_strategy=fsdp trainer.devices=8 ...
+#
+# - FSDPHarness: FSDP-correct norm clipping, global grad-norm logging and the
+#   optional init_new_parameters(tokenizer) post-load hook on the root unit.
+# - Per-block sharding + activation checkpointing; wte, ln_f and ff_out stay in
+#   the root unit and are covered by the optimizer through
+#   Harness.optimizer_named_parameters / the coverage check.
+# - FSDP-native bf16 params with fp32 reductions.
+lightning_module:
+  _target_: xlm.harness.FSDPHarness
+
+trainer:
+  gradient_clip_algorithm: norm
+  strategy:
+    auto_wrap_policy:
+      _target_: xlm.utils.fsdp_grouping.make_layer_wrap_policy
+      _args_:
+        - xlm.backbones.llada.modeling_llada.LLaDALlamaBlock
+    activation_checkpointing_policy:
+      _target_: xlm.utils.fsdp_grouping.make_layer_wrap_policy
+      _args_:
+        - xlm.backbones.llada.modeling_llada.LLaDALlamaBlock
+    mixed_precision:
+      _target_: xlm.utils.fsdp_grouping.fsdp_bf16_mixed_precision
+
+callbacks:
+  fsdp_diagnostics:
+    _target_: xlm.utils.fsdp_diagnostics_callback.FSDPDiagnosticsCallback
+    num_logged_batches: 3
+    log_module_tree_top_k: 5
+    log_to_logger: true

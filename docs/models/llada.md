@@ -105,6 +105,7 @@ Hydra configs under {{ gh_dir('xlm-models/llada/configs', 'xlm-models/llada/conf
 | `model/llada_8b.yaml` | Architecture (Base and Instruct share this file) |
 | `model_type/llada_base.yaml` / `llada_eval.yaml` | Harness + predictor (no loss) |
 | `experiment/math500_llada_eval.yaml` | MATH-500 Hub eval |
+| `experiment/llada_fsdp_args.yaml` | FSDP training overlay: `FSDPHarness`, per-`LLaDALlamaBlock` sharding + activation checkpointing, bf16 mixed precision (see [LLMs guide](../guide/llms.md)) |
 | `datamodule/math500_llada.yaml` | Prediction dataloaders + `print_batch_llada` |
 | `debug/math500_debug.yaml` | Tiny debug limits |
 | `fsdp/decoder_lm_example.yaml` | Example FSDP grouping for `model.transformer.*` |

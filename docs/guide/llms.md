@@ -18,7 +18,7 @@ See {{ gh('src/xlm/configs/lightning_train/trainer_strategy/fsdp.yaml', 'trainer
 _target_: lightning.pytorch.strategies.FSDPStrategy
 sharding_strategy: FULL_SHARD
 cpu_offload: false
-use_orig_params: false
+use_orig_params: true
 state_dict_type: sharded
 ```
 
@@ -26,15 +26,19 @@ Notes:
 
 - `sharding_strategy: FULL_SHARD` shards parameters, gradients, and optimizer state across all ranks (ZeRO-3 equivalent). Use `SHARD_GRAD_OP` (ZeRO-2) or `NO_SHARD` (DDP) if memory is not the bottleneck.
 - `state_dict_type: sharded` writes one shard per rank instead of consolidating to a single full state dict. This is the only practical option for 7B+ models — a `full` state dict has to materialize the unsharded weights on rank 0, which is what we are trying to avoid in the first place.
-- `use_orig_params: false` is the default; flip to `true` only if you need parameter-group-aware optimizers or `torch.compile` over the wrapped model.
+- `use_orig_params: true` is the default (it is also Lightning's own default). Lightning wraps the **whole `LightningModule`**, not `harness.model`, so with a per-block `auto_wrap_policy` every parameter outside a block (embeddings, final norm, `lm_head`, any freshly added head) lands in the *root* FSDP unit, whose `FlatParameter` is registered on the wrapper *above* `self.model`. With `use_orig_params: false` the original `nn.Parameter`s are deregistered and `self.model.named_parameters()` never reaches that root flat param, so an optimizer built from `self.model` silently skips those weights ([issue #59](https://github.com/dhruvdcoder/xlm-core/issues/59)). `true` keeps the original parameters registered (as views into the local shard), which also enables per-parameter weight-decay / LR groups and `torch.compile`. `Harness.configure_optimizers` verifies coverage either way (see [Gotchas](#6-gotchas)); do not flip this back to `false` unless you also build your optimizer from `Harness.optimizer_named_parameters()`.
 
 ## 2. The model-specific experiment YAML
 
-Layered on top of the base strategy, the experiment YAML supplies the three knobs FSDP needs to actually shard a specific model:
+Layered on top of the base strategy, the experiment YAML supplies the harness class and the three knobs FSDP needs to actually shard a specific model. Ready-made overlays ship with the bundled large models: {{ gh('xlm-models/dream/configs/experiment/dream_fsdp_args.yaml', 'dream_fsdp_args.yaml') }} and {{ gh('xlm-models/llada/configs/experiment/llada_fsdp_args.yaml', 'llada_fsdp_args.yaml') }}. For your own model, copy one of them:
 
 ```yaml
 # @package _global_
+lightning_module:
+  _target_: xlm.harness.FSDPHarness   # FSDP-correct clipping / grad-norm logging, see section 6
+
 trainer:
+  gradient_clip_algorithm: norm
   strategy:
     auto_wrap_policy:
       _target_: xlm.utils.fsdp_grouping.make_layer_wrap_policy
@@ -49,6 +53,16 @@ trainer:
 ```
 
 Walking through each block:
+
+### `lightning_module._target_: xlm.harness.FSDPHarness`
+
+{{ gh('src/xlm/harness.py', 'FSDPHarness') }} is a thin subclass of `Harness` for sharded training. Base `Harness` already sources optimizer parameters from the FSDP root and verifies coverage; `FSDPHarness` adds the three hooks that Lightning cannot do correctly on its own under FSDP:
+
+- `configure_gradient_clipping` calls `FullyShardedDataParallel.clip_grad_norm_` on the root (Lightning's `FSDPPrecision` raises for `gradient_clip_algorithm: norm`).
+- `on_before_optimizer_step` logs the **global** gradient norm as `Total gradient (norm)` (one all-reduce of the squared sums) and, when the model's `get_param_groups` names its groups, `grad_norm/<group name>` per group.
+- `on_fit_start` calls the optional model hook `init_new_parameters(tokenizer)` once at `global_step == 0` (skipped on resume) under `FSDP.summon_full_params(root, recurse=False, writeback=True)`. Use it to initialize weights that are missing from a pretrained checkpoint (fresh heads, new embedding rows); writes to root-unit tensors land in the shards without materializing the wrapped blocks.
+
+Every hook falls back to the base behaviour when the module is not FSDP-wrapped, so the same class works for single-device debug runs.
 
 ### `auto_wrap_policy`
 
@@ -109,7 +123,7 @@ For a different precision regime (e.g. fp16 with a loss scaler, or pure bf16 wit
 
 ## 3. CLI invocation
 
-The base `lightning_train/config.yaml` defaults to `trainer_strategy: single_device`. To switch on FSDP at launch time, add `trainer.strategy=fsdp` and compose your FSDP experiment overlay in the experiment list:
+The base `lightning_train/config.yaml` defaults to `trainer_strategy: single_device`. To switch on FSDP at launch time, add `trainer.strategy=fsdp` and compose your FSDP experiment overlay in the experiment list (for the bundled models use `dream_fsdp_args` / `llada_fsdp_args`):
 
 ```bash
 xlm \
@@ -240,62 +254,18 @@ The recommended pattern at 7B is: train with `state_dict_type: sharded`, then co
 
 A few things that have bitten us in practice:
 
+- **The optimizer must cover the root FSDP unit.** Lightning wraps the whole `Harness`; with a per-block `auto_wrap_policy` the embeddings, final norm, `lm_head` and any fresh head are flattened into the *root* unit, registered on the wrapper above `self.model`. With `use_orig_params: false` an optimizer built from `self.model.parameters()` (or from a model-level `get_param_groups` / `get_named_params_for_*` that iterates `self.named_parameters()`) never sees them. Nothing errors — Lightning only checks that *some* flat parameter is in the optimizer, gradients still flow, clipping and norm logging still iterate the root — but `optimizer.step()` leaves those weights at their initial values ([issue #59](https://github.com/dhruvdcoder/xlm-core/issues/59)). Two guards now exist:
+
+    - `trainer_strategy/fsdp.yaml` defaults to `use_orig_params: true`, so the original parameters stay reachable from `self.model`.
+    - `Harness.configure_optimizers` calls `check_optimizer_covers_trainable_params` after building the optimizer and raises `RuntimeError` listing every `requires_grad` parameter of the wrapped module that is missing from the param groups, e.g. `... are not in any optimizer param group and would never be updated: _flat_param (12,345,678) ...`. If you write your own `configure_optimizers`, build the groups from `Harness.optimizer_named_parameters()` (iterates the FSDP root when wrapped, strips the `_fsdp_wrapped_module.` / `model.` prefixes so name-based filters keep working) and call the check yourself. `lightning_module.allow_partial_optimizer_coverage: true` downgrades the error to a warning for intentionally un-optimized parameters.
+
+    Note that with `use_orig_params: false`, grouping is only possible at FSDP-unit granularity (one flat param per wrapped block plus the root), so per-parameter weight-decay splits or a separate head LR need `use_orig_params: true` (or the head wrapped as its own unit).
+
 - **Norm clipping and grad-norm logging under FSDP.** With `FSDPStrategy`, Lightning's built-in `gradient_clip_algorithm: norm` routes through `FSDPPrecision`, which raises `MisconfigurationException` — `torch.nn.utils.clip_grad_norm_()` is wrong for sharded `FlatParameter` gradients. Separately, `Harness.on_before_optimizer_step` uses `lightning.pytorch.utilities.grad_norm(self, ...)`, which only sums gradients visible on *that* rank; under FSDP that is a **local shard norm**, not the true global L2 norm (so W&B can show huge, nearly flat curves that do not match training stability).
 
-  Fix: subclass `Harness`, detect the FSDP root on `self.trainer.strategy.model`, and override **two** hooks (`configure_gradient_clipping` and `on_before_optimizer_step`). Set `lightning_module._target_` to your subclass and `trainer.gradient_clip_algorithm: norm`.
+  Fix: set `lightning_module._target_: xlm.harness.FSDPHarness` (or subclass it) and `trainer.gradient_clip_algorithm: norm`. `FSDPHarness` overrides `configure_gradient_clipping` (calls `root.clip_grad_norm_`) and `on_before_optimizer_step` (all-reduced global norm, plus `grad_norm/<group>` for named param groups); see the `FSDPHarness` block in section 2. `gradient_clip_algorithm: value` remains fine for **non-FSDP** experiments (e.g. single-GPU debug) that still use base `Harness`; base `Harness` under FSDP must run with `trainer.gradient_clip_val: null`.
 
-  Example pattern:
-
-  ```python
-  from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
-
-  def configure_gradient_clipping(
-      self, optimizer, gradient_clip_val=None, gradient_clip_algorithm=None
-  ):
-      if gradient_clip_val is None:
-          return
-      root = self.trainer.strategy.model
-      if isinstance(root, FSDP):
-          root.clip_grad_norm_(max_norm=float(gradient_clip_val), norm_type=2.0)
-          return
-      return super().configure_gradient_clipping(
-          optimizer,
-          gradient_clip_val=gradient_clip_val,
-          gradient_clip_algorithm=gradient_clip_algorithm,
-      )
-  ```
-
-  ```python
-  import torch
-  import torch.distributed as dist
-  from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
-
-  def on_before_optimizer_step(self, optimizer):
-      root = self.trainer.strategy.model
-      if not isinstance(root, FSDP):
-          return super().on_before_optimizer_step(optimizer)
-
-      local_sq = torch.zeros((), device=self.device, dtype=torch.float32)
-      for p in root.parameters():
-          if p.grad is not None:
-              local_sq += p.grad.detach().float().pow(2).sum()
-      if dist.is_available() and dist.is_initialized():
-          dist.all_reduce(local_sq, op=dist.ReduceOp.SUM)
-      global_norm = local_sq.sqrt()
-      self.log(
-          "Total gradient (norm)",
-          global_norm,
-          on_step=True,
-          on_epoch=False,
-          prog_bar=False,
-          sync_dist=False,
-          rank_zero_only=True,
-          logger=True,
-          add_dataloader_idx=False,
-      )
-  ```
-
-  With these overrides, `trainer.gradient_clip_algorithm: norm` is the right choice; `gradient_clip_algorithm: value` remains fine for **non-FSDP** experiments (e.g. single-GPU debug) that still use base `Harness`.
+- **Initializing new weights after a pretrained load.** Weights that the checkpoint does not contain (a new length head, extra embedding rows) are random after `load_model_weights_into_model`. Under FSDP you cannot just assign into them from `on_fit_start` because each rank only holds a shard. Define `init_new_parameters(self, tokenizer)` on your model; `FSDPHarness.on_fit_start` calls it once at step 0 under `FSDP.summon_full_params(root, recurse=False, writeback=True)` (and directly when not wrapped). Keep the method idempotent and restricted to tensors in the root unit (embeddings, heads); block-internal tensors would need `recurse=True`, which materializes the whole model on every rank.
 
 - **Don't double-register the model on the predictor.** In `Harness.instantiate_predictor`, the model is attached to the predictor via `object.__setattr__(self.predictor, "model", self.model)` rather than plain `=`. A normal assignment would register the same `nn.Module` as a submodule of both the harness and the predictor, and FSDP would walk those `FlatParameters` twice — roughly doubling GPU memory usage. If you write your own predictor, copy this pattern.
 
