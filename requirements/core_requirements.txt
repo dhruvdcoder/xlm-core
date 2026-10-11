@@ -16,7 +16,7 @@ jupyter
 hydra-colorlog
 hydra-joblib-launcher
 hydra-submitit-launcher
-datasets >= 3.3.2, < 4.0.0 # was using 2.15.0 earlier due to some bug. Then used 3.3.2 successfully. With 4.0.0, one cannot use script based datasets but lm1b is script based as of Sep 5, 2025.
+datasets >= 4.0.0, < 5 # was using 2.15.0 earlier due to some bug. Then used 3.3.2 successfully. With 4.0.0, one cannot use script based datasets but lm1b is script based as of Sep 5, 2025.
 pyarrow <= 25.0.1 # pyarrow 26 (Oct 2026) requires numpy >= 2, but the [all] extras resolve numpy to 1.26.4, which breaks `import pyarrow` (and therefore datasets) at startup.
 transformers
 more-itertools
