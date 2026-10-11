@@ -7,6 +7,7 @@ hydra-colorlog
 hydra-joblib-launcher
 hydra-submitit-launcher
 datasets >= 3.3.2, < 4.0.0
+pyarrow <= 25.0.1  # pyarrow 26 requires numpy >= 2, but the [all] extras resolve numpy to 1.26.4
 wandb
 transformers
 regex
