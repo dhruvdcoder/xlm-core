@@ -19,7 +19,7 @@
 #
 #SBATCH --job-name=xlm_fsdp_cov
 #SBATCH --nodes=1
-#SBATCH --ntasks=2
+#SBATCH --ntasks-per-node=2
 #SBATCH --gres=gpu:2
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
@@ -80,8 +80,9 @@ python -m xlm \
     "paths.log_dir=${RESULT_DIR}/prepare_logs"
 
 # 2. One process per GPU. Lightning's SLURMEnvironment picks up
-#    SLURM_PROCID / SLURM_NTASKS / SLURM_LOCALID; MASTER_ADDR / MASTER_PORT
-#    are exported for torch.distributed.
+#    SLURM_PROCID / SLURM_NTASKS_PER_NODE / SLURM_LOCALID (it rejects a
+#    plain --ntasks); MASTER_ADDR / MASTER_PORT are exported for
+#    torch.distributed.
 MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
 export MASTER_ADDR
 export MASTER_PORT=$((10000 + (SLURM_JOB_ID % 50000)))
