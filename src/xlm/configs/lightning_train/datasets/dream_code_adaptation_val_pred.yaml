@@ -1,8 +1,8 @@
 defaults:
-  - anyorder_val
+  - dream_code_adaptation_val
 
 filter_suffix: pred_preprocess
-preprocess_function: xlm.tasks.anyorder.anyorder_pred_preprocess_fn
+preprocess_function: xlm.tasks.dream_code_adaptation.dream_code_adaptation_pred_preprocess_fn
 preprocess_function_kwargs:
   sep: "\n"
 # keep ``answer``: passed through the pred collator as the reference

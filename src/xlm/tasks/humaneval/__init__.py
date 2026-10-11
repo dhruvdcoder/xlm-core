@@ -30,7 +30,7 @@ def humaneval_pred_preprocess_fn(
     *,
     sep: str = "\n",
 ) -> Dict[str, Any]:
-    """Prompt prefix (``prompt.strip() + sep``) with an empty target, as in any-order training."""
+    """Prompt prefix (prompt.strip() + sep) with an empty target, as in dream_code_adaptation training."""
     prompt = (example.get("prompt") or "").strip()
     example["prompt_ids"] = tokenizer.encode(
         prompt, add_special_tokens=False
