@@ -1,6 +1,5 @@
 # @package _global_
 defaults:
-  #- /callbacks/unconditional_samples #CLEANUP: Don't need this for prediction in v2
   - override /callbacks: debug_v2
   - override /loggers: debug
 

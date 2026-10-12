@@ -1,6 +1,6 @@
 # @package _global_
 defaults:
-  - override /callbacks: default_hf
+  - override /callbacks: llm_eval
   - override /datamodule: math500_llada
   - override /noise_schedule: dummy
   - override /model_type: llada_eval
@@ -47,13 +47,6 @@ datamodule:
         collator:
           input_block_size: ${prompt_block_size}
           truncate: null
-
-# These two callbacks in the shared `default_hf` group point at classes that no
-# longer exist (xlm.datamodule.base.PrintBatchCallback,
-# xlm.diffusion.base.UnconditionalSampleGenerator); disable them here.
-callbacks:
-  print_batch: null
-  unconditional_sample_generator: null
 
 predictor:
   max_new_tokens: ${block_size}

@@ -9,7 +9,7 @@
 #   python -m xlm.commands.lightning_train experiment=humaneval_flexmdm_dream_eval \
 #       humaneval_n_samples=16 per_device_batch_size=16 global_batch_size=16
 defaults:
-  - override /callbacks: default_hf
+  - override /callbacks: llm_eval
   - override /datamodule: humaneval_flexmdm_dream
   - override /noise_schedule: flexmdm_power
   - override /model_type: flexmdm_dream_eval

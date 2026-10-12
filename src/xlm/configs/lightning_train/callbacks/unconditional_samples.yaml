@@ -1,3 +1,0 @@
-unconditional_sample_generator:
-  _target_: xlm.diffusion.base.UnconditionalSampleGenerator
-  num_samples: 1

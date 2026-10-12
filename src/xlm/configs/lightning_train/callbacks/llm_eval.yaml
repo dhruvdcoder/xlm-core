@@ -1,0 +1,6 @@
+# Callbacks for `job_type=eval` with large pretrained models (Dream, LLaDA, FlexMDM-Dream, ...).
+# Eval runs have no optimizer and no training steps, so checkpointing, LR monitoring and EMA
+# are useless (and `on_exception_checkpoint` would dump a multi-GB checkpoint on failure).
+# Use `default_hf` for EMA-free *training* of such models.
+defaults:
+  - file_friendly_progress_bar

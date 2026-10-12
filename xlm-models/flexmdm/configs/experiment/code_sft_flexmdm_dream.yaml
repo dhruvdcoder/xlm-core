@@ -67,9 +67,6 @@ callbacks:
   checkpoint_every_n_steps:
     every_n_train_steps: 1500
     keep_multiple: 1
-  # default_hf ships two stale callbacks (targets no longer exist); the Harness prints batches itself.
-  unconditional_sample_generator: null
-  print_batch: null
 
 predictor:
   max_steps: 512

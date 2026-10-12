@@ -1,8 +1,7 @@
+# EMA-free training callbacks for large pretrained (HF) models. For `job_type=eval` use `llm_eval`.
 defaults:
   - checkpoint_every_n_steps_with_thinning
   - checkpoint_monitor
   - on_exception_checkpoint
   - learning_rate_monitor
   - file_friendly_progress_bar
-  - print_batch
-  - unconditional_samples
