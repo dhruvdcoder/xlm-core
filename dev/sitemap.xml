@@ -345,11 +345,31 @@
          <lastmod>2026-10-12</lastmod>
     </url>
     <url>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/tasks/dream_code_adaptation/</loc>
+         <lastmod>2026-10-12</lastmod>
+    </url>
+    <url>
          <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/tasks/gram_graph_coloring/</loc>
          <lastmod>2026-10-12</lastmod>
     </url>
     <url>
          <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/tasks/gram_n_queens/</loc>
+         <lastmod>2026-10-12</lastmod>
+    </url>
+    <url>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/tasks/humaneval/</loc>
+         <lastmod>2026-10-12</lastmod>
+    </url>
+    <url>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/tasks/humaneval/data/</loc>
+         <lastmod>2026-10-12</lastmod>
+    </url>
+    <url>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/tasks/humaneval/eval/</loc>
+         <lastmod>2026-10-12</lastmod>
+    </url>
+    <url>
+         <loc>https://dhruvdcoder.github.io/xlm-core/dev/reference/xlm/tasks/humaneval/sanitize/</loc>
          <lastmod>2026-10-12</lastmod>
     </url>
     <url>
