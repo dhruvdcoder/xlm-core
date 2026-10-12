@@ -118,7 +118,8 @@ class FilePredictionWriter(_PredictionWriter):
             file_path_: Path to the file or special values.
                 if "from_pl_module", query the pl_module for the predictions_file for the step and epoch
                 set to "none" to disable file writing
-                a str or Path is used as a fixed output file (appended across batches)
+                a str or Path is used as a fixed output file (truncated on first
+                write of this process, then appended across batches)
         """
         super().__init__(deepcopy(fields_to_keep_in_output))
 
@@ -131,6 +132,8 @@ class FilePredictionWriter(_PredictionWriter):
         else:
             self.file_path_ = Path(str(file_path_))
         self.supports_reading = True
+        # Paths already opened this process: first write truncates, later writes append.
+        self._initialized_paths: set[Path] = set()
 
     def _get_file_path(
         self,
@@ -169,6 +172,10 @@ class FilePredictionWriter(_PredictionWriter):
     ) -> None:
         """Write predictions to a JSONL file.
 
+        The first write to a given path in this process truncates the file
+        (so a new job with a fixed ``file_path_`` overrides any leftover dump).
+        Later batches append.
+
         Args:
             predictions: List of prediction dictionaries.
             ground_truth_text: List of ground truth text strings.
@@ -188,8 +195,18 @@ class FilePredictionWriter(_PredictionWriter):
 
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Write to file
-        with open(file_path, "a") as f:
+        resolved = file_path.resolve()
+        if resolved not in self._initialized_paths:
+            mode = "w"
+            self._initialized_paths.add(resolved)
+            if file_path.exists() and file_path.stat().st_size > 0:
+                logger.info(
+                    f"Truncating existing prediction file at start of write: {file_path}"
+                )
+        else:
+            mode = "a"
+
+        with open(file_path, mode) as f:
             for i, dict_ in enumerate(predictions):
                 if ground_truth_text:
                     dict_["truth"] = ground_truth_text[i]
