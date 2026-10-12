@@ -1,0 +1,31 @@
+# @package _global_
+# FlexMDM (Dream-Coder) code-SFT training data: reference pre-tokenized .bin shards.
+# Train = holdout-split train half (shuffled, DistributedSampler seed 0); val = the 0.05% holdout.
+defaults:
+  - default
+  - /datasets@datamodule.dataset_managers.train.lm: flexmdm_pretokenized
+  - /datasets@datamodule.dataset_managers.val.lm: flexmdm_pretokenized
+
+flexmdm_pretokenized_root: ${oc.env:FLEXMDM_PRETOKENIZED_ROOT,???}
+flexmdm_dataset_names: null
+flexmdm_repeat_factors:
+  OpenCodeInstruct-score1-py-all: 1
+  rstarcoder-synthetic-sft: 2
+  KodCode-V1-SFT-4o: 2
+  opc-sft-stage2-educational: 2
+  rstarcoder-seed-sft: 2
+
+datamodule:
+  print_batch_fn: flexmdm.datamodule_flexmdm_dream.print_batch_flexmdm_dream
+  dataset_managers:
+    val:
+      lm:
+        split: val
+        stages: [fit, validate]
+        dataloader_kwargs:
+          batch_size: ${per_device_val_batch_size}
+          drop_last: false
+          persistent_workers: false
+
+tags:
+  dataset: flexmdm_code_sft

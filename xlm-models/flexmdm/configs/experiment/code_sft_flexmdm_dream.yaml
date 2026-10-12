@@ -1,0 +1,78 @@
+# @package _global_
+# FlexMDM fine-tune of Dream-Coder-7B-Base on the reference code-SFT mixture.
+# Reproduces genuine-any-order/FlexMDM flexmdm/config/fsdp_train.yaml:
+#   AdamW lr 1e-5 (insertion modules x2), betas (0.9, 0.95), wd 0.01, warmup 10% of 75k
+#   steps + cosine, clip 1.0, global batch 576 (micro 6), seq 768, bf16 params, seed 1,
+#   power schedules 1.7 / 2.89, globally stratified t.
+# Compose with the FSDP overlay for multi-GPU runs:
+#
+#   FLEXMDM_PRETOKENIZED_ROOT=/path/to/pretokenized xlm job_type=train \
+#       experiment=[code_sft_flexmdm_dream,flexmdm_dream_fsdp_args] trainer_strategy=fsdp \
+#       trainer.devices=8 trainer.max_steps=500
+defaults:
+  - override /callbacks: default_hf
+  - override /datamodule: code_sft_flexmdm_dream
+  - override /noise_schedule: flexmdm_power
+  - override /model_type: flexmdm_dream
+  - override /model: dream_coder_7b_flexmdm
+
+seed: 1
+max_seq_len: 768
+block_size: ${max_seq_len}
+per_device_batch_size: 6 # reference micro_batch_size_per_gpu
+per_device_val_batch_size: 16 # reference validation_micro_batch_size_per_gpu
+global_batch_size: 576 # accumulate_grad_batches = 576 / (6 * devices)
+monitored_metric: val/lm/accumulated_loss
+init_dtype: bfloat16 # reference casts the whole model to bf16 (bf16 master weights)
+skip_init_weights: true
+strict_model_only_load: false # base checkpoint lacks the FlexMDM extras (fresh init)
+force_flash_attn: false
+insertion_lr_multiplier: 2.0
+inference_insertion_exponent: 2.9
+
+# Backbone initialization (reference model.partial_pretrain). Set to the merged FlexMDM repo
+# (dhruveshpatel/dream_flexmdm) + strict_model_only_load=true to continue from the released weights.
+flexmdm_dream_repo_id: Dream-org/Dream-Coder-v0-Base-7B
+
+global_components:
+  tokenizer:
+    _target_: xlm.datamodule.load_auto_tokenizer
+    pretrained_model_name_or_path: ${flexmdm_dream_repo_id}
+
+hub:
+  repo_id: ${flexmdm_dream_repo_id}
+
+optimizer:
+  _target_: torch.optim.AdamW
+  lr: 1.0e-5
+  betas: [0.9, 0.95]
+  weight_decay: 0.01
+
+lr_scheduler:
+  name: cosine # HF cosine == reference cosine_warmup_lambda (num_cycles 0.5)
+  num_warmup_steps: 7500 # 0.1 * 75000
+  num_training_steps: 75000 # cosine horizon (reference total_training_steps)
+  monitor: train/loss
+
+trainer:
+  max_steps: 75000
+  gradient_clip_val: 1.0
+  val_check_interval: 1500
+  check_val_every_n_epoch: null
+  num_sanity_val_steps: 0
+  limit_val_batches: 1.0
+  log_every_n_steps: 1
+
+callbacks:
+  checkpoint_every_n_steps:
+    every_n_train_steps: 1500
+    keep_multiple: 1
+  # default_hf ships two stale callbacks (targets no longer exist); the Harness prints batches itself.
+  unconditional_sample_generator: null
+  print_batch: null
+
+predictor:
+  max_steps: 512
+
+tags:
+  model: flexmdm_dream_coder_7b

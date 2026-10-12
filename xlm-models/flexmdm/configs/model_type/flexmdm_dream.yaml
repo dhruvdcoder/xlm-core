@@ -1,0 +1,36 @@
+# @package _global_
+# FlexMDM (Dream-Coder) training: reference FlexMDMProcess loss + reference sampler.
+defaults:
+  - flexmdm_dream_eval
+  - /metrics@reported_metrics.train.lm.accumulated_loss: accumulated_loss
+  - /metrics@reported_metrics.val.lm.accumulated_loss: accumulated_loss
+
+lightning_module:
+  _target_: xlm.harness.Harness
+  log: # extra per-step scalars from the loss dict (train/loss is always logged)
+    train/unmask_loss: unmask_loss
+    train/insertion_loss: insertion_loss
+
+loss:
+  _target_: flexmdm.loss_flexmdm_dream.FlexMDMDreamLoss
+  noise_schedule: ${global_components:noise_schedule}
+  max_length: ${max_seq_len} # reference data.max_length normalizer (B * L)
+  eps: 1.0e-6
+  weight_eps: 1.0e-3
+  stratified_t: true # globally stratified t per optimizer step (reference trainer)
+
+diagnostic_metrics: null
+reported_metrics:
+  train:
+    lm:
+      accumulated_loss:
+        prefix: train/lm
+        update_fn: flexmdm.metrics_flexmdm.mean_metric_update_fn
+  val:
+    lm:
+      accumulated_loss:
+        prefix: val/lm
+        update_fn: flexmdm.metrics_flexmdm.mean_metric_update_fn
+
+tags:
+  model_type: flexmdm_dream
