@@ -7,6 +7,10 @@ defaults:
 
 humaneval_n_samples: 1 # generations per task; pass@k reported for k <= this (16 for the paper)
 humaneval_limit: null # first N tasks only (smoke runs); null = all 164
+# Whole-task sharding across jobs (tasks i with i % num_shards == shard_index). Score the
+# concatenated per-shard predictions with `python -m xlm.tasks.humaneval.score`.
+humaneval_shard_index: 0
+humaneval_num_shards: 1
 
 datamodule:
   print_batch_fn: flexmdm.datamodule_flexmdm_dream.print_batch_flexmdm_dream
@@ -15,6 +19,8 @@ datamodule:
       humaneval_prediction:
         n_samples: ${humaneval_n_samples}
         limit: ${humaneval_limit}
+        shard_index: ${humaneval_shard_index}
+        num_shards: ${humaneval_num_shards}
         preprocess_function_kwargs:
           sep: ""
           strip: false

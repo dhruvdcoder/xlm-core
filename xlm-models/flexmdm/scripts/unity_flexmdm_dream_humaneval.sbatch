@@ -47,6 +47,24 @@ BATCH=${BATCH:-16}
 STEPS=${STEPS:-512}
 JOB=${JOB:-flexmdm_dream_he_n${N_SAMPLES}_s${STEPS}}
 
+# One batch (16 x 768 tokens x 512 steps) takes ~10 min on an A100, i.e. ~27 h for all 164 tasks
+# on a single GPU. Shard whole tasks across an array: `sbatch --array=0-3 <this script>`.
+# Each shard writes its own predictions JSONL and skips the in-job pass@k; score all shards with
+#   python -m xlm.tasks.humaneval.score --n-samples 16 --expect-tasks 164 \
+#       --output-dir logs/${JOB}/humaneval_passk \
+#       --predictions "logs/${JOB}_shard*/runs/*/predictions/test/humaneval_prediction/*.jsonl"
+NUM_SHARDS=${SLURM_ARRAY_TASK_COUNT:-1}
+SHARD=${SLURM_ARRAY_TASK_ID:-0}
+SHARD_ARGS=()
+if [ "$NUM_SHARDS" -gt 1 ]; then
+  JOB="${JOB}_shard${SHARD}of${NUM_SHARDS}"
+  # drop the in-job pass@k (it would see only this shard); CompositePostHocEvaluator with no
+  # matching evaluator returns empty metrics.
+  SHARD_ARGS=(humaneval_shard_index="$SHARD" humaneval_num_shards="$NUM_SHARDS" '~post_hoc_evaluator.evaluators.humaneval')
+else
+  SHARD_ARGS=(post_hoc_evaluator.evaluators.humaneval.workers="$SLURM_CPUS_PER_TASK")
+fi
+
 srun xlm job_type=eval \
   experiment=humaneval_flexmdm_dream_eval \
   job_name="$JOB" \
@@ -54,5 +72,5 @@ srun xlm job_type=eval \
   humaneval_n_samples="$N_SAMPLES" humaneval_limit="$LIMIT" \
   per_device_batch_size="$BATCH" global_batch_size="$BATCH" \
   predictor.max_steps="$STEPS" \
-  post_hoc_evaluator.evaluators.humaneval.workers="$SLURM_CPUS_PER_TASK" \
+  "${SHARD_ARGS[@]}" \
   "$@"

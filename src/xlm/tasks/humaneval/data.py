@@ -81,6 +81,11 @@ class HumanEvalDatasetManager(EvalDatasetManager):
 
     ``full_name`` is kept for naming only; rows come from
     :func:`load_humaneval_tasks` so the prompts match the reference loader exactly.
+
+    ``shard_index`` / ``num_shards`` keep whole tasks ``i`` with
+    ``i % num_shards == shard_index`` (after ``limit``), like the reference
+    ``evals/humaneval_compare/common.shard``. Run one job per shard and score the
+    concatenated predictions with ``python -m xlm.tasks.humaneval.score``.
     """
 
     def __init__(
@@ -88,17 +93,38 @@ class HumanEvalDatasetManager(EvalDatasetManager):
         *args: Any,
         n_samples: int = 16,
         limit: Optional[int] = None,
+        shard_index: int = 0,
+        num_shards: int = 1,
         **kwargs: Any,
     ):
         super().__init__(*args, **kwargs)
+        if num_shards <= 0:
+            raise ValueError(f"num_shards must be positive, got {num_shards}")
+        if not 0 <= shard_index < num_shards:
+            raise ValueError(
+                f"shard_index {shard_index} out of range [0, {num_shards})"
+            )
         self.n_samples = n_samples
         self.limit = limit
+        self.shard_index = shard_index
+        self.num_shards = num_shards
 
     def _download(self, num_proc: Optional[int] = None) -> datasets.Dataset:
         tasks = load_humaneval_tasks()
         if self.limit is not None:
             tasks = tasks[: self.limit]
+        if self.num_shards > 1:
+            tasks = [
+                t
+                for i, t in enumerate(tasks)
+                if i % self.num_shards == self.shard_index
+            ]
         logger.info(
             f"HumanEvalDatasetManager: {len(tasks)} tasks x {self.n_samples} samples"
+            + (
+                f" (shard {self.shard_index}/{self.num_shards})"
+                if self.num_shards > 1
+                else ""
+            )
         )
         return datasets.Dataset.from_list(build_sample_rows(tasks, self.n_samples))

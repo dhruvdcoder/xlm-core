@@ -8,6 +8,8 @@ collator: ???
 full_name: openai/openai_humaneval/test
 n_samples: 1  # 16 for reference pass@{1,2,4,8,16}
 limit: null  # first N tasks, for smoke runs
+shard_index: 0  # keep tasks i with i % num_shards == shard_index (one job per shard)
+num_shards: 1
 preprocess_function: xlm.tasks.humaneval.humaneval_pred_preprocess_fn
 preprocess_function_kwargs:
   sep: "\n"
