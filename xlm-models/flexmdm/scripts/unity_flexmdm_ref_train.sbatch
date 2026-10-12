@@ -36,6 +36,10 @@ RUN_NAME=${RUN_NAME:-ref_fsdp_s${STEPS}_gb${GLOBAL_BATCH}_g${NPROC}_seed${SEED}}
 export SAVE_ROOT=${SAVE_ROOT:-$DATA_ROOT/ref_checkpoints/$RUN_NAME}
 export WANDB_PROJECT=${WANDB_PROJECT_OVERRIDE:-flexmdm-dream-repro}
 
+# Lmod is not initialized in non-login batch shells on some Unity partitions.
+if ! command -v module >/dev/null 2>&1; then
+  for s in /etc/profile.d/z0[0-9]-lmod-*.sh; do [ -r "$s" ] && source "$s"; done
+fi
 module load conda/latest
 conda activate "$VENV"
 cd "$WORKTREE"

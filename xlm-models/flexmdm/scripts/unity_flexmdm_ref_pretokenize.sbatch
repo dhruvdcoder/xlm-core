@@ -29,6 +29,10 @@ export BASE_MODEL=${BASE_MODEL:-Dream-org/Dream-Coder-v0-Base-7B}
 LIMIT=${LIMIT:-60000}          # rows streamed per source before filtering
 DATASETS=${DATASETS:-}         # space-separated subset; empty = all five from the config
 
+# Lmod is not initialized in non-login batch shells on some Unity partitions.
+if ! command -v module >/dev/null 2>&1; then
+  for s in /etc/profile.d/z0[0-9]-lmod-*.sh; do [ -r "$s" ] && source "$s"; done
+fi
 module load conda/latest
 conda activate "$VENV"
 cd "$WORKTREE"

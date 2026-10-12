@@ -27,6 +27,10 @@ SEED=${SEED:-1}
 NPROC=${SLURM_NTASKS_PER_NODE:-4}
 RUN_NAME=${RUN_NAME:-xlm_fsdp_s${STEPS}_gb${GLOBAL_BATCH}_g${NPROC}_seed${SEED}}
 
+# Lmod is not initialized in non-login batch shells on some Unity partitions.
+if ! command -v module >/dev/null 2>&1; then
+  for s in /etc/profile.d/z0[0-9]-lmod-*.sh; do [ -r "$s" ] && source "$s"; done
+fi
 module load conda/latest
 conda activate "$VENV"
 cd "$WORKTREE"
