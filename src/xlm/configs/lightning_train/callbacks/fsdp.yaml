@@ -1,0 +1,4 @@
+defaults:
+  - checkpoint_every_n_steps_with_thinning
+  - learning_rate_monitor
+  - file_friendly_progress_bar
