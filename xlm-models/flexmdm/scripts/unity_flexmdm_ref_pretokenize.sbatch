@@ -67,9 +67,9 @@ printf ' %q' "${cmd[@]}"; echo
 "${cmd[@]}"
 
 echo "=== drop truncated rows"
-python scripts/drop_truncated_rows.py --root "$PRETOKENIZED_ROOT"
+PYTHONPATH="$REF_ROOT:${PYTHONPATH:-}" python scripts/drop_truncated_rows.py --root "$PRETOKENIZED_ROOT"
 echo "=== merge manifests"
-python scripts/merge_manifests.py --root "$PRETOKENIZED_ROOT" --config "$RESOLVED_CFG"
+PYTHONPATH="$REF_ROOT:${PYTHONPATH:-}" python scripts/merge_manifests.py --root "$PRETOKENIZED_ROOT" --config "$RESOLVED_CFG"
 python - <<PY
 import json
 m = json.load(open("$PRETOKENIZED_ROOT/manifest.json"))
