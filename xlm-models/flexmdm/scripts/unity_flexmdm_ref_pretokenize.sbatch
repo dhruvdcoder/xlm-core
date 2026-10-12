@@ -22,7 +22,7 @@ set -eo pipefail
 WORKTREE=${WORKTREE:-/scratch3/workspace/dhruveshpate_umass_edu-idlm/xlm-core-dream-flexmdm}
 VENV=${VENV:-/scratch3/workspace/dhruveshpate_umass_edu-idlm/xlm-core/.venv_xlm_core}
 REF_ROOT=${REF_ROOT:-/scratch3/workspace/dhruveshpate_umass_edu-idlm/flexmdm_ref/FlexMDM}
-DATA_ROOT=${DATA_ROOT:-/scratch3/workspace/dhruveshpate_umass_edu-idlm/flexmdm_data}
+export DATA_ROOT=${DATA_ROOT:-/scratch3/workspace/dhruveshpate_umass_edu-idlm/flexmdm_data}
 export PRETOKENIZED_ROOT=${PRETOKENIZED_ROOT:-$DATA_ROOT/pretokenized}
 export SCRATCH_ROOT=$DATA_ROOT
 export BASE_MODEL=${BASE_MODEL:-Dream-org/Dream-Coder-v0-Base-7B}
