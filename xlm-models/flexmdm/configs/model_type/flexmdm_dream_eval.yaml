@@ -1,0 +1,25 @@
+# @package _global_
+# FlexMDM (Dream-Coder) inference only: Harness + reference sampler, no loss metrics.
+lightning_module:
+  _target_: xlm.harness.Harness
+
+predictor:
+  _target_: flexmdm.predictor_flexmdm_dream.FlexMDMDreamPredictor
+  tokenizer: ${global_components:tokenizer}
+  noise_schedule: ${global_components:noise_schedule}
+  max_steps: 512
+  temperature: 0.1
+  confidence: top_k
+  insertion_temperature: 1.0
+  insertion_count_sampler: poisson
+  insertion_count_theta: 1.0
+  use_midpoint_hazard_rate: false
+  eps: 1.0e-6
+  # Inference-time insertion schedule (alpha-bar = 2.9 in the paper); the model is fed
+  # train_schedule.inv(inference_schedule.at(t)). null = no reparameterization.
+  inference_insertion_schedule:
+    _target_: flexmdm.noise_flexmdm.PowerSchedule
+    exp: ${oc.select:inference_insertion_exponent,2.9}
+
+tags:
+  model_type: flexmdm_dream

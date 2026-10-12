@@ -1,0 +1,23 @@
+# @package _global_
+# HumanEval prompts (raw, no strip / no separator) x n_samples for FlexMDM (Dream-Coder) pass@k.
+defaults:
+  - default
+  - /datasets@datamodule.dataset_managers.test.humaneval_prediction: humaneval_test_pred
+  - /collator@datamodule.dataset_managers.test.humaneval_prediction.collator: flexmdm_dream_pred
+
+humaneval_n_samples: 1 # generations per task; pass@k reported for k <= this (16 for the paper)
+humaneval_limit: null # first N tasks only (smoke runs); null = all 164
+
+datamodule:
+  print_batch_fn: flexmdm.datamodule_flexmdm_dream.print_batch_flexmdm_dream
+  dataset_managers:
+    test:
+      humaneval_prediction:
+        n_samples: ${humaneval_n_samples}
+        limit: ${humaneval_limit}
+        preprocess_function_kwargs:
+          sep: ""
+          strip: false
+
+tags:
+  dataset: humaneval

@@ -42,6 +42,7 @@ class DreamConfigBase(PretrainedConfig):
         pad_token_id=151643,
         use_time_embedding=False,
         d_cond=None,
+        time_conditioning="rmsnorm4",
         **kwargs,
     ):
         self.vocab_size = vocab_size
@@ -76,4 +77,24 @@ class DreamConfigBase(PretrainedConfig):
         self.mask_token_id = mask_token_id
         self.pad_token_id = pad_token_id
         self.use_time_embedding = use_time_embedding
-        self.d_cond = d_cond if d_cond is not None else hidden_size // 2
+        # How the time conditioning vector ``c`` modulates the decoder layers:
+        # - "rmsnorm4": ``DreamBaseModel.sigma_map`` (TimestepEmbedder) builds
+        #   ``c`` of size ``d_cond`` (default hidden_size // 2) and every layer has
+        #   a 4-chunk modulation (separate shift/scale for attention and MLP norms).
+        # - "flexmdm_shared2": ``c`` of size ``d_cond`` (default hidden_size) is
+        #   computed outside the backbone (e.g. ``flexmdm.FlexMDMDreamModel``) and
+        #   passed to ``forward(c=...)``; every layer has one 2-chunk
+        #   ``(scale, shift)`` modulation shared by both norms, matching the
+        #   FlexMDM (Dream-Coder) reference ``temb_mods``.
+        if time_conditioning not in ("rmsnorm4", "flexmdm_shared2"):
+            raise ValueError(
+                f"Unknown time_conditioning={time_conditioning!r}; expected "
+                "'rmsnorm4' or 'flexmdm_shared2'."
+            )
+        self.time_conditioning = time_conditioning
+        if d_cond is not None:
+            self.d_cond = d_cond
+        elif time_conditioning == "flexmdm_shared2":
+            self.d_cond = hidden_size
+        else:
+            self.d_cond = hidden_size // 2

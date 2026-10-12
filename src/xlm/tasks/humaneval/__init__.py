@@ -29,11 +29,19 @@ def humaneval_pred_preprocess_fn(
     tokenizer: Any,
     *,
     sep: str = "\n",
+    strip: bool = True,
 ) -> Dict[str, Any]:
-    """Prompt prefix (prompt.strip() + sep) with an empty target, as in dream_code_adaptation training."""
-    prompt = (example.get("prompt") or "").strip()
-    example["prompt_ids"] = tokenizer.encode(
-        prompt, add_special_tokens=False
-    ) + tokenizer.encode(sep, add_special_tokens=False)
+    """Prompt prefix (prompt.strip() + sep) with an empty target, as in dream_code_adaptation training.
+
+    ``strip=False, sep=""`` keeps the raw HumanEval prompt (FlexMDM reference encoding).
+    """
+    prompt = example.get("prompt") or ""
+    if strip:
+        prompt = prompt.strip()
+    example["prompt_ids"] = tokenizer.encode(prompt, add_special_tokens=False)
+    if sep:
+        example["prompt_ids"] = example["prompt_ids"] + tokenizer.encode(
+            sep, add_special_tokens=False
+        )
     example["input_ids"] = []
     return example

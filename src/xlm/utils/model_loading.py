@@ -260,7 +260,10 @@ def load_model_for_inference(
             lightning_module.model,
             model_only_ckpt_path,
             map_location="cpu",
-            strict=True,
+            # Same knob as the train path (lightning_train.py).
+            strict=bool(
+                OmegaConf.select(cfg, "strict_model_only_load", default=True)
+            ),
             weights_only=True,
         )
         logger.warning(

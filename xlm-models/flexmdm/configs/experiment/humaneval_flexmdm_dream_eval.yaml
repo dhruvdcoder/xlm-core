@@ -1,0 +1,84 @@
+# @package _global_
+# HumanEval / HumanEval+ pass@k with the released FlexMDM (Dream-Coder-7B) checkpoint
+# (yuyuanchen0/flexmdm, step 49500), merged into xlm-core key layout by
+# xlm-models/flexmdm/scripts/merge_flexmdm_dream_checkpoint.py and hosted at ${hub.repo_id}.
+# Paper setting: 164 tasks x 16 samples, 512 steps,
+# temperature 0.1, top-k confidence unmasking, Poisson insertion (T_ins = 1.0), max length 768,
+# inference insertion exponent 2.9 (train 1.7 / 2.89). Reported pass@1: HE 50.65, HE+ 46.61.
+#
+#   python -m xlm.commands.lightning_train experiment=humaneval_flexmdm_dream_eval \
+#       humaneval_n_samples=16 per_device_batch_size=16 global_batch_size=16
+defaults:
+  - override /callbacks: default_hf
+  - override /datamodule: humaneval_flexmdm_dream
+  - override /noise_schedule: flexmdm_power
+  - override /model_type: flexmdm_dream_eval
+  - override /model: dream_coder_7b_flexmdm
+
+max_seq_len: 768
+block_size: ${max_seq_len}
+per_device_batch_size: 8
+global_batch_size: 8
+monitored_metric: null
+init_dtype: bfloat16
+skip_init_weights: true
+strict_model_only_load: true # merged checkpoint contains backbone + FlexMDM extras
+force_flash_attn: false # eager/sdpa for bit-exact traces; set true for speed
+
+# Merged checkpoint repo (backbone + extras, FlexMDMDreamModel key layout). Override to a local
+# folder/index via eval.model_only_checkpoint_path=<dir>/model.safetensors.index.json.
+flexmdm_dream_repo_id: dhruveshpatel/dream_flexmdm
+
+humaneval_variants: [base, plus] # base = HumanEval tests, plus = HumanEval+ tests
+inference_insertion_exponent: 2.9
+
+global_components:
+  tokenizer:
+    _target_: xlm.datamodule.load_auto_tokenizer
+    pretrained_model_name_or_path: ${flexmdm_dream_repo_id} # tokenizer files are copied into the merged repo
+
+hub:
+  repo_id: ${flexmdm_dream_repo_id}
+
+eval:
+  split: test
+
+predictor:
+  max_steps: 512
+
+log_predictions:
+  _target_: xlm.log_predictions.LogPredictions
+  fields_to_keep_in_output:
+    - text
+    - generated_text
+    - generated_length
+    - time_taken
+    - task_id
+    - sample_k
+  additional_fields_from_batch:
+    - task_id
+    - sample_k
+  writers:
+    - _target_: xlm.log_predictions.FilePredictionWriter
+      fields_to_keep_in_output: ${log_predictions.fields_to_keep_in_output}
+      file_path_: from_pl_module
+
+post_hoc_evaluator:
+  _target_: xlm.tasks.composite_eval.CompositePostHocEvaluator
+  evaluators:
+    humaneval:
+      _target_: xlm.tasks.humaneval.HumanEvalPassKEval
+      n_samples: ${humaneval_n_samples}
+      variants: ${humaneval_variants}
+      timeout_s: 30.0
+      workers: 16
+      output_dir: ${paths.output_dir}/humaneval_passk
+      model_name: flexmdm_dream
+
+trainer:
+  max_steps: 0
+  num_sanity_val_steps: 0
+
+tags:
+  dataset: humaneval
+  model: flexmdm_dream_coder_7b

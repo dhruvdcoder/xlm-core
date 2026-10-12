@@ -625,10 +625,28 @@ class DreamDecoderLayer(nn.Module):
         )
 
         self.use_time_embedding = config.use_time_embedding
+        self.time_conditioning = getattr(
+            config, "time_conditioning", "rmsnorm4"
+        )
         if config.use_time_embedding:
-            self.rms_norm_modulations = RMSNormModulations(
-                config.d_cond, config.hidden_size
-            )
+            if self.time_conditioning == "flexmdm_shared2":
+                # One (scale, shift) pair shared by both norms; chunk order
+                # (scale, shift) matches the FlexMDM reference ``temb_mods``.
+                self.rms_norm_modulations = RMSNormModulations(
+                    config.d_cond,
+                    config.hidden_size,
+                    num_modulation_parameters=2,
+                )
+            else:
+                self.rms_norm_modulations = RMSNormModulations(
+                    config.d_cond, config.hidden_size
+                )
+
+    def _modulations(self, c: torch.FloatTensor):
+        if self.time_conditioning == "flexmdm_shared2":
+            scale, shift = self.rms_norm_modulations(c)
+            return shift, scale, shift, scale
+        return self.rms_norm_modulations(c)
 
     def forward(
         self,
@@ -673,9 +691,12 @@ class DreamDecoderLayer(nn.Module):
         residual = hidden_states
 
         if self.use_time_embedding:
-            shift_msa, scale_msa, shift_mlp, scale_mlp = (
-                self.rms_norm_modulations(c)
-            )
+            if c is None:
+                raise ValueError(
+                    "use_time_embedding=True but no conditioning vector was "
+                    "provided (pass `t` or `c` to the backbone forward)."
+                )
+            shift_msa, scale_msa, shift_mlp, scale_mlp = self._modulations(c)
             hidden_states = RMSNormModulations.rms_norm_modulate(
                 self.input_layernorm(hidden_states), shift_msa, scale_msa
             )   
@@ -731,7 +752,13 @@ class DreamPreTrainedModel(PreTrainedModel):
 
     def _init_weights(self, module):
         std = self.config.initializer_range
-        if isinstance(module, nn.Linear):
+        if isinstance(module, RMSNormModulations):
+            # AdaLN modulations must start at identity (zero scale/shift);
+            # the generic nn.Linear branch below would overwrite them.
+            module.modulation.weight.data.zero_()
+            if module.modulation.bias is not None:
+                module.modulation.bias.data.zero_()
+        elif isinstance(module, nn.Linear):
             module.weight.data.normal_(mean=0.0, std=std)
             if module.bias is not None:
                 module.bias.data.zero_()
@@ -770,9 +797,13 @@ class DreamBaseModel(DreamPreTrainedModel):
         # Initialize weights and apply final processing
         self.post_init()
 
-        if config.use_time_embedding:
+        if config.use_time_embedding and (
+            getattr(config, "time_conditioning", "rmsnorm4") == "rmsnorm4"
+        ):
             self.sigma_map = TimestepEmbedder(config.d_cond, 256)
         else:
+            # "flexmdm_shared2": the conditioning vector ``c`` is computed by the
+            # wrapping model and passed to ``forward(c=...)``.
             self.sigma_map = None
 
     def get_input_embeddings(self):
@@ -794,6 +825,7 @@ class DreamBaseModel(DreamPreTrainedModel):
         return_dict: Optional[bool] = None,
         cache_position: Optional[torch.LongTensor] = None,
         t: Optional[torch.FloatTensor] = None,
+        c: Optional[torch.FloatTensor] = None,
     ) -> Union[Tuple, BaseModelOutput]:
         output_attentions = (
             output_attentions
@@ -864,9 +896,13 @@ class DreamBaseModel(DreamPreTrainedModel):
         all_self_attns = () if output_attentions else None
 
         if self.sigma_map is not None:
+            if t is None:
+                raise ValueError(
+                    "use_time_embedding=True (rmsnorm4) requires `t` in forward."
+                )
             c = F.silu(self.sigma_map(t))
-        else:
-            c = None
+        # else: ``c`` is either None (no time conditioning) or the externally
+        # computed conditioning vector (time_conditioning="flexmdm_shared2").
         for decoder_layer in self.layers:
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
@@ -973,6 +1009,7 @@ class DreamModelCore(DreamPreTrainedModel):
         cache_position: Optional[torch.LongTensor] = None,
         num_logits_to_keep: int = 0,
         t: Optional[torch.FloatTensor] = None,
+        c: Optional[torch.FloatTensor] = None,
         **loss_kwargs,
     ) -> Union[Tuple, MaskedLMOutput]:
         output_attentions = (
@@ -1004,6 +1041,7 @@ class DreamModelCore(DreamPreTrainedModel):
             return_dict=return_dict,
             cache_position=cache_position,
             t=t,
+            c=c,
         )
 
         hidden_states = outputs[0]
