@@ -31,7 +31,9 @@ DATASETS=${DATASETS:-}         # space-separated subset; empty = all five from t
 
 # Lmod is not initialized in non-login batch shells on some Unity partitions.
 if ! command -v module >/dev/null 2>&1; then
+  case $- in *u*) _had_u=1;; *) _had_u=0;; esac; set +u
   for s in /etc/profile.d/z0[0-9]-lmod-*.sh; do [ -r "$s" ] && source "$s"; done
+  [ "$_had_u" = 1 ] && set -u
 fi
 module load conda/latest
 conda activate "$VENV"

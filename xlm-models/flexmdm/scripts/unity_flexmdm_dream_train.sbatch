@@ -29,12 +29,14 @@ RUN_NAME=${RUN_NAME:-xlm_fsdp_s${STEPS}_gb${GLOBAL_BATCH}_g${NPROC}_seed${SEED}}
 
 # Lmod is not initialized in non-login batch shells on some Unity partitions.
 if ! command -v module >/dev/null 2>&1; then
+  case $- in *u*) _had_u=1;; *) _had_u=0;; esac; set +u
   for s in /etc/profile.d/z0[0-9]-lmod-*.sh; do [ -r "$s" ] && source "$s"; done
+  [ "$_had_u" = 1 ] && set -u
 fi
 module load conda/latest
 conda activate "$VENV"
 cd "$WORKTREE"
-export PYTHONPATH="$WORKTREE/src:${PYTHONPATH:-}"   # worktree src wins over the editable install
+export PYTHONPATH="$WORKTREE/src:$WORKTREE/xlm-models:${PYTHONPATH:-}"   # worktree src + xlm-models win over the editable installs
 set -a; [ -f .env ] && source .env; [ -f .secrets.env ] && source .secrets.env; set +a
 export HF_TOKEN=${HF_TOKEN:-${HF_HUB_KEY:-}}
 export WANDB_PROJECT=${WANDB_PROJECT_OVERRIDE:-flexmdm-dream-repro}

@@ -38,7 +38,9 @@ export WANDB_PROJECT=${WANDB_PROJECT_OVERRIDE:-flexmdm-dream-repro}
 
 # Lmod is not initialized in non-login batch shells on some Unity partitions.
 if ! command -v module >/dev/null 2>&1; then
+  case $- in *u*) _had_u=1;; *) _had_u=0;; esac; set +u
   for s in /etc/profile.d/z0[0-9]-lmod-*.sh; do [ -r "$s" ] && source "$s"; done
+  [ "$_had_u" = 1 ] && set -u
 fi
 module load conda/latest
 conda activate "$VENV"
@@ -55,9 +57,10 @@ mkdir -p "$SAVE_ROOT" "$WANDB_DIR"
 [ -f "$PRETOKENIZED_ROOT/manifest.json" ] || { echo "missing $PRETOKENIZED_ROOT/manifest.json (run unity_flexmdm_ref_pretokenize.sbatch)"; exit 2; }
 
 cd "$REF_ROOT"
+export PYTHONPATH="$REF_ROOT:${PYTHONPATH:-}"   # reference `flexmdm` must win over xlm-models' flexmdm
 echo "=== reference FlexMDM train: steps=$STEPS global_batch=$GLOBAL_BATCH micro=$MICRO gpus=$NPROC seed=$SEED"
 echo "pretokenized_root=$PRETOKENIZED_ROOT save_root=$SAVE_ROOT wandb=$WANDB_ENTITY/$WANDB_PROJECT/$RUN_NAME"
-nvidia-smi --query-gpu=name,memory.total --format=csv,noheader | head -1
+nvidia-smi --id=0 --query-gpu=name,memory.total --format=csv,noheader || true
 
 srun --ntasks=1 --kill-on-bad-exit=1 python -m torch.distributed.run \
     --standalone --nnodes 1 --nproc_per_node "$NPROC" \
