@@ -63,7 +63,9 @@ def resolve_dir(repo_or_dir: str, revision: str | None = None) -> Path:
         return p
     from huggingface_hub import snapshot_download
 
-    return Path(snapshot_download(repo_id=repo_or_dir, revision=revision))
+    from xlm.utils.hf_hub import resolve_hf_hub_token
+
+    return Path(snapshot_download(repo_id=repo_or_dir, revision=revision, token=resolve_hf_hub_token()))
 
 
 def load_reference_package(root: str):
