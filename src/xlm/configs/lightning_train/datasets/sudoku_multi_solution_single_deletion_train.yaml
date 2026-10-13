@@ -1,0 +1,8 @@
+# One clue deleted from a unique parent. Use this subset to compare
+# solution counts. N=1 (redundant_control) is not included.
+defaults:
+  - sudoku_multi_solution_train
+  - _self_
+
+filter_fn: xlm.tasks.sudoku_multi_solution.sudoku_multi_solution_single_deletion_filter_fn
+filter_suffix: single_deletion
