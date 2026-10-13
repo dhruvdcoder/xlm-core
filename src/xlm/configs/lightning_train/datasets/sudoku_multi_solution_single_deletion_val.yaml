@@ -1,0 +1,9 @@
+defaults:
+  - sudoku_multi_solution_single_deletion_train
+  - _self_
+
+full_name: brozonoyer/sudoku-extreme-multi-solution/test
+full_name_debug: brozonoyer/sudoku-extreme-multi-solution/train
+stages:
+  - fit
+  - validate

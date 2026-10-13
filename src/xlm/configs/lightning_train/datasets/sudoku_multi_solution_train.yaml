@@ -1,0 +1,34 @@
+# Modeling split of brozonoyer/sudoku-extreme-multi-solution (config
+# `default`). Every example keeps solution_token_ids, the full set.
+# A custom collator chooses the training target.
+defaults:
+  - default_text
+  - _self_
+
+_target_: xlm.datamodule.DatasetManager
+collator: ??? # model specific collator
+full_name: brozonoyer/sudoku-extreme-multi-solution/train
+full_name_debug: brozonoyer/sudoku-extreme-multi-solution/train
+preprocess_function: xlm.tasks.sudoku_multi_solution.sudoku_multi_solution_preprocess_fn
+on_the_fly_processor: null
+on_the_fly_group_processor: null
+columns_to_remove:
+  - puzzle
+  - solutions
+  - determined_board
+  - deduction_board
+stages:
+  - fit
+iterable_dataset_shards: 32
+shuffle_buffer_size: null
+shuffle_seed: 42
+split_by_node: true
+dataloader_kwargs:
+  batch_size: ${per_device_batch_size}
+  num_workers: ${num_dataloader_workers}
+  shuffle: null
+  pin_memory: True
+  persistent_workers: False
+  prefetch_factor: ${dataloader_prefetch_factor}
+  drop_last: True
+model_name: null

@@ -1,0 +1,3 @@
+defaults:
+  - sudoku_multi_solution_single_deletion_val
+  - _self_
