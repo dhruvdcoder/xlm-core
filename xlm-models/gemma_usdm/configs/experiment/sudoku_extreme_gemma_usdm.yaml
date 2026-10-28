@@ -1,0 +1,83 @@
+# @package _global_
+# Sudoku-Extreme with vanilla gemma-usdm self-conditioning.
+# The IWSLT seq2seq layout is reused: a clean 81-cell prompt plus an 81-cell
+# canvas. Uniform replacement is over every non-pad id. Whole-board exact
+# match and token accuracy score the canvas the predictor appends.
+defaults:
+  - /metrics@reported_metrics.val.prediction.exact_match: exact_match
+  - /metrics@reported_metrics.val.prediction.token_accuracy: token_accuracy
+  - /metrics@reported_metrics.test.prediction.exact_match: exact_match
+  - /metrics@reported_metrics.test.prediction.token_accuracy: token_accuracy
+  - override /datamodule: sudoku_extreme_gemma_usdm
+  - override /noise_schedule: dummy
+  - override /model_type: gemma_usdm_iwslt_seq2seq
+  - override /model: rotary_transformer_xtiny_gemma_usdm
+
+add_bos: false
+add_eos: false
+loss_on_padding: true
+clean_prob: 0.1
+# Fresh loader rows. The loss concatenates one replayed half, so each
+# forward is twice this wide (1024 per device at batch 512).
+per_device_batch_size: 512
+global_batch_size: 512
+block_size: 81
+input_block_size: 81
+monitored_metric: val/lm/accumulated_loss
+
+datamodule:
+  print_batch_fn: gemma_usdm.datamodule_gemma_usdm.print_batch_gemma_usdm
+
+global_components:
+  tokenizer:
+    _target_: xlm.datamodule.SimpleSpaceTokenizer.for_numbers
+    vocab_size: 10
+
+trainer:
+  max_steps: 150_000
+  val_check_interval: 5_000
+  check_val_every_n_epoch: null
+  num_sanity_val_steps: 1
+  limit_val_batches: 100
+  gradient_clip_val: 0.5
+
+optimizer:
+  lr: 0.0003
+
+lr_scheduler:
+  name: constant_with_warmup
+  num_warmup_steps: 2000
+  num_training_steps: ${trainer.max_steps}
+  monitor: train/loss
+
+log_predictions:
+  _target_: xlm.log_predictions.LogPredictions
+  fields_to_keep_in_output:
+    - text
+    - truth
+    - nfe
+  inject_target: target_ids
+  writers:
+    - file
+    - logger
+
+reported_metrics:
+  val:
+    prediction:
+      exact_match:
+        prefix: val/prediction
+        update_fn: mlm.metrics_mlm.seq2seq_exact_match_update_fn
+      token_accuracy:
+        prefix: val/prediction
+        update_fn: mlm.metrics_mlm.seq2seq_token_accuracy_update_fn
+  test:
+    prediction:
+      exact_match:
+        prefix: test/prediction
+        update_fn: mlm.metrics_mlm.seq2seq_exact_match_update_fn
+      token_accuracy:
+        prefix: test/prediction
+        update_fn: mlm.metrics_mlm.seq2seq_token_accuracy_update_fn
+
+tags:
+  dataset: sudoku_extreme
