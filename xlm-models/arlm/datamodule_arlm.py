@@ -106,13 +106,13 @@ def prepare_prefix_ids_arlm(
             temp = temp + [eos_token_id]
 
         # Pad/truncate
-        padded_seq = pad_truncate_list(
-            temp, max_len, pad_token_id, pad_left=True
+        padded_seq, num_padded = pad_truncate_list(
+            temp, max_len, pad_token_id, pad_left=True, return_num_padded=True
         )
         input_ids.append(padded_seq)
 
-        # Create attention mask (1 for real tokens, 0 for padding on the left)
-        mask = [0] * (max_len - len(temp)) + [1] * len(temp)
+        # Mask length always equals max_len (num_padded is 0 when truncated)
+        mask = [0] * num_padded + [1] * (max_len - num_padded)
         attention_mask.append(mask)
 
     return {
@@ -175,13 +175,13 @@ def prepare_suffix_ids_arlm(
             temp = temp + [eos_token_id]
 
         # Pad/truncate
-        padded_seq = pad_truncate_list(
-            temp, max_len, pad_token_id, pad_left=False
+        padded_seq, num_padded = pad_truncate_list(
+            temp, max_len, pad_token_id, pad_left=False, return_num_padded=True
         )
         input_ids.append(padded_seq)
 
-        # Create attention mask
-        mask = [1] * len(temp) + [0] * (max_len - len(temp))
+        # Mask length always equals max_len (num_padded is 0 when truncated)
+        mask = [1] * (max_len - num_padded) + [0] * num_padded
         attention_mask.append(mask)
 
         # Create target_ids (unshifted - will be shifted in collator if needed)
