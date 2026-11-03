@@ -3987,6 +3987,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="score/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>score
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -7051,6 +7079,10 @@ extraction modes, sandboxed execution and unbiased pass@k (:mod:<code>eval</code
         <p>Eval manager that expands each HumanEval task into <code>n_samples</code> rows.</p>
 <p><code>full_name</code> is kept for naming only; rows come from
 :func:<code>load_humaneval_tasks</code> so the prompts match the reference loader exactly.</p>
+<p><code>shard_index</code> / <code>num_shards</code> keep whole tasks <code>i</code> with
+<code>i % num_shards == shard_index</code> (after <code>limit</code>), like the reference
+<code>evals/humaneval_compare/common.shard</code>. Run one job per shard and score the
+concatenated predictions with <code>python -m xlm.tasks.humaneval.score</code>.</p>
 
 
 
@@ -7178,7 +7210,7 @@ passes). When <code>output_dir</code> is set, also writes <code>per_sample.jsonl
 
 
 <h2 id="xlm.tasks.humaneval.humaneval_pred_preprocess_fn" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">humaneval_pred_preprocess_fn</span><span class="p">(</span><span class="n">example</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">'</span><span class="se">\n</span><span class="s1">'</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">humaneval_pred_preprocess_fn</span><span class="p">(</span><span class="n">example</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">'</span><span class="se">\n</span><span class="s1">'</span><span class="p">,</span> <span class="n">strip</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
 
 </h2>
 
@@ -7186,6 +7218,7 @@ passes). When <code>output_dir</code> is set, also writes <code>per_sample.jsonl
     <div class="doc doc-contents ">
 
         <p>Prompt prefix (prompt.strip() + sep) with an empty target, as in dream_code_adaptation training.</p>
+<p><code>strip=False, sep=""</code> keeps the raw HumanEval prompt (FlexMDM reference encoding).</p>
 
 
     </div>

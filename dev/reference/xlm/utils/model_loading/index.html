@@ -3881,6 +3881,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tasks/humaneval/score/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>score
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -5236,6 +5264,28 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#xlm.utils.model_loading.compute_default_rope_parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;compute_default_rope_parameters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xlm.utils.model_loading.ensure_default_rope_init" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;ensure_default_rope_init
+      
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#xlm.utils.model_loading.load_model_for_inference" class="md-nav__link">
@@ -7023,6 +7073,50 @@ for inference tasks (generation, evaluation, push to hub, demos).</p>
 
 
 
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="xlm.utils.model_loading.compute_default_rope_parameters" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">compute_default_rope_parameters</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seq_len</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">rope_kwargs</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Inverse frequencies for original (unscaled) RoPE.</p>
+<p>Matches <code>transformers</code> &lt;=4 <code>ROPE_INIT_FUNCTIONS["default"]</code>
+(<code>_compute_default_rope_parameters</code>): base <code>config.rope_theta</code>
+(Dream-Coder / FlexMDM: <code>1_000_000</code>) and attention scaling <code>1.0</code>.
+On transformers 5, <code>rope_theta</code> may live in <code>rope_parameters</code>.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="xlm.utils.model_loading.ensure_default_rope_init" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">ensure_default_rope_init</span><span class="p">(</span><span class="n">rope_init_functions</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return a RoPE init map that contains <code>"default"</code>.</p>
+<p>If <code>"default"</code> is already present, the mapping is returned
+unchanged (transformers 4). Otherwise a shallow copy is returned
+with unscaled RoPE filled in. Yarn, linear, dynamic, and llama3
+entries are not replaced.</p>
+
+
+    </div>
+
+</div>
 
 <div class="doc doc-object doc-function">
 

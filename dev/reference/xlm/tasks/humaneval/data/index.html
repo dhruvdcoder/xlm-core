@@ -3965,6 +3965,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../score/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code>score
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -7031,6 +7059,10 @@ HumanEval+ share prompts, so one set of generations is scored against both.</p>
         <p>Eval manager that expands each HumanEval task into <code>n_samples</code> rows.</p>
 <p><code>full_name</code> is kept for naming only; rows come from
 :func:<code>load_humaneval_tasks</code> so the prompts match the reference loader exactly.</p>
+<p><code>shard_index</code> / <code>num_shards</code> keep whole tasks <code>i</code> with
+<code>i % num_shards == shard_index</code> (after <code>limit</code>), like the reference
+<code>evals/humaneval_compare/common.shard</code>. Run one job per shard and score the
+concatenated predictions with <code>python -m xlm.tasks.humaneval.score</code>.</p>
 
 
 
