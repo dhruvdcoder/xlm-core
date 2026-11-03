@@ -5,8 +5,6 @@ defaults:
   - on_exception_checkpoint
   - learning_rate_monitor
   - file_friendly_progress_bar
-  - print_batch
-  - unconditional_samples
 
 # MAYBE: Add params_log callback 
 # https://github.com/Dao-AILab/flash-attention/blob/main/training/src/callbacks/params_log.py (use class attributes instead of AttributeDict)

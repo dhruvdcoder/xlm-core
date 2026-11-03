@@ -58,5 +58,6 @@ evals/protein_eval/logs/
 docs/**/linkedin
 .cursor
 /slurm_scripts/
+/internal/
 docs/slides/
 .cursor

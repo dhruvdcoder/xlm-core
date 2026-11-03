@@ -1,0 +1,21 @@
+# Reference FlexMDM pre-tokenized code-SFT shards (``python -m flexmdm.data tokenize`` output).
+# Rows: [BOS] prompt [PAD] answer, right-padded to 768. See flexmdm.datamodule_flexmdm_dream.
+_target_: flexmdm.datamodule_flexmdm_dream.FlexMDMPretokenizedDatasetManager
+pretokenized_root: ${flexmdm_pretokenized_root}
+split: train
+# Mixture that trained the released checkpoint (reference fsdp_train.yaml); null = manifest order.
+dataset_names: ${flexmdm_dataset_names}
+repeat_factors: ${flexmdm_repeat_factors}
+validation_fraction: 0.0005
+validation_seed: ${seed} # reference: data.validation_seed -> trainer.seed (1)
+sampler_seed: 0 # reference: torch DistributedSampler default
+max_rows: null
+stages:
+  - fit
+dataloader_kwargs:
+  batch_size: ${per_device_batch_size}
+  num_workers: ${num_dataloader_workers}
+  pin_memory: true
+  persistent_workers: ${dataloader_persistent_workers}
+  prefetch_factor: ${dataloader_prefetch_factor}
+  drop_last: true

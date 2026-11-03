@@ -1,6 +1,5 @@
 defaults:
   - file_friendly_progress_bar
-  - print_batch
   - learning_rate_monitor
   - speed_monitor
   - ema

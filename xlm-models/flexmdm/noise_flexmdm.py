@@ -139,8 +139,53 @@ class PolynomialSchedule(Schedule, nn.Module):
     
     def inv(self, alpha: Tensor):
         return alpha ** (1 / self.exp)
-    
-    
+
+
+class PowerSchedule(Schedule, nn.Module):
+    """FlexMDM (Dream-Coder) reference ``power`` schedule: ``a(t) = 1 - (1 - t)^n``.
+
+    ``n = 1`` is the linear schedule and ``n = 2`` the reference ``quadratic``
+    schedule. The hazard ``a'(t) / (1 - a(t)) = n / (1 - t)``. The released
+    checkpoint uses ``n = 1.7`` for insertion and ``n = 1.7 * 1.7 = 2.89`` for
+    unmasking (``genuine-any-order/FlexMDM/flexmdm/schedules.py``).
+    """
+
+    def __init__(self, exp: float):
+        super().__init__()
+        if not float(exp) > 0.0:
+            raise ValueError(f"PowerSchedule exponent must be > 0, got {exp}.")
+        self.exp = float(exp)
+
+    def at(self, t: Tensor):
+        return 1.0 - (1.0 - t).clamp_min(0.0).pow(self.exp)
+
+    def derivative_at(self, t: Tensor):
+        return self.exp * (1.0 - t).clamp_min(0.0).pow(self.exp - 1.0)
+
+    def rate_scale_factor(self, t: Tensor, eps: float = 0.0) -> Tensor:
+        """``a'(t) / (1 - a(t) + eps)``; with ``eps=0`` this is exactly ``n / (1 - t)``."""
+        if eps == 0.0:
+            return self.exp / (1.0 - t)
+        return self.derivative_at(t) / (1.0 - self.at(t) + eps)
+
+    def inv(self, alpha: Tensor):
+        return 1.0 - (1.0 - alpha).clamp_min(0.0).pow(1.0 / self.exp)
+
+
+def reparameterize_time(
+    t: Tensor, *, inference_schedule: Schedule, train_schedule: Schedule
+) -> Tensor:
+    """Inference-time schedule reparameterization (paper App. D.1).
+
+    Query a model trained with ``train_schedule`` as if it had been trained with
+    ``inference_schedule`` by feeding it ``model_t = train^{-1}(inference(t))``.
+    For two power schedules with exponents ``a`` (train) and ``a_bar`` (inference)
+    this is ``1 - (1 - t)^(a_bar / a)`` (the released evaluation uses
+    ``a = 1.7``, ``a_bar = 2.9``).
+    """
+    return train_schedule.inv(inference_schedule.at(t))
+
+
 class FlexMDMNoiseSchedule:
     def __init__(self, insertion_noise_schedule, unmasking_noise_schedule):
         self.insertion_noise_schedule = insertion_noise_schedule

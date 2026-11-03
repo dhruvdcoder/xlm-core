@@ -1,0 +1,36 @@
+_target_: flexmdm.model_flexmdm_dream.FlexMDMDreamModel
+config:
+  _target_: flexmdm.configuration_flexmdm_dream.FlexMDMDreamConfig
+  # Aligned with https://huggingface.co/Dream-org/Dream-Coder-v0-Base-7B/blob/main/config.json
+  # (inherited unchanged by the FlexMDM checkpoint yuyuanchen0/flexmdm).
+  vocab_size: 152064
+  hidden_size: 3584
+  intermediate_size: 18944
+  num_hidden_layers: 28
+  num_attention_heads: 28
+  num_key_value_heads: 4
+  hidden_act: silu
+  max_position_embeddings: 32768 # as in yuyuanchen0/flexmdm config.json
+  initializer_range: 0.02
+  rms_norm_eps: 1e-6
+  use_cache: false
+  tie_word_embeddings: false
+  rope_theta: 1000000.0
+  use_sliding_window: false
+  sliding_window: 4096
+  max_window_layers: 28
+  attention_dropout: 0.0
+  mask_token_id: 151666
+  pad_token_id: 151643
+  bos_token_id: 151665  # <|beginoftext|> (Dream-Coder tokenizer); pad == eos == <|endoftext|>
+  eos_token_id: 151643
+  # FlexMDM additions (reference architecture.py defaults)
+  use_time_embedding: true
+  time_conditioning: flexmdm_shared2
+  time_scale: 1000.0
+  time_max_period: 10000
+max_length: ${max_seq_len}
+# Reference train_fsdp.py: insertion_head / time_mlp / temb_mods get lr * 2.0
+insertion_lr_multiplier: ${oc.select:insertion_lr_multiplier,1.0}
+base_lr: ${oc.select:optimizer.lr,null}
+force_flash_attn: ${oc.select:force_flash_attn,false}

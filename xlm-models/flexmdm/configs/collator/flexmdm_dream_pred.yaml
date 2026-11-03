@@ -1,0 +1,9 @@
+# FlexMDM (Dream-Coder) prediction collator: [BOS] prompt [PAD] prefix, PAD-padded to block_size.
+# Matches genuine-any-order/FlexMDM evals/humaneval_compare/common.py::encode_flexmdm_prompt.
+_target_: flexmdm.datamodule_flexmdm_dream.FlexMDMDreamPredCollator
+tokenizer: ${global_components:tokenizer}
+block_size: ${block_size}
+prepend_bos: true
+pass_through_fields:
+  - task_id
+  - sample_k

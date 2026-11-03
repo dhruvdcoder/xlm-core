@@ -1,0 +1,36 @@
+# @package _global_
+# FSDP overlay for FlexMDMDreamModel (Dream-Coder-7B backbone + insertion head / time MLP /
+# per-layer AdaLN). Compose after the task experiment:
+#
+#   xlm experiment=[code_sft_flexmdm_dream,flexmdm_dream_fsdp_args] trainer_strategy=fsdp \
+#       trainer.devices=8
+#
+# - FSDPHarness: FSDP-correct norm clipping and global grad-norm logging.
+# - Per-DreamDecoderLayer sharding (+ activation checkpointing). The insertion head, time MLP,
+#   embeddings, final norm and lm_head stay in the root unit; FlexMDMDreamModel.get_param_groups
+#   still sees them through use_orig_params=true and puts the FlexMDM additions in the x2 LR group.
+# - bf16 params / fp32 reductions, as in the reference fsdp.mixed_precision block. The reference
+#   uses HYBRID_SHARD across 2 nodes; FULL_SHARD (strategy default) is numerically equivalent.
+lightning_module:
+  _target_: xlm.harness.FSDPHarness
+
+trainer:
+  gradient_clip_algorithm: norm
+  strategy:
+    auto_wrap_policy:
+      _target_: xlm.utils.fsdp_grouping.make_layer_wrap_policy
+      _args_:
+        - xlm.backbones.dream.modeling_dream.DreamDecoderLayer
+    activation_checkpointing_policy:
+      _target_: xlm.utils.fsdp_grouping.make_layer_wrap_policy
+      _args_:
+        - xlm.backbones.dream.modeling_dream.DreamDecoderLayer
+    mixed_precision:
+      _target_: xlm.utils.fsdp_grouping.fsdp_bf16_mixed_precision
+
+callbacks:
+  fsdp_diagnostics:
+    _target_: xlm.utils.fsdp_diagnostics_callback.FSDPDiagnosticsCallback
+    num_logged_batches: 3
+    log_module_tree_top_k: 5
+    log_to_logger: true

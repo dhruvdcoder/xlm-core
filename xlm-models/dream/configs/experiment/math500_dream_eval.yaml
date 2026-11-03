@@ -1,6 +1,6 @@
 # @package _global_
 defaults:
-  - override /callbacks: default_hf
+  - override /callbacks: llm_eval
   - override /datamodule: math500_dream
   - override /noise_schedule: dummy
   - override /model_type: dream_eval
