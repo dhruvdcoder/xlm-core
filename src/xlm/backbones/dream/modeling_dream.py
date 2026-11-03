@@ -184,14 +184,67 @@ class DreamRotaryEmbedding(nn.Module):
             self.max_seq_len_cached = config.max_position_embeddings
             self.original_max_seq_len = config.max_position_embeddings
 
+        # transformers 5 stores unscaled RoPE as rope_type "default" (often via
+        # the rope_scaling property over rope_parameters) but removed that key
+        # from ROPE_INIT_FUNCTIONS. Scaled types are still in the dict.
+        if self.rope_type is None:
+            self.rope_type = "default"
         self.config = config
-        self.rope_init_fn = ROPE_INIT_FUNCTIONS[self.rope_type]
+        if self.rope_type == "default":
+            self.rope_init_fn = self.compute_default_rope_parameters
+        else:
+            self.rope_init_fn = ROPE_INIT_FUNCTIONS[self.rope_type]
 
         inv_freq, self.attention_scaling = self.rope_init_fn(
             self.config, device, **self.rope_kwargs
         )
         self.register_buffer("inv_freq", inv_freq, persistent=False)
         self.original_inv_freq = self.inv_freq
+
+    @staticmethod
+    def compute_default_rope_parameters(
+        config: Optional[DreamConfigBase] = None,
+        device: Optional[torch.device] = None,
+        seq_len: Optional[int] = None,
+        **rope_kwargs,
+    ) -> Tuple[torch.Tensor, float]:
+        """Inverse frequencies for original (unscaled) RoPE.
+
+        Matches ``transformers`` <=4 ``ROPE_INIT_FUNCTIONS["default"]``. The
+        base is ``config.rope_theta`` (Dream-Coder / FlexMDM: ``1_000_000``),
+        falling back to ``rope_parameters["rope_theta"]`` on transformers 5.
+        """
+        del seq_len  # unused for unscaled RoPE; kept for the init-fn signature
+        if config is not None:
+            base = getattr(config, "rope_theta", None)
+            rope_parameters = getattr(config, "rope_parameters", None)
+            if base is None and isinstance(rope_parameters, dict):
+                base = rope_parameters.get("rope_theta")
+            if base is None:
+                base = rope_kwargs.get("base", 10000.0)
+            partial_rotary_factor = getattr(
+                config, "partial_rotary_factor", 1.0
+            )
+            if partial_rotary_factor is None:
+                partial_rotary_factor = 1.0
+            head_dim = getattr(config, "head_dim", None) or (
+                config.hidden_size // config.num_attention_heads
+            )
+            dim = int(head_dim * partial_rotary_factor)
+        else:
+            base = rope_kwargs["base"]
+            dim = rope_kwargs["dim"]
+
+        inv_freq = 1.0 / (
+            base
+            ** (
+                torch.arange(0, dim, 2, dtype=torch.int64).to(
+                    device=device, dtype=torch.float
+                )
+                / dim
+            )
+        )
+        return inv_freq, 1.0
 
     def reset_parameters(self):
         inv_freq, self.attention_scaling = self.rope_init_fn(
