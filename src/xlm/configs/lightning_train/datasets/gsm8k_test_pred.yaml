@@ -4,4 +4,5 @@ defaults:
 stages:
   - validate
   - predict
+  - test
 shuffle_buffer_size: null
