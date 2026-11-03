@@ -8,7 +8,7 @@ from transformers.modeling_rope_utils import (
     _compute_default_rope_parameters,
 )
 
-from xlm.utils.transformers_compat import (
+from xlm.utils.model_loading import (
     ROPE_INIT_FUNCTIONS,
     compute_default_rope_parameters,
     ensure_default_rope_init,

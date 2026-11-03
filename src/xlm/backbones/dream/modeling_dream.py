@@ -43,7 +43,7 @@ from transformers.utils import (
 )
 from transformers import PretrainedConfig
 from xlm.backbones.dream.configuration_base import DreamConfigBase
-from xlm.utils.transformers_compat import ROPE_INIT_FUNCTIONS
+from xlm.utils.model_loading import ROPE_INIT_FUNCTIONS
 from flexmdm.model_flexmdm import TimestepEmbedder
 
 if is_flash_attn_2_available():
