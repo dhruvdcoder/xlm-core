@@ -6919,6 +6919,14 @@
 <p><code>gsm8k_test_pred</code> uses <code>gsm8k_preprocess_fn</code> (numeric gold from <code>####</code> in the
 GSM8K <code>answer</code> field). Same <code>Gsm8kCodeEval</code> via dataloader name substring
 <code>prediction</code>.</p>
+<h2 id="gemma-usdm">Gemma-USDM</h2>
+<p><code>experiment=tinygsm_gemma_usdm</code> trains the full 12-layer Gemma-USDM model on the same TinyGSM seq2seq split.
+The task metric is <code>code_exec_accuracy</code> from <code>Gsm8kCodeEval</code>, not token exact match.
+Validation is capped at 50 batches in the experiment config.
+GSM8K test scoring uses the same evaluator on <code>test.gsm8k_prediction</code>.</p>
+<div class="highlight"><pre><span></span><code>xlm<span class="w"> </span><span class="nv">job_type</span><span class="o">=</span><span class="nb">eval</span><span class="w"> </span><span class="nv">job_name</span><span class="o">=</span>tinygsm_gemma_usdm_gsm8k<span class="w"> </span><span class="nv">experiment</span><span class="o">=</span>tinygsm_gemma_usdm<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>+eval.ckpt_path<span class="o">=</span>/path/to/checkpoint.ckpt
+</code></pre></div>
 <h2 id="standalone-gsm8k-eval-flexmdm">Standalone GSM8K eval (FlexMDM)</h2>
 <p>See also <a href="../../models/flexmdm/#tinygsm">FlexMDM — TinyGSM</a> for training and checkpoint prep.</p>
 <div class="highlight"><pre><span></span><code>conda<span class="w"> </span>activate<span class="w"> </span>/scratch3/workspace/dhruveshpate_umass_edu-idlm/xlm-core/.venv_xlm_core
