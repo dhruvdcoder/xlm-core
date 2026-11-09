@@ -34,6 +34,18 @@ Prediction JSONL rows include:
 GSM8K `answer` field). Same `Gsm8kCodeEval` via dataloader name substring
 `prediction`.
 
+## Gemma-USDM
+
+`experiment=tinygsm_gemma_usdm` trains the full 12-layer Gemma-USDM model on the same TinyGSM seq2seq split.
+The task metric is `code_exec_accuracy` from `Gsm8kCodeEval`, not token exact match.
+Validation is capped at 50 batches in the experiment config.
+GSM8K test scoring uses the same evaluator on `test.gsm8k_prediction`.
+
+```bash
+xlm job_type=eval job_name=tinygsm_gemma_usdm_gsm8k experiment=tinygsm_gemma_usdm \
+  +eval.ckpt_path=/path/to/checkpoint.ckpt
+```
+
 ## Standalone GSM8K eval (FlexMDM)
 
 See also [FlexMDM — TinyGSM](../models/flexmdm.md#tinygsm) for training and checkpoint prep.

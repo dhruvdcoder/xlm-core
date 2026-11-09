@@ -56,3 +56,4 @@ Training settings, prepare/train commands, and experiment YAMLs live in the per-
 | FlexMDM | `experiment=tinygsm_flexmdm` | [FlexMDM — TinyGSM](../models/flexmdm.md#tinygsm) (debug: `debug=overfit_tinygsm_flexmdm`) |
 | MLM | `experiment=tinygsm_mlm` | [MLM — TinyGSM](../models/mlm.md#tinygsm) |
 | ARLM | `experiment=tinygsm_arlm` | [ARLM — TinyGSM](../models/arlm.md#tinygsm) |
+| Gemma-USDM | `experiment=tinygsm_gemma_usdm` | [TinyGSM and GSM8K](tinygsm_gsm8k.md#gemma-usdm) |

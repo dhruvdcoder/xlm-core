@@ -5,7 +5,10 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 
-from gemma_usdm.datamodule_gemma_usdm import GemmaUsdmTrainCollator
+from gemma_usdm.datamodule_gemma_usdm import (
+    GemmaUsdmPredCollator,
+    GemmaUsdmTrainCollator,
+)
 from gemma_usdm.loss_gemma_usdm import GemmaUsdmLoss
 from gemma_usdm.model_gemma_usdm import GemmaUsdmModel
 from gemma_usdm.noise_gemma_usdm import corrupt_canvas
@@ -136,6 +139,28 @@ def test_loss_on_padding_targets_and_mean():
     assert torch.allclose(got_false, expect_false)
     assert not torch.allclose(got_false, nll(7))
     assert loss_obj.buffer.rows is None
+
+
+def test_pred_collator_left_pads_empty_suffix_and_passes_answer():
+    """TinyGSM prediction rows have an empty suffix and a numeric gold answer."""
+    batch = GemmaUsdmPredCollator(
+        _Tok(),
+        block_size=4,
+        input_block_size=4,
+        pass_through_fields=["answer"],
+    )(
+        [
+            {"prompt_ids": [5, 6], "input_ids": [], "answer": "4"},
+            {"prompt_ids": [7, 8, 9], "input_ids": [], "answer": "1"},
+        ]
+    )
+    assert batch["input_ids"].tolist() == [[0, 0, 5, 6], [0, 7, 8, 9]]
+    assert batch["attention_mask"].tolist() == [
+        [False, False, True, True],
+        [False, True, True, True],
+    ]
+    assert batch["target_ids"].tolist() == [[3, 0, 0, 0], [3, 0, 0, 0]]
+    assert batch["answer"] == ["4", "1"]
 
 
 def test_entropy_budget_commits_lowest_and_renoises_the_rest():

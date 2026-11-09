@@ -1,0 +1,74 @@
+# @package _global_
+defaults:
+  - override /datamodule: tinygsm_gemma_usdm
+  - override /noise_schedule: dummy
+  - override /model_type: gemma_usdm_iwslt_seq2seq
+  - override /model: rotary_transformer_gemma_usdm
+
+add_bos: false
+add_eos: true
+loss_on_padding: true
+clean_prob: 0.1
+# Fresh loader rows. The loss concatenates one replayed half, so each
+# forward is twice this wide (32 per device, 512 per optimizer step).
+per_device_batch_size: 16
+global_batch_size: 256
+num_dataloader_workers: 5
+block_size: 256
+input_block_size: 256
+monitored_metric: val/lm/accumulated_loss
+
+global_components:
+  tokenizer:
+    _target_: xlm.datamodule.load_auto_tokenizer
+    pretrained_model_name_or_path: Qwen/Qwen2-0.5B
+    special_tokens:
+      mask_token: "<|mask|>"
+      pad_token: "<|pad|>"
+
+datamodule:
+  print_batch_fn: gemma_usdm.datamodule_gemma_usdm.print_batch_gemma_usdm
+
+trainer:
+  max_steps: 1000_000
+  val_check_interval: 50000
+  limit_val_batches: 50
+  check_val_every_n_epoch: null
+  num_sanity_val_steps: 3
+
+optimizer:
+  lr: 0.0001
+
+lr_scheduler:
+  name: constant_with_warmup
+  num_warmup_steps: 2000
+  num_training_steps: ${trainer.max_steps}
+  monitor: train/loss
+
+callbacks:
+  checkpoint_every_n_steps:
+    every_n_train_steps: 2500
+    keep_multiple: 40
+
+log_predictions:
+  _target_: xlm.log_predictions.LogPredictions
+  fields_to_keep_in_output:
+    - text
+    - generated_text
+    - answer
+    - nfe
+  additional_fields_from_batch:
+    - answer
+  writers:
+    - file
+    - logger
+
+post_hoc_evaluator:
+  _target_: xlm.tasks.composite_eval.CompositePostHocEvaluator
+  evaluators:
+    prediction:
+      _target_: xlm.tasks.tinygsm.Gsm8kCodeEval
+
+tags:
+  dataset: tinygsm
+  model_type: gemma_usdm_tinygsm_seq2seq
