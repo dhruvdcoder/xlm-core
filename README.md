@@ -50,7 +50,7 @@ The companion package [`xlm-models`](https://github.com/dhruvdcoder/xlm-core/tre
 | `ilm` | Insertion language model | [Guide](https://dhruveshp.com/xlm-core/dev/models/ilm/) | Beta | [arXiv:2505.05755](https://arxiv.org/abs/2505.05755) |
 | `mdlm` | Masked diffusion LM | [Guide](https://dhruveshp.com/xlm-core/dev/models/mdlm/) | Beta | [arXiv:2406.07524](https://arxiv.org/abs/2406.07524) |
 | `mlm` | Masked language model (BERT-style) | [Guide](https://dhruveshp.com/xlm-core/dev/models/mlm/) | Beta | — |
-| `flexmdm` | Flexible masked diffusion | [Guide](https://dhruveshp.com/xlm-core/dev/models/flexmdm/) | Alpha | [arXiv:2509.01025](https://arxiv.org/abs/2509.01025). Dream-Coder code model: [arXiv:2607.26504](https://arxiv.org/abs/2607.26504), [code](https://github.com/SeunggeunKimkr/genuine-any-order) |
+| `flexmdm` | Insertion-based masked diffusion | [Guide](https://dhruveshp.com/xlm-core/dev/models/flexmdm/) | Alpha | [arXiv:2509.01025](https://arxiv.org/abs/2509.01025). Dream-Coder code model: [arXiv:2607.26504](https://arxiv.org/abs/2607.26504), [code](https://github.com/SeunggeunKimkr/genuine-any-order) |
 | `dream` | Dream-style decoder LM | Partial | Alpha | [Source](https://github.com/dhruvdcoder/xlm-core/tree/main/xlm-models/dream); backbone in [`xlm.backbones.dream`](https://dhruveshp.com/xlm-core/dev/reference/xlm/backbones/dream/) |
 | `llada` | LLaDA masked diffusion LM | [Guide](https://dhruveshp.com/xlm-core/dev/models/llada/) | Partial / Alpha | [arXiv:2502.09992](https://arxiv.org/abs/2502.09992); [Source](https://github.com/dhruvdcoder/xlm-core/tree/main/xlm-models/llada); backbone in `xlm.backbones.llada` |
 
