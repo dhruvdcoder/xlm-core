@@ -1,0 +1,12 @@
+# @package _global_
+# Model-agnostic TinyGSM overfit on the local CSV.
+# Loads $DATA_DIR/tinygsm_sample/train.csv (default DATA_DIR=data).
+defaults:
+  - /debug/overfit
+  - override /datasets@datamodule.dataset_managers.train.lm: tinygsm_local_sample
+  - override /datasets@datamodule.dataset_managers.val.lm: tinygsm_local_sample
+  - override /datasets@datamodule.dataset_managers.val.prediction: tinygsm_local_sample_pred
+  - override /datasets@datamodule.dataset_managers.test.gsm8k_prediction: tinygsm_local_sample_pred
+
+tags:
+  debug: tinygsm_local_overfit
