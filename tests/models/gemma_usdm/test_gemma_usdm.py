@@ -249,6 +249,100 @@ def test_per_sequence_nfe_and_frozen_tokens():
     assert rows[0]["generated_text"] != ""
 
 
+def test_untempered_self_cond_selects_the_softmax_that_builds_z():
+    """True carries softmax(logits) @ E. False keeps softmax(logits / tau) @ E.
+
+    The last linear of self_cond_ffw is nonzero. A zero last linear would
+    send both flags to z = 0.
+    """
+    torch.manual_seed(0)
+
+    class _Carry(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.embed_tokens = nn.Embedding(8, 4)
+            self.self_cond_ffw = nn.Sequential(
+                nn.Linear(4, 4),
+                nn.GELU(),
+                nn.Linear(4, 4),
+            )
+            nn.init.eye_(self.self_cond_ffw[0].weight)
+            nn.init.zeros_(self.self_cond_ffw[0].bias)
+            nn.init.eye_(self.self_cond_ffw[-1].weight)
+            nn.init.zeros_(self.self_cond_ffw[-1].bias)
+            self.seen: list[torch.Tensor] = []
+
+        def self_conditioning(self, soft, canvas_mask):
+            z = self.self_cond_ffw(
+                soft.to(dtype=self.embed_tokens.weight.dtype)
+            )
+            gate = canvas_mask.to(dtype=z.dtype).unsqueeze(-1)
+            return z * gate
+
+        def forward(
+            self,
+            x_t,
+            attention_mask=None,
+            positions=None,
+            self_cond=None,
+            block_mask=None,
+        ):
+            del attention_mask, positions, block_mask
+            self.seen.append(self_cond.detach().clone())
+            logits = torch.zeros(*x_t.shape, 8)
+            logits[..., 2] = 2.0
+            logits[..., 5] = 0.5
+            return logits
+
+    model = _Carry()
+    last = model.self_cond_ffw[-1].weight.detach()
+    assert float(last.abs().sum()) > 0
+    prefix = 2
+    canvas_len = 3
+    batch = {
+        "input_ids": torch.tensor([[5, 6]]),
+        "attention_mask": torch.ones(1, prefix, dtype=torch.bool),
+    }
+    canvas = torch.zeros(1, prefix + canvas_len, dtype=torch.bool)
+    canvas[:, prefix:] = True
+    tau = 0.5
+
+    def carried(flag: bool) -> torch.Tensor:
+        model.seen.clear()
+        predictor = GemmaUsdmPredictor(
+            max_steps=2,
+            max_new_tokens=canvas_len,
+            entropy_budget=0.1,
+            stop_entropy=-1.0,
+            tau_max=tau,
+            tau_min=tau,
+            untempered_self_cond=flag,
+            tokenizer=_Tok(),
+            model=model,
+        )
+        predictor.predict(batch)
+        assert len(model.seen) == 2
+        assert torch.count_nonzero(model.seen[0]) == 0
+        return model.seen[1]
+
+    def expected(flag: bool) -> torch.Tensor:
+        logits = torch.zeros(1, prefix + canvas_len, 8)
+        logits[..., 2] = 2.0
+        logits[..., 5] = 0.5
+        embed = model.embed_tokens.weight.detach().float()
+        if flag:
+            probs = torch.softmax(logits, dim=-1)
+        else:
+            probs = torch.softmax(logits / tau, dim=-1)
+        return model.self_conditioning(probs @ embed, canvas)
+
+    tempered = carried(False)
+    untempered = carried(True)
+    assert torch.allclose(tempered, expected(False))
+    assert torch.allclose(untempered, expected(True))
+    assert not torch.allclose(tempered, untempered)
+
+
 def test_self_conditioning_is_zero_on_the_source():
     model = _tiny_model()
     model.self_cond_ffw[-1].bias.data.fill_(1.0)
