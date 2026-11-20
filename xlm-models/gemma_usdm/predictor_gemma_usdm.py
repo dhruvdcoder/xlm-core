@@ -100,6 +100,7 @@ class GemmaUsdmPredictor:
         tau_max: float = 0.8,
         tau_min: float = 0.4,
         loss_on_padding: bool = True,
+        untempered_self_cond: bool = False,
         skip_special_tokens: bool = True,
         tokenizer: Optional[Tokenizer] = None,
         model: Any = None,
@@ -112,6 +113,7 @@ class GemmaUsdmPredictor:
         self.tau_max = tau_max
         self.tau_min = tau_min
         self.loss_on_padding = loss_on_padding
+        self.untempered_self_cond = untempered_self_cond
         self.skip_special_tokens = skip_special_tokens
         self.tokenizer = tokenizer
         self.model = model
@@ -248,7 +250,11 @@ class GemmaUsdmPredictor:
                 uniform,
                 self.entropy_budget,
             )
-            soft = probs.float() @ model.embed_tokens.weight.detach().float()
+            embedding = model.embed_tokens.weight.detach()
+            if self.untempered_self_cond:
+                soft = torch.softmax(logits.float(), dim=-1) @ embedding.float()
+            else:
+                soft = probs.float() @ embedding.float()
             z_proposed = model.self_conditioning(soft, canvas_mask)
             keep = active.unsqueeze(-1)
             tokens = torch.where(keep, proposed, tokens)

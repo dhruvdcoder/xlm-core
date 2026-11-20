@@ -26,6 +26,7 @@ predictor:
   stop_entropy: 0.005
   tau_max: 0.8
   tau_min: 0.4
+  untempered_self_cond: false
   loss_on_padding: ${oc.select:loss_on_padding,true}
 
 diagnostic_metrics: null
